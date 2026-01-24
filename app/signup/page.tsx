@@ -4,7 +4,10 @@ import {useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {Eye, EyeOff, ChevronRight} from 'lucide-react';
+import {Eye, EyeOff, ChevronRight, Loader2} from 'lucide-react';
+import {useSignupMutation} from '@/lib/api/services/auth.hooks';
+import {useToast} from '@/hooks/use-toast';
+import {VerificationCodeModal} from '@/components/modals';
 
 const onboardingSlides = [
   {
@@ -23,9 +26,14 @@ const onboardingSlides = [
 
 const SignUpPage = () => {
   const router = useRouter();
+  const {toast} = useToast();
+  const signupMutation = useSignupMutation();
+
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
   const [formData, setFormData] = useState({
     fullName: '',
     referrerName: '',
@@ -35,14 +43,55 @@ const SignUpPage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({...formData, [e.target.name]: e.target.value});
+    setError(''); // Clear error when user types
+  };
+
+  // Extract code from message (e.g., "Your verification code is 1234")
+  const extractCodeFromMessage = (message: string): string => {
+    const codeMatch = message.match(/\b\d{4,6}\b/);
+    return codeMatch ? codeMatch[0] : '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    setError('');
+
+    signupMutation.mutate(
+      {
+        email: formData.email,
+        fullName: formData.fullName,
+        referrerName: formData.referrerName || undefined,
+        password: formData.password,
+      },
+      {
+        onSuccess: (response) => {
+          // Extract code from data.message (API returns: { message: "...", data: { message: "...OTP is: \"1234\"" } })
+          const dataMessage = response?.data?.message || '';
+          const code = extractCodeFromMessage(dataMessage);
+          
+          if (code) {
+            setVerificationCode(code);
+            setShowCodeModal(true);
+          } else {
+            toast({
+              title: 'Account created! 🎉',
+              description: response?.message || 'Please check your email for the verification code.',
+            });
+            router.push(`/signup/verify?email=${encodeURIComponent(formData.email)}`);
+          }
+        },
+        onError: (err: any) => {
+          const message =
+            err?.response?.data?.message ||
+            'Failed to create account. Please try again.';
+          setError(message);
+        },
+      }
+    );
+  };
+
+  const handleModalClose = () => {
+    setShowCodeModal(false);
     router.push(`/signup/verify?email=${encodeURIComponent(formData.email)}`);
   };
 
@@ -143,6 +192,12 @@ const SignUpPage = () => {
 
           {/* Sign Up Form */}
           <form onSubmit={handleSubmit} className='space-y-4'>
+            {error && (
+              <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm'>
+                {error}
+              </div>
+            )}
+
             <div>
               <input
                 type='text'
@@ -219,9 +274,16 @@ const SignUpPage = () => {
 
             <button
               type='submit'
-              disabled={isLoading}
-              className='w-full py-3.5 bg-primary hover:bg-primary/90 text-[#0A1F44] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
-              {isLoading ? 'Creating account...' : 'Sign Up'}
+              disabled={signupMutation.isPending}
+              className='w-full py-3.5 bg-primary hover:bg-primary/90 text-[#0A1F44] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'>
+              {signupMutation.isPending ? (
+                <>
+                  <Loader2 className='w-5 h-5 animate-spin' />
+                  Creating account...
+                </>
+              ) : (
+                'Sign Up'
+              )}
             </button>
           </form>
 
@@ -235,6 +297,16 @@ const SignUpPage = () => {
           </p>
         </div>
       </div>
+      
+      {/* Verification Code Modal */}
+      <VerificationCodeModal
+        open={showCodeModal}
+        onOpenChange={handleModalClose}
+        code={verificationCode}
+        email={formData.email}
+        title="Account Created! 🎉"
+        description="Here's your verification code. Copy it and use it on the next screen to verify your account."
+      />
     </div>
   );
 };

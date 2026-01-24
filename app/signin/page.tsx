@@ -4,7 +4,9 @@ import {useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
-import {Eye, EyeOff, ChevronRight} from 'lucide-react';
+import {Eye, EyeOff, ChevronRight, Loader2} from 'lucide-react';
+import {useSigninMutation} from '@/lib/api/services/auth.hooks';
+import {useToast} from '@/hooks/use-toast';
 
 const onboardingSlides = [
   {
@@ -23,9 +25,12 @@ const onboardingSlides = [
 
 const SignInPage = () => {
   const router = useRouter();
+  const {toast} = useToast();
+  const signinMutation = useSigninMutation();
+
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -33,15 +38,34 @@ const SignInPage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({...formData, [e.target.name]: e.target.value});
+    setError(''); // Clear error when user types
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    router.push(`/`);
+    setError('');
+
+    signinMutation.mutate(
+      {
+        email: formData.email,
+        password: formData.password,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Welcome back! 🎉',
+            description: 'You have successfully signed in.',
+          });
+          router.push('/');
+        },
+        onError: (err: any) => {
+          const message =
+            err?.response?.data?.message ||
+            'Invalid email or password. Please try again.';
+          setError(message);
+        },
+      }
+    );
   };
 
   const nextSlide = () => {
@@ -140,6 +164,12 @@ const SignInPage = () => {
 
           {/* Sign Up Form */}
           <form onSubmit={handleSubmit} className='space-y-4'>
+            {error && (
+              <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm'>
+                {error}
+              </div>
+            )}
+
             <div className='relative'>
               <input
                 type='email'
@@ -181,9 +211,16 @@ const SignInPage = () => {
 
             <button
               type='submit'
-              disabled={isLoading}
-              className='w-full py-3.5 bg-primary hover:bg-primary/90 text-[#0A1F44] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
-              {isLoading ? 'Signing in...' : 'Login In'}
+              disabled={signinMutation.isPending}
+              className='w-full py-3.5 bg-primary hover:bg-primary/90 text-[#0A1F44] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'>
+              {signinMutation.isPending ? (
+                <>
+                  <Loader2 className='w-5 h-5 animate-spin' />
+                  Signing in...
+                </>
+              ) : (
+                'Log In'
+              )}
             </button>
           </form>
 

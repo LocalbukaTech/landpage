@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useCallback, useEffect} from 'react';
+import {useState, useCallback, useRef, useEffect} from 'react';
 import {useRouter, useParams} from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -20,13 +20,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import {Button} from '@/components/ui/button';
 import {useToast} from '@/hooks/use-toast';
-import {blogPosts} from '@/lib/blog-data';
-
-// Mock data for similar blogs dropdown
-const availableBlogs = blogPosts.map((post) => ({
-  id: post.id.toString(),
-  title: post.title,
-}));
+import {useBlogQuery, useUpdateBlogMutation} from '@/lib/api';
+import {dataUrlToFile} from '@/lib/blog-drafts';
 
 const categories = [
   'Food Culture',
@@ -69,20 +64,22 @@ const EditBlogPage = () => {
   const router = useRouter();
   const params = useParams();
   const {toast} = useToast();
+  const blogId = params.id as string;
+  
+  // API hooks
+  const {data: blogData, isLoading: isLoadingBlog} = useBlogQuery(blogId);
+  const updateBlogMutation = useUpdateBlogMutation();
+  
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedData = useRef(false);
 
   // Form state
   const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [category, setCategory] = useState('');
   const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [coverImageAlt, setCoverImageAlt] = useState('');
-  const [similarBlogs, setSimilarBlogs] = useState<string[]>([]);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [category, setCategory] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [showSimilarBlogsDropdown, setShowSimilarBlogsDropdown] =
-    useState(false);
 
   // TipTap Editor
   const editor = useEditor({
@@ -111,49 +108,31 @@ const EditBlogPage = () => {
     },
   });
 
-  // Load existing blog post data
+  // Load blog data from API - handle nested response structure
+  // Response is: { data: { data: Blog } }
+  const blog = (blogData?.data as any)?.data || blogData?.data;
+  
+  // Set form data when blog and editor are ready
   useEffect(() => {
-    const blogSlug = params.id as string;
-    // Find the blog post by slug from blog data
-    const existingPost = blogPosts.find((p) => p.slug === blogSlug);
-
-    if (existingPost && editor) {
-      // Convert content blocks to HTML for editor
-      const htmlContent = existingPost.content
-        .map((block) => {
-          if (block.type === 'paragraph') return `<p>${block.text}</p>`;
-          if (block.type === 'heading') return `<h2>${block.text}</h2>`;
-          if (block.type === 'quote')
-            return `<blockquote><p>${block.text}</p><cite>— ${block.author}</cite></blockquote>`;
-          if (block.type === 'list' && block.items)
-            return `<ul>${block.items
-              .map((item) => `<li>${item}</li>`)
-              .join('')}</ul>`;
-          return '';
-        })
-        .join('');
-
-      editor.commands.setContent(htmlContent);
-
-      // Use batch state update pattern - schedule to next tick
-      requestAnimationFrame(() => {
-        setTitle(existingPost.title);
-        setCategory(existingPost.category);
-        setCoverImage(existingPost.image);
-        setCoverImageAlt(existingPost.title);
-        setIsLoading(false);
-      });
-    } else if (!existingPost) {
-      requestAnimationFrame(() => {
-        setIsLoading(false);
-      });
-    }
-  }, [params.id, editor]);
+    // Wait for both editor and blog data
+    if (!editor || !blog) return;
+    
+    // Only load once
+    if (hasLoadedData.current) return;
+    hasLoadedData.current = true;
+    
+    console.log('Loading blog data into form:', blog);
+    setTitle(blog.title || '');
+    setCoverImage(blog.image_url || null);
+    setCategory(blog.category || '');
+    editor.commands.setContent(blog.content || '');
+  }, [blog, editor]);
 
   // Handle cover image upload
   const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setCoverImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverImage(reader.result as string);
@@ -192,37 +171,22 @@ const EditBlogPage = () => {
     }
   }, [editor]);
 
-  // Toggle similar blog selection
-  const toggleSimilarBlog = (blogId: string) => {
-    setSimilarBlogs((prev) =>
-      prev.includes(blogId)
-        ? prev.filter((id) => id !== blogId)
-        : prev.length < 3
-        ? [...prev, blogId]
-        : prev
-    );
-  };
 
-  // Remove similar blog
-  const removeSimilarBlog = (blogId: string) => {
-    setSimilarBlogs((prev) => prev.filter((id) => id !== blogId));
-  };
 
-  // Save changes
+  // Save changes (just update UI state for now)
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setIsSaving(false);
     setIsSaved(true);
     toast({
-      title: 'Changes saved',
-      description: 'Your blog post has been updated.',
+      title: 'Changes noted',
+      description: 'Click Update to publish your changes.',
     });
     setTimeout(() => setIsSaved(false), 2000);
   };
 
-  // Publish/Update post
+  // Update post via API
   const handlePublish = async () => {
     if (!title.trim()) {
       toast({
@@ -242,18 +206,54 @@ const EditBlogPage = () => {
       return;
     }
 
+    if (!category) {
+      toast({
+        title: 'Category required',
+        description: 'Please select a category for your blog post.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSaving(false);
-    toast({
-      title: 'Blog post updated!',
-      description: 'Your changes have been published successfully.',
-    });
-    router.push('/secure-admin/blog');
+    
+    try {
+      // Prepare image file - use new file if uploaded, otherwise convert existing URL
+      let imageFile: File | undefined;
+      if (coverImageFile) {
+        imageFile = coverImageFile;
+      } else if (coverImage && coverImage.startsWith('data:')) {
+        imageFile = await dataUrlToFile(coverImage, 'cover-image.jpg');
+      }
+      
+      await updateBlogMutation.mutateAsync({
+        id: blogId,
+        data: {
+          image: imageFile,
+          title: title,
+          content: editor?.getHTML() || '',
+          category: category,
+        },
+      });
+      
+      toast({
+        title: 'Blog post updated!',
+        description: 'Your changes have been published successfully.',
+      });
+      router.push('/secure-admin/blog');
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Failed to update blog post. Please try again.';
+      toast({
+        title: 'Update failed',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  if (isLoading) {
+  if (isLoadingBlog) {
     return (
       <div className='flex items-center justify-center min-h-[60vh]'>
         <div className='text-center'>
@@ -580,16 +580,7 @@ const EditBlogPage = () => {
             {/* Editor Content */}
             <EditorContent editor={editor} />
 
-            {/* Subtitle */}
-            <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
-              <input
-                type='text'
-                value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value)}
-                placeholder='[Subtitle]'
-                className='text-lg bg-transparent border-none focus:outline-none text-muted-foreground placeholder:text-gray-400 w-full'
-              />
-            </div>
+
           </div>
         </div>
 
@@ -629,16 +620,6 @@ const EditBlogPage = () => {
             <button className='text-sm text-primary hover:underline mt-2'>
               Edit Cover Image
             </button>
-            <div className='mt-3'>
-              <label className='text-sm text-muted-foreground'>Alt Text</label>
-              <input
-                type='text'
-                value={coverImageAlt}
-                onChange={(e) => setCoverImageAlt(e.target.value)}
-                placeholder='Food in a...'
-                className='w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-primary focus:border-transparent'
-              />
-            </div>
           </div>
 
           {/* Category */}
@@ -678,80 +659,6 @@ const EditBlogPage = () => {
                 </>
               )}
             </div>
-          </div>
-
-          {/* Similar Blogs */}
-          <div>
-            <h3 className='font-semibold text-foreground mb-3'>
-              Similar Blogs
-            </h3>
-            <div className='relative mb-3'>
-              <button
-                onClick={() =>
-                  setShowSimilarBlogsDropdown(!showSimilarBlogsDropdown)
-                }
-                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-left flex items-center justify-between'>
-                <span className='text-gray-400'>Select</span>
-                <ChevronDown className='w-4 h-4' />
-              </button>
-              {showSimilarBlogsDropdown && (
-                <>
-                  <div
-                    className='fixed inset-0 z-10'
-                    onClick={() => setShowSimilarBlogsDropdown(false)}
-                  />
-                  <div className='absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto'>
-                    {availableBlogs.map((blog) => (
-                      <button
-                        key={blog.id}
-                        onClick={() => toggleSimilarBlog(blog.id)}
-                        disabled={
-                          similarBlogs.length >= 3 &&
-                          !similarBlogs.includes(blog.id)
-                        }
-                        className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed ${
-                          similarBlogs.includes(blog.id)
-                            ? 'bg-primary/10 text-primary'
-                            : ''
-                        }`}>
-                        {blog.title.length > 35
-                          ? blog.title.slice(0, 35) + '...'
-                          : blog.title}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Selected Similar Blogs */}
-            <div className='space-y-2'>
-              {similarBlogs.map((blogId) => {
-                const blog = availableBlogs.find((b) => b.id === blogId);
-                return (
-                  <div
-                    key={blogId}
-                    className='flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg'>
-                    <span className='text-sm text-primary truncate flex-1'>
-                      [{blog?.title.slice(0, 20)}...]
-                    </span>
-                    <button
-                      onClick={() => removeSimilarBlog(blogId)}
-                      className='ml-2 text-red-500 hover:text-red-600'>
-                      <X className='w-4 h-4' />
-                    </button>
-                  </div>
-                );
-              })}
-              {similarBlogs.length < 3 && (
-                <div className='px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg'>
-                  <span className='text-sm text-gray-400'>[Blog Title]</span>
-                </div>
-              )}
-            </div>
-            <p className='text-xs text-muted-foreground mt-2'>
-              Select up to 3 related blog posts
-            </p>
           </div>
         </div>
       </div>

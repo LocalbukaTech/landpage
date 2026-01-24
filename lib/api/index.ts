@@ -16,6 +16,14 @@ export * from './types';
 // Custom hooks
 export * from './hooks';
 
+// Auth domain
+export * from './services/auth.service';
+export * from './services/auth.hooks';
+
 // Teams domain
 export * from './services/teams.service';
 export * from './services/teams.hooks';
+
+// Blog domain
+export * from './services/blog.service';
+export * from './services/blog.hooks';

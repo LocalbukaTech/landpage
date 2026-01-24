@@ -53,5 +53,8 @@ export const queryKeys = {
     detail: (slug: string) => [...queryKeys.blog.all, 'detail', slug] as const,
   },
 
+  // Simple string keys for common queries
+  blogs: 'blogs',
+
   // Add more entity types as needed
 } as const;

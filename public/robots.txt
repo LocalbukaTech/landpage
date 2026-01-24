@@ -1,0 +1,22 @@
+# Robots.txt for LocalBuka
+# https://localbuka.com
+
+User-agent: *
+Allow: /
+
+# Disallow admin and private routes
+Disallow: /secure-admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /signin
+Disallow: /signup
+
+# Allow specific crawlers full access
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Sitemap location
+Sitemap: https://localbuka.com/sitemap.xml

@@ -7,9 +7,7 @@ import axios, {
 import Cookies from 'js-cookie';
 
 // Base URL for all API requests
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://local-buka-server-new.onrender.com';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Token cookie key
 const TOKEN_KEY = 'localbuka_admin_token';

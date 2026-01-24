@@ -1,7 +1,7 @@
 'use client';
 
-import {useState, useCallback} from 'react';
-import {useRouter} from 'next/navigation';
+import {useState, useCallback, useEffect, useRef} from 'react';
+import {useRouter, useSearchParams} from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -11,6 +11,8 @@ import {
   X,
   ChevronDown,
   Loader2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {useEditor, EditorContent} from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -20,13 +22,15 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import {Button} from '@/components/ui/button';
 import {useToast} from '@/hooks/use-toast';
-import {blogPosts} from '@/lib/blog-data';
-
-// Mock data for similar blogs dropdown
-const availableBlogs = blogPosts.map((post) => ({
-  id: post.id.toString(),
-  title: post.title,
-}));
+import {useCreateBlogMutation} from '@/lib/api';
+import {
+  generateDraftId,
+  getDraft,
+  saveDraft,
+  deleteDraft,
+  dataUrlToFile,
+  type BlogDraft,
+} from '@/lib/blog-drafts';
 
 const categories = [
   'Food Culture',
@@ -39,7 +43,6 @@ const categories = [
   'Events',
   'Stories',
 ];
-
 // Toolbar Button Component
 const ToolbarButton = ({
   onClick,
@@ -67,20 +70,29 @@ const ToolbarButton = ({
 
 const CreateBlogPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {toast} = useToast();
+  const createBlogMutation = useCreateBlogMutation();
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
+  // Draft ID - either from URL params or generate new
+  const [draftId] = useState(() => {
+    const urlDraftId = searchParams.get('draft');
+    return urlDraftId || generateDraftId();
+  });
+  const isLoadingDraft = useRef(false);
+
   // Form state
   const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [category, setCategory] = useState('');
   const [coverImage, setCoverImage] = useState<string | null>(null);
-  const [coverImageAlt, setCoverImageAlt] = useState('');
-  const [similarBlogs, setSimilarBlogs] = useState<string[]>([]);
+  const [category, setCategory] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-  const [showSimilarBlogsDropdown, setShowSimilarBlogsDropdown] =
-    useState(false);
+  
+  // Debug modal state
+  const [showPayloadModal, setShowPayloadModal] = useState(false);
+  const [payloadJson, setPayloadJson] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // TipTap Editor
   const editor = useEditor({
@@ -151,27 +163,41 @@ const CreateBlogPage = () => {
     }
   }, [editor]);
 
-  // Toggle similar blog selection
-  const toggleSimilarBlog = (blogId: string) => {
-    setSimilarBlogs((prev) =>
-      prev.includes(blogId)
-        ? prev.filter((id) => id !== blogId)
-        : prev.length < 3
-        ? [...prev, blogId]
-        : prev
-    );
-  };
+  // Load draft from localStorage on mount
+  useEffect(() => {
+    // Wait for editor to be ready
+    if (!editor) return;
+    
+    // Only load once
+    if (isLoadingDraft.current) return;
+    
+    const urlDraftId = searchParams.get('draft');
+    if (urlDraftId) {
+      const existingDraft = getDraft(urlDraftId);
+      if (existingDraft) {
+        isLoadingDraft.current = true;
+        setTitle(existingDraft.title);
+        setCategory(existingDraft.category);
+        setCoverImage(existingDraft.coverImage);
+        editor.commands.setContent(existingDraft.content);
+      }
+    }
+  }, [searchParams, editor]);
 
-  // Remove similar blog
-  const removeSimilarBlog = (blogId: string) => {
-    setSimilarBlogs((prev) => prev.filter((id) => id !== blogId));
-  };
-
-  // Save as draft
+  // Save as draft to localStorage
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    
+    const draft: BlogDraft = {
+      id: draftId,
+      title: title,
+      content: editor?.getHTML() || '',
+      category: category,
+      coverImage: coverImage,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    saveDraft(draft);
     setIsSaving(false);
     setIsSaved(true);
     toast({
@@ -181,7 +207,7 @@ const CreateBlogPage = () => {
     setTimeout(() => setIsSaved(false), 2000);
   };
 
-  // Publish post
+  // Publish post to API
   const handlePublish = async () => {
     if (!title.trim()) {
       toast({
@@ -201,15 +227,65 @@ const CreateBlogPage = () => {
       return;
     }
 
+    if (!category) {
+      toast({
+        title: 'Category required',
+        description: 'Please select a category for your blog post.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!coverImage) {
+      toast({
+        title: 'Cover image required',
+        description: 'Please upload a cover image for your blog post.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSaving(false);
-    toast({
-      title: 'Blog post published!',
-      description: 'Your blog post has been published successfully.',
-    });
-    router.push('/secure-admin/blog');
+    
+    try {
+      // Convert base64 image to File
+      const imageFile = await dataUrlToFile(coverImage, 'cover-image.jpg');
+      
+      await createBlogMutation.mutateAsync({
+        image: imageFile,
+        title: title,
+        content: editor?.getHTML() || '',
+        category: category,
+      });
+      
+      // Delete draft on successful publish
+      deleteDraft(draftId);
+      
+      toast({
+        title: 'Blog post published!',
+        description: 'Your blog post has been published successfully.',
+      });
+      router.push('/secure-admin/blog');
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'Failed to publish blog post. Please try again.';
+      toast({
+        title: 'Publish failed',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  const handleCopyPayload = async () => {
+    try {
+      await navigator.clipboard.writeText(payloadJson);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
   };
 
   return (
@@ -526,16 +602,7 @@ const CreateBlogPage = () => {
             {/* Editor Content */}
             <EditorContent editor={editor} />
 
-            {/* Subtitle */}
-            <div className='mt-6 pt-4 border-t border-gray-200 dark:border-gray-700'>
-              <input
-                type='text'
-                value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value)}
-                placeholder='[Subtitle]'
-                className='text-lg bg-transparent border-none focus:outline-none text-muted-foreground placeholder:text-gray-400 w-full'
-              />
-            </div>
+
           </div>
         </div>
 
@@ -575,16 +642,6 @@ const CreateBlogPage = () => {
             <button className='text-sm text-primary hover:underline mt-2'>
               Edit Cover Image
             </button>
-            <div className='mt-3'>
-              <label className='text-sm text-muted-foreground'>Alt Text</label>
-              <input
-                type='text'
-                value={coverImageAlt}
-                onChange={(e) => setCoverImageAlt(e.target.value)}
-                placeholder='Food in a...'
-                className='w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-primary focus:border-transparent'
-              />
-            </div>
           </div>
 
           {/* Category */}
@@ -624,80 +681,6 @@ const CreateBlogPage = () => {
                 </>
               )}
             </div>
-          </div>
-
-          {/* Similar Blogs */}
-          <div>
-            <h3 className='font-semibold text-foreground mb-3'>
-              Similar Blogs
-            </h3>
-            <div className='relative mb-3'>
-              <button
-                onClick={() =>
-                  setShowSimilarBlogsDropdown(!showSimilarBlogsDropdown)
-                }
-                className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-left flex items-center justify-between'>
-                <span className='text-gray-400'>Select</span>
-                <ChevronDown className='w-4 h-4' />
-              </button>
-              {showSimilarBlogsDropdown && (
-                <>
-                  <div
-                    className='fixed inset-0 z-10'
-                    onClick={() => setShowSimilarBlogsDropdown(false)}
-                  />
-                  <div className='absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto'>
-                    {availableBlogs.map((blog) => (
-                      <button
-                        key={blog.id}
-                        onClick={() => toggleSimilarBlog(blog.id)}
-                        disabled={
-                          similarBlogs.length >= 3 &&
-                          !similarBlogs.includes(blog.id)
-                        }
-                        className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed ${
-                          similarBlogs.includes(blog.id)
-                            ? 'bg-primary/10 text-primary'
-                            : ''
-                        }`}>
-                        {blog.title.length > 35
-                          ? blog.title.slice(0, 35) + '...'
-                          : blog.title}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Selected Similar Blogs */}
-            <div className='space-y-2'>
-              {similarBlogs.map((blogId) => {
-                const blog = availableBlogs.find((b) => b.id === blogId);
-                return (
-                  <div
-                    key={blogId}
-                    className='flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg'>
-                    <span className='text-sm text-primary truncate flex-1'>
-                      [{blog?.title.slice(0, 20)}...]
-                    </span>
-                    <button
-                      onClick={() => removeSimilarBlog(blogId)}
-                      className='ml-2 text-red-500 hover:text-red-600'>
-                      <X className='w-4 h-4' />
-                    </button>
-                  </div>
-                );
-              })}
-              {similarBlogs.length < 3 && (
-                <div className='px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg'>
-                  <span className='text-sm text-gray-400'>[Blog Title]</span>
-                </div>
-              )}
-            </div>
-            <p className='text-xs text-muted-foreground mt-2'>
-              Select up to 3 related blog posts
-            </p>
           </div>
         </div>
       </div>
@@ -775,6 +758,92 @@ const CreateBlogPage = () => {
           background: #374151;
         }
       `}</style>
+      
+      {/* Payload Debug Modal */}
+      {showPayloadModal && (
+        <>
+          <div
+            className='fixed inset-0 bg-black/60 z-9999 backdrop-blur-sm'
+            onClick={() => setShowPayloadModal(false)}
+          />
+          <div className='fixed inset-0 z-9999 flex items-center justify-center p-4'>
+            <div
+              className='relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden'
+              onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className='flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700'>
+                <h2 className='text-xl font-bold text-foreground'>
+                  📝 Blog Post Preview
+                </h2>
+                <button
+                  onClick={() => setShowPayloadModal(false)}
+                  className='p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors'>
+                  <X className='w-5 h-5' />
+                </button>
+              </div>
+              
+              {/* Content - Rendered Preview */}
+              <div className='p-6 overflow-y-auto max-h-[70vh]'>
+                {/* Cover Image */}
+                {coverImage && (
+                  <div className='mb-6 rounded-xl overflow-hidden'>
+                    <img 
+                      src={coverImage} 
+                      alt='Cover' 
+                      className='w-full h-64 object-cover'
+                    />
+                  </div>
+                )}
+                
+                {/* Title */}
+                <h1 className='text-3xl font-bold text-foreground mb-6'>
+                  {title || '[No Title]'}
+                </h1>
+                
+                {/* Rendered HTML Content */}
+                <div 
+                  className='prose prose-lg dark:prose-invert max-w-none'
+                  dangerouslySetInnerHTML={{ __html: editor?.getHTML() || '' }}
+                />
+                
+                {/* JSON Payload Section */}
+                <div className='mt-8 pt-6 border-t border-gray-200 dark:border-gray-700'>
+                  <h3 className='text-sm font-semibold text-muted-foreground mb-3'>
+                    Raw JSON Payload:
+                  </h3>
+                  <pre className='bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap text-gray-800 dark:text-gray-200'>
+                    {payloadJson}
+                  </pre>
+                </div>
+              </div>
+              
+              {/* Footer */}
+              <div className='flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700'>
+                <Button
+                  variant='outline'
+                  onClick={() => setShowPayloadModal(false)}>
+                  Close
+                </Button>
+                <Button
+                  onClick={handleCopyPayload}
+                  className={copied ? 'bg-green-600 hover:bg-green-600' : ''}>
+                  {copied ? (
+                    <>
+                      <Check className='w-4 h-4 mr-2' />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className='w-4 h-4 mr-2' />
+                      Copy JSON
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

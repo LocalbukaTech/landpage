@@ -1,15 +1,34 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {Button} from '@/components/ui/button';
 import {NAV_LINKS} from '@/lib/constants';
 import {WaitlistModal} from '@/components/modals/waitlist-modal';
 import {useRouter} from 'next/navigation';
+import {getUser, isUserAuthenticated, logoutUser} from '@/lib/auth';
+import {LogOut, User as UserIcon} from 'lucide-react';
 
 export function Navbar() {
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [user, setUser] = useState<{fullName?: string} | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
+
+  // Check auth state on mount and when it changes
+  useEffect(() => {
+    const checkAuth = () => {
+      setIsAuthenticated(isUserAuthenticated());
+      setUser(getUser());
+    };
+    
+    checkAuth();
+    
+    // Listen for storage events (for when auth state changes in another tab)
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
+  }, []);
 
   const handleNavClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
@@ -34,7 +53,16 @@ export function Navbar() {
       }
     }
   };
-  const router = useRouter();
+
+  const handleLogout = () => {
+    logoutUser();
+    setUser(null);
+    setIsAuthenticated(false);
+    router.push('/');
+  };
+
+  // Get first name from fullName
+  const firstName = user?.fullName?.split(' ')[0] || 'User';
 
   return (
     <>
@@ -71,19 +99,41 @@ export function Navbar() {
                 ))}
               </div>
 
-              {/* Auth Buttons */}
+              {/* Auth Section */}
               <div className='flex items-center gap-3'>
-                <Button
-                  onClick={() => router.push('signin')}
-                  variant='ghost'
-                  className='text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 cursor-pointer'>
-                  Login
-                </Button>
-                <Button
-                  onClick={() => router.push('signup')}
-                  className='bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm px-5 py-2 cursor-pointer'>
-                  Sign Up
-                </Button>
+                {isAuthenticated && user ? (
+                  // Logged in: Show welcome message
+                  <div className='flex items-center gap-3'>
+                    <div className='flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg'>
+                      <UserIcon className='w-4 h-4 text-primary' />
+                      <span className='text-sm font-medium text-gray-800 dark:text-gray-200'>
+                        Welcome, <span className='text-primary'>{firstName}</span>
+                      </span>
+                    </div>
+                    <Button
+                      onClick={handleLogout}
+                      variant='ghost'
+                      size='sm'
+                      className='text-gray-500 hover:text-red-500 transition-colors'>
+                      <LogOut className='w-4 h-4' />
+                    </Button>
+                  </div>
+                ) : (
+                  // Not logged in: Show auth buttons
+                  <>
+                    <Button
+                      onClick={() => router.push('signin')}
+                      variant='ghost'
+                      className='text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 cursor-pointer'>
+                      Login
+                    </Button>
+                    <Button
+                      onClick={() => router.push('signup')}
+                      className='bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm px-5 py-2 cursor-pointer'>
+                      Sign Up
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -95,3 +145,4 @@ export function Navbar() {
     </>
   );
 }
+

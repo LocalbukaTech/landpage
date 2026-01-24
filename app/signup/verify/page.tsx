@@ -3,7 +3,10 @@
 import {useState, useRef, useEffect, Suspense} from 'react';
 import Image from 'next/image';
 import {useRouter, useSearchParams} from 'next/navigation';
-import {ChevronRight, Pencil} from 'lucide-react';
+import {ChevronRight, Pencil, Loader2} from 'lucide-react';
+import {useVerifyMutation, useResendCodeMutation} from '@/lib/api/services/auth.hooks';
+import {useToast} from '@/hooks/use-toast';
+import {VerificationCodeModal} from '@/components/modals';
 
 const onboardingSlides = [
   {
@@ -23,16 +26,28 @@ const onboardingSlides = [
 const VerifyPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get('email') || 'jamesgreat@gmail.com';
+  const {toast} = useToast();
+  const email = searchParams.get('email') || '';
+
+  const verifyMutation = useVerifyMutation();
+  const resendCodeMutation = useResendCodeMutation();
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [otp, setOtp] = useState(['', '', '', '']);
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
+
+  // Extract code from message (e.g., "Your verification code is 1234")
+  const extractCodeFromMessage = (message: string): string => {
+    const codeMatch = message.match(/\b\d{4,6}\b/);
+    return codeMatch ? codeMatch[0] : '';
+  };
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) {
@@ -44,6 +59,7 @@ const VerifyPageContent = () => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    setError(''); // Clear error when user types
 
     // Auto-focus next input
     if (value && index < 3) {
@@ -67,6 +83,7 @@ const VerifyPageContent = () => {
       newOtp[i] = pastedData[i];
     }
     setOtp(newOtp);
+    setError('');
 
     const focusIndex = Math.min(pastedData.length, 3);
     inputRefs.current[focusIndex]?.focus();
@@ -76,16 +93,68 @@ const VerifyPageContent = () => {
     e.preventDefault();
     if (otp.some((digit) => !digit)) return;
 
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    router.push('/signup/success');
+    setError('');
+    const code = otp.join('');
+
+    verifyMutation.mutate(
+      {email, code},
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Email verified! 🎉',
+            description: 'Your account has been successfully verified.',
+          });
+          router.push('/signup/success');
+        },
+        onError: (err: any) => {
+          const message =
+            err?.response?.data?.message ||
+            'Invalid verification code. Please try again.';
+          setError(message);
+        },
+      }
+    );
   };
 
   const handleResendCode = () => {
-    // Simulate resend
-    setOtp(['', '', '', '']);
+    if (!email) {
+      setError('Email is required to resend code.');
+      return;
+    }
+
+    resendCodeMutation.mutate(
+      {email},
+      {
+        onSuccess: (response) => {
+          // Extract code from data.message (API returns: { message: "...", data: { message: "...OTP is: \"1234\"" } })
+          const dataMessage = response?.data?.message || '';
+          const code = extractCodeFromMessage(dataMessage);
+          
+          if (code) {
+            setVerificationCode(code);
+            setShowCodeModal(true);
+            setOtp(['', '', '', '']);
+          } else {
+            toast({
+              title: 'Code sent! 📧',
+              description: response?.message || 'A new verification code has been sent to your email.',
+            });
+            setOtp(['', '', '', '']);
+            inputRefs.current[0]?.focus();
+          }
+        },
+        onError: (err: any) => {
+          const message =
+            err?.response?.data?.message ||
+            'Failed to resend code. Please try again.';
+          setError(message);
+        },
+      }
+    );
+  };
+
+  const handleModalClose = () => {
+    setShowCodeModal(false);
     inputRefs.current[0]?.focus();
   };
 
@@ -106,7 +175,7 @@ const VerifyPageContent = () => {
             priority
           />
           {/* Gradient Overlay */}
-          <div className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent' />
+          <div className='absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent' />
         </div>
 
         {/* Content */}
@@ -161,6 +230,12 @@ const VerifyPageContent = () => {
 
           {/* OTP Form */}
           <form onSubmit={handleVerify}>
+            {error && (
+              <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-sm mb-4'>
+                {error}
+              </div>
+            )}
+
             <div className='flex gap-4 mb-8 justify-center'>
               {otp.map((digit, index) => (
                 <input
@@ -182,19 +257,44 @@ const VerifyPageContent = () => {
 
             <button
               type='submit'
-              disabled={isLoading || otp.some((digit) => !digit)}
-              className='w-full py-3.5 bg-primary hover:bg-primary/90 text-[#0A1F44] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
-              {isLoading ? 'Verifying...' : 'Verify'}
+              disabled={verifyMutation.isPending || otp.some((digit) => !digit)}
+              className='w-full py-3.5 bg-primary hover:bg-primary/90 text-[#0A1F44] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'>
+              {verifyMutation.isPending ? (
+                <>
+                  <Loader2 className='w-5 h-5 animate-spin' />
+                  Verifying...
+                </>
+              ) : (
+                'Verify'
+              )}
             </button>
           </form>
 
           <button
             onClick={handleResendCode}
-            className='w-full text-center text-gray-500 dark:text-gray-400 hover:text-[#0A1F44] dark:hover:text-white font-medium mt-4 transition-colors'>
-            Resend Code
+            disabled={resendCodeMutation.isPending}
+            className='w-full text-center text-gray-500 dark:text-gray-400 hover:text-[#0A1F44] dark:hover:text-white font-medium mt-4 transition-colors disabled:opacity-50 flex items-center justify-center gap-2'>
+            {resendCodeMutation.isPending ? (
+              <>
+                <Loader2 className='w-4 h-4 animate-spin' />
+                Sending...
+              </>
+            ) : (
+              'Resend Code'
+            )}
           </button>
         </div>
       </div>
+      
+      {/* Verification Code Modal */}
+      <VerificationCodeModal
+        open={showCodeModal}
+        onOpenChange={handleModalClose}
+        code={verificationCode}
+        email={email}
+        title="New Code Sent! 📧"
+        description="Here's your new verification code. Copy it and enter it above to verify your account."
+      />
     </div>
   );
 };

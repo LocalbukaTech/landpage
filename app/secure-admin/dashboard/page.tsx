@@ -1,9 +1,10 @@
 'use client';
 
 import {useMemo} from 'react';
-import {BarChart3, Users, ListCheck, TrendingUp, Loader2} from 'lucide-react';
+import {BarChart3, Users, ListCheck, FileText, Loader2} from 'lucide-react';
 import {useTeamsQuery} from '@/lib/api/services/teams.hooks';
 import {useWaitlistQuery} from '@/lib/api/services/waitlist.hooks';
+import {useBlogsQuery} from '@/lib/api/services/blog.hooks';
 
 const Dashboard = () => {
   // Fetch all teams to count departments (using a large size to get all)
@@ -15,9 +16,14 @@ const Dashboard = () => {
     page: 1,
     size: 1,
   });
+  const {data: blogsData, isLoading: blogsLoading} = useBlogsQuery({
+    page: 1,
+    size: 1,
+  });
 
   const totalTeamMembers = teamsData?.data?.total_docs ?? 0;
   const totalWaitlistEntries = waitlistData?.data?.total_docs ?? 0;
+  const totalBlogs = (blogsData?.data as any)?.data?.total_docs ?? 0;
 
   // Calculate unique departments from teams
   const activeDepartments = useMemo(() => {
@@ -49,19 +55,19 @@ const Dashboard = () => {
       name: 'Active Departments',
       value: activeDepartments,
       icon: BarChart3,
-      change: '0%',
-      changeType: 'neutral',
+      change: '+0%',
+      changeType: 'positive',
       color: 'bg-purple-500',
       loading: teamsLoading,
     },
     {
-      name: 'Growth Rate',
-      value: '0%',
-      icon: TrendingUp,
+      name: 'Total Blogs',
+      value: totalBlogs,
+      icon: FileText,
       change: '+0%',
       changeType: 'positive',
       color: 'bg-orange-500',
-      loading: false,
+      loading: blogsLoading,
     },
   ];
 
@@ -119,7 +125,7 @@ const Dashboard = () => {
         <h2 className='text-xl font-bold text-foreground mb-4'>
           Quick Actions
         </h2>
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
           <a
             href='/secure-admin/teams'
             className='flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200'>
@@ -143,6 +149,19 @@ const Dashboard = () => {
               <h3 className='font-semibold text-foreground'>Review Waitlist</h3>
               <p className='text-sm text-muted-foreground'>
                 Check new waitlist entries
+              </p>
+            </div>
+          </a>
+          <a
+            href='/secure-admin/blog'
+            className='flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200'>
+            <div className='w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center'>
+              <FileText className='w-5 h-5 text-orange-600 dark:text-orange-400' />
+            </div>
+            <div>
+              <h3 className='font-semibold text-foreground'>Manage Blogs</h3>
+              <p className='text-sm text-muted-foreground'>
+                Create and edit blog posts
               </p>
             </div>
           </a>

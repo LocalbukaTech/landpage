@@ -24,8 +24,18 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor - Add auth token, modify requests
 apiClient.interceptors.request.use(
   (config) => {
-    // Get token from cookies
-    const token = typeof window !== 'undefined' ? Cookies.get(TOKEN_KEY) : null;
+    if (typeof window === 'undefined') {
+      return config;
+    }
+    
+    // Determine which token to use based on current page path
+    // Admin sections (secure-admin/*) use admin token
+    // User sections (blog/*, etc.) use user token
+    const isAdminSection = window.location.pathname.startsWith('/secure-admin');
+    
+    const token = isAdminSection 
+      ? Cookies.get(TOKEN_KEY)  // Admin token for admin sections
+      : Cookies.get('localbuka_user_token');  // User token for user sections
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

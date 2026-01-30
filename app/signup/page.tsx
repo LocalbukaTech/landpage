@@ -3,7 +3,7 @@
 import {useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {useRouter} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {Eye, EyeOff, ChevronRight, Loader2} from 'lucide-react';
 import {useSignupMutation} from '@/lib/api/services/auth.hooks';
 import {useToast} from '@/hooks/use-toast';
@@ -28,6 +28,8 @@ const SignUpPage = () => {
   const router = useRouter();
   const {toast} = useToast();
   const signupMutation = useSignupMutation();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/';
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
@@ -77,7 +79,7 @@ const SignUpPage = () => {
               title: 'Account created! 🎉',
               description: response?.message || 'Please check your email for the verification code.',
             });
-            router.push(`/signup/verify?email=${encodeURIComponent(formData.email)}`);
+            router.push(`/signup/verify?email=${encodeURIComponent(formData.email)}&redirect=${encodeURIComponent(redirect)}`);
           }
         },
         onError: (err: any) => {
@@ -290,7 +292,7 @@ const SignUpPage = () => {
           <p className='text-center text-gray-500 dark:text-gray-400 mt-6'>
             Already have an account?{' '}
             <Link
-              href='/signin'
+              href={`/signin${redirect !== '/' ? `?redirect=${encodeURIComponent(redirect)}` : ''}`}
               className='text-[#0A1F44] dark:text-white font-semibold hover:underline'>
               Log In
             </Link>

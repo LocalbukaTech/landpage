@@ -104,7 +104,9 @@ const VerifyPageContent = () => {
             title: 'Email verified! 🎉',
             description: 'Your account has been successfully verified.',
           });
-          router.push('/signup/success');
+  const redirect = searchParams.get('redirect') || '/';
+  // ...
+          router.push(`/signup/success?redirect=${encodeURIComponent(redirect)}`);
         },
         onError: (err: any) => {
           const message =

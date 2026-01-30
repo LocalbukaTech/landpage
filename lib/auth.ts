@@ -30,6 +30,7 @@ export const setAuthToken = (token: string) => {
 };
 
 export const getAuthToken = (): string | undefined => {
+  if (typeof window === 'undefined') return undefined;
   return Cookies.get(TOKEN_KEY);
 };
 
@@ -50,6 +51,7 @@ export const setAdminUser = (admin: Admin) => {
 };
 
 export const getAdminUser = (): Admin | null => {
+  if (typeof window === 'undefined') return null;
   const adminStr = Cookies.get(ADMIN_KEY);
   if (!adminStr) return null;
   try {
@@ -89,6 +91,7 @@ export const setUserAuthToken = (token: string) => {
 };
 
 export const getUserAuthToken = (): string | undefined => {
+  if (typeof window === 'undefined') return undefined;
   return Cookies.get(USER_TOKEN_KEY);
 };
 
@@ -109,6 +112,7 @@ export const setUser = (user: User) => {
 };
 
 export const getUser = (): User | null => {
+  if (typeof window === 'undefined') return null;
   const userStr = Cookies.get(USER_KEY);
   if (!userStr) return null;
   try {

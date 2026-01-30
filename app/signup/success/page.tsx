@@ -1,12 +1,14 @@
 'use client';
 
-import {useRouter} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 
 const SuccessPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/';
 
   const handleProceed = () => {
-    router.push('/signup/preferences');
+    router.push(`/signup/preferences?redirect=${encodeURIComponent(redirect)}`);
   };
 
   return (

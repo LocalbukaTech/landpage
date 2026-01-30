@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, Suspense} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter, useSearchParams} from 'next/navigation';
@@ -23,7 +23,7 @@ const onboardingSlides = [
   },
 ];
 
-const SignInPage = () => {
+const SignInContent = () => {
   const router = useRouter();
   const {toast} = useToast();
   const signinMutation = useSigninMutation();
@@ -240,4 +240,17 @@ const SignInPage = () => {
   );
 };
 
+const SignInPage = () => {
+  return (
+    <Suspense fallback={
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loader2 className='w-8 h-8 animate-spin text-primary' />
+      </div>
+    }>
+      <SignInContent />
+    </Suspense>
+  );
+};
+
 export default SignInPage;
+

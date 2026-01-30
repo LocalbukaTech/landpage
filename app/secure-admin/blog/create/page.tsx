@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useCallback, useEffect, useRef} from 'react';
+import {useState, useCallback, useEffect, useRef, Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -68,7 +68,7 @@ const ToolbarButton = ({
   </button>
 );
 
-const CreateBlogPage = () => {
+const CreateBlogContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {toast} = useToast();
@@ -845,6 +845,18 @@ const CreateBlogPage = () => {
         </>
       )}
     </div>
+  );
+};
+
+const CreateBlogPage = () => {
+  return (
+    <Suspense fallback={
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loader2 className='w-8 h-8 animate-spin text-primary' />
+      </div>
+    }>
+      <CreateBlogContent />
+    </Suspense>
   );
 };
 

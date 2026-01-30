@@ -1,8 +1,10 @@
 'use client';
 
+import {Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
+import {Loader2} from 'lucide-react';
 
-const SuccessPage = () => {
+const SuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
@@ -46,4 +48,17 @@ const SuccessPage = () => {
   );
 };
 
+const SuccessPage = () => {
+  return (
+    <Suspense fallback={
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loader2 className='w-8 h-8 animate-spin text-primary' />
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
+  );
+};
+
 export default SuccessPage;
+

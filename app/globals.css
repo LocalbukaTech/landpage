@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -128,5 +128,100 @@
 @layer utilities {
   .font-display {
     font-family: var(--font-display);
+  }
+}
+
+/* Custom Prose Styles for Blog Content - Match Editor Appearance */
+@layer components {
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    color: #fbbe15;
+    font-weight: 700;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+
+  .prose h1 {
+    font-size: 2.25rem;
+  }
+
+  .prose h2 {
+    font-size: 1.75rem;
+  }
+
+  .prose h3 {
+    font-size: 1.5rem;
+  }
+
+  .prose p {
+    margin-bottom: 1em;
+    line-height: 1.75;
+  }
+
+  .prose blockquote {
+    border-left: 4px solid #fbbe15;
+    background-color: rgba(251, 190, 21, 0.08);
+    padding: 1rem 1.5rem;
+    margin: 1.5em 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-style: normal;
+  }
+
+  .prose blockquote p {
+    margin-bottom: 0.5em;
+  }
+
+  .prose blockquote p:last-child {
+    margin-bottom: 0;
+  }
+
+  .prose strong {
+    font-weight: 700;
+    color: inherit;
+  }
+
+  .prose em {
+    font-style: italic;
+  }
+
+  .prose a {
+    color: #fbbe15;
+    text-decoration: underline;
+  }
+
+  .prose a:hover {
+    color: #e0a912;
+  }
+
+  .prose ul,
+  .prose ol {
+    padding-left: 1.5em;
+    margin: 1em 0;
+  }
+
+  .prose li {
+    margin-bottom: 0.5em;
+  }
+
+  /* Dark mode prose adjustments */
+  .dark .prose {
+    color: #e5e7eb;
+  }
+
+  .dark .prose h1,
+  .dark .prose h2,
+  .dark .prose h3,
+  .dark .prose h4,
+  .dark .prose h5,
+  .dark .prose h6 {
+    color: #fbbe15;
+  }
+
+  .dark .prose blockquote {
+    background-color: rgba(251, 190, 21, 0.12);
   }
 }

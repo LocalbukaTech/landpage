@@ -186,7 +186,7 @@ const EditBlogPage = () => {
     setTimeout(() => setIsSaved(false), 2000);
   };
 
-  // Update post via API
+  // Update post via API - only send changed fields
   const handlePublish = async () => {
     if (!title.trim()) {
       toast({
@@ -218,22 +218,45 @@ const EditBlogPage = () => {
     setIsSaving(true);
     
     try {
-      // Prepare image file - use new file if uploaded, otherwise convert existing URL
-      let imageFile: File | undefined;
+      // Build payload with only changed fields
+      const changedData: Record<string, any> = {};
+      const currentContent = editor?.getHTML() || '';
+      
+      // Check title
+      if (title !== blog?.title) {
+        changedData.title = title;
+      }
+      
+      // Check content
+      if (currentContent !== blog?.content) {
+        changedData.content = currentContent;
+      }
+      
+      // Check category
+      if (category !== blog?.category) {
+        changedData.category = category;
+      }
+      
+      // Check image - if new file uploaded or if cover changed from original
       if (coverImageFile) {
-        imageFile = coverImageFile;
-      } else if (coverImage && coverImage.startsWith('data:')) {
-        imageFile = await dataUrlToFile(coverImage, 'cover-image.jpg');
+        changedData.image = coverImageFile;
+      } else if (coverImage && coverImage.startsWith('data:') && coverImage !== blog?.image_url) {
+        changedData.image = await dataUrlToFile(coverImage, 'cover-image.jpg');
+      }
+      
+      // If nothing changed, just show a message
+      if (Object.keys(changedData).length === 0) {
+        toast({
+          title: 'No changes detected',
+          description: 'No fields have been modified.',
+        });
+        setIsSaving(false);
+        return;
       }
       
       await updateBlogMutation.mutateAsync({
         id: blogId,
-        data: {
-          image: imageFile,
-          title: title,
-          content: editor?.getHTML() || '',
-          category: category,
-        },
+        data: changedData,
       });
       
       toast({

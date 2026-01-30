@@ -364,14 +364,14 @@ const BlogListPage = () => {
                               />
                               <div className='absolute right-0 bottom-8 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1'>
                                 <Link
-                                  href={`/blog/${post.id}`}
+                                  href={`/blog/${post.slug}`} // View public (slug in URL is fine for SEO, but ID is what matters)
                                   target='_blank'
                                   className='flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'>
                                   <Eye className='w-4 h-4' />
                                   View
                                 </Link>
                                 <Link
-                                  href={`/secure-admin/blog/edit/${post.id}`}
+                                  href={`/secure-admin/blog/edit/${post.id}`} // Edit using ID
                                   className='flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'>
                                   <Pencil className='w-4 h-4' />
                                   Edit

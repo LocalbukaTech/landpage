@@ -51,6 +51,7 @@ export const queryKeys = {
     list: (filters?: Record<string, any>) =>
       [...queryKeys.blog.all, 'list', filters] as const,
     detail: (slug: string) => [...queryKeys.blog.all, 'detail', slug] as const,
+    comments: (blogId: string) => [...queryKeys.blog.all, 'comments', blogId] as const,
   },
 
   // Simple string keys for common queries

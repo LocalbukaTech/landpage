@@ -1,7 +1,7 @@
 'use client';
 
 import {useState} from 'react';
-import {useRouter} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 
 const foodCategories = [
   {id: 'soups-stews', label: 'Soups & Stews'},
@@ -13,6 +13,8 @@ const foodCategories = [
 
 const PreferencesPage = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/';
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const toggleCategory = (id: string) => {
@@ -22,8 +24,8 @@ const PreferencesPage = () => {
   };
 
   const handleGoToFeed = () => {
-    // Save preferences and navigate to feed/home
-    router.push('/');
+    // Save preferences and navigate to feed/home (or redirect target)
+    router.push(redirect);
   };
 
   return (

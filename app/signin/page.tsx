@@ -3,7 +3,7 @@
 import {useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {useRouter} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {Eye, EyeOff, ChevronRight, Loader2} from 'lucide-react';
 import {useSigninMutation} from '@/lib/api/services/auth.hooks';
 import {useToast} from '@/hooks/use-toast';
@@ -27,6 +27,8 @@ const SignInPage = () => {
   const router = useRouter();
   const {toast} = useToast();
   const signinMutation = useSigninMutation();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/';
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
@@ -56,7 +58,7 @@ const SignInPage = () => {
             title: 'Welcome back! 🎉',
             description: 'You have successfully signed in.',
           });
-          router.push('/');
+          router.push(redirect);
         },
         onError: (err: any) => {
           const message =
@@ -227,7 +229,7 @@ const SignInPage = () => {
           <p className='text-center text-gray-500 dark:text-gray-400 mt-6'>
             Don&apos;t have an account? &nbsp;
             <Link
-              href='/signup'
+              href={`/signup${redirect !== '/' ? `?redirect=${encodeURIComponent(redirect)}` : ''}`}
               className='text-[#0A1F44] dark:text-white font-semibold hover:underline'>
               Create an account
             </Link>

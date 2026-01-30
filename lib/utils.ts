@@ -16,3 +16,18 @@ export function capitalize(str: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
+
+/**
+ * Generate a URL-friendly slug from a string
+ */
+export function slugify(str: string): string {
+  if (!str) return 'post';
+  const slug = str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  
+  return slug || 'post';
+}

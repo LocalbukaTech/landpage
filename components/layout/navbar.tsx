@@ -122,13 +122,13 @@ export function Navbar() {
                   // Not logged in: Show auth buttons
                   <>
                     <Button
-                      onClick={() => router.push('signin')}
+                      onClick={() => router.push('/signin')}
                       variant='ghost'
                       className='text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 cursor-pointer'>
                       Login
                     </Button>
                     <Button
-                      onClick={() => router.push('signup')}
+                      onClick={() => router.push('/signup')}
                       className='bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm px-5 py-2 cursor-pointer'>
                       Sign Up
                     </Button>

@@ -117,7 +117,7 @@ export const metadata: Metadata = {
   
   // Verification tags
   verification: {
-    google: "your-google-verification-code", // Replace with actual verification code
+    google: "rHMJyMhob2VyENTxqizb6NjC-N5FxDIdiveFvQB3jBg", // Replace with actual verification code
   },
   
   // Additional metadata

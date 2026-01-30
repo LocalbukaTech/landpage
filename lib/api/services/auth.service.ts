@@ -40,6 +40,10 @@ export interface User {
   isVerified: boolean;
   created_at: string;
   updated_at: string;
+  // Optional fields that might come from API or for compatibility
+  image_url?: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 // Signin

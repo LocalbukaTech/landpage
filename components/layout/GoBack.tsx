@@ -17,7 +17,7 @@ const GoBack = ({color}: IGoBack) => {
           : 'text-white hover:text-white/80'
       }`}>
       <ChevronLeftCircle
-        className={`w-7 h-7 ${color === 'black' ? 'text-white' : 'text-black'}`}
+        className={`w-7 h-7 ${color === 'black' ? 'text-black' : 'text-white'}`}
       />
     </button>
   );

@@ -1,7 +1,8 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
+import {Loader2} from 'lucide-react';
 
 const foodCategories = [
   {id: 'soups-stews', label: 'Soups & Stews'},
@@ -11,7 +12,7 @@ const foodCategories = [
   {id: 'snacks', label: 'Snacks'},
 ];
 
-const PreferencesPage = () => {
+const PreferencesContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
@@ -69,4 +70,17 @@ const PreferencesPage = () => {
   );
 };
 
+const PreferencesPage = () => {
+  return (
+    <Suspense fallback={
+      <div className='min-h-screen flex items-center justify-center'>
+        <Loader2 className='w-8 h-8 animate-spin text-primary' />
+      </div>
+    }>
+      <PreferencesContent />
+    </Suspense>
+  );
+};
+
 export default PreferencesPage;
+

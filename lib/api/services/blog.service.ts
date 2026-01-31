@@ -61,17 +61,19 @@ export interface UpdateBlogPayload {
 // Comment & Reply Types
 // ============================================
 
-export interface UserShort {
+export interface Author {
   id: string;
-  first_name: string;
-  last_name: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  fullName?: string;  // API may return fullName instead of first_name/last_name
   image_url?: string;
 }
 
 export interface Reply {
   id: string;
   comment: string;
-  user?: UserShort;
+  author?: Author;
   parent_id: string;
   created_at: string;
   updated_at: string;
@@ -84,7 +86,7 @@ export interface Reply {
 export interface Comment {
   id: string;
   comment: string;
-  user?: UserShort;
+  author?: Author;
   parent_id: string | null;
   replies: Reply[];
   created_at: string;

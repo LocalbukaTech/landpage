@@ -160,10 +160,11 @@ export const useLikeBlogMutation = () => {
     mutationFn: (blogId: string) => blogService.likeBlog(blogId),
     onSuccess: (response, blogId) => {
       queryClient.invalidateQueries({queryKey: [queryKeys.blog, blogId]});
+      queryClient.invalidateQueries({queryKey: [queryKeys.blog, 'slug']}); // Update blog detail by slug
       queryClient.invalidateQueries({queryKey: [queryKeys.blogs]}); // Update list view likes
       toast({
         title: 'Success',
-        description: response.message || 'You liked this blog post.',
+        description: response.data?.message || 'You liked this blog post.',
       });
     },
     onError: (error: any) => {

@@ -17,6 +17,26 @@ import {useToast} from '@/hooks/use-toast';
 
 const REPLIES_PER_PAGE = 5;
 
+// Helper to get display name from user object (handles both fullName and first_name/last_name)
+const getDisplayName = (user?: { first_name?: string; last_name?: string; fullName?: string }) => {
+  if (!user) return 'User';
+  if (user.fullName) return user.fullName;
+  if (user.first_name || user.last_name) {
+    return `${user.first_name || ''} ${user.last_name || ''}`.trim();
+  }
+  return 'User';
+};
+
+// Helper to get avatar initial from user object
+const getAvatarInitial = (user?: { first_name?: string; last_name?: string; fullName?: string }) => {
+  if (!user) return 'U';
+  if (user.fullName) {
+    const firstName = user.fullName.split(' ')[0];
+    return firstName?.[0]?.toUpperCase() || 'U';
+  }
+  return user.first_name?.[0]?.toUpperCase() || 'U';
+};
+
 // Recursive ReplyItem component for unlimited nesting
 interface ReplyItemProps {
   reply: Reply;
@@ -86,17 +106,16 @@ const ReplyItem = ({reply, blogId, depth}: ReplyItemProps) => {
   return (
     <div className='flex gap-3 pt-3'>
       <Avatar className='w-8 h-8 shrink-0'>
-        <AvatarImage src={reply.user?.image_url} alt={reply.user?.first_name || 'User'} />
+        <AvatarImage src={reply.author?.image_url} alt={getDisplayName(reply.author)} />
         <AvatarFallback className='text-xs'>
-          {reply.user?.first_name?.[0] || 'U'}
-          {reply.user?.last_name?.[0] || ''}
+          {getAvatarInitial(reply.author)}
         </AvatarFallback> 
       </Avatar>
       
       <div className='flex-1 min-w-0'>
         <div className='flex items-center gap-2 mb-1'>
           <span className='font-semibold text-xs text-[#0A1F44] dark:text-white'>
-            {reply.user?.first_name || 'User'} {reply.user?.last_name || ''}
+            {getDisplayName(reply.author)}
           </span>
           <span className='text-[10px] text-gray-500'>
             {formatDistanceToNow(new Date(reply.created_at), {addSuffix: true})}
@@ -251,10 +270,9 @@ const CommentItem = ({comment, blogId, index, length}: CommentItemProps) => {
   return (
     <div className={`flex gap-4 p-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-4 ${index === length-1 ? '' : 'border-b'}`}>
       <Avatar className='w-10 h-10 shrink-0'>
-        <AvatarImage src={comment.user?.image_url} alt={comment.user?.first_name || 'User'} />
+        <AvatarImage src={comment.author?.image_url} alt={getDisplayName(comment.author)} />
         <AvatarFallback>
-          {comment.user?.first_name?.[0] || 'U'}
-          {comment.user?.last_name?.[0] || ''}
+          {getAvatarInitial(comment.author)}
         </AvatarFallback>
       </Avatar>
 
@@ -262,7 +280,7 @@ const CommentItem = ({comment, blogId, index, length}: CommentItemProps) => {
         {/* Header */}
         <div className='flex items-center gap-2 mb-1'>
           <span className='font-semibold text-sm text-[#0A1F44] dark:text-white'>
-            {comment.user?.first_name} {comment.user?.last_name}
+            {getDisplayName(comment.author)}
           </span>
           <span className='text-xs text-gray-500'>
             {formatDistanceToNow(new Date(comment.created_at), {addSuffix: true})}

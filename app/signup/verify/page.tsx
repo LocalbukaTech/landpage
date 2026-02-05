@@ -132,18 +132,18 @@ const VerifyPageContent = () => {
           const dataMessage = response?.data?.message || '';
           const code = extractCodeFromMessage(dataMessage);
           
-          if (code) {
-            setVerificationCode(code);
-            setShowCodeModal(true);
-            setOtp(['', '', '', '']);
-          } else {
+          // if (code) {
+          //   setVerificationCode(code);
+          //   // setShowCodeModal(true);
+          //   setOtp(['', '', '', '']);
+          // } else {
             toast({
               title: 'Code sent! 📧',
               description: response?.message || 'A new verification code has been sent to your email.',
             });
             setOtp(['', '', '', '']);
             inputRefs.current[0]?.focus();
-          }
+          // }
         },
         onError: (err: any) => {
           const message =

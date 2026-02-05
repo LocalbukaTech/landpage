@@ -5,6 +5,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ScrollToTop } from "@/components/common";
+import { GoogleAnalytics } from "@/components/google-analytics";
 
 const nunitoSans = Nunito_Sans({
   variable: "--font-nunito-sans",
@@ -150,6 +151,7 @@ export default function RootLayout({
       <body
         className={`${nunitoSans.variable} ${hakuna.variable} font-sans antialiased`}
       >
+        <GoogleAnalytics />
         <ScrollToTop />
         <Providers>
           {children}

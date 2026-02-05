@@ -71,16 +71,16 @@ const SignUpContent = () => {
           const dataMessage = response?.data?.message || '';
           const code = extractCodeFromMessage(dataMessage);
           
-          if (code) {
-            setVerificationCode(code);
-            setShowCodeModal(true);
-          } else {
+          // if (code) {
+          //   setVerificationCode(code);
+          //   // setShowCodeModal(true);
+          // } else {
             toast({
               title: 'Account created! 🎉',
               description: response?.message || 'Please check your email for the verification code.',
             });
             router.push(`/signup/verify?email=${encodeURIComponent(formData.email)}&redirect=${encodeURIComponent(redirect)}`);
-          }
+          // }
         },
         onError: (err: any) => {
           const message =

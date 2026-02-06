@@ -133,7 +133,15 @@ const SignInContent = () => {
           </p>
 
           {/* Google Sign Up */}
-          <button className='w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors'>
+          <button
+            type='button'
+            onClick={() => {
+              toast({
+                title: 'Feature Coming Soon',
+                description: 'Google Sign-In is not available yet. Please use your email to proceed.',
+              });
+            }}
+            className='w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors'>
             <svg className='w-5 h-5' viewBox='0 0 24 24'>
               <path
                 fill='#4285F4'

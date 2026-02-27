@@ -7,6 +7,7 @@ import {useRouter, useSearchParams} from 'next/navigation';
 import {Eye, EyeOff, ChevronRight, Loader2} from 'lucide-react';
 import {useSigninMutation} from '@/lib/api/services/auth.hooks';
 import {useToast} from '@/hooks/use-toast';
+import {API_BASE_URL} from '@/lib/api/client';
 
 const onboardingSlides = [
   {
@@ -136,10 +137,7 @@ const SignInContent = () => {
           <button
             type='button'
             onClick={() => {
-              toast({
-                title: 'Feature Coming Soon',
-                description: 'Google Sign-In is not available yet. Please use your email to proceed.',
-              });
+              window.location.href = `${API_BASE_URL}/auth/google`;
             }}
             className='w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors'>
             <svg className='w-5 h-5' viewBox='0 0 24 24'>

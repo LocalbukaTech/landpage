@@ -137,6 +137,8 @@ const SignInContent = () => {
           <button
             type='button'
             onClick={() => {
+              // Remember that the user initiated auth from the signin page
+              localStorage.setItem('google_auth_origin', 'signin');
               window.location.href = `${API_BASE_URL}/auth/google`;
             }}
             className='w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors'>

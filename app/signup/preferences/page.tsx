@@ -15,7 +15,7 @@ const foodCategories = [
 const PreferencesContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const redirect = searchParams.get('redirect') || '/feeds';
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const toggleCategory = (id: string) => {

@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/de97zul4x/image/upload/**',
       },
+        {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "maps.googleapis.com",
+      },
     ],
   },
 };

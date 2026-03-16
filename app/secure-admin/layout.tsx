@@ -9,6 +9,11 @@ import {
   LogOut,
   LayoutDashboard,
   FileText,
+   User,
+  Building2,
+  ShieldAlert,
+  Megaphone,
+  LineChart,
 } from 'lucide-react';
 import Image from 'next/image';
 import {isAuthenticated, getAdminUser, logout} from '@/lib/auth';
@@ -24,6 +29,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import {Admin} from '@/lib/api/services/auth.service';
+import { FaUsers } from "react-icons/fa6";
+import { AdminHeader } from '@/components/admin/layout/AdminHeader';
 
 export default function AdminLayout({children}: {children: React.ReactNode}) {
   const router = useRouter();
@@ -94,6 +101,12 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
       href: '/secure-admin/waitlist',
       icon: ListCheck,
     },
+     { icon: User, name: "User Management", href: "/secure-admin/user-management" },
+  { icon: Building2, name: "Buka Management", href: "/secure-admin/buka-management" },
+  { icon: ShieldAlert, name: "Content Moderation", href: "/secure-admin/content-moderation" },
+  { icon: Megaphone, name: "Ad Placements", href: "/secure-admin/ad-placements" },
+  { icon: LineChart, name: "Analytics & Reporting", href: "/secure-admin/analytics" },
+  { icon: FaUsers, name: "Roles", href: "/secure-admin/roles" },
   ];
 
   const handleSignOut = () => {
@@ -104,7 +117,7 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
   return (
     <div className='min-h-screen bg-gray-50 dark:bg-black'>
       {/* Sidebar */}
-      <aside className='fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800'>
+      <aside className='fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto scrollbar-hide'>
         {/* Logo */}
         <div className='flex items-center gap-3 px-6 py-6 border-b border-gray-200 dark:border-gray-800'>
           <div className='flex justify-center'>
@@ -154,12 +167,6 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
               {admin?.email ?? 'Administrator'}
             </p>
           </div>
-          <button
-            onClick={() => setShowLogoutConfirm(true)}
-            className='flex items-center gap-2 w-full px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all cursor-pointer'>
-            <LogOut className='w-4 h-4' />
-            <span className='text-sm font-medium'>Sign Out</span>
-          </button>
         </div>
       </aside>
 
@@ -187,7 +194,17 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
       </AlertDialog>
 
       {/* Main Content */}
-      <main className='ml-64 p-8'>{children}</main>
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Header takes up its required space and doesn't shrink */}
+        <div className="shrink-0">
+          <AdminHeader  handleLogout={() => setShowLogoutConfirm(true)}/>
+        </div>
+        
+        {/* Main content is exactly the remaining height and scrolls internally */}
+        <main className="flex-1 ml-64 p-8 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

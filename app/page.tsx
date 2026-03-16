@@ -1,3 +1,8 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { isUserAuthenticated } from '@/lib/auth';
 import {Navbar} from '@/components/layout/navbar';
 import {HeroSection} from '@/components/sections/hero-section';
 import {FoodLoversSection} from '@/components/sections/food-lovers-section';
@@ -9,6 +14,14 @@ import {FAQSection} from '@/components/sections/faq-section';
 import {Footer} from '@/components/layout/footer';
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isUserAuthenticated()) {
+      router.push('/feeds');
+    }
+  }, [router]);
+
   return (
     <>
       <Navbar />

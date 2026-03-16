@@ -109,6 +109,21 @@ export const authService = {
 };
 
 // ============================================
+// User Profile Types
+// ============================================
+
+export interface UpdateProfilePayload {
+  fullName?: string;
+  username?: string;
+  avatar?: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
+// ============================================
 // User Auth Service
 // ============================================
 
@@ -124,4 +139,17 @@ export const userAuthService = {
 
   resendCode: (data: ResendCodePayload) =>
     api.post<ApiResponse<ResendCodeResponse>>('/auth/signup/otp', data),
+
+  // User profile
+  getMe: () =>
+    api.get<ApiResponse<User>>('/users/me'),
+
+  updateMe: (data: UpdateProfilePayload) =>
+    api.patch<ApiResponse<User>>('/users/me', data),
+
+  deleteMe: () =>
+    api.delete<ApiResponse<void>>('/users/me'),
+
+  changePassword: (data: ChangePasswordPayload) =>
+    api.patch<ApiResponse<{ message: string }>>('/users/me/password', data),
 };

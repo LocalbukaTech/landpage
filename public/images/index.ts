@@ -7,6 +7,10 @@ const pattern = '/images/pattern.png';
 const phone1 = '/images/1.png';
 const phone2 = '/images/2.png';
 const phone3 = '/images/3.png';
+const image1 = '/images/1.png';
+const image2 = '/images/2.png';
+const image3 = '/images/3.png';
+const bukaCuisineHero = '/images/bukaDetails_hero.png';
 
 export const Images = {
   foodSmallBackground,
@@ -17,4 +21,8 @@ export const Images = {
   phone1,
   phone2,
   phone3,
+    image1,
+  image2,
+  image3,
+  bukaCuisineHero,
 };

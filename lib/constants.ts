@@ -5,6 +5,7 @@ import {
   RiInstagramFill,
   RiTwitterXFill,
   RiTiktokFill,
+  RiFacebookFill,
 } from 'react-icons/ri';
 
 // Navigation links configuration
@@ -212,5 +213,6 @@ export const SOCIAL_LINKS: ReadonlyArray<SocialLink> = [
     label: 'Tiktok',
     Icon: RiTiktokFill,
   },
-  {href: 'https://x.com/LocalBuka/', label: 'Twitter/X', Icon: RiTwitterXFill},
+  {href: 'https://x.com/LocalBuka_app/', label: 'Twitter/X', Icon: RiTwitterXFill},
+  {href: 'https://www.facebook.com/Local-Buka/', label: 'Facebook', Icon: RiFacebookFill},
 ];

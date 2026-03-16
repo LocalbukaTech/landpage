@@ -1,4 +1,4 @@
-import {useMutation} from '@tanstack/react-query';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {
   authService,
   userAuthService,
@@ -12,12 +12,15 @@ import {
   type VerifyResponse,
   type ResendCodePayload,
   type ResendCodeResponse,
+  type UpdateProfilePayload,
+  type ChangePasswordPayload,
 } from './auth.service';
 import {
   setAuthToken,
   setAdminUser,
   setUserAuthToken,
   setUser,
+  getUserAuthToken,
 } from '@/lib/auth';
 import type {ApiResponse} from '../types';
 
@@ -71,5 +74,42 @@ export const useVerifyMutation = () => {
 export const useResendCodeMutation = () => {
   return useMutation({
     mutationFn: (data: ResendCodePayload) => userAuthService.resendCode(data),
+  });
+};
+
+// ============================================
+// User Profile Hooks
+// ============================================
+
+export const useMe = () => {
+  const token = getUserAuthToken();
+  return useQuery({
+    queryKey: ['user', 'me'],
+    queryFn: () => userAuthService.getMe(),
+    enabled: !!token,
+  });
+};
+
+export const useUpdateMe = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateProfilePayload) => userAuthService.updateMe(data),
+    onSuccess: (response) => {
+      const user = (response as any)?.data?.data || (response as any)?.data;
+      if (user) setUser(user);
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    },
+  });
+};
+
+export const useDeleteMe = () => {
+  return useMutation({
+    mutationFn: () => userAuthService.deleteMe(),
+  });
+};
+
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: (data: ChangePasswordPayload) => userAuthService.changePassword(data),
   });
 };

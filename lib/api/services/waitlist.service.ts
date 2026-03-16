@@ -7,6 +7,8 @@ export interface Waitlist {
   last_name: string;
   phone: string;
   location: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface WaitlistListData {

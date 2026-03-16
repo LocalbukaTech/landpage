@@ -26,7 +26,7 @@ function TeamMemberCard({member}: {member: Team}) {
     <Drawer>
       <DrawerTrigger asChild>
         <div className='relative overflow-hidden rounded-2xl group cursor-pointer shadow-lg hover:shadow-xl transition-all'>
-          <div className='relative h-[584px]'>
+          <div className='relative h-[500px]'>
             {member.image_url ? (
               <Image
                 src={member.image_url}

@@ -29,7 +29,7 @@ const SignInContent = () => {
   const {toast} = useToast();
   const signinMutation = useSigninMutation();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const redirect = searchParams.get('redirect') || '/feeds';
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);

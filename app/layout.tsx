@@ -130,6 +130,8 @@ export const metadata: Metadata = {
   },
 };
 
+import Script from "next/script";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -151,6 +153,12 @@ export default function RootLayout({
       <body
         className={`${nunitoSans.variable} ${hakuna.variable} font-sans antialiased`}
       >
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2319578381550272"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <GoogleAnalytics />
         <ScrollToTop />
         <Providers>

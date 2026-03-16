@@ -47,7 +47,7 @@ const TeamsPage = () => {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
 
   // Modal states
   const [viewTeam, setViewTeam] = useState<Team | null>(null);
@@ -57,6 +57,7 @@ const TeamsPage = () => {
     team: Team;
     action: 'approve' | 'reject';
   } | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -86,12 +87,9 @@ const TeamsPage = () => {
     if (statusFilter === 'all') {
       params.all = true;
     } else if (statusFilter === 'approved') {
-      params.approved = true;
-      params.all = false;
+     params.all = true;
     } else {
-      // pending (unapproved)
       params.approved = false;
-      params.all = false;
     }
 
     return params;
@@ -116,7 +114,7 @@ const TeamsPage = () => {
   ];
 
   const statusTabs = [
-    {id: 'all' as const, label: 'All Members', icon: Users},
+    // {id: 'all' as const, label: 'All Members', icon: Users},
     {id: 'pending' as const, label: 'Pending Review', icon: Clock},
     {id: 'approved' as const, label: 'Approved', icon: CheckCircle},
   ];
@@ -320,7 +318,7 @@ const TeamsPage = () => {
             Manage team members and review submissions
           </p>
         </div>
-        <div className='bg-primary text-white px-6 py-3 rounded-lg font-semibold text-lg'>
+        <div className='font-semibold text-lg font-display'>
           {totalDocs}{' '}
           {statusFilter === 'all'
             ? 'Total'
@@ -490,7 +488,8 @@ const TeamsPage = () => {
                       alt={`${member.first_name} ${member.last_name}`}
                       width={80}
                       height={80}
-                      className='rounded-lg object-cover w-20 h-20'
+                      className='rounded-lg object-cover w-20 h-20 cursor-zoom-in'
+                      onClick={() => setFullscreenImage(member.image_url!)}
                     />
                   ) : (
                     <div className='w-20 h-20 bg-linear-to-br from-primary to-primary/60 rounded-lg flex items-center justify-center'>
@@ -644,7 +643,8 @@ const TeamsPage = () => {
                     alt={`${viewTeam.first_name} ${viewTeam.last_name}`}
                     width={120}
                     height={120}
-                    className='rounded-full object-cover w-30 h-30'
+                    className='rounded-full object-cover w-30 h-30 cursor-zoom-in'
+                    onClick={() => setFullscreenImage(viewTeam.image_url!)}
                   />
                 ) : (
                   <div className='w-30 h-30 bg-linear-to-br from-primary to-primary/60 rounded-full flex items-center justify-center'>
@@ -1019,6 +1019,31 @@ const TeamsPage = () => {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen Image Overlay */}
+      {fullscreenImage && (
+        <div 
+          className='fixed inset-0 z-100 flex items-center justify-center bg-black/90 backdrop-blur-md cursor-zoom-out p-4 md:p-10'
+          onClick={() => setFullscreenImage(null)}
+        >
+          <button
+            onClick={() => setFullscreenImage(null)}
+            className='absolute top-6 right-6 p-2 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all z-101'
+          >
+            <X className='w-8 h-8' />
+          </button>
+          
+          <div className='relative w-full h-full flex items-center justify-center overflow-hidden'>
+             <Image
+                src={fullscreenImage}
+                alt="Fullscreen View"
+                fill
+                className="object-contain"
+                priority
+             />
           </div>
         </div>
       )}

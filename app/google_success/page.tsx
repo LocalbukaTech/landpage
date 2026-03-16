@@ -40,7 +40,7 @@ const GoogleSuccessContent = () => {
       } else {
         // Automatically redirect to homepage for signins (or unknown origin)
         localStorage.removeItem('google_auth_origin');
-        router.push('/');
+        router.push('/feeds');
       }
     } catch {
       setError('Authentication failed. Invalid response data.');

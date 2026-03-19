@@ -117,7 +117,18 @@ function TeamMemberCard({member}: {member: Team}) {
 export function TeamSection() {
   const {data, isLoading, isError} = useTeamsQuery();
   const teams: Team[] = data?.data.docs ?? [];
+  
+//   [
+//     "Human Resource",
+//     "Operations",
+//     "Human Resource",
+//     "Product",
+//     "Brand & Finance"
+// ]
+  // filter by non-selected department
+  // const filteredDepartemnt = teams.filter((item) => item.department !== 'Human Resource' && item.department !== 'Brand & Finance')
   const featuredTeams = teams.slice(0, 10);
+  // console.log(featuredTeams, 'teams')
 
   return (
     <section className='py-20 bg-white dark:bg-black'>

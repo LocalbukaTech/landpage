@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 export function ProfileDetails() {
     const { toast } = useToast();
     const { requireAuth, isAuthenticated } = useRequireAuth();
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const { data: meResponse, isLoading } = useMe();
     const updateMeMutation = useUpdateMe();
 
@@ -73,7 +73,9 @@ export function ProfileDetails() {
             updateMeMutation.mutate(
                 { fullName },
                 {
-                    onSuccess: () => {
+                    onSuccess: (response: any) => {
+                        const updatedUser = response?.data?.data || response?.data;
+                        if (updatedUser) updateUser(updatedUser);
                         toast({
                             title: "Profile Updated",
                             description: "Your profile has been saved successfully.",

@@ -57,7 +57,7 @@ export function AccountInformation({ activeSubTab, onSubTabChange }: AccountInfo
 
 function AccountTab() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { data: meResponse, isLoading } = useMe();
   const updateMeMutation = useUpdateMe();
 
@@ -98,7 +98,9 @@ function AccountTab() {
     updateMeMutation.mutate(
       { fullName, username },
       {
-        onSuccess: () => {
+        onSuccess: (response: any) => {
+          const updatedUser = response?.data?.data || response?.data;
+          if (updatedUser) updateUser(updatedUser);
           toast({
             title: "Account Updated",
             description: "Your account information has been saved successfully.",

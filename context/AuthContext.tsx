@@ -13,6 +13,8 @@ interface AuthContextValue {
   isAuthModalOpen: boolean;
   /** Update user state after sign-in/sign-up/verify */
   loginUser: (user: User, token: string) => void;
+  /** Update user state (e.g. after profile edit) */
+  updateUser: (user: User) => void;
   logout: () => void;
   /** Pending callback stored from openAuthModal */
   pendingAction: React.MutableRefObject<(() => void) | null>;
@@ -53,6 +55,11 @@ export function AuthProvider({
     pendingAction.current = null;
   }, []);
 
+  const updateUser = useCallback((u: User) => {
+    persistUser(u);
+    setUser(u);
+  }, []);
+
   const loginUser = useCallback((u: User, token: string) => {
     setUserAuthToken(token);
     persistUser(u);
@@ -81,6 +88,7 @@ export function AuthProvider({
         closeAuthModal,
         isAuthModalOpen,
         loginUser,
+        updateUser,
         logout,
         pendingAction,
       }}

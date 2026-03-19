@@ -8,6 +8,7 @@ import {Eye, EyeOff, ChevronRight, Loader2} from 'lucide-react';
 import {useSigninMutation} from '@/lib/api/services/auth.hooks';
 import {useToast} from '@/hooks/use-toast';
 import {API_BASE_URL} from '@/lib/api/client';
+import {useAuth} from '@/context/AuthContext';
 
 const onboardingSlides = [
   {
@@ -27,6 +28,7 @@ const onboardingSlides = [
 const SignInContent = () => {
   const router = useRouter();
   const {toast} = useToast();
+  const {loginUser} = useAuth();
   const signinMutation = useSigninMutation();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/feeds';
@@ -54,7 +56,9 @@ const SignInContent = () => {
         password: formData.password,
       },
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
+          const {token, user} = response.data;
+          loginUser(user, token.access_token);
           toast({
             title: 'Welcome back! 🎉',
             description: 'You have successfully signed in.',

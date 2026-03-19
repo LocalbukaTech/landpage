@@ -7,6 +7,7 @@ import {ChevronRight, Pencil, Loader2} from 'lucide-react';
 import {useVerifyMutation, useResendCodeMutation} from '@/lib/api/services/auth.hooks';
 import {useToast} from '@/hooks/use-toast';
 import {VerificationCodeModal} from '@/components/modals';
+import {useAuth} from '@/context/AuthContext';
 
 const onboardingSlides = [
   {
@@ -27,6 +28,7 @@ const VerifyPageContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {toast} = useToast();
+  const {loginUser} = useAuth();
   const email = searchParams.get('email') || '';
 
   const verifyMutation = useVerifyMutation();
@@ -99,7 +101,10 @@ const VerifyPageContent = () => {
     verifyMutation.mutate(
       {email, code},
       {
-        onSuccess: () => {
+        onSuccess: (response) => {
+          const {token, user} = response.data;
+          loginUser(user, token.access_token);
+          
           toast({
             title: 'Email verified! 🎉',
             description: 'Your account has been successfully verified.',

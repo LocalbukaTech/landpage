@@ -14,6 +14,8 @@ import {
   type ResendCodeResponse,
   type UpdateProfilePayload,
   type ChangePasswordPayload,
+  ExchangeGoogleCodeResponse,
+  GoogleSigninPayload,
 } from './auth.service';
 import {
   setAuthToken,
@@ -49,6 +51,17 @@ export const useSigninMutation = () => {
     onSuccess: (response: ApiResponse<SigninResponse>) => {
       const {token, user} = response.data;
       setUserAuthToken(token.access_token);
+      setUser(user);
+    },
+  });
+};
+
+export const useExchangeGoogleCodeMutation = () => {
+  return useMutation({
+    mutationFn: (data: GoogleSigninPayload) => userAuthService.exchangeGoogleCode(data),
+    onSuccess: (response: ApiResponse<ExchangeGoogleCodeResponse>) => {
+      const {token, user} = response.data;
+      setUserAuthToken(token);
       setUser(user);
     },
   });

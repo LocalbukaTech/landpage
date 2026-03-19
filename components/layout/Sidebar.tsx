@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
 import {
   Home,
   UtensilsCrossed,
@@ -39,13 +38,12 @@ const mobileNavItems = [
 ];
 
 const footerLinks = [
-  { label: "Company", href: "https://localbuka.com/" },
+  // { label: "Company", href: "https://localbuka.com/" },
   { label: "Terms & Policies", href: "https://localbuka.com/privacy/" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
@@ -178,36 +176,15 @@ export function Sidebar() {
 
         {/* Ad Unit and Login/Footer */}
         <div className="flex flex-col gap-6 pt-4 mt-auto">
-          {!isCollapsed && (
+          {/* {!isCollapsed && (
             <div className="px-2">
               <AdSenseUnit />
             </div>
-          )}
+          )} */}
           
           {!isCollapsed && (
             <>
-              {!isAuthenticated && (
-                <div className="flex flex-col gap-3 p-2 bg-white/5 rounded-xl border border-white/10">
-                  <p className="text-[13px] text-zinc-400 leading-relaxed">
-                    Log in to follow creators, like videos, and comment.
-                  </p>
-                  <Link
-                    href={'/signin'} 
-                    className="w-full py-2.5 bg-[#fbbe15] text-[#1a1a1a] font-bold text-center rounded-lg hover:bg-[#e5ab13] transition-colors border-none cursor-pointer"
-                  >
-                    Log in
-                  </Link>
-                  <div className="text-center">
-                    <span className="text-[12px] text-zinc-500">Don't have an account? </span>
-                    <Link 
-                      href={'/signup'} 
-                      className="text-[12px] text-[#fbbe15] font-semibold hover:underline bg-transparent border-none cursor-pointer p-0"
-                    >
-                      Sign up
-                    </Link>
-                  </div>
-                </div>
-              )}
+              
               
               <footer className="flex flex-col gap-2">
                 <div className="flex flex-col gap-x-3 gap-y-1">

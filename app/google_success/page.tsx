@@ -4,30 +4,31 @@ import {useEffect, useState, Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {Loader2} from 'lucide-react';
 import {setUserAuthToken, setUser} from '@/lib/auth';
+import { useExchangeGoogleCodeMutation } from '@/lib/api';
 
 const GoogleSuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const googleExchangeMutation = useExchangeGoogleCodeMutation();
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const userParam = searchParams.get('user');
+    const code = searchParams.get('code');
 
-    if (!token) {
-      setError('Authentication failed. No token received.');
+    if (!code) {
+      setError('Authentication failed. No code received.');
       return;
     }
 
     try {
-      // Store the token
-      setUserAuthToken(token);
-
-      // Parse and store the user if provided
-      if (userParam) {
-        const user = JSON.parse(decodeURIComponent(userParam));
-        setUser(user);
+      if (code) {
+        googleExchangeMutation.mutate({code});
+        if (googleExchangeMutation.isSuccess) {
+          const {token, user} = googleExchangeMutation.data.data;
+          setUserAuthToken(token);
+          setUser(user);
+        }
       }
 
       // Check where the user came from

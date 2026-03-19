@@ -26,7 +26,7 @@ const GoogleSuccessContent = () => {
         googleExchangeMutation.mutate({code});
         if (googleExchangeMutation.isSuccess) {
           const {token, user} = googleExchangeMutation.data.data;
-          setUserAuthToken(token);
+          setUserAuthToken(token.access_token);
           setUser(user);
         }
       }

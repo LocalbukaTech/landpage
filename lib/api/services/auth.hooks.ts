@@ -61,7 +61,7 @@ export const useExchangeGoogleCodeMutation = () => {
     mutationFn: (data: GoogleSigninPayload) => userAuthService.exchangeGoogleCode(data),
     onSuccess: (response: ApiResponse<ExchangeGoogleCodeResponse>) => {
       const {token, user} = response.data;
-      setUserAuthToken(token);
+      setUserAuthToken(token.access_token);
       setUser(user);
     },
   });

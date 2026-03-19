@@ -93,7 +93,11 @@ export interface VerifyResponse {
   message: string;
 }
 export interface ExchangeGoogleCodeResponse {
-  token: string;
+  token: {
+    access_token: string;
+    refresh_token?: string;
+    token_type?: string;
+  };
   user: User;
 }
 

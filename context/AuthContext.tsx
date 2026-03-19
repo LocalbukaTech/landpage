@@ -20,18 +20,28 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({
+  children,
+  initialUser = null,
+  initialToken = null,
+}: {
+  children: React.ReactNode;
+  initialUser?: User | null;
+  initialToken?: string | null;
+}) {
+  const [user, setUser] = useState<User | null>(initialUser);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const pendingAction = useRef<(() => void) | null>(null);
 
-  // Hydrate from cookies on mount
+  // Hydrate from cookies on mount if not provided by server
   useEffect(() => {
-    const stored = getUser();
-    if (stored) setUser(stored);
-  }, []);
+    if (!user) {
+      const stored = getUser();
+      if (stored) setUser(stored);
+    }
+  }, [user]);
 
-  const isAuthenticated = !!user && !!getUserAuthToken();
+  const isAuthenticated = !!user && (!!initialToken || !!getUserAuthToken());
 
   const openAuthModal = useCallback((onSuccess?: () => void) => {
     pendingAction.current = onSuccess || null;

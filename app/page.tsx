@@ -1,38 +1,16 @@
-'use client';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { LandingPageClient } from '@/components/layout/landing-page-client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { isUserAuthenticated } from '@/lib/auth';
-import {Navbar} from '@/components/layout/navbar';
-import {HeroSection} from '@/components/sections/hero-section';
-import {FoodLoversSection} from '@/components/sections/food-lovers-section';
-import {WhyLocalBukaSection} from '@/components/sections/why-localbuka-section';
-import {AppDownloadSection} from '@/components/sections/app-download-section';
-import {TeamSection} from '@/components/sections/team-section';
-import {TestimonialsSection} from '@/components/sections/testimonials-section';
-import {FAQSection} from '@/components/sections/faq-section';
-import {Footer} from '@/components/layout/footer';
+export const dynamic = 'force-dynamic';
 
-export default function Home() {
-  const router = useRouter();
+export default async function Home() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('localbuka_user_token');
 
-  useEffect(() => {
-    if (isUserAuthenticated()) {
-      router.push('/feeds');
-    }
-  }, [router]);
+  if (token) {
+    redirect('/feeds');
+  }
 
-  return (
-    <>
-      <Navbar />
-      <HeroSection />
-      <FoodLoversSection />
-      <WhyLocalBukaSection />
-      <AppDownloadSection />
-      <TeamSection />
-      <TestimonialsSection />
-      <FAQSection />
-      <Footer />
-    </>
-  );
+  return <LandingPageClient />;
 }

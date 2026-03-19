@@ -32,18 +32,20 @@ function AdjustMapBounds({
   destination,
   showRoute,
   routePoints,
+  recenterTrigger,
 }: {
   origin: [number, number] | null;
   destination: [number, number];
   showRoute: boolean;
   routePoints: [number, number][];
+  recenterTrigger: number;
 }) {
   const map = useMap();
   const hasFit = useRef(false);
 
+  // Fit bounds when route loads or when recenter is triggered
   useEffect(() => {
-    if (showRoute && origin && routePoints.length > 0 && !hasFit.current) {
-      // Fit bounds once to show the full route with padding for UI controls
+    if (showRoute && origin && routePoints.length > 0) {
       map.fitBounds(L.latLngBounds(routePoints), {
         paddingTopLeft: [60, 100],
         paddingBottomRight: [60, 80],
@@ -51,9 +53,8 @@ function AdjustMapBounds({
       hasFit.current = true;
     } else if (!showRoute) {
       map.setView(destination, 15);
-      hasFit.current = false;
     }
-  }, [map, origin, destination, showRoute, routePoints]);
+  }, [map, origin, destination, showRoute, routePoints, recenterTrigger]);
 
   return null;
 }
@@ -82,16 +83,16 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
   // Turn-by-turn state
   const [routeSteps, setRouteSteps] = useState<RouteStep[]>([]);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [recenterTrigger, setRecenterTrigger] = useState(0);
   const lastSpokenManeuverRef = useRef<string | null>(null);
   const hasGivenWarningRef = useRef<boolean>(false);
 
-  // Origin icon — standard blue marker for user's current location
-  const userIcon = typeof window !== 'undefined' ? new L.Icon({
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
+  // Origin icon — Google Maps style blue pulse marker
+  const userIcon = typeof window !== 'undefined' ? L.divIcon({
+    className: 'user-location-marker-container',
+    html: '<div class="user-location-marker"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
   }) : undefined;
 
   // Destination icon — LocalBuka logo for the restaurant
@@ -452,9 +453,23 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
         </div>
       )}
 
-      {/* Voice Toggle Button */}
+      {/* Right Controls (Recenter) */}
+      <div className="absolute bottom-6 right-3 z-1000">
+        <button
+          onClick={() => {
+            const destinationLat: [number, number] = activeDestination;
+            setRecenterTrigger(prev => prev + 1);
+          }}
+          className="w-12 h-12 rounded-full bg-white text-zinc-700 shadow-lg flex items-center justify-center hover:bg-zinc-50 transition-all border-none cursor-pointer"
+          aria-label="Recenter map"
+        >
+          <Navigation size={20} className="fill-current" />
+        </button>
+      </div>
+
+      {/* Left Controls (Voice) */}
       {showRoute && (
-        <div className="absolute bottom-20 right-3 z-1000">
+        <div className="absolute bottom-6 left-3 z-1000">
           <button
             onClick={toggleVoice}
             className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 border-none cursor-pointer ${
@@ -473,8 +488,9 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
         center={destination}
         zoom={15}
         style={{ height: "100%", width: "100%", zIndex: 0, background: "#f8f9fa" }}
-        scrollWheelZoom={false}
+        scrollWheelZoom={false} // We handle this with a custom handler for Cmd/Ctrl
       >
+        <MapZoomHandler />
         <TileLayer
           attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
@@ -485,7 +501,7 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
 
         {showRoute && userLocation && (
           <>
-            {/* Origin Marker — Blue Pin (user location) */}
+            {/* Origin Marker — Pulse (user location) */}
             <Marker position={userLocation} icon={userIcon!} />
 
             {/* Route Line - solid */}
@@ -501,8 +517,47 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
           destination={destination}
           showRoute={showRoute}
           routePoints={routePoints}
+          recenterTrigger={recenterTrigger}
         />
       </MapContainer>
     </>
   );
+}
+
+// ---- Sub-component: Recenter and Zoom Handler ----
+function MapZoomHandler() {
+  const map = useMap();
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Check if Ctrl (Windows) or Cmd (Mac) is pressed
+      const isModifierPressed = e.ctrlKey || e.metaKey;
+
+      if (!isModifierPressed) {
+        // Prevent zoom if modifier is not pressed
+        e.preventDefault();
+        setShowHint(true);
+        setTimeout(() => setShowHint(false), 2000);
+      }
+    };
+
+    const container = map.getContainer();
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    
+    // Enable scrollWheelZoom but we control it via the event listener above
+    map.scrollWheelZoom.enable();
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, [map]);
+
+  return showHint ? (
+    <div className="absolute inset-0 z-2000 pointer-events-none flex items-center justify-center">
+      <div className="bg-black/70 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm animate-in fade-in zoom-in duration-200">
+        Use {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} + scroll to zoom
+      </div>
+    </div>
+  ) : null;
 }

@@ -51,6 +51,9 @@ export interface SigninPayload {
   email: string;
   password: string;
 }
+export interface GoogleSigninPayload {
+  code: string;
+}
 
 export interface SigninResponse {
   token: {
@@ -88,6 +91,10 @@ export interface VerifyResponse {
   };
   user: User;
   message: string;
+}
+export interface ExchangeGoogleCodeResponse {
+  token: string;
+  user: User;
 }
 
 // Resend Code
@@ -139,6 +146,9 @@ export const userAuthService = {
 
   resendCode: (data: ResendCodePayload) =>
     api.post<ApiResponse<ResendCodeResponse>>('/auth/signup/otp', data),
+
+  exchangeGoogleCode: (data: GoogleSigninPayload) =>
+    api.post<ApiResponse<ExchangeGoogleCodeResponse>>('/auth/google/exchange', data),
 
   // User profile
   getMe: () =>

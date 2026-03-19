@@ -8,7 +8,7 @@ import { CuisineSection } from "@/components/buka/CuisineSection";
 import { Waitlist } from "@/components/buka/Waitlist";
 import { Images } from "@/public/images";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRestaurants, useTrendingRestaurants, useSearchRestaurants } from "@/lib/api";
 import { Restaurant } from "@/lib/api/services/restaurants.service";
 import { CgSpinner } from "react-icons/cg";
@@ -43,6 +43,14 @@ const cuisines = [
 export default function BukaPage() {
   const router = useRouter();
   const { lat, lng, loading: loadingGeo } = useGeolocation();
+  const [heroBgUrl, setHeroBgUrl] = useState("url('/images/buka.gif')");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setHeroBgUrl("url('/images/buka_hero.png')");
+    }, 3000); // Adjust this value to match your GIF duration
+    return () => clearTimeout(timer);
+  }, []);
 
   // Fetch from the API
   const { data: restaurantsData, isLoading: isLoadingAll } = useRestaurants({ page: 1, pageSize: 20 });
@@ -94,8 +102,8 @@ export default function BukaPage() {
         {/* Hero Section */}
         <section className="relative w-full overflow-hidden" style={{ height: 1007 }}>
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('/images/buka_hero.png')" }}
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+            style={{ backgroundImage: heroBgUrl }}
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
 

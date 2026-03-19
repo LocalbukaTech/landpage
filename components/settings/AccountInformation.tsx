@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useMe, useUpdateMe, useDeleteMe, useChangePassword } from "@/lib/api/services/auth.hooks";
 import { useAuth } from "@/context/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api/client";
+
 
 interface AccountInformationProps {
   activeSubTab: string;
@@ -64,39 +66,88 @@ function AccountTab() {
   const meData = (meResponse as any)?.data?.data || (meResponse as any)?.data || null;
   const apiUser = meData || user;
 
-  const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [avatarSrc, setAvatarSrc] = useState("/images/Image2.png");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+    const [formData, setFormData] = useState({
+        fullName: "",
+        username: "",
+        avatar: "",
+        email: "",
+
+    });
+  const [profileImage, setProfileImage] = useState("/images/profile-pic.png");
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Populate
   useEffect(() => {
-    if (apiUser) {
-      setFullName(apiUser.fullName || "");
-      setUsername(apiUser.username || "");
-      setEmail(apiUser.email || "");
-      if (apiUser.image_url || apiUser.avatar) {
-        setAvatarSrc(apiUser.image_url || apiUser.avatar);
-      }
-    }
-  }, [apiUser?.fullName, apiUser?.email]);
+        if (apiUser) {
+            setFormData({
+                username: apiUser.username || "",
+                fullName: apiUser.fullName || "",
+                avatar: apiUser.avatar || "",
+                email: apiUser.email || "",
+            });
+            if (apiUser.image_url || apiUser.avatar) {
+                setProfileImage(apiUser.image_url || apiUser.avatar);
+            }
+        }
+    }, [apiUser?.fullName, apiUser?.email]);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setAvatarSrc(url);
-    }
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+          if (file) {
+              // Optimistically show the image
+              const imageUrl = URL.createObjectURL(file);
+              setProfileImage(imageUrl);
+  
+              setIsUploading(true);
+              // try {
+              //     const uploadData = new FormData();
+              //     uploadData.append("file", file); // standard key for file uploads
+  
+              //     const response = await api.post("images/upload", uploadData, {
+              //         headers: {
+              //             "Content-Type": "multipart/form-data",
+              //         },
+              //     });
+  
+              //     const uploadedUrl = (response as any)?.data?.url || (response as any)?.url || (response as any)?.data;
+              //     if (typeof uploadedUrl === "string") {
+              //         setFormData((prev) => ({ ...prev, avatar: uploadedUrl }));
+              //         setProfileImage(uploadedUrl); // Update with the real URL
+              //     } else if ((response as any)?.data) {
+              //         setFormData((prev) => ({ ...prev, avatar: (response as any).data }));
+              //     }
+                  
+              //     toast({
+              //         title: "Image Uploaded",
+              //         description: "Your profile picture was uploaded successfully.",
+              //         variant: "success",
+              //     });
+              // } catch (error) {
+              //     toast({
+              //         title: "Upload Failed",
+              //         description: "Failed to upload profile picture. Please try again.",
+              //         variant: "destructive",
+              //     });
+              //     // Revert to original user image if upload failed
+              //     if (apiUser?.image_url || apiUser?.avatar) {
+              //         setProfileImage(apiUser.image_url || apiUser.avatar);
+              //     } else {
+              //         setProfileImage("/images/profile-pic.png");
+              //     }
+              // } finally {
+              //     setIsUploading(false);
+              // }
+          }
   };
 
   const handleSave = () => {
     updateMeMutation.mutate(
-      { fullName, username },
+      { fullName: formData.fullName, username:  formData.username, avatar: formData.avatar },
       {
         onSuccess: (response: any) => {
           const updatedUser = response?.data?.data || response?.data;
@@ -131,7 +182,7 @@ function AccountTab() {
       {/* Avatar */}
       <div className="relative w-20 h-20">
         <Image
-          src={avatarSrc}
+          src={profileImage}
           alt="Profile"
           width={80}
           height={80}
@@ -157,8 +208,11 @@ function AccountTab() {
         <label className="absolute top-2 left-3 text-[11px] text-zinc-500">Full Name</label>
         <input
           type="text"
-          value={fullName.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
-          onChange={(e) => setFullName(e.target.value.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" "))}
+          value={formData.fullName.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")}
+          onChange={(e) => setFormData((p) => ({
+            ...p,
+            fullName: e.target.value.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" "),
+          }))}
           className="w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors"
         />
       </div>
@@ -168,8 +222,11 @@ function AccountTab() {
         <label className="absolute top-2 left-3 text-[11px] text-zinc-500">Username</label>
         <input
           type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={formData.username}
+          onChange={(e) => setFormData((p) => ({
+            ...p,
+            username: e.target.value,
+          }))}
           placeholder="Choose a username"
           className="w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600"
         />
@@ -179,7 +236,7 @@ function AccountTab() {
       <div className="relative">
         <input
           type="email"
-          value={email}
+          value={formData.email}
           readOnly
           className="w-full py-3 px-3 bg-[#333] border border-white/10 rounded-lg text-zinc-500 text-sm cursor-not-allowed"
         />

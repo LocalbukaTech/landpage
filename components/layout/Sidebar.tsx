@@ -176,11 +176,11 @@ export function Sidebar() {
 
         {/* Ad Unit and Login/Footer */}
         <div className="flex flex-col gap-6 pt-4 mt-auto">
-          {/* {!isCollapsed && (
+          {!isCollapsed && (
             <div className="px-2">
               <AdSenseUnit />
             </div>
-          )} */}
+          )}
           
           {!isCollapsed && (
             <>

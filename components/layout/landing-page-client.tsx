@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { Navbar } from '@/components/layout/navbar';
 import { HeroSection } from '@/components/sections/hero-section';
 import { FoodLoversSection } from '@/components/sections/food-lovers-section';
@@ -17,8 +18,11 @@ const WAIT_TIME_MS = 3 * 60 * 1000; // 3 minutes
 
 export function LandingPageClient() {
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
+    if (isAuthenticated) return;
+
     // Check if the modal has already been shown in this session
     const hasBeenShown = sessionStorage.getItem(WAITLIST_MODAL_SHOWN_KEY);
 
@@ -30,7 +34,7 @@ export function LandingPageClient() {
 
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <>

@@ -20,7 +20,7 @@ export default function AdSenseUnit() {
         // Use contentRect or observe the parent's width
         const width = entry.contentRect.width;
         
-        if (width > 0 && !isPushed.current) {
+        if (width >= 100 && !isPushed.current) {
           try {
             // Final check on status before pushing
             if (adRef.current?.getAttribute("data-adsbygoogle-status") !== "done") {

@@ -36,6 +36,7 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
+  username: string;
   referrerName?: string;
   isVerified: boolean;
   created_at: string;
@@ -44,6 +45,7 @@ export interface User {
   image_url?: string;
   first_name?: string;
   last_name?: string;
+  avatar?: string;
 }
 
 // Signin

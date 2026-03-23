@@ -18,6 +18,7 @@ import { SearchOverlay } from "@/components/layout/SearchOverlay";
 import { NotificationOverlay } from "@/components/layout/NotificationOverlay";
 import { cn } from "@/lib/utils";
 import AdSenseUnit from "@/components/AdSenseUnit";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { icon: Home, label: "Home", href: "/feeds" },
@@ -46,6 +47,8 @@ export function Sidebar() {
   const pathname = usePathname();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  const userAvatar = isAuthenticated && user?.avatar ? user.avatar : null;
 
   const isCollapsed = isSearchOpen || isNotificationOpen;
 
@@ -164,7 +167,21 @@ export function Sidebar() {
                       )}
                       onClick={() => handleNavClick(item.label)}
                     >
-                      <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                      {item.label === "Profile" && userAvatar ? (
+                        <Image
+                          src={userAvatar}
+                          alt="Profile"
+                          width={22}
+                          height={22}
+                          className={cn(
+                            "rounded-full object-cover",
+                            activeState ? "ring-2 ring-[#fbbe15]" : ""
+                          )}
+                          style={{ width: 22, height: 22 }}
+                        />
+                      ) : (
+                        <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                      )}
                       {!isCollapsed && <span>{item.label}</span>}
                     </Link>
                   )}
@@ -271,7 +288,21 @@ export function Sidebar() {
               )}
               onClick={() => handleNavClick(item.label)}
             >
-              <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+              {item.label === "Profile" && userAvatar ? (
+                <Image
+                  src={userAvatar}
+                  alt="Profile"
+                  width={22}
+                  height={22}
+                  className={cn(
+                    "rounded-full object-cover",
+                    activeState ? "ring-2 ring-white" : ""
+                  )}
+                  style={{ width: 22, height: 22 }}
+                />
+              ) : (
+                <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+              )}
               <span className="text-[10px] font-medium">{item.label}</span>
             </Link>
           );

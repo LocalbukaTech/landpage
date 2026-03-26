@@ -80,6 +80,23 @@ export const queryKeys = {
     reviews: (id: string) => [...queryKeys.restaurants.all, 'reviews', id] as const,
     googleReviews: (id: string) => [...queryKeys.restaurants.all, 'google-reviews', id] as const,
   },
+  
+  // Notifications
+  notifications: {
+    all: ['notifications'] as const,
+    list: (filters?: Record<string, any>) =>
+      [...queryKeys.notifications.all, 'list', filters] as const,
+    unreadCount: () => [...queryKeys.notifications.all, 'unread-count'] as const,
+  },
+
+  // Social
+  social: {
+    all: ['social'] as const,
+    followers: (userId: string) => [...queryKeys.social.all, 'followers', userId] as const,
+    following: (userId: string) => [...queryKeys.social.all, 'following', userId] as const,
+  },
 
   // Add more entity types as needed
 } as const;
+
+

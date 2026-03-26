@@ -19,6 +19,7 @@ import { NotificationOverlay } from "@/components/layout/NotificationOverlay";
 import { cn } from "@/lib/utils";
 import AdSenseUnit from "@/components/AdSenseUnit";
 import { useAuth } from "@/context/AuthContext";
+import { useUnreadCount } from "@/lib/api/services/notifications.hooks";
 
 const navItems = [
   { icon: Home, label: "Home", href: "/feeds" },
@@ -49,6 +50,9 @@ export function Sidebar() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const userAvatar = isAuthenticated && user?.avatar ? user.avatar : null;
+  
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.data?.unreadCount || 0;
 
   const isCollapsed = isSearchOpen || isNotificationOpen;
 
@@ -154,7 +158,14 @@ export function Sidebar() {
                         isCollapsed ? "justify-center py-3" : ""
                       )}
                     >
-                      <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                      <div className="relative">
+                        <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                        {isNotificationItem && unreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-[#fbbe15] text-[#1a1a1a] text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-[#1a1a1a]">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </div>
                       {!isCollapsed && <span>{item.label}</span>}
                     </button>
                   ) : (
@@ -272,7 +283,14 @@ export function Sidebar() {
                   activeState ? "text-white" : "text-zinc-500"
                 )}
               >
-                <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                <div className="relative">
+                  <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-[#fbbe15] text-[#1a1a1a] text-[9px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center border border-[#1a1a1a]">
+                      {unreadCount > 99 ? '!' : unreadCount}
+                    </span>
+                  )}
+                </div>
                 <span className="text-[10px] font-medium">{item.label}</span>
               </button>
              )

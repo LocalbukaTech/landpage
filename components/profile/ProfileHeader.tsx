@@ -12,6 +12,7 @@ import { useMe } from "@/lib/api/services/auth.hooks";
 
 interface ProfileHeaderProps {
   /** For other-profile pages, pass the other user's data */
+  otherId?: string;
   otherName?: string;
   otherAvatarSrc?: string;
   otherLocation?: string;
@@ -22,6 +23,7 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({
+  otherId,
   otherName = "Okafor Emeka",
   otherAvatarSrc = "/images/otherName.png",
   otherLocation,
@@ -49,7 +51,7 @@ export function ProfileHeader({
     ? otherName
     : apiUser?.fullName || apiUser?.first_name
       ? `${apiUser?.first_name || ""} ${apiUser?.last_name || ""}`.trim() || apiUser?.fullName
-      : "";
+      : "User";
 
   const displayAvatar = isOtherProfile
     ? otherAvatarSrc
@@ -63,6 +65,8 @@ export function ProfileHeader({
     ? (otherBio || "No bio yet.")
     : "No bio yet.";
 
+  // For real profile, we'll show "0" for now if the API doesn't provide counts, 
+  // or we could use the mock values if counts are missing.
   const displayPosts = isOtherProfile ? otherPosts : 0;
   const displayFollowers = isOtherProfile ? otherFollowers : "0";
   const displayFollowing = isOtherProfile ? otherFollowing : 0;
@@ -78,14 +82,24 @@ export function ProfileHeader({
 
   return (
     <div className="w-full">
-      <SocialModal
-        open={isFollowersModalOpen}
-        onClose={() => setIsFollowersModalOpen(false)}
-      />
-      <SocialModal
-        open={isFollowingModalOpen}
-        onClose={() => setIsFollowingModalOpen(false)}
-      />
+      {apiUser?.id && (
+        <>
+          <SocialModal
+            userId={apiUser.id}
+            title={displayName}
+            initialTab="followers"
+            open={isFollowersModalOpen}
+            onClose={() => setIsFollowersModalOpen(false)}
+          />
+          <SocialModal
+            userId={apiUser.id}
+            title={displayName}
+            initialTab="following"
+            open={isFollowingModalOpen}
+            onClose={() => setIsFollowingModalOpen(false)}
+          />
+        </>
+      )}
       <div className="flex items-start gap-6">
         {/* Avatar */}
         <div className="relative shrink-0">

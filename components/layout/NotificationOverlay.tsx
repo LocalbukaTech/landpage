@@ -153,7 +153,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
            <div className="w-10 h-10 rounded-full bg-[#fbbe15] flex items-center justify-center shrink-0">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-zinc-700 shrink-0 relative border border-white/10">
           <Image
-            src={notification.user?.avatar || "/images/notification_avatar.png"}
+            src={notification.user?.avatar || "/images/profile.png"}
             alt={notification.user?.name || "User"}
             fill
             className="object-cover"
@@ -204,7 +204,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
       <div className="flex gap-3 items-center flex-1">
         <div className="w-10 h-10 rounded-full overflow-hidden bg-zinc-700 shrink-0 relative border border-white/10">
           <Image
-            src={notification.user?.avatar || "/images/notification_avatar.png"}
+            src={notification.user?.avatar || "/images/profile.png"}
             alt={notification.user?.name || "User"}
             fill
             className="object-cover"

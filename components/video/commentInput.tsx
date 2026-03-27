@@ -1,13 +1,23 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowUp } from "lucide-react"
+import { ArrowUp, X } from "lucide-react"
 
 interface CommentInputProps {
-  onSend?: (text: string) => void
+  onSend?: (text: string) => void;
+  replyingTo?: { id: string; username: string } | null;
+  onCancelReply?: () => void;
 }
 
-export default function CommentInput({ onSend }: CommentInputProps) {
+export default function CommentInput({ onSend, replyingTo, onCancelReply }: CommentInputProps) {
   const [text, setText] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-focus when entering reply mode
+  useEffect(() => {
+    if (replyingTo && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [replyingTo]);
 
   const handleSend = () => {
     if (!text.trim()) return
@@ -25,7 +35,17 @@ export default function CommentInput({ onSend }: CommentInputProps) {
   const isDisabled = !text.trim()
 
   return (
-    <div className="p-3 border-t border-[#3b3b3b] bg-[#2c2c2c] flex items-center justify-center">
+    <div className="p-3 border-t border-[#3b3b3b] bg-[#2c2c2c] flex flex-col gap-2">
+      
+      {replyingTo && (
+        <div className="flex items-center justify-between text-xs text-neutral-400 px-2 font-medium">
+          <span>Replying to {replyingTo.username}...</span>
+          <button onClick={onCancelReply} className="hover:text-white transition-colors">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <div
         className="
           w-full flex items-center 
@@ -38,10 +58,10 @@ export default function CommentInput({ onSend }: CommentInputProps) {
         "
       >
         <input
+          ref={inputRef}
           type="text"
-          placeholder="Add comment"
+          placeholder={replyingTo ? "Write a reply..." : "Add comment..."}
           value={text}
-          autoFocus
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
           className="
@@ -71,6 +91,7 @@ export default function CommentInput({ onSend }: CommentInputProps) {
             active:scale-95
             disabled:opacity-50
             disabled:cursor-not-allowed
+            ml-2
           "
         >
           <ArrowUp

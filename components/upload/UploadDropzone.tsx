@@ -42,7 +42,7 @@ export function UploadDropzone({ onFileSelect }: UploadDropzoneProps) {
         <input
           ref={inputRef}
           type="file"
-          accept="video/mp4,video/*"
+          accept="video/mp4,video/*,image/*"
           className="hidden"
           onChange={handleFileChange}
         />
@@ -89,7 +89,7 @@ export function UploadDropzone({ onFileSelect }: UploadDropzoneProps) {
               <span>File formats</span>
             </div>
             <p className="text-sm text-zinc-500">
-              Recommended: ".mp4". Other major formats are supported.
+              Recommended: ".mp4" for videos, ".jpg, .png" for images.
             </p>
           </div>
 

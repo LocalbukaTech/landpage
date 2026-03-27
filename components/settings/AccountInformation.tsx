@@ -73,8 +73,8 @@ function AccountTab() {
         email: "",
 
     });
-  const [profileImage, setProfileImage] = useState("/images/profile-pic.png");
-    const [isUploading, setIsUploading] = useState(false);
+  const [profileImage, setProfileImage] = useState("/images/profile.png");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Populate
@@ -97,57 +97,28 @@ function AccountTab() {
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-          if (file) {
-              // Optimistically show the image
-              const imageUrl = URL.createObjectURL(file);
-              setProfileImage(imageUrl);
-  
-              setIsUploading(true);
-              // try {
-              //     const uploadData = new FormData();
-              //     uploadData.append("file", file); // standard key for file uploads
-  
-              //     const response = await api.post("images/upload", uploadData, {
-              //         headers: {
-              //             "Content-Type": "multipart/form-data",
-              //         },
-              //     });
-  
-              //     const uploadedUrl = (response as any)?.data?.url || (response as any)?.url || (response as any)?.data;
-              //     if (typeof uploadedUrl === "string") {
-              //         setFormData((prev) => ({ ...prev, avatar: uploadedUrl }));
-              //         setProfileImage(uploadedUrl); // Update with the real URL
-              //     } else if ((response as any)?.data) {
-              //         setFormData((prev) => ({ ...prev, avatar: (response as any).data }));
-              //     }
-                  
-              //     toast({
-              //         title: "Image Uploaded",
-              //         description: "Your profile picture was uploaded successfully.",
-              //         variant: "success",
-              //     });
-              // } catch (error) {
-              //     toast({
-              //         title: "Upload Failed",
-              //         description: "Failed to upload profile picture. Please try again.",
-              //         variant: "destructive",
-              //     });
-              //     // Revert to original user image if upload failed
-              //     if (apiUser?.image_url || apiUser?.avatar) {
-              //         setProfileImage(apiUser.image_url || apiUser.avatar);
-              //     } else {
-              //         setProfileImage("/images/profile-pic.png");
-              //     }
-              // } finally {
-              //     setIsUploading(false);
-              // }
-          }
+    const file = e.target.files?.[0];
+    if (file) {
+      // Optimistically show the image
+      const imageUrl = URL.createObjectURL(file);
+      setProfileImage(imageUrl);
+      setAvatarFile(file);
+    }
   };
 
   const handleSave = () => {
+    let payload_data: any;
+    if (avatarFile) {
+        payload_data = new FormData();
+        payload_data.append("fullName", formData.fullName);
+        payload_data.append("username", formData.username);
+        payload_data.append("avatar", avatarFile);
+    } else {
+        payload_data = { fullName: formData.fullName, username: formData.username, avatar: formData.avatar };
+    }
+
     updateMeMutation.mutate(
-      { fullName: formData.fullName, username:  formData.username, avatar: formData.avatar },
+      payload_data,
       {
         onSuccess: (response: any) => {
           const updatedUser = response?.data?.data || response?.data;

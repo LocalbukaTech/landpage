@@ -40,13 +40,13 @@ const router = useRouter();
       <div className="flex items-center gap-3 cursor-pointer" onClick={() => {router.push('/other-profile')}}>
         <div className="relative w-10 h-10 shrink-0">
           <img
-            src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff`}
+            src={user.avatar || "/images/profile.png"}
             className="w-full h-full rounded-full object-cover border border-gray-800"
             alt={user.name}
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.onerror = null; 
-              target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random&color=fff`;
+              target.src = "/images/profile.png";
             }}
           />
         </div>

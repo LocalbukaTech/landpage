@@ -9,66 +9,67 @@ import { IoMdShareAlt } from "react-icons/io";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useMe } from "@/lib/api/services/auth.hooks";
+import { useFollowUser, useUnfollowUser } from "@/lib/api/services/profile.hooks";
+import type { PostUser } from "@/types/post";
+import type { User } from "@/lib/api/services/auth.service";
 
 interface ProfileHeaderProps {
   /** For other-profile pages, pass the other user's data */
-  otherName?: string;
-  otherAvatarSrc?: string;
-  otherLocation?: string;
-  otherBio?: string;
-  otherPosts?: number;
-  otherFollowers?: string;
-  otherFollowing?: number;
+  userData?: PostUser | User | any;
 }
 
 export function ProfileHeader({
-  otherName = "Okafor Emeka",
-  otherAvatarSrc = "/images/otherName.png",
-  otherLocation,
-  otherBio,
-  otherPosts = 24,
-  otherFollowers = "2K",
-  otherFollowing = 341,
+  userData
 }: ProfileHeaderProps) {
-  const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
   const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
   const route = usePathname();
   const router = useRouter();
 
-  // Fetch real user data
+  // Auth & Mutations
   const { user: authUser } = useAuth();
-  const { data: meResponse, isLoading } = useMe();
-  const meData = (meResponse as any)?.data?.data || (meResponse as any)?.data || null;
-  const apiUser = meData || authUser;
+  const followUserMutation = useFollowUser();
+  const unfollowUserMutation = useUnfollowUser();
 
-  const isOtherProfile = route === "/other-profile";
+  const { data: meResponse, isLoading: isLoadingMe } = useMe();
+  const meData = (meResponse as any)?.data?.data || (meResponse as any)?.data || null;
+  const isOtherProfile = route === "/other-profile" || (userData && userData.id !== authUser?.id);
+  
+  const apiUser = isOtherProfile ? userData : (meData || authUser);
 
   // Determine display values
-  const displayName = isOtherProfile
-    ? otherName
-    : apiUser?.fullName || apiUser?.first_name
-      ? `${apiUser?.first_name || ""} ${apiUser?.last_name || ""}`.trim() || apiUser?.fullName
-      : "";
+  const displayName = apiUser?.fullName || apiUser?.username || `${apiUser?.firstName || ""} ${apiUser?.lastName || ""}`.trim() || "";
 
-  const displayAvatar = isOtherProfile
-    ? otherAvatarSrc
-    : apiUser?.image_url || apiUser?.avatar || "/images/profile-pic.png";
+  const displayAvatar = apiUser?.avatar || apiUser?.image_url || apiUser?.profilePicture || "/images/profile.png";
 
-  const displayLocation = isOtherProfile
-    ? (otherLocation || "Lagos, Nigeria")
-    : "Lagos, Nigeria";
+  const displayLocation = apiUser?.location || "Lagos, Nigeria";
 
-  const displayBio = isOtherProfile
-    ? (otherBio || "No bio yet.")
-    : "No bio yet.";
+  const displayBio = apiUser?.bio || "No bio yet.";
 
-  const displayPosts = isOtherProfile ? otherPosts : 0;
-  const displayFollowers = isOtherProfile ? otherFollowers : "0";
-  const displayFollowing = isOtherProfile ? otherFollowing : 0;
+  const displayPosts = apiUser?.postCount || apiUser?.postsCount || 0;
+  const displayFollowers = apiUser?.followerCount || apiUser?.followersCount || 0;
+  const displayFollowing = apiUser?.followingCount || 0;
 
-  // Show loading for own profile
-  if (!isOtherProfile && isLoading) {
+  const [isFollowing, setIsFollowing] = useState(apiUser?.isFollowing || false);
+
+  const handleFollowToggle = () => {
+    if (!apiUser?.id) return;
+    
+    if (isFollowing) {
+      setIsFollowing(false);
+      unfollowUserMutation.mutate(apiUser.id, {
+        onError: () => setIsFollowing(true)
+      });
+    } else {
+      setIsFollowing(true);
+      followUserMutation.mutate(apiUser.id, {
+        onError: () => setIsFollowing(false)
+      });
+    }
+  };
+
+  // Show loading for own profile if not passed explicitly as userData
+  if (!userData && !isOtherProfile && isLoadingMe) {
     return (
       <div className="w-full flex items-center justify-center py-12">
         <Loader2 className="w-6 h-6 animate-spin text-[#fbbe15]" />
@@ -123,10 +124,10 @@ export function ProfileHeader({
 
           <p className="text-sm text-zinc-400 mt-0.5">{displayLocation}</p>
 
-          {/* Follow Back Button */}
+          {/* Follow Button */}
           {isOtherProfile ? (
           <button
-            onClick={() => setIsFollowing(!isFollowing)}
+            onClick={handleFollowToggle}
             className={`mt-2 px-4 py-1.5 text-xs font-bold rounded-md transition-colors cursor-pointer border-none ${
               isFollowing
                 ? "bg-transparent border border-[#FBBE15] text-[#FBBE15] hover:bg-[#FBBE15]/10"
@@ -134,7 +135,7 @@ export function ProfileHeader({
             }`}
             style={isFollowing ? { border: '1px solid #FBBE15' } : {}}
           >
-            {isFollowing ? "Following" : "Follow back"}
+            {isFollowing ? "Following" : "Follow"}
           </button>
           ) : (
             <button

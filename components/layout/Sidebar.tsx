@@ -48,7 +48,7 @@ export function Sidebar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
-  const userAvatar = isAuthenticated && user?.avatar ? user.avatar : null;
+  const userAvatar = isAuthenticated ? (user?.avatar || "/images/profile.png") : null;
 
   const isCollapsed = isSearchOpen || isNotificationOpen;
 

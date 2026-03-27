@@ -160,8 +160,12 @@ export const userAuthService = {
   getMe: () =>
     api.get<ApiResponse<User>>('/users/me'),
 
-  updateMe: (data: UpdateProfilePayload) =>
-    api.patch<ApiResponse<User>>('/users/me', data),
+  updateMe: (data: UpdateProfilePayload | FormData) =>
+    api.patch<ApiResponse<User>>('/users/me', data, data instanceof FormData ? {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    } : undefined),
 
   deleteMe: () =>
     api.delete<ApiResponse<void>>('/users/me'),

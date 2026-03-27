@@ -1,7 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { profileService } from './profile.service';
-import type { PostsQueryParams } from '@/types/post';
-import { queryKeys } from '../types';
+import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {profileService} from './profile.service';
+import type {PostsQueryParams} from '@/types/post';
+import {queryKeys} from '../types';
 
 export const useSavedPosts = (params?: PostsQueryParams) => {
   return useQuery({
@@ -32,8 +32,10 @@ export const useFollowUser = () => {
   return useMutation({
     mutationFn: (id: string) => profileService.followUser(id),
     onSuccess: (_, id) => {
-      // Invalidate relevant queries like profile stats, feed, etc.
-      queryClient.invalidateQueries({ queryKey: ['users', id] });
+      // Invalidate all related queries for comprehensive updates
+      queryClient.invalidateQueries({queryKey: ['users', id]});
+      queryClient.invalidateQueries({queryKey: ['users', {following: true}]});
+      queryClient.invalidateQueries({queryKey: ['users', 'list']}); // Suggested list
     },
   });
 };
@@ -44,22 +46,45 @@ export const useUnfollowUser = () => {
   return useMutation({
     mutationFn: (id: string) => profileService.unfollowUser(id),
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['users', id] });
+      // Invalidate all related queries for comprehensive updates
+      queryClient.invalidateQueries({queryKey: ['users', id]});
+      queryClient.invalidateQueries({queryKey: ['users', {following: true}]});
+      queryClient.invalidateQueries({queryKey: ['users', 'list']}); // Suggested list
     },
   });
 };
 
-export const useUsers = (params?: { search?: string; page?: number; limit?: number }) => {
+export const useUsers = (params?: {
+  search?: string;
+  page?: number;
+  limit?: number;
+}) => {
   return useQuery({
     queryKey: ['users', 'list', params],
     queryFn: () => profileService.getUsers(params),
   });
 };
 
-export const useFollowing = (id: string, params?: { page?: number; limit?: number }) => {
+export const useFollowing = (
+  id: string,
+  params?: {page?: number; limit?: number},
+) => {
   return useQuery({
     queryKey: ['users', id, 'following', params],
     queryFn: () => profileService.getFollowing(id, params),
     enabled: !!id,
+    refetchInterval: 5000, // Refetch following list every 5 seconds for near real-time updates
+  });
+};
+
+export const useFollowers = (
+  id: string,
+  params?: {page?: number; limit?: number},
+) => {
+  return useQuery({
+    queryKey: ['users', id, 'followers', params],
+    queryFn: () => profileService.getFollowers(id, params),
+    enabled: !!id,
+    refetchInterval: 5000, // Refetch followers list every 5 seconds for near real-time updates
   });
 };

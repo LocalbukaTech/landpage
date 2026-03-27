@@ -37,4 +37,9 @@ export const profileService = {
   getFollowing: (id: string, params?: { page?: number; limit?: number }) => {
     return api.get<ApiResponse<any>>(`/users/${id}/following`, { params });
   },
+
+  /** GET /users/:id/followers — Get users following a user */
+  getFollowers: (id: string, params?: { page?: number; limit?: number }) => {
+    return api.get<ApiResponse<any>>(`/users/${id}/followers`, { params });
+  },
 };

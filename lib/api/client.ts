@@ -7,7 +7,7 @@ import axios, {
 import Cookies from 'js-cookie';
 
 // Base URL for all API requests
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://servernew-production.up.railway.app';
 
 // Token cookie key
 const TOKEN_KEY = 'localbuka_admin_token';

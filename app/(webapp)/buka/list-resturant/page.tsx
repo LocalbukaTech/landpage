@@ -7,36 +7,37 @@ import { useRouter } from "next/navigation";
 export default function ListResturant() {
     const router = useRouter();
 
-    const [restaurantName, setRestaurantName] = useState("");
-    const [address, setAddress] = useState("");
+    // 1. State with persistent initializers (prevents the "Reset" bug)
+    const [restaurantName, setRestaurantName] = useState(() => {
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem("listRestaurantForm");
+            try { return saved ? JSON.parse(saved).restaurantName || "" : ""; } catch { return ""; }
+        }
+        return "";
+    });
+
+    const [address, setAddress] = useState(() => {
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem("listRestaurantForm");
+            try { return saved ? JSON.parse(saved).address || "" : ""; } catch { return ""; }
+        }
+        return "";
+    });
+
     const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
     const [summaryHours, setSummaryHours] = useState("Hours");
 
+    // 2. Load Selection data (Cuisines/Hours summary)
     useEffect(() => {
-        const saved = localStorage.getItem("listRestaurantForm");
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                setRestaurantName(parsed.restaurantName || "");
-                setAddress(parsed.address || "");
-            } catch (e) {
-                console.error("Failed to parse saved form", e);
-            }
-        }
         const savedCuisines = localStorage.getItem("selectedCuisines");
         if (savedCuisines) {
-            try {
-                setSelectedCuisines(JSON.parse(savedCuisines));
-            } catch (e) {
-                console.error("Failed to parse selected cuisines", e);
-            }
+            try { setSelectedCuisines(JSON.parse(savedCuisines)); } catch (e) {}
         }
         const savedSummary = localStorage.getItem("summaryHours");
-        if (savedSummary) {
-            setSummaryHours(savedSummary);
-        }
+        if (savedSummary) { setSummaryHours(savedSummary); }
     }, []);
 
+    // 3. Save Name/Address whenever they change
     useEffect(() => {
         localStorage.setItem(
             "listRestaurantForm",
@@ -58,7 +59,7 @@ export default function ListResturant() {
 
     return (
         <div className="w-full min-h-screen bg-slate-50 flex flex-col items-center pt-8 pb-12 font-[var(--font-nunito-sans)] px-4">
-            
+
             {/* Breadcrumb outside the card */}
             <div className="w-full max-w-xl self-center px-4 mb-4" style={{ maxWidth: '640px' }}>
                 <p className="text-zinc-400 text-lg font-medium">
@@ -99,7 +100,7 @@ export default function ListResturant() {
                     {/* Form Fields */}
                     <div className="flex flex-col gap-10">
                         {/* Restaurant Name */}
-                        <div 
+                        <div
                             className="flex flex-col justify-center w-full h-[64px] px-6 py-2 bg-white transition-all"
                             style={{ border: '1.5px solid #1a1a1a', borderRadius: '12px' }}
                         >
@@ -116,7 +117,7 @@ export default function ListResturant() {
                         </div>
 
                         {/* Address */}
-                        <div 
+                        <div
                             className="flex flex-col justify-center w-full h-[64px] px-6 py-2 bg-white transition-all"
                             style={{ border: '1.5px solid #1a1a1a', borderRadius: '12px' }}
                         >

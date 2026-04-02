@@ -141,3 +141,13 @@ export const useImportGoogleRestaurant = () => {
     },
   });
 };
+
+export const useCreateRestaurant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: FormData) => restaurantsService.createRestaurant(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.restaurants.all });
+    },
+  });
+};

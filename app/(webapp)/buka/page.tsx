@@ -34,7 +34,7 @@ const mapToBukaRestaurant = (res: Restaurant): BukaRestaurant => ({
 const cuisines = [
   { name: "Nigeria Cuisine", image: Images.image1 },
   { name: "Yoruba Cuisine", image: Images.image2 },
-  { name: "Igbo Cuisine", image: Images.image3},
+  { name: "Igbo Cuisine", image: Images.image3 },
   { name: "Hausa Cuisine", image: "https://images.unsplash.com/photo-1567982047351-76b6f93e38ee?w=600&q=80" },
   { name: "Calabar Cuisine", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80" },
   { name: "Edo Cuisine", image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80" },
@@ -56,11 +56,11 @@ export default function BukaPage() {
   const { data: restaurantsData, isLoading: isLoadingAll } = useRestaurants({ page: 1, pageSize: 20 });
   const { data: trendingData, isLoading: isLoadingTrending } = useTrendingRestaurants();
   // Fetch Google fallback for user location
-  const { data: fallbackData, isLoading: isLoadingFallback } = useSearchRestaurants({ 
-    lat: lat || 6.5244, 
-    lng: lng || 3.3792, 
-    page: 1, 
-    pageSize: 20 
+  const { data: fallbackData, isLoading: isLoadingFallback } = useSearchRestaurants({
+    lat: lat || 6.5244,
+    lng: lng || 3.3792,
+    page: 1,
+    pageSize: 20
   }, !loadingGeo);
 
   // Map the API responses to the UI models
@@ -130,9 +130,14 @@ export default function BukaPage() {
               <br />
               your next plate is right here.
             </p>
-            <Link href="/buka/restaurant" className="w-fit px-10 py-3.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer border-none">
-              Explore Restaurants
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+              <Link href="/buka/restaurant" className="w-fit px-10 py-3.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer border-none">
+                Explore Restaurants
+              </Link>
+              <Link href="/buka/list-resturant" className="w-fit px-10 py-3.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer border-none">
+                List Resturant
+              </Link>
+            </div>
           </div>
         </section>
 

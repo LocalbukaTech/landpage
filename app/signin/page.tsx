@@ -143,7 +143,8 @@ const SignInContent = () => {
             onClick={() => {
               // Remember that the user initiated auth from the signin page
               localStorage.setItem('google_auth_origin', 'signin');
-              window.location.href = `${API_BASE_URL}/auth/google`;
+              const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+              window.location.href = `${API_BASE_URL}/auth/google?redirect_uri=${encodeURIComponent(currentOrigin + '/google_success')}&callbackUrl=${encodeURIComponent(currentOrigin + '/google_success')}`;
             }}
             className='w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors'>
             <svg className='w-5 h-5' viewBox='0 0 24 24'>

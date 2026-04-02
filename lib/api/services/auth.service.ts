@@ -39,6 +39,7 @@ export interface User {
   username: string;
   referrerName?: string;
   isVerified: boolean;
+  hasAcceptedContentPolicy?: boolean;
   created_at: string;
   updated_at: string;
   // Optional fields that might come from API or for compatibility
@@ -172,4 +173,8 @@ export const userAuthService = {
 
   changePassword: (data: ChangePasswordPayload) =>
     api.patch<ApiResponse<{ message: string }>>('/users/me/password', data),
+
+  /** PATCH /users/me/content-policy — Accept content policy */
+  acceptContentPolicy: () =>
+    api.patch<ApiResponse<{ hasAcceptedContentPolicy: boolean }>>('/users/me/content-policy'),
 };

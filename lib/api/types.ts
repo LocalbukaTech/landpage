@@ -60,6 +60,7 @@ export const queryKeys = {
     list: (filters?: Record<string, any>) =>
       [...queryKeys.users.all, 'list', filters] as const,
     detail: (id: string) => [...queryKeys.users.all, 'detail', id] as const,
+    savedPosts: (params?: Record<string, any>) => [...queryKeys.users.all, 'me', 'saved-posts', params] as const,
   },
 
   // Simple string keys for common queries
@@ -94,6 +95,18 @@ export const queryKeys = {
     all: ['social'] as const,
     followers: (userId: string) => [...queryKeys.social.all, 'followers', userId] as const,
     following: (userId: string) => [...queryKeys.social.all, 'following', userId] as const,
+  },
+
+  // Posts / Feed
+  posts: {
+    all: ['posts'] as const,
+    list: (filters?: Record<string, unknown>) =>
+      [...queryKeys.posts.all, 'list', filters] as const,
+    feed: (filters?: Record<string, unknown>) =>
+      [...queryKeys.posts.all, 'feed', filters] as const,
+    detail: (id: string) => [...queryKeys.posts.all, 'detail', id] as const,
+    comments: (postId: string, filters?: Record<string, unknown>) =>
+      [...queryKeys.posts.all, 'comments', postId, filters] as const,
   },
 
   // Add more entity types as needed

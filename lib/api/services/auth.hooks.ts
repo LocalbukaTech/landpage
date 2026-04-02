@@ -106,7 +106,7 @@ export const useMe = () => {
 export const useUpdateMe = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: UpdateProfilePayload) => userAuthService.updateMe(data),
+    mutationFn: (data: UpdateProfilePayload | FormData) => userAuthService.updateMe(data),
     onSuccess: (response) => {
       const user = (response as any)?.data?.data || (response as any)?.data;
       if (user) setUser(user);
@@ -124,5 +124,15 @@ export const useDeleteMe = () => {
 export const useChangePassword = () => {
   return useMutation({
     mutationFn: (data: ChangePasswordPayload) => userAuthService.changePassword(data),
+  });
+};
+
+export const useAcceptContentPolicy = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => userAuthService.acceptContentPolicy(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    },
   });
 };

@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -237,10 +237,10 @@
 .user-location-marker {
   width: 14px;
   height: 14px;
-  background-color: #4285F4;
+  background-color: #4285f4;
   border: 2px solid white;
   border-radius: 50%;
-  box-shadow: 0 0 4px rgba(0,0,0,0.4);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
   position: relative;
 }
 
@@ -264,5 +264,24 @@
   100% {
     transform: scale(3.5);
     opacity: 0;
+  }
+}
+
+/* Count animation when it changes (like Twitter/TikTok) */
+@keyframes count-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@layer utilities {
+  .animate-count-pop {
+    animation: count-pop 0.3s ease-out;
   }
 }

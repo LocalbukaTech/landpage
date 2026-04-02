@@ -2,19 +2,28 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { Volume2, VolumeX, MoreHorizontal, Play, Pause } from "lucide-react";
-import { Video } from "@/types/video";
+import type { Post } from "@/types/post";
 import { VideoOverlay } from "@/components/video/VideoOverlay";
 
 interface VideoPlayerProps {
-  video: Video;
+  post: Post;
   isActive: boolean;
   onSwipeUp?: () => void;
   onSwipeDown?: () => void;
   isMuted: boolean;
   onMuteChange: (muted: boolean) => void;
+  showTimestamp?: boolean;
 }
 
-export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, onMuteChange }: VideoPlayerProps) {
+export function VideoPlayer({ 
+  post, 
+  isActive, 
+  onSwipeUp, 
+  onSwipeDown, 
+  isMuted, 
+  onMuteChange,
+  showTimestamp
+}: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -32,9 +41,11 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
   const [lastAction, setLastAction] = useState<"play" | "pause">("pause");
   const iconTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const isVideo = post.mediaType === 'video';
+
   // Play/pause based on active state and video changes
   useEffect(() => {
-    if (videoRef.current) {
+    if (videoRef.current && isVideo) {
       if (isActive) {
         // Reset video to beginning when switching
         videoRef.current.currentTime = 0;
@@ -48,7 +59,7 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
         setIsPlaying(false);
       }
     }
-  }, [isActive, video.id]);
+  }, [isActive, post.id, isVideo]);
 
   const showIcon = useCallback((action: "play" | "pause") => {
     setLastAction(action);
@@ -66,6 +77,8 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
   }, []);
 
   const togglePlay = () => {
+    if (!isVideo) return; // Images don't play/pause
+
     // Don't toggle play if we were swiping
     if (isScrolling.current) {
       isScrolling.current = false;
@@ -86,7 +99,7 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
 
   const toggleMute = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (videoRef.current) {
+    if (videoRef.current && isVideo) {
       const newMuted = !isMuted;
       videoRef.current.muted = newMuted;
       onMuteChange(newMuted);
@@ -190,27 +203,37 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
   return (
     <div
       ref={containerRef}
-      className="relative w-[380px] h-full bg-black rounded-2xl overflow-hidden cursor-pointer"
+      className={`relative w-[420px] h-full bg-black rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
       onClick={togglePlay}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onWheel={handleWheel}
     >
-      <video
-        ref={videoRef}
-        src={video.src}
-        className="w-full h-full object-cover"
-        loop
-        muted={isMuted}
-        playsInline
-        preload="auto"
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-      />
+      {isVideo ? (
+        <video
+          ref={videoRef}
+          src={post.mediaUrl}
+          poster={post.thumbnailUrl || undefined}
+          className="w-full h-full object-cover"
+          loop
+          muted={isMuted}
+          playsInline
+          preload="auto"
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+        />
+      ) : (
+        <img
+          src={post.mediaUrl}
+          alt={post.caption || "Post Image"}
+          className="w-full h-full object-cover"
+          draggable={false}
+        />
+      )}
 
       {/* TikTok-style Play/Pause Icon Overlay */}
-      {showPlayPauseIcon && (
+      {isVideo && showPlayPauseIcon && (
         <div
           className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
           style={{
@@ -228,7 +251,7 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
       )}
 
       {/* Paused state — persistent subtle icon */}
-      {!isPlaying && !showPlayPauseIcon && (
+      {isVideo && !isPlaying && !showPlayPauseIcon && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <div className="w-20 h-20 rounded-full bg-black/40 flex items-center justify-center backdrop-blur-sm opacity-70">
             <Play size={40} className="text-white ml-1" fill="white" />
@@ -238,13 +261,15 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
 
       {/* Top Controls */}
       <div className="absolute top-3 left-3 right-3 flex justify-between items-center z-10">
-        <button
-          className="flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none"
-          onClick={toggleMute}
-          aria-label={isMuted ? "Unmute" : "Mute"}
-        >
-          {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-        </button>
+        {isVideo ? (
+          <button
+            className="flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none"
+            onClick={toggleMute}
+            aria-label={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          </button>
+        ) : <div />}
         <button
           className="flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none"
           onClick={(e) => e.stopPropagation()}
@@ -255,35 +280,33 @@ export function VideoPlayer({ video, isActive, onSwipeUp, onSwipeDown, isMuted, 
       </div>
 
       {/* Video Overlay */}
-      <VideoOverlay
-        username={video.username}
-        isVerified={video.isVerified}
-        hashtags={video.hashtags}
-      />
+      <VideoOverlay post={post} showTimestamp={showTimestamp} />
 
       {/* Scrubber / Progress Bar */}
-      <div 
-        className="absolute bottom-0 left-0 right-0 h-1 md:h-1.5 bg-white/30 cursor-pointer group hover:h-2 md:hover:h-3 transition-all duration-200 z-30"
-        onClick={(e) => e.stopPropagation()}
-      >
+      {isVideo && (
         <div 
-          className="absolute top-0 left-0 h-full bg-primary rounded-r-full pointer-events-none"
-          style={{ width: `${progress}%` }}
-        />
-        <input 
-          type="range"
-          min="0"
-          max="100"
-          step="0.1"
-          value={progress}
-          onChange={handleSeek}
-          onMouseDown={handleSeekStart}
-          onMouseUp={handleSeekEnd}
-          onTouchStart={handleSeekStart}
-          onTouchEnd={handleSeekEnd}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        />
-      </div>
+          className="absolute bottom-0 left-0 right-0 h-1 md:h-1.5 bg-white/30 cursor-pointer group hover:h-2 md:hover:h-3 transition-all duration-200 z-30"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div 
+            className="absolute top-0 left-0 h-full bg-primary rounded-r-full pointer-events-none"
+            style={{ width: `${progress}%` }}
+          />
+          <input 
+            type="range"
+            min="0"
+            max="100"
+            step="0.1"
+            value={progress}
+            onChange={handleSeek}
+            onMouseDown={handleSeekStart}
+            onMouseUp={handleSeekEnd}
+            onTouchStart={handleSeekStart}
+            onTouchEnd={handleSeekEnd}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+        </div>
+      )}
     </div>
   );
 }

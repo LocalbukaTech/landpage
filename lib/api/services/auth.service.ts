@@ -39,6 +39,7 @@ export interface User {
   username: string;
   referrerName?: string;
   isVerified: boolean;
+  hasAcceptedContentPolicy?: boolean;
   created_at: string;
   updated_at: string;
   // Optional fields that might come from API or for compatibility
@@ -160,12 +161,20 @@ export const userAuthService = {
   getMe: () =>
     api.get<ApiResponse<User>>('/users/me'),
 
-  updateMe: (data: UpdateProfilePayload) =>
-    api.patch<ApiResponse<User>>('/users/me', data),
+  updateMe: (data: UpdateProfilePayload | FormData) =>
+    api.patch<ApiResponse<User>>('/users/me', data, data instanceof FormData ? {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    } : undefined),
 
   deleteMe: () =>
     api.delete<ApiResponse<void>>('/users/me'),
 
   changePassword: (data: ChangePasswordPayload) =>
     api.patch<ApiResponse<{ message: string }>>('/users/me/password', data),
+
+  /** PATCH /users/me/content-policy — Accept content policy */
+  acceptContentPolicy: () =>
+    api.patch<ApiResponse<{ hasAcceptedContentPolicy: boolean }>>('/users/me/content-policy'),
 };

@@ -126,4 +126,13 @@ export const restaurantsService = {
   importGoogleRestaurant: (placeId: string) => {
     return api.post<ApiResponse<Restaurant>>(`/restaurants/google/${placeId}/import`);
   },
+
+  // Create a new restaurant
+  createRestaurant: (data: FormData) => {
+    return api.post<ApiResponse<Restaurant>>('/restaurants', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };

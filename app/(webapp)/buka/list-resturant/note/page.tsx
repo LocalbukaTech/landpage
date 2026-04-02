@@ -1,40 +1,80 @@
 "use client";
-
 import { useRouter } from "next/navigation";
+import { useCreateRestaurant } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function NotePage() {
     const router = useRouter();
+    const { toast } = useToast();
+    const createRestaurantMutation = useCreateRestaurant();
 
-    const handleContinue = () => {
-        // Final submission logic
+    const handleContinue = async () => {
         const saved = localStorage.getItem("listRestaurantForm");
         const savedCuisines = localStorage.getItem("selectedCuisines");
+        const savedHours = localStorage.getItem("restaurantHours");
         
-        if (saved) {
-            try {
-                const formData = {
-                    ...JSON.parse(saved),
-                    cuisines: savedCuisines ? JSON.parse(savedCuisines) : [],
-                };
-                console.log("Final submission:", formData);
-                
-                localStorage.removeItem("listRestaurantForm");
-                localStorage.removeItem("selectedCuisines");
-                localStorage.removeItem("restaurantHours");
-                localStorage.removeItem("summaryHours");
-                router.push("/buka/list-resturant/success");
-            } catch (e) {
-                console.error("Failed to parse saved data", e);
-                router.push("/buka/list-resturant");
-            }
-        } else {
+        if (!saved) {
             router.push("/buka/list-resturant");
+            return;
+        }
+
+        try {
+            const { restaurantName, address } = JSON.parse(saved);
+            const cuisinesArray = savedCuisines ? JSON.parse(savedCuisines) : [];
+            
+            // Map to FormData as expected by the backend multipart/form-data endpoint
+            const formData = new FormData();
+            formData.append("name", restaurantName);
+            formData.append("address", address);
+            // Backend expects cuisine as a string
+            formData.append("cuisine", cuisinesArray.join(", "));
+            // Storing hours in description as a temporary measure if no dedicated field exists
+            formData.append("description", savedHours || "No hours provided");
+
+            await createRestaurantMutation.mutateAsync(formData);
+            
+            // Cleanup on success
+            localStorage.removeItem("listRestaurantForm");
+            localStorage.removeItem("selectedCuisines");
+            localStorage.removeItem("restaurantHours");
+            localStorage.removeItem("summaryHours");
+            
+            router.push("/buka/list-resturant/success");
+        } catch (e: any) {
+            console.error("Failed to submit restaurant", e);
+            const status = e.response?.status;
+            const message = e.response?.data?.message || e.message;
+
+            if (status === 401) {
+                toast({
+                    title: "Action required",
+                    description: "You must be logged in to list a restaurant. Please log in and try again.",
+                    variant: "destructive",
+                    duration: 10000,
+                });
+            } else if (status === 404) {
+                toast({
+                    title: "Connection Issue",
+                    description: "The server endpoint was not found. Please check your network or API configuration.",
+                    variant: "destructive",
+                    duration: 10000,
+                });
+            } else {
+                toast({
+                    title: "Submission failed",
+                    description: `Error: ${message}`,
+                    variant: "destructive",
+                    duration: 10000,
+                });
+            }
         }
     };
 
     const handleCancel = () => {
         localStorage.removeItem("listRestaurantForm");
         localStorage.removeItem("selectedCuisines");
+        localStorage.removeItem("restaurantHours");
+        localStorage.removeItem("summaryHours");
         router.push("/buka");
     };
 

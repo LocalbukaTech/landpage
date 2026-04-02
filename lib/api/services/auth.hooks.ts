@@ -126,3 +126,13 @@ export const useChangePassword = () => {
     mutationFn: (data: ChangePasswordPayload) => userAuthService.changePassword(data),
   });
 };
+
+export const useAcceptContentPolicy = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => userAuthService.acceptContentPolicy(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    },
+  });
+};

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Prohibition } from "@/components/upload/Prohibition";
@@ -8,28 +8,34 @@ import { UploadDropzone } from "@/components/upload/UploadDropzone";
 import { UploadDetails } from "@/components/upload/UploadDetails";
 import { UploadSuccess } from "@/components/upload/UploadSuccess";
 import { useCreatePost } from "@/lib/api/services/posts.hooks";
+import { useMe, useAcceptContentPolicy } from "@/lib/api/services/auth.hooks";
 import { Loader2 } from "lucide-react";
 
 type UploadStep = "PROHIBITION" | "SELECT" | "DETAILS" | "SUCCESS";
 
 export default function UploadPage() {
   const router = useRouter();
-  const [step, setStep] = useState<UploadStep>("PROHIBITION");
+  const [manualStep, setManualStep] = useState<UploadStep | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [hasMounted, setHasMounted] = useState(false);
 
   const createPostMutation = useCreatePost();
+  const { data: meResponse, isLoading: isLoadingMe } = useMe();
+  const acceptPolicyMutation = useAcceptContentPolicy();
 
-  useEffect(() => {
-    // Check if user has already accepted terms
-    const hasAccepted = localStorage.getItem("localbuka_upload_terms_accepted");
-    if (hasAccepted === "true") {
-      setStep("SELECT");
-    }
-    setHasMounted(true);
-  }, []);
+  // Derive initial step from loaded user data without using an effect
+  const initialStep = useMemo<UploadStep | null>(() => {
+    if (isLoadingMe) return null;
+    const userData =
+      (meResponse as any)?.data?.data || (meResponse as any)?.data;
+    const hasAccepted = userData?.hasAcceptedContentPolicy === true;
+    return hasAccepted ? "SELECT" : "PROHIBITION";
+  }, [meResponse, isLoadingMe]);
 
-  if (!hasMounted) {
+  const step = manualStep ?? initialStep;
+  const setStep = (s: UploadStep) => setManualStep(s);
+
+  // Show loading while fetching user data
+  if (isLoadingMe || step === null) {
     return (
       <MainLayout>
         <div className="w-full max-w-5xl flex items-center justify-center h-[50vh]">
@@ -40,8 +46,17 @@ export default function UploadPage() {
   }
 
   const handleAcceptTerms = () => {
-    localStorage.setItem("localbuka_upload_terms_accepted", "true");
-    setStep("SELECT");
+    // Call the API to persist the content policy acceptance
+    acceptPolicyMutation.mutate(undefined, {
+      onSuccess: () => {
+        setStep("SELECT");
+      },
+      onError: (error) => {
+        console.error("Failed to accept content policy", error);
+        // Still proceed to allow upload even if API call fails
+        setStep("SELECT");
+      },
+    });
   };
 
   const handleRefuseTerms = () => {
@@ -53,12 +68,17 @@ export default function UploadPage() {
     setStep("DETAILS");
   };
 
-  const handlePost = (data: { description: string; tags: string[]; location: string }) => {
+  const handlePost = (data: {
+    description: string;
+    tags: string[];
+    location: string;
+    restaurantId?: string;
+  }) => {
     if (!selectedFile) return;
 
     const formData = new FormData();
     formData.append("media", selectedFile);
-    
+
     // Append caption if available
     if (data.description) {
       formData.append("caption", data.description);
@@ -69,17 +89,13 @@ export default function UploadPage() {
     }
     // Append tags
     if (data.tags && data.tags.length > 0) {
-      data.tags.forEach(tag => formData.append("tags", tag));
+      data.tags.forEach((tag) => formData.append("tags", tag));
     }
-    
+
     // Auto-detect and send mediaType (required)
     const isVideo = selectedFile.type.startsWith("video/");
     formData.append("mediaType", isVideo ? "video" : "image");
 
-    // Location (restaurantId) and hashtags omitted as requested (tags are appended above)
-    // You mentioned "If location is not present, use Ikeja", but there is no specific UUID for Ikeja right now.
-    // If you need a fallback UUID, we can provide it, but for now we omit it as per the second part of your sentence.
-    
     createPostMutation.mutate(formData, {
       onSuccess: () => {
         setStep("SUCCESS");
@@ -87,7 +103,7 @@ export default function UploadPage() {
       onError: (error) => {
         console.error("Upload failed", error);
         alert("Failed to upload. Please try again.");
-      }
+      },
     });
   };
 
@@ -100,17 +116,20 @@ export default function UploadPage() {
     <MainLayout>
       <div className="w-full max-w-5xl">
         {step === "PROHIBITION" && (
-          <Prohibition onAccept={handleAcceptTerms} onRefuse={handleRefuseTerms} />
+          <Prohibition
+            onAccept={handleAcceptTerms}
+            onRefuse={handleRefuseTerms}
+          />
         )}
-        
+
         {step === "SELECT" && (
           <UploadDropzone onFileSelect={handleFileSelect} />
         )}
 
         {step === "DETAILS" && selectedFile && (
-          <UploadDetails 
-            file={selectedFile} 
-            onPost={handlePost} 
+          <UploadDetails
+            file={selectedFile}
+            onPost={handlePost}
             onDiscard={handleDiscard}
             isUploading={createPostMutation.isPending}
           />

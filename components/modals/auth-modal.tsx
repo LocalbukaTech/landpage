@@ -73,7 +73,8 @@ export function AuthModal() {
 
   const handleGoogleAuth = () => {
     localStorage.setItem("google_auth_origin", tab);
-    window.location.href = `${API_BASE_URL}/auth/google`;
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    window.location.href = `${API_BASE_URL}/auth/google?redirect_uri=${encodeURIComponent(currentOrigin + '/google_success')}&callbackUrl=${encodeURIComponent(currentOrigin + '/google_success')}`;
   };
 
   const switchTab = (newTab: AuthTab) => {

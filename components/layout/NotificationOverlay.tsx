@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {X, UtensilsCrossed, Loader2} from 'lucide-react';
 import Image from 'next/image';
 import {cn} from '@/lib/utils';
@@ -9,7 +9,8 @@ import {
   useMarkAllAsRead,
   useMarkAsRead,
 } from '@/lib/api/services/notifications.hooks';
-import {useFollowUser} from '@/lib/api/services/profile.hooks';
+import {useFollowUser, useFollowing} from '@/lib/api/services/profile.hooks';
+import {useAuth} from '@/context/AuthContext';
 import {formatDistanceToNow} from 'date-fns';
 import type {Notification} from '@/types/notification';
 
@@ -27,6 +28,28 @@ export function NotificationOverlay({
     pageSize: 50,
   });
   const markAllAsRead = useMarkAllAsRead();
+  const {user} = useAuth();
+
+  // Fetch the current user's following list to determine who we already follow
+  const {data: followingResp} = useFollowing(user?.id || '', {
+    page: 1,
+    limit: 200,
+  });
+
+  // Build a Set of user IDs the current user is following
+  const followingIds = useMemo(() => {
+    const list =
+      (followingResp as any)?.data?.data ||
+      (followingResp as any)?.data ||
+      [];
+    const ids = new Set<string>();
+    list.forEach((entry: any) => {
+      // Handle different API response shapes (entry.following or entry directly)
+      const u = entry.following || entry;
+      if (u?.id) ids.add(u.id);
+    });
+    return ids;
+  }, [followingResp]);
 
   const notifications = (notificationsEntry as any)?.data?.data || [];
 
@@ -86,7 +109,11 @@ export function NotificationOverlay({
           ) : (
             <div className='flex flex-col gap-4'>
               {notifications.map((notif: Notification) => (
-                <NotificationItem key={notif.id} notification={notif} />
+                <NotificationItem
+                  key={notif.id}
+                  notification={notif}
+                  alreadyFollowing={followingIds.has(notif.actorId)}
+                />
               ))}
             </div>
           )}
@@ -96,7 +123,13 @@ export function NotificationOverlay({
   );
 }
 
-function NotificationItem({notification}: {notification: Notification}) {
+function NotificationItem({
+  notification,
+  alreadyFollowing,
+}: {
+  notification: Notification;
+  alreadyFollowing: boolean;
+}) {
   const markAsRead = useMarkAsRead();
   const followUserMutation = useFollowUser();
   const [isFollowingBack, setIsFollowingBack] = useState(false);
@@ -120,6 +153,13 @@ function NotificationItem({notification}: {notification: Notification}) {
   })
     .replace('about ', '')
     .replace('less than a minute ago', 'just now');
+
+  // Determine if we should show the follow-back button:
+  // Only for "follow" notifications where we haven't already followed the person back
+  const showFollowBack =
+    notification.type === 'follow' && !alreadyFollowing && !isFollowingBack;
+  const showFollowedState =
+    notification.type === 'follow' && (alreadyFollowing || isFollowingBack);
 
   return (
     <div
@@ -157,23 +197,28 @@ function NotificationItem({notification}: {notification: Notification}) {
         notification.type === 'comment') && (
         <div className='w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 shrink-0 border border-white/10 relative'>
           <div className='absolute inset-0 flex items-center justify-center bg-black/20'>
-            {/* If we had the entity image, we'd show it here. For now default food icon if post */}
             <UtensilsCrossed size={14} className='text-zinc-500' />
           </div>
         </div>
       )}
 
-      {notification.type === 'follow' && (
+      {showFollowBack && (
         <button
           onClick={handleFollowBack}
-          disabled={isFollowingBack}
+          disabled={followUserMutation.isPending}
           className='bg-[#fbbe15] text-[#1a1a1a] text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-[#e5ac10] transition-colors shrink-0  tracking-tighter disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1'>
-          {isFollowingBack ? (
+          {followUserMutation.isPending ? (
             <Loader2 size={10} className='animate-spin' />
           ) : (
             'Follow back'
           )}
         </button>
+      )}
+
+      {showFollowedState && (
+        <div className='text-zinc-400 text-[10px] font-bold tracking-tighter shrink-0'>
+          Following
+        </div>
       )}
 
       {notification.type === 'unfollow' && (
@@ -184,3 +229,4 @@ function NotificationItem({notification}: {notification: Notification}) {
     </div>
   );
 }
+

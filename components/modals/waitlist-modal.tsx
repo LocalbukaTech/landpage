@@ -153,74 +153,74 @@ export function WaitlistModal({open, onOpenChange}: WaitlistModalProps) {
                 </p>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className='space-y-4'>
-                  <div>
-                    <Input
-                      type='text'
-                      name='firstName'
-                      placeholder='First Name'
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      required
-                      className='h-12 px-4 outline-none text-black'
-                    />
-                  </div>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="w-full">
+                  <input
+                    type="text"
+                    name="firstName"
+                    placeholder="First Name"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                    className="w-full h-12 px-4 outline-none text-black border border-gray-300 rounded-lg"
+                  />
+                </div>
 
-                  <div>
-                    <Input
-                      type='text'
-                      name='lastName'
-                      placeholder='Last Name'
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      required
-                      className='h-12 px-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-black'
-                    />
-                  </div>
+                <div className="w-full">
+                  <input
+                    type="text"
+                    name="lastName"
+                    placeholder="Last Name"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                    className="w-full h-12 px-4 outline-none text-black border border-gray-300 rounded-lg"
+                  />
+                </div>
 
-                  <div>
-                    <Input
-                      type='tel'
-                      name='phoneNumber'
-                      placeholder='Phone Number'
-                      value={formData.phoneNumber}
-                      onChange={handleChange}
-                      required
-                      className='h-12 px-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-black'
-                    />
-                  </div>
+                <div className="w-full">
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    placeholder="Phone Number"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    required
+                    className="w-full h-12 px-4 outline-none text-black border border-gray-300 rounded-lg"
+                  />
+                </div>
 
-                  <div>
-                    <Input
-                      type='text'
-                      name='location'
-                      placeholder='Location'
-                      value={formData.location}
-                      onChange={handleChange}
-                      required
-                      className='h-12 px-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary text-black'
-                    />
-                  </div>
+                <div className="w-full">
+                  <input
+                    type="text"
+                    name="location"
+                    placeholder="Location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    required
+                    className="w-full h-12 px-4 outline-none text-black border border-gray-300 rounded-lg"
+                  />
+                </div>
 
-                  <Button
-                    type='submit'
-                    disabled={createWaitlistMutation.isPending || isSuccess}
-                    className='w-full h-12 font-semibold text-base rounded-lg transition-colors bg-[#FBBE15] hover:bg-[#FBBE15]/90 text-white'>
-                    {createWaitlistMutation.isPending ? (
-                      <>
-                        <Loader2 className='w-6 h-6 animate-spin mr-2' />
-                        Joining...
-                      </>
-                    ) : isSuccess ? (
-                      <>
-                        <Check className='w-5 h-5 mr-2' />
-                        Joined
-                      </>
-                    ) : (
-                      'Join the Waitlist'
-                    )}
-                  </Button>
-                </form>
+                <Button
+                  type="submit"
+                  disabled={createWaitlistMutation.isPending || isSuccess}
+                  className="w-full h-12 font-semibold text-base rounded-lg transition-colors bg-[#FBBE15] hover:bg-[#FBBE15]/90 text-white">
+                  {createWaitlistMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                      Joining...
+                    </>
+                  ) : isSuccess ? ( 
+                    <>
+                      <Check className="w-5 h-5 mr-2" />
+                      Joined
+                    </>
+                  ) : (
+                    'Join the Waitlist'
+                  )}
+                </Button>
+              </form>
               </div>
             </div>
 

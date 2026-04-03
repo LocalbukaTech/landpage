@@ -36,20 +36,26 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
+  username: string;
   referrerName?: string;
   isVerified: boolean;
+  hasAcceptedContentPolicy?: boolean;
   created_at: string;
   updated_at: string;
   // Optional fields that might come from API or for compatibility
   image_url?: string;
   first_name?: string;
   last_name?: string;
+  avatar?: string;
 }
 
 // Signin
 export interface SigninPayload {
   email: string;
   password: string;
+}
+export interface GoogleSigninPayload {
+  code: string;
 }
 
 export interface SigninResponse {
@@ -88,6 +94,14 @@ export interface VerifyResponse {
   };
   user: User;
   message: string;
+}
+export interface ExchangeGoogleCodeResponse {
+  token: {
+    access_token: string;
+    refresh_token?: string;
+    token_type?: string;
+  };
+  user: User;
 }
 
 // Resend Code
@@ -140,16 +154,27 @@ export const userAuthService = {
   resendCode: (data: ResendCodePayload) =>
     api.post<ApiResponse<ResendCodeResponse>>('/auth/signup/otp', data),
 
+  exchangeGoogleCode: (data: GoogleSigninPayload) =>
+    api.post<ApiResponse<ExchangeGoogleCodeResponse>>('/auth/google/exchange', data),
+
   // User profile
   getMe: () =>
     api.get<ApiResponse<User>>('/users/me'),
 
-  updateMe: (data: UpdateProfilePayload) =>
-    api.patch<ApiResponse<User>>('/users/me', data),
+  updateMe: (data: UpdateProfilePayload | FormData) =>
+    api.patch<ApiResponse<User>>('/users/me', data, data instanceof FormData ? {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    } : undefined),
 
   deleteMe: () =>
     api.delete<ApiResponse<void>>('/users/me'),
 
   changePassword: (data: ChangePasswordPayload) =>
     api.patch<ApiResponse<{ message: string }>>('/users/me/password', data),
+
+  /** PATCH /users/me/content-policy — Accept content policy */
+  acceptContentPolicy: () =>
+    api.patch<ApiResponse<{ hasAcceptedContentPolicy: boolean }>>('/users/me/content-policy'),
 };

@@ -9,11 +9,12 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useMe, useUpdateMe } from "@/lib/api/services/auth.hooks";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api/client";
 
 export function ProfileDetails() {
     const { toast } = useToast();
     const { requireAuth, isAuthenticated } = useRequireAuth();
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const { data: meResponse, isLoading } = useMe();
     const updateMeMutation = useUpdateMe();
 
@@ -30,9 +31,12 @@ export function ProfileDetails() {
         firstName: "",
         lastName: "",
         email: "",
+        avatar: "",
+
     });
 
     const [profileImage, setProfileImage] = useState("/images/profile-pic.png");
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Populate form when user data loads
@@ -43,6 +47,7 @@ export function ProfileDetails() {
                 firstName: parts[0] || "",
                 lastName: parts.slice(1).join(" ") || "",
                 email: apiUser.email || "",
+                avatar: apiUser.avatar || "",
             });
             if (apiUser.image_url || apiUser.avatar) {
                 setProfileImage(apiUser.image_url || apiUser.avatar);
@@ -54,11 +59,52 @@ export function ProfileDetails() {
         fileInputRef.current?.click();
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // Optimistically show the image
             const imageUrl = URL.createObjectURL(file);
             setProfileImage(imageUrl);
+
+            setIsUploading(true);
+            try {
+                const uploadData = new FormData();
+                uploadData.append("Photo", file); // standard key for file uploads
+
+                const response = await api.post("images/upload", uploadData, {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                });
+
+                const uploadedUrl = (response as any)?.data?.url || (response as any)?.url || (response as any)?.data;
+                if (typeof uploadedUrl === "string") {
+                    setFormData((prev) => ({ ...prev, avatar: uploadedUrl }));
+                    setProfileImage(uploadedUrl); // Update with the real URL
+                } else if ((response as any)?.data) {
+                    setFormData((prev) => ({ ...prev, avatar: (response as any).data }));
+                }
+                
+                toast({
+                    title: "Image Uploaded",
+                    description: "Your profile picture was uploaded successfully.",
+                    variant: "success",
+                });
+            } catch (error) {
+                toast({
+                    title: "Upload Failed",
+                    description: "Failed to upload profile picture. Please try again.",
+                    variant: "destructive",
+                });
+                // Revert to original user image if upload failed
+                if (apiUser?.image_url || apiUser?.avatar) {
+                    setProfileImage(apiUser.image_url || apiUser.avatar);
+                } else {
+                    setProfileImage("/images/profile-pic.png");
+                }
+            } finally {
+                setIsUploading(false);
+            }
         }
     };
 
@@ -68,12 +114,15 @@ export function ProfileDetails() {
     };
 
     const handleSave = () => {
+        console.log('hhhh')
         requireAuth(() => {
             const fullName = `${formData.firstName} ${formData.lastName}`.trim();
             updateMeMutation.mutate(
-                { fullName },
+                { fullName, avatar: formData.avatar },
                 {
-                    onSuccess: () => {
+                    onSuccess: (response: any) => {
+                        const updatedUser = response?.data?.data || response?.data;
+                        if (updatedUser) updateUser(updatedUser);
                         toast({
                             title: "Profile Updated",
                             description: "Your profile has been saved successfully.",
@@ -166,13 +215,18 @@ export function ProfileDetails() {
             <div className="mt-12 flex justify-start lg:justify-end w-full">
                 <Button
                     onClick={handleSave}
-                    disabled={updateMeMutation.isPending}
+                    disabled={updateMeMutation.isPending || isUploading}
                     className="w-full max-w-[380px] bg-[#F5B400] hover:bg-[#D99F00] text-black font-semibold text-[14px] h-[52px] rounded-[10px] shadow-none border-none disabled:opacity-50"
                 >
                     {updateMeMutation.isPending ? (
                         <span className="flex items-center gap-2">
                             <Loader2 className="w-4 h-4 animate-spin" />
                             Saving...
+                        </span>
+                    ) : isUploading ? (
+                        <span className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Uploading Image...
                         </span>
                     ) : (
                         "Save"

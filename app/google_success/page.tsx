@@ -1,51 +1,58 @@
 'use client';
 
-import {useEffect, useState, Suspense} from 'react';
+import {useEffect, useState, useRef, Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {Loader2} from 'lucide-react';
 import {setUserAuthToken, setUser} from '@/lib/auth';
+import { useExchangeGoogleCodeMutation } from '@/lib/api';
+import {useAuth} from '@/context/AuthContext';
 
 const GoogleSuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const {loginUser} = useAuth();
   const [error, setError] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
+  const googleExchangeMutation = useExchangeGoogleCodeMutation();
+  const hasExchanged = useRef(false);
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const userParam = searchParams.get('user');
+    const code = searchParams.get('code');
 
-    if (!token) {
-      setError('Authentication failed. No token received.');
+    if (!code) {
+      setError('Authentication failed. No code received.');
       return;
     }
 
-    try {
-      // Store the token
-      setUserAuthToken(token);
+    if (hasExchanged.current) return;
+    hasExchanged.current = true;
 
-      // Parse and store the user if provided
-      if (userParam) {
-        const user = JSON.parse(decodeURIComponent(userParam));
-        setUser(user);
-      }
+    googleExchangeMutation.mutate(
+      {code},
+      {
+        onSuccess: (response) => {
+          const {token, user} = response.data;
+          loginUser(user, token.access_token);
 
-      // Check where the user came from
-      const origin = localStorage.getItem('google_auth_origin');
-      
-      if (origin === 'signup') {
-        // Clear the flag and show the success screen
-        localStorage.removeItem('google_auth_origin');
-        setShowSuccess(true);
-      } else {
-        // Automatically redirect to homepage for signins (or unknown origin)
-        localStorage.removeItem('google_auth_origin');
-        router.push('/feeds');
+          // Check where the user came from
+          const origin = localStorage.getItem('google_auth_origin');
+          
+          if (origin === 'signup') {
+            // Clear the flag and show the success screen
+            localStorage.removeItem('google_auth_origin');
+            setShowSuccess(true);
+          } else {
+            // Automatically redirect to homepage for signins (or unknown origin)
+            localStorage.removeItem('google_auth_origin');
+            router.push('/feeds');
+          }
+        },
+        onError: () => {
+          setError('Authentication failed. Invalid response data.');
+        }
       }
-    } catch {
-      setError('Authentication failed. Invalid response data.');
-    }
-  }, [searchParams, router]);
+    );
+  }, [searchParams, router, loginUser]);
 
   const handleProceed = () => {
     router.push('/signup/preferences');

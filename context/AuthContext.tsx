@@ -13,6 +13,8 @@ interface AuthContextValue {
   isAuthModalOpen: boolean;
   /** Update user state after sign-in/sign-up/verify */
   loginUser: (user: User, token: string) => void;
+  /** Update user state (e.g. after profile edit) */
+  updateUser: (user: User) => void;
   logout: () => void;
   /** Pending callback stored from openAuthModal */
   pendingAction: React.MutableRefObject<(() => void) | null>;
@@ -20,18 +22,28 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({
+  children,
+  initialUser = null,
+  initialToken = null,
+}: {
+  children: React.ReactNode;
+  initialUser?: User | null;
+  initialToken?: string | null;
+}) {
+  const [user, setUser] = useState<User | null>(initialUser);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const pendingAction = useRef<(() => void) | null>(null);
 
-  // Hydrate from cookies on mount
+  // Hydrate from cookies on mount if not provided by server
   useEffect(() => {
-    const stored = getUser();
-    if (stored) setUser(stored);
-  }, []);
+    if (!user) {
+      const stored = getUser();
+      if (stored) setUser(stored);
+    }
+  }, [user]);
 
-  const isAuthenticated = !!user && !!getUserAuthToken();
+  const isAuthenticated = !!user && (!!initialToken || !!getUserAuthToken());
 
   const openAuthModal = useCallback((onSuccess?: () => void) => {
     pendingAction.current = onSuccess || null;
@@ -41,6 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const closeAuthModal = useCallback(() => {
     setIsAuthModalOpen(false);
     pendingAction.current = null;
+  }, []);
+
+  const updateUser = useCallback((u: User) => {
+    persistUser(u);
+    setUser(u);
   }, []);
 
   const loginUser = useCallback((u: User, token: string) => {
@@ -71,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         closeAuthModal,
         isAuthModalOpen,
         loginUser,
+        updateUser,
         logout,
         pendingAction,
       }}

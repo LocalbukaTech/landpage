@@ -2,11 +2,18 @@
 
 import * as React from 'react';
 import {Moon, Sun} from 'lucide-react';
-import {useTheme} from 'next-themes';
-import {Button} from '@/components/ui/button';
+import { useTheme } from 'next-themes';
+import { Button } from '@/components/ui/button';
+import { usePathname } from 'next/navigation';
 
 export function ThemeToggle() {
   const {theme, setTheme} = useTheme();
+  const pathname = usePathname();
+
+  // Hide on restaurant detail pages where the map is prominent
+  if (pathname.includes('/buka/restaurant/')) {
+    return null;
+  }
 
   return (
     <Button

@@ -14,6 +14,8 @@ import {
   type ResendCodeResponse,
   type UpdateProfilePayload,
   type ChangePasswordPayload,
+  ExchangeGoogleCodeResponse,
+  GoogleSigninPayload,
 } from './auth.service';
 import {
   setAuthToken,
@@ -47,6 +49,17 @@ export const useSigninMutation = () => {
   return useMutation({
     mutationFn: (data: SigninPayload) => userAuthService.signin(data),
     onSuccess: (response: ApiResponse<SigninResponse>) => {
+      const {token, user} = response.data;
+      setUserAuthToken(token.access_token);
+      setUser(user);
+    },
+  });
+};
+
+export const useExchangeGoogleCodeMutation = () => {
+  return useMutation({
+    mutationFn: (data: GoogleSigninPayload) => userAuthService.exchangeGoogleCode(data),
+    onSuccess: (response: ApiResponse<ExchangeGoogleCodeResponse>) => {
       const {token, user} = response.data;
       setUserAuthToken(token.access_token);
       setUser(user);
@@ -93,7 +106,7 @@ export const useMe = () => {
 export const useUpdateMe = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: UpdateProfilePayload) => userAuthService.updateMe(data),
+    mutationFn: (data: UpdateProfilePayload | FormData) => userAuthService.updateMe(data),
     onSuccess: (response) => {
       const user = (response as any)?.data?.data || (response as any)?.data;
       if (user) setUser(user);
@@ -111,5 +124,15 @@ export const useDeleteMe = () => {
 export const useChangePassword = () => {
   return useMutation({
     mutationFn: (data: ChangePasswordPayload) => userAuthService.changePassword(data),
+  });
+};
+
+export const useAcceptContentPolicy = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => userAuthService.acceptContentPolicy(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    },
   });
 };

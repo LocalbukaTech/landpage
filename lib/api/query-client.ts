@@ -4,9 +4,9 @@ const queryConfig: DefaultOptions = {
   queries: {
     // Default settings for all queries
     retry: 1, // Retry failed requests once
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnWindowFocus: true, // REFETCH when user switches back to window
     refetchOnReconnect: true, // Refetch when reconnecting
-    staleTime: 5 * 60 * 1000, // Data is fresh for 5 minutes
+    staleTime: 1000, // Data is fresh for 1 second (aggressive)
     gcTime: 10 * 60 * 1000, // Cache for 10 minutes (formerly cacheTime)
   },
   mutations: {

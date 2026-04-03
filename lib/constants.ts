@@ -214,5 +214,5 @@ export const SOCIAL_LINKS: ReadonlyArray<SocialLink> = [
     Icon: RiTiktokFill,
   },
   {href: 'https://x.com/LocalBuka_app/', label: 'Twitter/X', Icon: RiTwitterXFill},
-  {href: 'https://www.facebook.com/Local-Buka/', label: 'Facebook', Icon: RiFacebookFill},
+  {href: 'https://web.facebook.com/profile.php?id=61567778991994', label: 'Facebook', Icon: RiFacebookFill},
 ];

@@ -132,11 +132,27 @@ export const metadata: Metadata = {
 
 import Script from "next/script";
 
-export default function RootLayout({
+import { cookies } from "next/headers";
+import type { User } from "@/lib/api/services/auth.service";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const userCookie = cookieStore.get("localbuka_user")?.value;
+  const tokenCookie = cookieStore.get("localbuka_user_token")?.value;
+
+  let initialUser: User | null = null;
+  if (userCookie) {
+    try {
+      initialUser = JSON.parse(userCookie);
+    } catch (e) {
+      console.error("Failed to parse user cookie", e);
+    }
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -159,9 +175,18 @@ export default function RootLayout({
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
+        <Script id="clarity-script" strategy="afterInteractive">
+          {`
+            (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", "w03esrpked");
+          `}
+        </Script>
         <GoogleAnalytics />
         <ScrollToTop />
-        <Providers>
+        <Providers initialUser={initialUser} initialToken={tokenCookie}>
           {children}
 
           <ThemeToggle />

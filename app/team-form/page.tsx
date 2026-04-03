@@ -13,6 +13,10 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+interface IDepartment {
+  label: string;
+  value: string;
+}
 const TeamForm = () => {
   const createTeam = useCreateTeamMutation();
   const loading = createTeam.isPending;
@@ -140,6 +144,26 @@ const TeamForm = () => {
     });
   };
 
+
+  const departments:IDepartment[] =[{
+    label: 'Operations',
+    value: 'operations',
+  }, {
+    label: 'Engineering',
+    value: 'engineering',
+  }, {
+    label: 'Product',
+    value: 'product',
+  }, {
+    label: 'Human Resource',
+    value: 'human_resource',
+  }, {
+    label: 'Brand & Finance',
+    value: 'brand_finance',
+  }]
+
+  const departmentList = departments.map((item) => item.label)
+  console.log(departmentList, 'lisus')
   return (
     <>
       <div className='min-h-screen bg-linear-to-br from-primary/10 via-white to-primary/5 dark:from-black dark:via-gray-950 dark:to-black py-12 px-4 sm:px-6 lg:px-8'>
@@ -260,11 +284,11 @@ const TeamForm = () => {
                     onChange={handleChange}
                     className='w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-foreground focus:ring-2 focus:ring-primary focus:border-transparent transition-all'>
                     <option value=''>Select Department</option>
-                    <option value='Operations'>Operations</option>
-                    <option value='Engineering'>Engineering</option>
-                    <option value='Product'>Product</option>
-                    <option value='Human Resource'>Human Resource</option>
-                    <option value='Brand & Finance'>Brand & Finance</option>
+                    {departments.map((department) => (
+                      <option key={department.value} value={department.value}>
+                        {department.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

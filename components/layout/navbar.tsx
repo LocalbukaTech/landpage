@@ -30,18 +30,6 @@ export function Navbar() {
     return () => window.removeEventListener('storage', checkAuth);
   }, []);
 
-  // Auto-pop waitlist modal after 3 minutes of browsing (once per session)
-  useEffect(() => {
-    const alreadyShown = sessionStorage.getItem('waitlist_auto_shown');
-    if (alreadyShown) return;
-
-    const timer = setTimeout(() => {
-      sessionStorage.setItem('waitlist_auto_shown', 'true');
-      setIsWaitlistOpen(true);
-    }, 3 * 60 * 1000); // 3 minutes
-
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleNavClick = (
     e: React.MouseEvent<HTMLAnchorElement>,

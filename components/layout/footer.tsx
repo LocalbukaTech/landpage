@@ -43,6 +43,7 @@ export function Footer() {
                   key={label}
                   target='_blank'
                   href={href}
+                  rel="noopener noreferrer"
                   className='text-white hover:text-primary transition-colors'
                   aria-label={label}>
                   <Icon size={24} />

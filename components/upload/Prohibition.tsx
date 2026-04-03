@@ -41,7 +41,7 @@ export function Prohibition({ onAccept, onRefuse }: ProhibitionProps) {
         <div className="space-y-4 mb-8">
           {/* Item 1 */}
           <div className="flex items-center gap-4 p-4 rounded-xl bg-red-50 border border-red-200">
-            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-orange-100 rounded-full text-orange-600">
+            <div className="shrink-0 w-10 h-10 flex items-center justify-center bg-orange-100 rounded-full text-orange-600">
               <MessageSquareX size={24} />
             </div>
             <p className="text-[#1a1a1a] font-medium">
@@ -51,7 +51,7 @@ export function Prohibition({ onAccept, onRefuse }: ProhibitionProps) {
 
           {/* Item 2 */}
           <div className="flex items-center gap-4 p-4 rounded-xl bg-red-50 border border-red-200">
-            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-purple-100 rounded-full text-purple-600">
+            <div className="shrink-0 w-10 h-10 flex items-center justify-center bg-purple-100 rounded-full text-purple-600">
               <EyeOff size={24} />
             </div>
             <p className="text-[#1a1a1a] font-medium">
@@ -61,7 +61,7 @@ export function Prohibition({ onAccept, onRefuse }: ProhibitionProps) {
 
           {/* Item 3 */}
           <div className="flex items-center gap-4 p-4 rounded-xl bg-red-50 border border-red-200">
-            <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-red-100 rounded-full text-red-600">
+            <div className="shrink-0 w-10 h-10 flex items-center justify-center bg-red-100 rounded-full text-red-600">
               <Ban size={24} />
             </div>
             <p className="text-[#1a1a1a] font-medium">

@@ -92,6 +92,8 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.posts.all, 'detail', id] as const,
     comments: (postId: string, filters?: Record<string, unknown>) =>
       [...queryKeys.posts.all, 'comments', postId, filters] as const,
+    reposts: (postId: string, filters?: Record<string, unknown>) =>
+      [...queryKeys.posts.all, 'reposts', postId, filters] as const,
   },
 
   // Add more entity types as needed

@@ -9,6 +9,7 @@ import {useFollowUser, useFollowing} from '@/lib/api/services/profile.hooks';
 import {useRepostPost} from '@/lib/api/services/posts.hooks';
 import {useAuth} from '@/context/AuthContext';
 import {ShareDrawer} from './ShareDrawer';
+import RepostsModal from '../social/RepostsModal';
 import {AnimatedCount} from './AnimatedCount';
 import type {Post} from '@/types/post';
 
@@ -32,6 +33,7 @@ export function ActionBar({
   const followUserMutation = useFollowUser();
   const repostPostMutation = useRepostPost();
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isRepostsModalOpen, setIsRepostsModalOpen] = useState(false);
 
   // Fetch following list to check if already followed
   const {data: followingResponse} = useFollowing(user?.id as string);
@@ -181,6 +183,7 @@ export function ActionBar({
       label: 'Repost',
       isActive: isReposted,
       onClick: handleRepost,
+      onCountClick: () => setIsRepostsModalOpen(true),
       activeClass: 'text-green-500',
     },
   ];
@@ -217,27 +220,48 @@ export function ActionBar({
       </div>
 
       {actions.map((action) => (
-        <button
-          key={action.id}
-          className={cn(
-            'flex flex-col items-center gap-1.5 bg-transparent border-none text-white cursor-pointer transition-transform duration-200 hover:scale-110 active:scale-95',
-            action.isActive ? action.activeClass : '',
-          )}
-          onClick={action.onClick}
-          aria-label={action.label}>
-          <div className='flex items-center justify-center w-9 h-9'>
-            <action.icon
-              size={24}
-              fill={action.isActive ? 'currentColor' : 'none'}
-            />
-          </div>
-          <AnimatedCount count={action.count || 0} />
-        </button>
+        <div key={action.id} className='flex flex-col items-center gap-1.5'>
+          <button
+            className={cn(
+              'flex flex-col items-center bg-transparent border-none text-white cursor-pointer transition-transform duration-200 hover:scale-110 active:scale-95',
+              action.isActive ? action.activeClass : '',
+            )}
+            onClick={action.onClick}
+            aria-label={action.label}>
+            <div className='flex items-center justify-center w-9 h-9'>
+              <action.icon
+                size={24}
+                fill={action.isActive ? 'currentColor' : 'none'}
+              />
+            </div>
+          </button>
+          <button
+            className={cn(
+              'bg-transparent border-none cursor-pointer p-0',
+              action.isActive ? action.activeClass : 'text-white',
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (action.onCountClick) {
+                action.onCountClick();
+              } else {
+                action.onClick();
+              }
+            }}>
+            <AnimatedCount count={action.count || 0} />
+          </button>
+        </div>
       ))}
 
       <ShareDrawer
         open={isShareOpen}
         onOpenChange={setIsShareOpen}
+        postId={post.id}
+      />
+
+      <RepostsModal
+        open={isRepostsModalOpen}
+        onClose={() => setIsRepostsModalOpen(false)}
         postId={post.id}
       />
     </div>

@@ -58,6 +58,11 @@ export const postsService = {
     return api.post<ApiResponse<{ reposted: boolean, repostCount: number }>>(`/posts/${id}/repost`);
   },
 
+  /** GET /posts/:id/reposts — Get list of users who reposted a post */
+  getPostReposts: (id: string, params?: { page?: number; pageSize?: number }) => {
+    return api.get<ApiResponse<any>>(`/posts/${id}/reposts`, { params });
+  },
+
   /** GET /posts/:id/comments — top-level comments (replies nested) */
   getComments: (id: string, params?: CommentsQueryParams) => {
     return api.get<ApiResponse<CommentsResponse>>(`/posts/${id}/comments`, { params });

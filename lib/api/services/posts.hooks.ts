@@ -226,3 +226,20 @@ export const useRepostPost = () => {
     },
   });
 };
+
+/** Fetch users who reposted a post (paginated) */
+export const usePostReposts = (
+  postId: string,
+  params?: {page?: number; pageSize?: number},
+) => {
+  return useQuery({
+    queryKey: [
+      ...queryKeys.posts.reposts(postId, params as Record<string, unknown>),
+    ],
+    queryFn: async () => {
+      const response = await postsService.getPostReposts(postId, params);
+      return response.data;
+    },
+    enabled: !!postId,
+  });
+};

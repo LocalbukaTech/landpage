@@ -14,6 +14,9 @@ export const NAV_LINKS = [
   {href: '/', label: 'Get the App'},
 ] as const;
 
+// Sentinel value for restaurants without photos – used to trigger the icon placeholder in UI
+export const RESTAURANT_PLACEHOLDER_IMG = '__no_photo__';
+
 // Feature cards data
 export const FEATURES = [
   {

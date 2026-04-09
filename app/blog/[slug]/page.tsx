@@ -1,6 +1,4 @@
-
 import {Metadata} from 'next';
-import {notFound} from 'next/navigation';
 import BlogDetailClient from '../components/BlogDetailClient';
 import {blogService} from '@/lib/api/services/blog.service';
 
@@ -25,7 +23,8 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
         images: [blog.image_url],
       },
     };
-  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_error) {
     return {
       title: 'Blog Not Found | Localbuka',
     };

@@ -16,7 +16,7 @@ export default function AdSenseUnit() {
     }
 
     const observer = new ResizeObserver((entries) => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         // Use contentRect or observe the parent's width
         const width = entry.contentRect.width;
         
@@ -24,7 +24,7 @@ export default function AdSenseUnit() {
           try {
             // Final check on status before pushing
             if (adRef.current?.getAttribute("data-adsbygoogle-status") !== "done") {
-              // @ts-ignore
+              // @ts-expect-error adsbygoogle is injected externally
               (window.adsbygoogle = window.adsbygoogle || []).push({});
               isPushed.current = true;
               observer.disconnect();

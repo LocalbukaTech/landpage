@@ -5,7 +5,7 @@ import GoBack from '@/components/layout/GoBack';
 import {Navbar} from '@/components/layout/navbar';
 import Image from 'next/image';
 import Link from 'next/link';
-import {useParams, useRouter, usePathname} from 'next/navigation';
+import {useRouter, usePathname} from 'next/navigation';
 import {
   useBlogBySlugQuery,
   useLikeBlogMutation,
@@ -14,14 +14,12 @@ import {
 import {Loader2, ThumbsUp, Calendar, Clock, FileText} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import CommentSection from './CommentSection';
-import {getUser, isUserAuthenticated} from '@/lib/auth';
-import {useToast} from '@/hooks/use-toast';
+import {isUserAuthenticated} from '@/lib/auth';
 import {format} from 'date-fns';
 
 const BlogDetailClient = ({slug}: {slug: string}) => {
   const router = useRouter();
   const pathname = usePathname();
-  const {toast} = useToast();
 
   // API Hooks
   // Fetch by SLUG using the new endpoint
@@ -38,15 +36,6 @@ const BlogDetailClient = ({slug}: {slug: string}) => {
 
   // Mutations
 
-  const handleAuthCheck = () => {
-    if (!isUserAuthenticated()) {
-      router.push(`/signin?redirect=${pathname}`);
-      return false;
-    }
-    return true;
-  };
- const userId = getUser()?.id;
-//  alert(userId)
 
   const handleLike = () => {
     if (blog?.is_liked) return;

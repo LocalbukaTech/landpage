@@ -36,13 +36,26 @@ import {
   useRemoveSavedRestaurant,
   useSearchRestaurants 
 } from "@/lib/api";
-import { Restaurant } from "@/lib/api/services/restaurants.service";
 import { CgSpinner } from "react-icons/cg";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { RESTAURANT_PLACEHOLDER_IMG } from "@/lib/constants";
 
 // Mock Fallbacks
 const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80";
-const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80";
+
+// Sort: DB items first, then Google, each group by latest updatedAt
+const sortDbFirstThenByDate = (items: BukaRestaurant[]): BukaRestaurant[] =>
+  [...items].sort((a, b) => {
+    const aIsGoogle = a.rawRestaurant?.source === "google" ? 1 : 0;
+    const bIsGoogle = b.rawRestaurant?.source === "google" ? 1 : 0;
+    if (aIsGoogle !== bIsGoogle) return aIsGoogle - bIsGoogle;
+    const dateA = a.rawRestaurant?.updatedAt;
+    const dateB = b.rawRestaurant?.updatedAt;
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
 
 function mapToSimilarRestaurant(apiRest: any): BukaRestaurant {
   return {
@@ -51,7 +64,7 @@ function mapToSimilarRestaurant(apiRest: any): BukaRestaurant {
     image:
       apiRest.photos && apiRest.photos.length > 0
         ? apiRest.photos[0]
-        : PLACEHOLDER_IMG,
+        : RESTAURANT_PLACEHOLDER_IMG,
     rating: apiRest.avgRating || apiRest.googleRating || 0,
     reviewCount: apiRest.reviewCount || 0,
     address: apiRest.address || `${apiRest.city || ""}, ${apiRest.state || ""}`,
@@ -88,9 +101,12 @@ function SimilarRestaurants({ lat, lng, currentId }: { lat: number; lng: number;
         const rId = r.id || r.googlePlaceId;
         return rId !== currentId;
       })
-      .slice(0, 3)
+      .slice(0, 6)
       .map(mapToSimilarRestaurant);
   })();
+
+  // Sort: DB restaurants first, then Google
+  const sorted = sortDbFirstThenByDate(nearby).slice(0, 3);
 
   if (isLoading) {
     return (
@@ -100,7 +116,7 @@ function SimilarRestaurants({ lat, lng, currentId }: { lat: number; lng: number;
     );
   }
 
-  if (nearby.length === 0) return null;
+  if (sorted.length === 0) return null;
 
   return (
     <div className="pb-16">
@@ -113,7 +129,7 @@ function SimilarRestaurants({ lat, lng, currentId }: { lat: number; lng: number;
         </button>
       </div>
       <div className="grid grid-cols-3 gap-5">
-        {nearby.map((r) => (
+        {sorted.map((r) => (
           <BukaCard key={r.id} restaurant={r} />
         ))}
       </div>
@@ -132,19 +148,18 @@ export default function RestaurantDetailPage() {
   const { data: localReviewsData, isLoading: isLoadingLocalReviews } = useReviews(id);
   const { data: googleReviewsData, isLoading: isLoadingGoogleReviews } = useGoogleReviews(id);
 
-  const [fallbackRestaurant, setFallbackRestaurant] = useState<any>(null);
-
-  useEffect(() => {
-    // Attempt to load from localStorage if we don't have it in the DB
+  const [fallbackRestaurant] = useState<any>(() => {
+    if (typeof window === "undefined") return null;
     const saved = localStorage.getItem(`buka_fallback_${id}`);
     if (saved) {
       try {
-        setFallbackRestaurant(JSON.parse(saved));
+        return JSON.parse(saved);
       } catch (e) {
         console.error("Failed to parse fallback restaurant", e);
       }
     }
-  }, [id]);
+    return null;
+  });
 
   // Remap logic
   const restaurant = rawRestaurant || fallbackRestaurant;
@@ -181,7 +196,9 @@ export default function RestaurantDetailPage() {
 
   const photos = (restaurant?.photos && restaurant.photos.length > 0)
     ? restaurant.photos 
-    : (restaurant?.image ? [restaurant.image] : [PLACEHOLDER_IMG]);
+    : (restaurant?.image ? [restaurant.image] : [RESTAURANT_PLACEHOLDER_IMG]);
+
+  const isPlaceholderPhoto = photos.length === 1 && photos[0] === RESTAURANT_PLACEHOLDER_IMG;
 
   const rating = restaurant?.avgRating || restaurant?.googleRating || restaurant?.rating || 0;
   const reviewCountStr = restaurant?.reviewCount || 0;
@@ -263,23 +280,29 @@ export default function RestaurantDetailPage() {
       <div className="max-w-[1440px] mx-auto">
         {/* ── Hero Carousel ── */}
         <section className="relative w-full h-[500px] overflow-hidden rounded-b-2xl bg-zinc-900 border-b border-zinc-800">
-          {photos.slice(0, 5).map((img: string, i: number) => (
-            <div
-              key={i}
-              className={`absolute inset-0 transition-opacity duration-700 ${
-                i === activeHeroIndex ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              <Image
-                src={img}
-                alt={`${restaurant?.name || 'Restaurant'} slide ${i + 1}`}
-                fill
-                className="object-cover"
-                sizes="100vw"
-                priority={i === 0}
-              />
+          {isPlaceholderPhoto ? (
+            <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+              <UtensilsCrossed size={80} className="text-zinc-600" />
             </div>
-          ))}
+          ) : (
+            photos.slice(0, 5).map((img: string, i: number) => (
+              <div
+                key={i}
+                className={`absolute inset-0 transition-opacity duration-700 ${
+                  i === activeHeroIndex ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <Image
+                  src={img}
+                  alt={`${restaurant?.name || 'Restaurant'} slide ${i + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="100vw"
+                  priority={i === 0}
+                />
+              </div>
+            ))
+          )}
 
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent" />
@@ -482,13 +505,19 @@ export default function RestaurantDetailPage() {
                     key={i}
                     className="relative aspect-square rounded-xl overflow-hidden"
                   >
-                    <Image
-                      src={photo}
-                      alt={`Photo ${i + 1}`}
-                      fill
-                      className="object-cover hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 768px) 50vw, 20vw"
-                    />
+                    {photo === RESTAURANT_PLACEHOLDER_IMG ? (
+                      <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+                        <UtensilsCrossed size={48} className="text-zinc-600" />
+                      </div>
+                    ) : (
+                      <Image
+                        src={photo}
+                        alt={`Photo ${i + 1}`}
+                        fill
+                        className="object-cover hover:scale-105 transition-transform duration-300"
+                        sizes="(max-width: 768px) 50vw, 20vw"
+                      />
+                    )}
                   </div>
                 ))}
               </div>

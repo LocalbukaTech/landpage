@@ -61,6 +61,7 @@ export const queryKeys = {
       [...queryKeys.users.all, 'list', filters] as const,
     detail: (id: string) => [...queryKeys.users.all, 'detail', id] as const,
     savedPosts: (params?: Record<string, any>) => [...queryKeys.users.all, 'me', 'saved-posts', params] as const,
+    reposts: (params?: Record<string, any>) => [...queryKeys.users.all, 'me', 'reposts', params] as const,
   },
 
   // Simple string keys for common queries

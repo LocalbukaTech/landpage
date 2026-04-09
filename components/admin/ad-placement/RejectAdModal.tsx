@@ -1,8 +1,8 @@
 "use client";
 
-import { X } from "lucide-react";
+import {X} from "lucide-react";
 
-export function RejectAdModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export function RejectAdModal({isOpen, onCloseAction}: { isOpen: boolean; onCloseAction: () => void }) {
   if (!isOpen) return null;
 
   return (
@@ -10,7 +10,8 @@ export function RejectAdModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
       <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in fade-in zoom-in duration-200">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-zinc-900">Reject Ad</h3>
-          <button onClick={onClose} className="p-1 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors">
+          <button onClick={onCloseAction}
+                  className="p-1 rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors">
             <X size={16} />
           </button>
         </div>
@@ -26,14 +27,14 @@ export function RejectAdModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
         </div>
 
         <div className="flex gap-4">
-          <button 
-            onClick={onClose}
+          <button
+              onClick={onCloseAction}
             className="flex-1 py-3 rounded-xl text-sm font-bold text-zinc-500 hover:bg-zinc-50 transition-colors"
           >
             No, Cancel
           </button>
           <button
-          onClick={onClose} 
+              onClick={onCloseAction}
            className="flex-1 py-3 rounded-xl text-sm font-bold bg-[#fbbe15] text-zinc-900 hover:bg-[#eab308] transition-colors shadow-sm shadow-[#fbbe15]/20">
             Yes, Reject
           </button>

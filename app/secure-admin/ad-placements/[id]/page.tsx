@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, use } from "react";
+import React, {use, useState} from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronRight, X, Check } from "lucide-react";
-import { RejectAdModal } from "@/components/admin/ad-placement/RejectAdModal";
+import {Check, ChevronRight, X} from "lucide-react";
+import {RejectAdModal} from "@/components/admin/ad-placement/RejectAdModal";
 
 export default function ViewAdPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap the params promise using React.use() to fix the Next.js error
@@ -106,7 +106,7 @@ export default function ViewAdPage({ params }: { params: Promise<{ id: string }>
         </button>
       </div>
 
-      <RejectAdModal isOpen={isRejectModalOpen} onClose={() => setIsRejectModalOpen(false)} />
+      <RejectAdModal isOpen={isRejectModalOpen} onCloseAction={() => setIsRejectModalOpen(false)}/>
     </div>
   );
 }

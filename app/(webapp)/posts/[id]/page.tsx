@@ -1,7 +1,7 @@
-import { Metadata } from "next";
-import { postsService } from "@/lib/api/services/posts.service";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { PostClient } from "./PostClient";
+import {Metadata} from "next";
+import {postsService} from "@/lib/api/services/posts.service";
+import {MainLayout} from "@/components/layout/MainLayout";
+import {PostClient} from "./PostClient";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -47,7 +47,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         creator: "@localbuka",
       },
     };
-  } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_error) {
     return {
       title: "Post | LocalBuka",
       description: "Discover authentic culinary experiences on LocalBuka.",

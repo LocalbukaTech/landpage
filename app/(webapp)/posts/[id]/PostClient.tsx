@@ -1,6 +1,5 @@
 "use client";
 
-import { MainLayout } from "@/components/layout/MainLayout";
 import { VideoFeed } from "@/components/video/VideoFeed";
 import { usePost } from "@/lib/api/services/posts.hooks";
 import { Loader2, ArrowLeft } from "lucide-react";

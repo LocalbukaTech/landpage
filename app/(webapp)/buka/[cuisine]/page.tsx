@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Search, MapPin, ChevronDown, Filter } from "lucide-react";
+import { Search, MapPin, ChevronDown } from "lucide-react";
 import { CuisineHero } from "@/components/buka/CuisineHero";
 import { CuisineFilters, FilterState } from "@/components/buka/CuisineFilters";
 import { BukaCard, BukaRestaurant } from "@/components/buka/BukaCard";
@@ -10,6 +10,7 @@ import { Pagination } from "@/components/buka/Pagination";
 import { Images } from "@/public/images";
 import { useRestaurantsByCuisine, useSearchRestaurants } from "@/lib/api";
 import { CgSpinner } from "react-icons/cg";
+import { RESTAURANT_PLACEHOLDER_IMG } from "@/lib/constants";
 
 // Map slug → cuisine filter name
 const SLUG_TO_CUISINE: Record<string, string> = {
@@ -79,14 +80,25 @@ const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
 
 const ITEMS_PER_PAGE = 9;
 
-// Fallback image utility
-const PLACEHOLDER_IMG = "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80";
+// Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
+const sortDbFirstThenByDate = (items: BukaRestaurant[]): BukaRestaurant[] =>
+  [...items].sort((a, b) => {
+    const aIsGoogle = a.rawRestaurant?.source === "google" ? 1 : 0;
+    const bIsGoogle = b.rawRestaurant?.source === "google" ? 1 : 0;
+    if (aIsGoogle !== bIsGoogle) return aIsGoogle - bIsGoogle;
+    const dateA = a.rawRestaurant?.updatedAt;
+    const dateB = b.rawRestaurant?.updatedAt;
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
 
 function mapToBukaRestaurant(apiRest: any): BukaRestaurant {
   return {
     id: apiRest.id || apiRest.googlePlaceId || Math.random().toString(),
     name: apiRest.name,
-    image: (apiRest.photos && apiRest.photos.length > 0) ? apiRest.photos[0] : PLACEHOLDER_IMG,
+    image: (apiRest.photos && apiRest.photos.length > 0) ? apiRest.photos[0] : RESTAURANT_PLACEHOLDER_IMG,
     rating: apiRest.avgRating || apiRest.googleRating || 0,
     reviewCount: apiRest.reviewCount || 0,
     address: apiRest.address || `${apiRest.city || ''}, ${apiRest.state || ''}`,
@@ -159,7 +171,7 @@ export default function CuisineDetailPage() {
       if (id && !uniqueMap.has(id)) uniqueMap.set(id, c);
     });
 
-    return Array.from(uniqueMap.values()).map(mapToBukaRestaurant);
+    return sortDbFirstThenByDate(Array.from(uniqueMap.values()).map(mapToBukaRestaurant));
   }, [cuisineRes, fallbackSearchRes]);
 
   const [filters, setFilters] = useState<FilterState>({

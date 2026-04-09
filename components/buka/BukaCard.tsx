@@ -9,6 +9,7 @@ import { Restaurant } from "@/lib/api/services/restaurants.service";
 import { useImportGoogleRestaurant, useSaveRestaurant, useSavedRestaurants, useRemoveSavedRestaurant } from "@/lib/api";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useAuth } from "@/context/AuthContext";
+import { RESTAURANT_PLACEHOLDER_IMG } from "@/lib/constants";
 
 export interface BukaRestaurant {
   id: string;
@@ -214,7 +215,11 @@ export function BukaCard({ restaurant }: BukaCardProps) {
 
       {/* Image */}
       <div className="relative w-full aspect-4/3 rounded-xl overflow-hidden group">
-        {restaurant.image ? (
+        {(!restaurant.image || restaurant.image === RESTAURANT_PLACEHOLDER_IMG) ? (
+          <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+            <UtensilsCrossed size={48} className="text-zinc-600" />
+          </div>
+        ) : (
           <Image
             src={restaurant.image}
             alt={restaurant.name}
@@ -222,10 +227,6 @@ export function BukaCard({ restaurant }: BukaCardProps) {
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
-        ) : (
-          <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-            <UtensilsCrossed size={48} className="text-zinc-600" />
-          </div>
         )}
         {/* Wishlist Bookmark */}
         <button

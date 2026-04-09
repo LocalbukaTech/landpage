@@ -1,13 +1,13 @@
 'use client';
 
-import {Suspense, useEffect, useState, useMemo} from 'react';
-import {useSearchParams, useRouter} from 'next/navigation';
+import {Suspense, useEffect, useMemo, useState} from 'react';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {MainLayout} from '@/components/layout/MainLayout';
 import {ProfileHeader} from '@/components/profile/ProfileHeader';
 import {ProfileTabs} from '@/components/profile/ProfileTabs';
 import {useAuth} from '@/context/AuthContext';
 import {useMe} from '@/lib/api/services/auth.hooks';
-import {useUserPosts, useSavedPosts} from '@/lib/api/services/profile.hooks';
+import {useRePosts, useSavedPosts, useUserPosts} from '@/lib/api/services/profile.hooks';
 import type {Post} from '@/types/post';
 import {Loader2} from 'lucide-react';
 
@@ -27,7 +27,7 @@ function ProfileContent() {
     router.replace(`/profile?${params.toString()}`, {scroll: false});
   };
 
-  const {data: meResponse, isLoading: isLoadingMe} = useMe();
+  const {data: meResponse} = useMe();
   const apiUser = ((meResponse as any)?.data?.data ||
     (meResponse as any)?.data ||
     authUser) as any;
@@ -37,6 +37,10 @@ function ProfileContent() {
     {page: 1, pageSize: 50},
   );
   const {data: savedPostsResponse, isLoading: isLoadingSaved} = useSavedPosts({
+    page: 1,
+    pageSize: 50,
+  });
+  const {data: rePostsResponse, isLoading: isLoadingRepost} = useRePosts({
     page: 1,
     pageSize: 50,
   });
@@ -51,7 +55,13 @@ function ProfileContent() {
   }, [userPostsResponse]);
 
   const displayPosts = useMemo(() => {
-    if (activeTab === 'repost' || activeTab === 'tagged') return [];
+    if (activeTab === 'tagged') return [];
+
+    if (activeTab === 'repost') {
+      return (rePostsResponse?.data?.data || []).map(
+          (item: any) => item.post || item,
+      );
+    }
     if (activeTab === 'saved') {
       return (savedPostsResponse?.data?.data || []).map(
         (item: any) => item.post || item,
@@ -61,16 +71,17 @@ function ProfileContent() {
     if (Array.isArray(data)) return data;
     if (data && 'data' in data && Array.isArray(data.data)) return data.data;
     return [];
-  }, [activeTab, savedPostsResponse, userPostsResponse]) as Post[];
+  }, [activeTab, savedPostsResponse, userPostsResponse, rePostsResponse]) as Post[];
 
   const isLoadingData = useMemo(() => {
     if (activeTab === 'saved') return isLoadingSaved;
     if (activeTab === 'videos') return isLoadingPosts;
+    if (activeTab === 'repost') return isLoadingRepost;
     return false;
-  }, [activeTab, isLoadingSaved, isLoadingPosts]);
+  }, [activeTab, isLoadingSaved, isLoadingPosts, isLoadingRepost]);
 
   useEffect(() => {
-    if (isAuthenticated === false) {
+    if (!isAuthenticated) {
       router.push('/feeds');
       openAuthModal();
     }

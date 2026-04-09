@@ -12,6 +12,7 @@ import {
   Users,
   User,
   Search,
+  Store,
 } from 'lucide-react';
 import Image from 'next/image';
 import {SearchOverlay} from '@/components/layout/SearchOverlay';
@@ -20,7 +21,7 @@ import {cn} from '@/lib/utils';
 import {useAuth} from '@/context/AuthContext';
 import {useUnreadCount} from '@/lib/api/services/notifications.hooks';
 
-const navItems = [
+const baseNavItems = [
   {icon: Home, label: 'Home', href: '/feeds'},
   {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
   {icon: PlusCircle, label: 'Upload', href: '/upload'},
@@ -29,6 +30,8 @@ const navItems = [
   {icon: Users, label: 'Community', href: '#'},
   {icon: User, label: 'Profile', href: '/profile'},
 ];
+
+const myRestaurantItem = {icon: Store, label: 'My Restaurant', href: '/buka/my-restaurant'};
 
 const mobileNavItems = [
   {icon: Home, label: 'Home', href: '/feeds'},
@@ -51,6 +54,15 @@ export function Sidebar() {
   const userAvatar = isAuthenticated
     ? user?.avatar || '/images/profile.png'
     : null;
+
+  // Inject My Restaurant nav item when authenticated
+  const navItems = isAuthenticated
+    ? [
+        ...baseNavItems.slice(0, 2),
+        myRestaurantItem,
+        ...baseNavItems.slice(2),
+      ]
+    : baseNavItems;
 
   // Fetch unread notification count
   const {data: unreadCountResponse} = useUnreadCount();

@@ -1,6 +1,6 @@
-import {clsx, type ClassValue} from 'clsx';
+import {type ClassValue, clsx} from 'clsx';
 import {twMerge} from 'tailwind-merge';
-import { formatDistanceToNow } from 'date-fns';
+import {formatDistanceToNow} from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -37,17 +37,13 @@ export function slugify(str: string): string {
  * Format a date string to a short relative time (e.g. 1d, 2h, 5m)
  */
 export function formatRelativeShort(dateString: string): string {
+  // ...existing implementation...
   if (!dateString) return '';
   
   try {
     const date = new Date(dateString);
-    let distance = formatDistanceToNow(date, { addSuffix: false });
-    
-    // Convert date-fns output to short format
-    // "about 1 hour" -> "1h"
-    // "2 days" -> "2d"
-    // "less than a minute" -> "1m"
-    
+    const distance = formatDistanceToNow(date, {addSuffix: false});
+
     return distance
       .replace('about ', '')
       .replace('less than a ', '1')
@@ -62,7 +58,24 @@ export function formatRelativeShort(dateString: string): string {
       .replace(' year', 'y')
       .replace(' years', 'y')
       .replace(/\s/g, '');
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     return '';
   }
 }
+
+/**
+ * Sort items by a date field in descending order (latest first).
+ * Items without the date field are pushed to the end.
+ */
+export function sortByLatest<T>(items: T[], dateKey: keyof T): T[] {
+  return [...items].sort((a, b) => {
+    const dateA = a[dateKey] as unknown as string | undefined;
+    const dateB = b[dateKey] as unknown as string | undefined;
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
+}
+

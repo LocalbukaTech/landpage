@@ -1,11 +1,15 @@
-import { api } from '../client';
-import type { ApiResponse } from '../types';
-import type { PostsResponse, PostsQueryParams } from '@/types/post';
+import {api} from '../client';
+import type {ApiResponse} from '../types';
+import type {PostsQueryParams, PostsResponse} from '@/types/post';
 
 export const profileService = {
   /** GET /users/me/saved-posts — Get own saved/bookmarked posts */
   getSavedPosts: (params?: PostsQueryParams) => {
     return api.get<ApiResponse<PostsResponse>>('/users/me/saved-posts', { params });
+  },
+  /** GET /users/me/reposts — Get own reposted posts */
+  getRePosts: (params?: PostsQueryParams) => {
+    return api.get<ApiResponse<PostsResponse>>('/users/me/reposts', {params});
   },
 
   /** GET /users/:id/posts — Get all posts by a user (for profile page) */

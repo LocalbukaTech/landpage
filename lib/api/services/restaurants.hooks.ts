@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { restaurantsService } from './restaurants.service';
-import { queryKeys } from '../types';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {restaurantsService} from '@/lib/api';
+import {queryKeys} from '../types';
 
 export const useRestaurants = (params?: { page?: number; pageSize?: number; city?: string }) => {
   return useQuery({
@@ -151,3 +151,36 @@ export const useCreateRestaurant = () => {
     },
   });
 };
+
+export const useUpdateRestaurant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, data}: { id: string; data: FormData }) =>
+        restaurantsService.updateRestaurant(id, data),
+    onSuccess: (_, {id}) => {
+      queryClient.invalidateQueries({queryKey: queryKeys.restaurants.all});
+      queryClient.invalidateQueries({queryKey: queryKeys.restaurants.detail(id)});
+    },
+  });
+};
+
+export const useDeleteRestaurant = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => restaurantsService.deleteRestaurant(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: queryKeys.restaurants.all});
+    },
+  });
+};
+
+export const useMyRestaurants = () => {
+  return useQuery({
+    queryKey: [...queryKeys.restaurants.all, 'my'],
+    queryFn: async () => {
+      const response = await restaurantsService.getMyRestaurants();
+      return response.data;
+    },
+  });
+};
+

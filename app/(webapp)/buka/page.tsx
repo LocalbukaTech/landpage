@@ -13,13 +13,29 @@ import { useRestaurants, useTrendingRestaurants, useSearchRestaurants } from "@/
 import { Restaurant } from "@/lib/api/services/restaurants.service";
 import { CgSpinner } from "react-icons/cg";
 import Link from "next/link";
+import Image from "next/image";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { RESTAURANT_PLACEHOLDER_IMG } from "@/lib/constants";
+
+// Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
+const sortDbFirstThenByDate = (items: BukaRestaurant[]): BukaRestaurant[] =>
+  [...items].sort((a, b) => {
+    const aIsGoogle = a.rawRestaurant?.source === "google" ? 1 : 0;
+    const bIsGoogle = b.rawRestaurant?.source === "google" ? 1 : 0;
+    if (aIsGoogle !== bIsGoogle) return aIsGoogle - bIsGoogle; // DB first
+    const dateA = a.rawRestaurant?.updatedAt;
+    const dateB = b.rawRestaurant?.updatedAt;
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
 
 // Helper to map API restaurant to BukaRestaurant UI interface
 const mapToBukaRestaurant = (res: Restaurant): BukaRestaurant => ({
   id: res.id || res.googlePlaceId || Math.random().toString(),
   name: res.name || "Unknown Restaurant",
-  image: res.photos && res.photos.length > 0 ? res.photos[0] : "",
+  image: res.photos && res.photos.length > 0 ? res.photos[0] : RESTAURANT_PLACEHOLDER_IMG,
   rating: res.avgRating || res.googleRating || 0,
   reviewCount: res.reviewCount || 0,
   address: res.address || "No address provided",
@@ -75,7 +91,8 @@ export default function BukaPage() {
   const trendingUiRestaurants = useMemo(() => {
     const rawData = trendingData as unknown as { data?: Restaurant[] } | Restaurant[];
     const arrayData = Array.isArray(rawData) ? rawData : rawData?.data;
-    return Array.isArray(arrayData) ? arrayData.map(mapToBukaRestaurant) : [];
+    const mapped = Array.isArray(arrayData) ? arrayData.map(mapToBukaRestaurant) : [];
+    return sortDbFirstThenByDate(mapped);
   }, [trendingData]);
 
   // We can populate the different UI categories by distributing the dynamic data:
@@ -86,7 +103,7 @@ export default function BukaPage() {
     combined.forEach(r => {
       if (!uniqueMap.has(r.id)) uniqueMap.set(r.id, r);
     });
-    return Array.from(uniqueMap.values());
+    return sortDbFirstThenByDate(Array.from(uniqueMap.values()));
   }, [allUiRestaurants, searchUiRestaurants]);
 
   const topRestaurants = trendingUiRestaurants.length > 0 ? trendingUiRestaurants.slice(0, 5) : combinedAll.slice(0, 5);
@@ -108,17 +125,18 @@ export default function BukaPage() {
           <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
 
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/feeds')}
             className="absolute top-8 left-8 z-10 flex items-center justify-center w-10 h-10 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors bg-transparent cursor-pointer"
             aria-label="Go back"
           >
             <ArrowLeft size={20} />
           </button>
 
-          <img
+          <Image
             src="/images/buka-hero-overlay.png"
             alt=""
-            className="absolute bottom-0 left-0 z-5 pointer-events-none"
+            fill
+            className="absolute bottom-0 left-0 z-5 pointer-events-none object-contain object-bottom-left"
           />
 
           <div className="absolute bottom-16 left-8 z-10 flex flex-col gap-5 max-w-md">
@@ -164,9 +182,11 @@ export default function BukaPage() {
         {/* Banner Image */}
         <div className="px-8 pb-16">
           <div className="w-[92%] mx-auto rounded-2xl overflow-hidden">
-            <img
+            <Image
               src="/images/buka_middle_Image.png"
               alt="LocalBuka"
+              width={1400}
+              height={500}
               className="w-full h-auto object-cover"
             />
           </div>

@@ -1,10 +1,9 @@
 "use client";
 
-import { Settings, Bell, LogOut } from "lucide-react";
+import {Bell, LogOut, Settings} from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 
-export function AdminHeader({handleLogout}: {handleLogout: () => void}) {
+export function AdminHeader({handleLogoutAction}: { handleLogoutAction: () => void }) {
   return (
     <header className="h-[80px] w-full bg-white flex items-center justify-end px-8 border-b border-gray-50">
       <div className="flex items-center gap-4">
@@ -34,8 +33,8 @@ export function AdminHeader({handleLogout}: {handleLogout: () => void}) {
         </div>
 
         {/* Logout */}
-        <button 
-          onClick={handleLogout}
+        <button
+            onClick={handleLogoutAction}
           className="ml-2 text-red-500 hover:text-red-600 transition-colors"
           title="Logout"
         >

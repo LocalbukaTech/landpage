@@ -3,7 +3,6 @@
 import {useEffect, useState, useRef, Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {Loader2} from 'lucide-react';
-import {setUserAuthToken, setUser} from '@/lib/auth';
 import { useExchangeGoogleCodeMutation } from '@/lib/api';
 import {useAuth} from '@/context/AuthContext';
 
@@ -11,7 +10,11 @@ const GoogleSuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {loginUser} = useAuth();
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    if (typeof window === "undefined") return '';
+    const code = new URLSearchParams(window.location.search).get('code');
+    return code ? '' : 'Authentication failed. No code received.';
+  });
   const [showSuccess, setShowSuccess] = useState(false);
   const googleExchangeMutation = useExchangeGoogleCodeMutation();
   const hasExchanged = useRef(false);
@@ -20,7 +23,6 @@ const GoogleSuccessContent = () => {
     const code = searchParams.get('code');
 
     if (!code) {
-      setError('Authentication failed. No code received.');
       return;
     }
 
@@ -52,7 +54,7 @@ const GoogleSuccessContent = () => {
         }
       }
     );
-  }, [searchParams, router, loginUser]);
+  }, [searchParams, router, loginUser, googleExchangeMutation]);
 
   const handleProceed = () => {
     router.push('/signup/preferences');

@@ -9,6 +9,7 @@ import { Pagination } from "@/components/buka/Pagination";
 import { useRestaurants, useSearchRestaurants } from "@/lib/api";
 import { CgSpinner } from "react-icons/cg";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { RESTAURANT_PLACEHOLDER_IMG } from "@/lib/constants";
 
 const LOCATIONS = [
   "Current Location",
@@ -29,8 +30,19 @@ const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
 
 const ITEMS_PER_PAGE = 12;
 
-const PLACEHOLDER_IMG =
-  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=80";
+// Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
+const sortDbFirstThenByDate = (items: BukaRestaurant[]): BukaRestaurant[] =>
+  [...items].sort((a, b) => {
+    const aIsGoogle = a.rawRestaurant?.source === "google" ? 1 : 0;
+    const bIsGoogle = b.rawRestaurant?.source === "google" ? 1 : 0;
+    if (aIsGoogle !== bIsGoogle) return aIsGoogle - bIsGoogle;
+    const dateA = a.rawRestaurant?.updatedAt;
+    const dateB = b.rawRestaurant?.updatedAt;
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
 
 function mapToBukaRestaurant(apiRest: any): BukaRestaurant {
   return {
@@ -39,7 +51,7 @@ function mapToBukaRestaurant(apiRest: any): BukaRestaurant {
     image:
       apiRest.photos && apiRest.photos.length > 0
         ? apiRest.photos[0]
-        : PLACEHOLDER_IMG,
+        : RESTAURANT_PLACEHOLDER_IMG,
     rating: apiRest.avgRating || apiRest.googleRating || 0,
     reviewCount: apiRest.reviewCount || 0,
     address: apiRest.address || `${apiRest.city || ""}, ${apiRest.state || ""}`,
@@ -66,9 +78,9 @@ export default function ExploreRestaurantsPage() {
   const locationRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Extract city for API call
+  // Extract city for API call (first part before the comma, e.g. "Ikeja" from "Ikeja, Lagos")
   const locationParts = selectedLocation.split(", ");
-  const city = locationParts.length > 1 ? locationParts[1] : locationParts[0];
+  const city = locationParts[0];
 
   // Fetch ALL restaurants from DB
   const { data: allRes, isLoading: isLoadingAll } = useRestaurants({
@@ -118,7 +130,7 @@ export default function ExploreRestaurantsPage() {
       if (id && !uniqueMap.has(id)) uniqueMap.set(id, c);
     });
 
-    return Array.from(uniqueMap.values()).map(mapToBukaRestaurant);
+    return sortDbFirstThenByDate(Array.from(uniqueMap.values()).map(mapToBukaRestaurant));
   }, [allRes, fallbackRes]);
 
   // Filters — no default cuisine

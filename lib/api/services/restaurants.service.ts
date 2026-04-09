@@ -130,9 +130,24 @@ export const restaurantsService = {
   // Create a new restaurant
   createRestaurant: (data: FormData) => {
     return api.post<ApiResponse<Restaurant>>('/restaurants', data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
+  },
+
+  // Update an existing restaurant
+  updateRestaurant: (id: string, data: FormData) => {
+    return api.patch<ApiResponse<Restaurant>>(`/restaurants/${id}`, data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  // Delete a restaurant
+  deleteRestaurant: (id: string) => {
+    return api.delete<ApiResponse<any>>(`/restaurants/${id}`);
+  },
+
+  // Get current user's own restaurants
+  getMyRestaurants: () => {
+    return api.get<ApiResponse<Restaurant[]>>('/restaurants/me');
   },
 };

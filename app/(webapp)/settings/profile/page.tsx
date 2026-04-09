@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SettingsSidebar } from "@/components/layout/SettingsSidebar";
 import { TopHeader } from "@/components/layout/TopHeader";

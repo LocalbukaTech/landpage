@@ -1,4 +1,4 @@
-import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {profileService} from './profile.service';
 import type {PostsQueryParams} from '@/types/post';
 import {queryKeys} from '../types';
@@ -7,6 +7,12 @@ export const useSavedPosts = (params?: PostsQueryParams) => {
   return useQuery({
     queryKey: queryKeys.users.savedPosts(params),
     queryFn: () => profileService.getSavedPosts(params),
+  });
+};
+export const useRePosts = (params?: PostsQueryParams) => {
+  return useQuery({
+    queryKey: queryKeys.users.reposts(params),
+    queryFn: () => profileService.getRePosts(params),
   });
 };
 

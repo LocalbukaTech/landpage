@@ -1,22 +1,21 @@
 'use client';
 
-import {useRouter, usePathname} from 'next/navigation';
-import {useEffect, useState} from 'react';
+import {usePathname, useRouter} from 'next/navigation';
+import {startTransition, useEffect, useState} from 'react';
 import Link from 'next/link';
 import {
-  Users,
-  ListCheck,
-  LogOut,
-  LayoutDashboard,
-  FileText,
-   User,
   Building2,
-  ShieldAlert,
-  Megaphone,
+  FileText,
+  LayoutDashboard,
   LineChart,
+  ListCheck,
+  Megaphone,
+  ShieldAlert,
+  User,
+  Users,
 } from 'lucide-react';
 import Image from 'next/image';
-import {isAuthenticated, getAdminUser, logout} from '@/lib/auth';
+import {getAdminUser, isAuthenticated, logout} from '@/lib/auth';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,8 +28,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import {Admin} from '@/lib/api/services/auth.service';
-import { FaUsers } from "react-icons/fa6";
-import { AdminHeader } from '@/components/admin/layout/AdminHeader';
+import {FaUsers} from "react-icons/fa6";
+import {AdminHeader} from '@/components/admin/layout/AdminHeader';
 
 export default function AdminLayout({children}: {children: React.ReactNode}) {
   const router = useRouter();
@@ -46,7 +45,6 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
   useEffect(() => {
     // Skip auth check for login page
     if (isLoginPage) {
-      setIsLoading(false);
       return;
     }
 
@@ -54,9 +52,11 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
     const authenticated = isAuthenticated();
     const adminUser = getAdminUser();
 
-    setIsAuth(authenticated);
-    setAdmin(adminUser);
-    setIsLoading(false);
+    startTransition(() => {
+      setIsAuth(authenticated);
+      setAdmin(adminUser);
+      setIsLoading(false);
+    });
 
     if (!authenticated) {
       router.push('/secure-admin/login');
@@ -197,7 +197,7 @@ export default function AdminLayout({children}: {children: React.ReactNode}) {
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header takes up its required space and doesn't shrink */}
         <div className="shrink-0">
-          <AdminHeader  handleLogout={() => setShowLogoutConfirm(true)}/>
+          <AdminHeader handleLogoutAction={() => setShowLogoutConfirm(true)}/>
         </div>
         
         {/* Main content is exactly the remaining height and scrolls internally */}

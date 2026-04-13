@@ -1,35 +1,26 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { BukaCategory } from "@/components/buka/BukaCategory";
-import { BukaRestaurant } from "@/components/buka/BukaCard";
-import { CuisineSection } from "@/components/buka/CuisineSection";
-import { Waitlist } from "@/components/buka/Waitlist";
-import { Images } from "@/public/images";
+import {ArrowLeft} from "lucide-react";
+import {useRouter} from "next/navigation";
+import {BukaCategory} from "@/components/buka/BukaCategory";
+import {BukaRestaurant} from "@/components/buka/BukaCard";
+import {CuisineSection} from "@/components/buka/CuisineSection";
+import {Waitlist} from "@/components/buka/Waitlist";
+import {Images} from "@/public/images";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRestaurants, useTrendingRestaurants, useSearchRestaurants } from "@/lib/api";
-import { Restaurant } from "@/lib/api/services/restaurants.service";
-import { CgSpinner } from "react-icons/cg";
+import {useEffect, useMemo, useState} from "react";
+import {useRestaurants, useSearchRestaurants, useTrendingRestaurants} from "@/lib/api";
+import {Restaurant} from "@/lib/api/services/restaurants.service";
+import {CgSpinner} from "react-icons/cg";
 import Link from "next/link";
 import Image from "next/image";
-import { useGeolocation } from "@/hooks/useGeolocation";
-import { RESTAURANT_PLACEHOLDER_IMG } from "@/lib/constants";
+import {useGeolocation} from "@/hooks/useGeolocation";
+import {RESTAURANT_PLACEHOLDER_IMG} from "@/lib/constants";
+import {helper} from "@/utils/helper";
+import {useAuth} from "@/context/AuthContext";
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
-const sortDbFirstThenByDate = (items: BukaRestaurant[]): BukaRestaurant[] =>
-  [...items].sort((a, b) => {
-    const aIsGoogle = a.rawRestaurant?.source === "google" ? 1 : 0;
-    const bIsGoogle = b.rawRestaurant?.source === "google" ? 1 : 0;
-    if (aIsGoogle !== bIsGoogle) return aIsGoogle - bIsGoogle; // DB first
-    const dateA = a.rawRestaurant?.updatedAt;
-    const dateB = b.rawRestaurant?.updatedAt;
-    if (!dateA && !dateB) return 0;
-    if (!dateA) return 1;
-    if (!dateB) return -1;
-    return new Date(dateB).getTime() - new Date(dateA).getTime();
-  });
+
 
 // Helper to map API restaurant to BukaRestaurant UI interface
 const mapToBukaRestaurant = (res: Restaurant): BukaRestaurant => ({
@@ -60,6 +51,7 @@ export default function BukaPage() {
   const router = useRouter();
   const { lat, lng, loading: loadingGeo } = useGeolocation();
   const [heroBgUrl, setHeroBgUrl] = useState("url('/images/buka.gif')");
+  const {isAuthenticated} = useAuth()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -92,7 +84,7 @@ export default function BukaPage() {
     const rawData = trendingData as unknown as { data?: Restaurant[] } | Restaurant[];
     const arrayData = Array.isArray(rawData) ? rawData : rawData?.data;
     const mapped = Array.isArray(arrayData) ? arrayData.map(mapToBukaRestaurant) : [];
-    return sortDbFirstThenByDate(mapped);
+    return helper.sortDbFirstThenByDate(mapped);
   }, [trendingData]);
 
   // We can populate the different UI categories by distributing the dynamic data:
@@ -103,7 +95,7 @@ export default function BukaPage() {
     combined.forEach(r => {
       if (!uniqueMap.has(r.id)) uniqueMap.set(r.id, r);
     });
-    return sortDbFirstThenByDate(Array.from(uniqueMap.values()));
+    return helper.sortDbFirstThenByDate(Array.from(uniqueMap.values()));
   }, [allUiRestaurants, searchUiRestaurants]);
 
   const topRestaurants = trendingUiRestaurants.length > 0 ? trendingUiRestaurants.slice(0, 5) : combinedAll.slice(0, 5);
@@ -199,9 +191,11 @@ export default function BukaPage() {
           )}
         </div>
         {/* WaitList Section */}
+        {!isAuthenticated &&
         <div className="px-8 pb-16">
           <Waitlist />
         </div>
+        }
       </div>
     </div>
   );

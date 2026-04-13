@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
-import { Search, MapPin, ChevronDown, ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { CuisineFilters, FilterState } from "@/components/buka/CuisineFilters";
-import { BukaCard, BukaRestaurant } from "@/components/buka/BukaCard";
-import { Pagination } from "@/components/buka/Pagination";
-import { useRestaurants, useSearchRestaurants } from "@/lib/api";
-import { CgSpinner } from "react-icons/cg";
-import { useGeolocation } from "@/hooks/useGeolocation";
-import { RESTAURANT_PLACEHOLDER_IMG } from "@/lib/constants";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {ArrowLeft, ChevronDown, MapPin, Search} from "lucide-react";
+import {useRouter} from "next/navigation";
+import {CuisineFilters, FilterState} from "@/components/buka/CuisineFilters";
+import {BukaCard, BukaRestaurant} from "@/components/buka/BukaCard";
+import {Pagination} from "@/components/buka/Pagination";
+import {useRestaurants, useSearchRestaurants} from "@/lib/api";
+import {CgSpinner} from "react-icons/cg";
+import {useGeolocation} from "@/hooks/useGeolocation";
+import {RESTAURANT_PLACEHOLDER_IMG} from "@/lib/constants";
+import {helper} from "@/utils/helper";
 
 const LOCATIONS = [
   "Current Location",
@@ -31,18 +32,7 @@ const LOCATION_COORDS: Record<string, { lat: number; lng: number }> = {
 const ITEMS_PER_PAGE = 12;
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
-const sortDbFirstThenByDate = (items: BukaRestaurant[]): BukaRestaurant[] =>
-  [...items].sort((a, b) => {
-    const aIsGoogle = a.rawRestaurant?.source === "google" ? 1 : 0;
-    const bIsGoogle = b.rawRestaurant?.source === "google" ? 1 : 0;
-    if (aIsGoogle !== bIsGoogle) return aIsGoogle - bIsGoogle;
-    const dateA = a.rawRestaurant?.updatedAt;
-    const dateB = b.rawRestaurant?.updatedAt;
-    if (!dateA && !dateB) return 0;
-    if (!dateA) return 1;
-    if (!dateB) return -1;
-    return new Date(dateB).getTime() - new Date(dateA).getTime();
-  });
+
 
 function mapToBukaRestaurant(apiRest: any): BukaRestaurant {
   return {
@@ -130,7 +120,7 @@ export default function ExploreRestaurantsPage() {
       if (id && !uniqueMap.has(id)) uniqueMap.set(id, c);
     });
 
-    return sortDbFirstThenByDate(Array.from(uniqueMap.values()).map(mapToBukaRestaurant));
+    return helper.sortDbFirstThenByDate(Array.from(uniqueMap.values()).map(mapToBukaRestaurant));
   }, [allRes, fallbackRes]);
 
   // Filters — no default cuisine

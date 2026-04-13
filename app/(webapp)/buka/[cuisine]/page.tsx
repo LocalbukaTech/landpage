@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
-import { useParams } from "next/navigation";
-import { Search, MapPin, ChevronDown } from "lucide-react";
-import { CuisineHero } from "@/components/buka/CuisineHero";
-import { CuisineFilters, FilterState } from "@/components/buka/CuisineFilters";
-import { BukaCard, BukaRestaurant } from "@/components/buka/BukaCard";
-import { Pagination } from "@/components/buka/Pagination";
-import { Images } from "@/public/images";
-import { useRestaurantsByCuisine, useSearchRestaurants } from "@/lib/api";
-import { CgSpinner } from "react-icons/cg";
-import { RESTAURANT_PLACEHOLDER_IMG } from "@/lib/constants";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {useParams} from "next/navigation";
+import {ChevronDown, MapPin, Search} from "lucide-react";
+import {CuisineHero} from "@/components/buka/CuisineHero";
+import {CuisineFilters, FilterState} from "@/components/buka/CuisineFilters";
+import {BukaCard, BukaRestaurant} from "@/components/buka/BukaCard";
+import {Pagination} from "@/components/buka/Pagination";
+import {Images} from "@/public/images";
+import {useRestaurantsByCuisine, useSearchRestaurants} from "@/lib/api";
+import {CgSpinner} from "react-icons/cg";
+import {RESTAURANT_PLACEHOLDER_IMG} from "@/lib/constants";
+import {helper} from "@/utils/helper";
 
 // Map slug → cuisine filter name
 const SLUG_TO_CUISINE: Record<string, string> = {
@@ -81,18 +82,7 @@ const LOCATION_COORDS: Record<string, { lat: number, lng: number }> = {
 const ITEMS_PER_PAGE = 9;
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
-const sortDbFirstThenByDate = (items: BukaRestaurant[]): BukaRestaurant[] =>
-  [...items].sort((a, b) => {
-    const aIsGoogle = a.rawRestaurant?.source === "google" ? 1 : 0;
-    const bIsGoogle = b.rawRestaurant?.source === "google" ? 1 : 0;
-    if (aIsGoogle !== bIsGoogle) return aIsGoogle - bIsGoogle;
-    const dateA = a.rawRestaurant?.updatedAt;
-    const dateB = b.rawRestaurant?.updatedAt;
-    if (!dateA && !dateB) return 0;
-    if (!dateA) return 1;
-    if (!dateB) return -1;
-    return new Date(dateB).getTime() - new Date(dateA).getTime();
-  });
+
 
 function mapToBukaRestaurant(apiRest: any): BukaRestaurant {
   return {
@@ -171,7 +161,7 @@ export default function CuisineDetailPage() {
       if (id && !uniqueMap.has(id)) uniqueMap.set(id, c);
     });
 
-    return sortDbFirstThenByDate(Array.from(uniqueMap.values()).map(mapToBukaRestaurant));
+    return helper.sortDbFirstThenByDate(Array.from(uniqueMap.values()).map(mapToBukaRestaurant));
   }, [cuisineRes, fallbackSearchRes]);
 
   const [filters, setFilters] = useState<FilterState>({

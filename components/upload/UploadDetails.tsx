@@ -1,28 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { 
-  MapPin, 
-  Tag, 
-  Hash, 
-  Volume2, 
-  VolumeX,
-  MoreVertical, 
-  Loader2,
-  X,
-  User as UserIcon
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useRestaurants } from "@/lib/api/services/restaurants.hooks";
-import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerTrigger, 
-  DrawerClose 
-} from "@/components/ui/drawer";
-import { Search as SearchIcon } from "lucide-react";
+import {useRef, useState} from "react";
+import Image from "next/image";
+import {Hash, Loader2, MapPin, MoreVertical, Search as SearchIcon, Tag, Volume2, VolumeX, X} from "lucide-react";
+import {cn} from "@/lib/utils";
+import {useRestaurants} from "@/lib/api/services/restaurants.hooks";
+import {Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger} from "@/components/ui/drawer";
 
 interface UploadDetailsProps {
   file: File;
@@ -34,12 +17,13 @@ interface UploadDetailsProps {
 export function UploadDetails({ file, onPost, onDiscard, isUploading = false }: UploadDetailsProps) {
   const isImage = file.type.startsWith("image/");
   const [description, setDescription] = useState("");
-  const videoUrl = useRef(URL.createObjectURL(file));
+  const [mediaUrl] = useState(() => URL.createObjectURL(file));
   const videoRef = useRef<HTMLVideoElement>(null);
   
   // UI States
   const [showLocations, setShowLocations] = useState(false);
   const [showUsers, setShowUsers] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [inputFocus, setInputFocus] = useState(false);
   
   // Tagging States
@@ -47,7 +31,6 @@ export function UploadDetails({ file, onPost, onDiscard, isUploading = false }: 
   const [selectedRestaurant, setSelectedRestaurant] = useState<{ id: string; name: string } | null>(null);
 
   // Video States
-  const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false); // Unmuted by default as requested
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -227,11 +210,12 @@ export function UploadDetails({ file, onPost, onDiscard, isUploading = false }: 
                             }}
                             className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-zinc-50 transition-colors text-left"
                           >
-                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-100 shrink-0">
-                              <img 
-                                src={r.photos?.[0] || "/images/placeholder-restaurant.png"} 
-                                alt={r.name} 
-                                className="w-full h-full object-cover"
+                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-zinc-100 shrink-0 relative">
+                              <Image
+                                  src={r.photos?.[0] || "/images/placeholder-restaurant.png"}
+                                alt={r.name}
+                                  fill
+                                  className="object-cover"
                               />
                             </div>
                             <div className="flex flex-col">
@@ -349,22 +333,24 @@ export function UploadDetails({ file, onPost, onDiscard, isUploading = false }: 
 
           {/* Right Column: Video Preview */}
           <div className="w-full lg:w-[320px] bg-black rounded-2xl overflow-hidden relative aspect-9/16 lg:aspect-auto h-[500px] group">
-            {isLoading && (
+            {isLoading && !isImage && (
               <div className="absolute inset-0 flex items-center justify-center z-20 bg-black/20">
                 <Loader2 className="w-10 h-10 text-white animate-spin" />
               </div>
             )}
             
             {isImage ? (
-              <img 
-                src={videoUrl.current} 
-                alt="Preview" 
-                className="w-full h-full object-cover"
+                <Image
+                    src={mediaUrl}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                    unoptimized
               />
             ) : (
               <video
                 ref={videoRef}
-                src={videoUrl.current}
+                src={mediaUrl}
                 className="w-full h-full object-cover"
                 loop
                 autoPlay

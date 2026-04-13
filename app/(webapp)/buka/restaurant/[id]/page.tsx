@@ -1,22 +1,35 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import {useCallback, useEffect, useState} from "react";
+import {useParams, useRouter} from "next/navigation";
 import Image from "next/image";
 import {
   ArrowLeft,
-  Star,
-  MapPin,
-  Phone,
   Bookmark,
-  Share2,
-  UtensilsCrossed,
-  MoreVertical,
   ChevronRight,
-  Route
+  MapPin,
+  MoreVertical,
+  Phone,
+  Route,
+  Share2,
+  Star,
+  UtensilsCrossed
 } from "lucide-react";
-import { BukaCard, BukaRestaurant } from "@/components/buka/BukaCard";
+import {BukaCard, BukaRestaurant} from "@/components/buka/BukaCard";
 import dynamic from "next/dynamic";
+import {
+  useGoogleReviews,
+  useRemoveSavedRestaurant,
+  useRestaurant,
+  useReviews,
+  useSavedRestaurants,
+  useSaveRestaurant,
+  useSearchRestaurants
+} from "@/lib/api";
+import {CgSpinner} from "react-icons/cg";
+import {useRequireAuth} from "@/hooks/useRequireAuth";
+import {RESTAURANT_PLACEHOLDER_IMG} from "@/lib/constants";
+import {helper} from "@/utils/helper";
 
 const MapEmbed = dynamic(() => import("@/components/buka/MapEmbed").then(mod => mod.MapEmbed), {
   ssr: false,
@@ -27,35 +40,10 @@ const MapEmbed = dynamic(() => import("@/components/buka/MapEmbed").then(mod => 
   ),
 });
 
-import { 
-  useRestaurant, 
-  useReviews, 
-  useGoogleReviews, 
-  useSavedRestaurants, 
-  useSaveRestaurant, 
-  useRemoveSavedRestaurant,
-  useSearchRestaurants 
-} from "@/lib/api";
-import { CgSpinner } from "react-icons/cg";
-import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { RESTAURANT_PLACEHOLDER_IMG } from "@/lib/constants";
-
 // Mock Fallbacks
 const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80";
 
 // Sort: DB items first, then Google, each group by latest updatedAt
-const sortDbFirstThenByDate = (items: BukaRestaurant[]): BukaRestaurant[] =>
-  [...items].sort((a, b) => {
-    const aIsGoogle = a.rawRestaurant?.source === "google" ? 1 : 0;
-    const bIsGoogle = b.rawRestaurant?.source === "google" ? 1 : 0;
-    if (aIsGoogle !== bIsGoogle) return aIsGoogle - bIsGoogle;
-    const dateA = a.rawRestaurant?.updatedAt;
-    const dateB = b.rawRestaurant?.updatedAt;
-    if (!dateA && !dateB) return 0;
-    if (!dateA) return 1;
-    if (!dateB) return -1;
-    return new Date(dateB).getTime() - new Date(dateA).getTime();
-  });
 
 function mapToSimilarRestaurant(apiRest: any): BukaRestaurant {
   return {
@@ -106,7 +94,7 @@ function SimilarRestaurants({ lat, lng, currentId }: { lat: number; lng: number;
   })();
 
   // Sort: DB restaurants first, then Google
-  const sorted = sortDbFirstThenByDate(nearby).slice(0, 3);
+  const sorted = helper.sortDbFirstThenByDate(nearby).slice(0, 3);
 
   if (isLoading) {
     return (

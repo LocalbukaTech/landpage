@@ -1,15 +1,15 @@
-import { PostUser } from "./post";
+import {PostUser} from './post';
 
-export type NotificationType = 
-  | 'like_post' 
-  | 'unlike_post' 
-  | 'follow' 
-  | 'unfollow' 
-  | 'repost' 
-  | 'comment' 
+export type NotificationType =
+  | 'like_post'
+  | 'unlike_post'
+  | 'follow'
+  | 'unfollow'
+  | 'repost'
+  | 'comment'
   | 'mention';
 
-export type EntityType = 'post' | 'user' | 'comment';
+export type EntityType = 'post' | 'user' | 'comment' | 'restaurant';
 
 export interface Notification {
   id: string;

@@ -32,6 +32,22 @@ export const useUserProfile = (id: string) => {
   });
 };
 
+export const useUserStats = (id: string) => {
+  return useQuery({
+    queryKey: ['users', id, 'stats'],
+    queryFn: () => profileService.getUserStats(id),
+    enabled: !!id,
+  });
+};
+
+export const useUserReposts = (id: string, params?: PostsQueryParams) => {
+  return useQuery({
+    queryKey: ['users', id, 'reposts', params],
+    queryFn: () => profileService.getUserReposts(id, params),
+    enabled: !!id,
+  });
+};
+
 export const useFollowUser = () => {
   const queryClient = useQueryClient();
 

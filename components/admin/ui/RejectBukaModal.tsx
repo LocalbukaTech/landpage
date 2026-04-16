@@ -1,14 +1,25 @@
+"use client";
+
+import { useState } from "react";
 import { X } from "lucide-react";
 
 interface RejectBukaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onReject: () => void;
+  onReject: (reason: string) => void;
   restaurantName: string;
 }
 
 export function RejectBukaModal({ isOpen, onClose, onReject, restaurantName }: RejectBukaModalProps) {
+  const [reason, setReason] = useState("");
+
   if (!isOpen) return null;
+
+  const handleReject = () => {
+    if (!reason.trim()) return;
+    onReject(reason);
+    setReason(""); // Reset for next use
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
@@ -37,9 +48,11 @@ export function RejectBukaModal({ isOpen, onClose, onReject, restaurantName }: R
               Reason for Rejection
             </label>
             <textarea 
-              className="w-full border border-[#1f2937] rounded-xl px-4 py-3 text-gray-700 min-h-[60px] resize-none focus:outline-none focus:ring-1 text-[15px]" 
-              placeholder="Text"
-              rows={2}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full border border-[#1f2937] rounded-xl px-4 py-3 text-gray-700 min-h-[100px] resize-none focus:outline-none focus:ring-1 focus:ring-primary text-[15px]" 
+              placeholder="Provide a reason for the restaurant owner..."
+              rows={4}
             />
           </div>
         </div>
@@ -53,8 +66,9 @@ export function RejectBukaModal({ isOpen, onClose, onReject, restaurantName }: R
             No, Cancel
           </button>
           <button 
-            onClick={onReject}
-            className="flex-1 py-4 bg-[#fbbe15] text-[#0f172a] font-semibold text-[16px] rounded-xl hover:bg-[#eab308] transition-colors shadow-sm"
+            onClick={handleReject}
+            disabled={!reason.trim()}
+            className="flex-1 py-4 bg-[#fbbe15] text-[#0f172a] font-semibold text-[16px] rounded-xl hover:bg-[#eab308] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Yes, Reject
           </button>

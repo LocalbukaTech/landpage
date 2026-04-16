@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { restaurantsService } from './restaurants.service';
 import { queryKeys } from '../types';
 
-export const useRestaurants = (params?: { page?: number; pageSize?: number; city?: string }) => {
+export const useRestaurants = (params?: { page?: number; pageSize?: number; city?: string; status?: string; search?: string }) => {
   return useQuery({
     queryKey: [...queryKeys.restaurants.list(params)],
     queryFn: async () => {
@@ -30,6 +30,17 @@ export const useSearchRestaurants = (params: { lat: number; lng: number; page?: 
       return response.data;
     },
     enabled: enabled && !!params.lat && !!params.lng,
+  });
+};
+
+export const useSearchAll = (params: { q: string; type?: string; page?: number; pageSize?: number }, enabled = true) => {
+  return useQuery({
+    queryKey: ['search', params],
+    queryFn: async () => {
+      const response = await restaurantsService.searchAll(params);
+      return response.data;
+    },
+    enabled: enabled && !!params.q,
   });
 };
 
@@ -148,6 +159,18 @@ export const useCreateRestaurant = () => {
     mutationFn: (data: FormData) => restaurantsService.createRestaurant(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.restaurants.all });
+    },
+  });
+};
+
+export const useUpdateRestaurantStatus = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, data}: { id: string; data: { status: string; reason?: string } }) =>
+        restaurantsService.updateRestaurantStatus(id, data),
+    onSuccess: (_, {id}) => {
+      queryClient.invalidateQueries({queryKey: queryKeys.restaurants.all});
+      queryClient.invalidateQueries({queryKey: queryKeys.restaurants.detail(id)});
     },
   });
 };

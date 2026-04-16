@@ -8,6 +8,7 @@ import {useRequireAuth} from '@/hooks/useRequireAuth';
 import {useFollowUser, useFollowing} from '@/lib/api/services/profile.hooks';
 import {useRepostPost} from '@/lib/api/services/posts.hooks';
 import {useAuth} from '@/context/AuthContext';
+import {useRouter} from 'next/navigation';
 import {ShareDrawer} from './ShareDrawer';
 import {AnimatedCount} from './AnimatedCount';
 import type {Post} from '@/types/post';
@@ -29,6 +30,7 @@ export function ActionBar({
 }: ActionBarProps) {
   const {requireAuth} = useRequireAuth();
   const {user} = useAuth();
+  const router = useRouter();
   const followUserMutation = useFollowUser();
   const repostPostMutation = useRepostPost();
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -105,6 +107,15 @@ export function ActionBar({
         },
       });
     });
+  };
+
+  const handleAvatarClick = () => {
+    if (!post?.user?.id) return;
+    if (post.user.id === user?.id) {
+      router.push('/profile');
+    } else {
+      router.push(`/other-profile?id=${post.user.id}`);
+    }
   };
 
   const handleLike = () => {
@@ -188,7 +199,9 @@ export function ActionBar({
   return (
     <div className='flex flex-col gap-4 pb-4 items-center'>
       {/* Avatar with follow button */}
-      <div className='relative mb-2 mt-4 cursor-pointer hover:opacity-90 active:scale-95 transition-all'>
+      <div
+        onClick={handleAvatarClick}
+        className='relative mb-2 mt-4 cursor-pointer hover:opacity-90 active:scale-95 transition-all'>
         <div className='w-11 h-11 rounded-full overflow-hidden border-2 border-white/80 bg-zinc-800'>
           <Image
             src={

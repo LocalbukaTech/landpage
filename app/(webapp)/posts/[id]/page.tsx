@@ -1,24 +1,28 @@
-import {Metadata} from "next";
-import {postsService} from "@/lib/api/services/posts.service";
-import {MainLayout} from "@/components/layout/MainLayout";
-import {PostClient} from "./PostClient";
+import {Metadata} from 'next';
+import {postsService} from '@/lib/api/services/posts.service';
+import {MainLayout} from '@/components/layout/MainLayout';
+import {PostClient} from './PostClient';
+import {Suspense} from 'react';
+import {Loader2} from 'lucide-react';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{id: string}>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
+export async function generateMetadata({params}: PageProps): Promise<Metadata> {
+  const {id} = await params;
   try {
     const response = await postsService.getPost(id);
-    const post = (response as any)?.data?.data || (response as any)?.data || response;
-    
-    if (!post) throw new Error("Post not found");
+    const post =
+      (response as any)?.data?.data || (response as any)?.data || response;
 
-    const title = `${post.user?.fullName || "A user"} on LocalBuka`;
-    const description = post.caption || "Taste the world, one plate at a time with LocalBuka.";
+    if (!post) throw new Error('Post not found');
+
+    const title = `${post.user?.fullName || 'A user'} on LocalBuka`;
+    const description =
+      post.caption || 'Taste the world, one plate at a time with LocalBuka.';
     const imageUrl = post.mediaUrl;
-    const siteUrl = "https://www.localbuka.com";
+    const siteUrl = 'https://www.localbuka.com';
     const postUrl = `${siteUrl}/posts/${id}`;
 
     return {
@@ -28,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title,
         description,
         url: postUrl,
-        siteName: "LocalBuka",
+        siteName: 'LocalBuka',
         images: [
           {
             url: imageUrl,
@@ -37,39 +41,47 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             alt: title,
           },
         ],
-        type: "video.other",
+        type: 'video.other',
       },
       twitter: {
-        card: "summary_large_image",
+        card: 'summary_large_image',
         title,
         description,
         images: [imageUrl],
-        creator: "@localbuka",
+        creator: '@localbuka',
       },
     };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_error) {
     return {
-      title: "Post | LocalBuka",
-      description: "Discover authentic culinary experiences on LocalBuka.",
+      title: 'Post | LocalBuka',
+      description: 'Discover authentic culinary experiences on LocalBuka.',
     };
   }
 }
 
-export default async function SinglePostPage({ params }: PageProps) {
-  const { id } = await params;
+export default async function SinglePostPage({params}: PageProps) {
+  const {id} = await params;
   let initialPost = null;
-  
+
   try {
     const response = await postsService.getPost(id);
-    initialPost = (response as any)?.data?.data || (response as any)?.data || response;
+    initialPost =
+      (response as any)?.data?.data || (response as any)?.data || response;
   } catch (e) {
-    console.error("Error fetching post for SSR:", e);
+    console.error('Error fetching post for SSR:', e);
   }
 
   return (
     <MainLayout>
-      <PostClient id={id} initialPost={initialPost} />
+      <Suspense
+        fallback={
+          <div className='flex items-center justify-center h-full'>
+            <Loader2 className='w-8 h-8 animate-spin text-[#FFC727]' />
+          </div>
+        }>
+        <PostClient id={id} initialPost={initialPost} />
+      </Suspense>
     </MainLayout>
   );
 }

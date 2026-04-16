@@ -1,5 +1,5 @@
-import { api } from '../client';
-import { PaginatedResponse, ApiResponse } from '../types';
+import {api} from '../client';
+import {PaginatedResponse, ApiResponse} from '../types';
 
 export interface Restaurant {
   id: string | null;
@@ -63,8 +63,14 @@ export interface GoogleReview {
 
 export const restaurantsService = {
   // Get all restaurants
-  getRestaurants: (params?: { page?: number; pageSize?: number; city?: string }) => {
-    return api.get<ApiResponse<PaginatedResponse<Restaurant>>>('/restaurants', { params });
+  getRestaurants: (params?: {
+    page?: number;
+    pageSize?: number;
+    city?: string;
+  }) => {
+    return api.get<ApiResponse<PaginatedResponse<Restaurant>>>('/restaurants', {
+      params,
+    });
   },
 
   // Get trending restaurants
@@ -73,13 +79,27 @@ export const restaurantsService = {
   },
 
   // Search restaurants
-  searchRestaurants: (params: { lat: number; lng: number; page?: number; pageSize?: number }) => {
-    return api.get<ApiResponse<PaginatedResponse<Restaurant>>>('/restaurants/search', { params });
+  searchRestaurants: (params: {
+    lat: number;
+    lng: number;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    return api.get<ApiResponse<PaginatedResponse<Restaurant>>>(
+      '/restaurants/search',
+      {params},
+    );
   },
 
   // Get restaurants by cuisine
-  getRestaurantsByCuisine: (cuisine: string, params?: { page?: number; pageSize?: number; city?: string }) => {
-    return api.get<ApiResponse<Restaurant[]>>(`/restaurants/cuisine/${cuisine}`, { params });
+  getRestaurantsByCuisine: (
+    cuisine: string,
+    params?: {page?: number; pageSize?: number; city?: string},
+  ) => {
+    return api.get<ApiResponse<Restaurant[]>>(
+      `/restaurants/cuisine/${cuisine}`,
+      {params},
+    );
   },
 
   // Get restaurant by id
@@ -103,8 +123,10 @@ export const restaurantsService = {
   },
 
   // Add a review for a restaurant
-  addReview: (id: string, data: any) => {
-    return api.post<ApiResponse<Review>>(`/restaurants/${id}/reviews`, data);
+  addReview: (id: string, data: FormData) => {
+    return api.post<ApiResponse<Review>>(`/restaurants/${id}/reviews`, data, {
+      headers: {'Content-Type': 'multipart/form-data'},
+    });
   },
 
   // Get LocalBuka reviews for a restaurant
@@ -114,30 +136,36 @@ export const restaurantsService = {
 
   // Get Google reviews for a restaurant
   getGoogleReviews: (id: string) => {
-    return api.get<ApiResponse<GoogleReview[]>>(`/restaurants/${id}/reviews/google`);
+    return api.get<ApiResponse<GoogleReview[]>>(
+      `/restaurants/${id}/reviews/google`,
+    );
   },
 
   // Delete a review
   deleteReview: (id: string, reviewId: string) => {
-    return api.delete<ApiResponse<any>>(`/restaurants/${id}/reviews/${reviewId}`);
+    return api.delete<ApiResponse<any>>(
+      `/restaurants/${id}/reviews/${reviewId}`,
+    );
   },
 
   // Import a Google restaurant into our DB by placeId
   importGoogleRestaurant: (placeId: string) => {
-    return api.post<ApiResponse<Restaurant>>(`/restaurants/google/${placeId}/import`);
+    return api.post<ApiResponse<Restaurant>>(
+      `/restaurants/google/${placeId}/import`,
+    );
   },
 
   // Create a new restaurant
   createRestaurant: (data: FormData) => {
     return api.post<ApiResponse<Restaurant>>('/restaurants', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: {'Content-Type': 'multipart/form-data'},
     });
   },
 
   // Update an existing restaurant
   updateRestaurant: (id: string, data: FormData) => {
     return api.patch<ApiResponse<Restaurant>>(`/restaurants/${id}`, data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: {'Content-Type': 'multipart/form-data'},
     });
   },
 

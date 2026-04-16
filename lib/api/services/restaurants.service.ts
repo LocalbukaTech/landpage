@@ -26,6 +26,14 @@ export interface Restaurant {
   ownerId: string | null;
   createdAt?: string;
   updatedAt?: string;
+  status?: 'pending' | 'approved' | 'rejected' | 'suspended';
+  moderationReason?: string;
+  owner?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
 }
 
 export interface Review {
@@ -67,10 +75,22 @@ export const restaurantsService = {
     page?: number;
     pageSize?: number;
     city?: string;
+    status?: string;
+    search?: string;
   }) => {
     return api.get<ApiResponse<PaginatedResponse<Restaurant>>>('/restaurants', {
       params,
     });
+  },
+  // Update an existing restaurant's moderation status
+  updateRestaurantStatus: (
+    id: string,
+    data: {status: string; reason?: string},
+  ) => {
+    return api.patch<ApiResponse<Restaurant>>(
+      `/restaurants/${id}/status`,
+      data,
+    );
   },
 
   // Get trending restaurants
@@ -91,6 +111,17 @@ export const restaurantsService = {
     );
   },
 
+  // Global search across restaurants
+  searchAll: (params: {
+    q: string;
+    type?: string;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    return api.get<ApiResponse<PaginatedResponse<Restaurant>>>('/search', {
+      params,
+    });
+  },
   // Get restaurants by cuisine
   getRestaurantsByCuisine: (
     cuisine: string,

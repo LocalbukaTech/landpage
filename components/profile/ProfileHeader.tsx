@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {useState, useMemo} from 'react';
+import {useState, useMemo, useEffect} from 'react';
+import {useGeolocation} from '@/hooks/useGeolocation';
 import {Settings, Loader2} from 'lucide-react';
 import SocialModal from '../social/SocialModal';
 import {IoMdShareAlt} from 'react-icons/io';
@@ -23,9 +24,15 @@ interface ProfileHeaderProps {
   userData?: PostUser | User | any;
   /** Total posts count */
   postsCount?: number;
+  /** Total likes given, shown on other-profile */
+  likesGivenCount?: number;
 }
 
-export function ProfileHeader({userData, postsCount}: ProfileHeaderProps) {
+export function ProfileHeader({
+  userData,
+  postsCount,
+  likesGivenCount = 0,
+}: ProfileHeaderProps) {
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
   const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
   const route = usePathname();
@@ -85,7 +92,31 @@ export function ProfileHeader({userData, postsCount}: ProfileHeaderProps) {
     apiUser?.profilePicture ||
     '/images/profile.png';
 
-  const displayLocation = apiUser?.location || 'Lagos, Nigeria';
+  // Reverse-geocode the user's own location from browser geolocation
+  const {lat, lng} = useGeolocation();
+  const [geoLocation, setGeoLocation] = useState<string | null>(null);
+  useEffect(() => {
+    if (isOtherProfile || !lat || !lng) return;
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        const city =
+          data.address?.city ||
+          data.address?.town ||
+          data.address?.village ||
+          '';
+        const country = data.address?.country || '';
+        const loc = [city, country].filter(Boolean).join(', ');
+        if (loc) setGeoLocation(loc);
+      })
+      .catch(() => {});
+  }, [lat, lng, isOtherProfile]);
+
+  const displayLocation = !isOtherProfile
+    ? geoLocation || apiUser?.location || ''
+    : null;
 
   const displayBio = apiUser?.bio || 'No bio yet.';
 
@@ -133,20 +164,24 @@ export function ProfileHeader({userData, postsCount}: ProfileHeaderProps) {
 
   return (
     <div className='w-full'>
-      <SocialModal
-        open={isFollowersModalOpen}
-        onClose={() => setIsFollowersModalOpen(false)}
-        userId={apiUser?.id || ''}
-        userName={displayName}
-        initialTab='followers'
-      />
-      <SocialModal
-        open={isFollowingModalOpen}
-        onClose={() => setIsFollowingModalOpen(false)}
-        userId={apiUser?.id || ''}
-        userName={displayName}
-        initialTab='following'
-      />
+      {!isOtherProfile && (
+        <>
+          <SocialModal
+            open={isFollowersModalOpen}
+            onClose={() => setIsFollowersModalOpen(false)}
+            userId={apiUser?.id || ''}
+            userName={displayName}
+            initialTab='followers'
+          />
+          <SocialModal
+            open={isFollowingModalOpen}
+            onClose={() => setIsFollowingModalOpen(false)}
+            userId={apiUser?.id || ''}
+            userName={displayName}
+            initialTab='following'
+          />
+        </>
+      )}
       <div className='flex items-start gap-6'>
         {/* Avatar */}
         <div className='relative shrink-0'>
@@ -186,7 +221,10 @@ export function ProfileHeader({userData, postsCount}: ProfileHeaderProps) {
             </Link>
           </div>
 
-          <p className='text-sm text-zinc-400 mt-0.5'>{displayLocation}</p>
+          {/* Location: shown for own profile only (from geolocation); hidden on other-profile until backend provides it */}
+          {!isOtherProfile && displayLocation && (
+            <p className='text-sm text-zinc-400 mt-0.5'>{displayLocation}</p>
+          )}
 
           {/* Follow Button */}
           {isOtherProfile ? (
@@ -218,22 +256,48 @@ export function ProfileHeader({userData, postsCount}: ProfileHeaderProps) {
               </span>
               <p className='text-zinc-400 text-xs'>Posts</p>
             </div>
-            <button
-              className='text-center cursor-pointer'
-              onClick={() => setIsFollowersModalOpen(true)}>
-              <span className='text-white font-bold text-base'>
-                {displayFollowers}
-              </span>
-              <p className='text-zinc-400 text-xs'>Followers</p>
-            </button>
-            <button
-              className='text-center cursor-pointer'
-              onClick={() => setIsFollowingModalOpen(true)}>
-              <span className='text-white font-bold text-base'>
-                {displayFollowing}
-              </span>
-              <p className='text-zinc-400 text-xs'>Following</p>
-            </button>
+            {isOtherProfile ? (
+              <div className='text-center'>
+                <span className='text-white font-bold text-base'>
+                  {displayFollowers}
+                </span>
+                <p className='text-zinc-400 text-xs'>Followers</p>
+              </div>
+            ) : (
+              <button
+                className='text-center cursor-pointer'
+                onClick={() => setIsFollowersModalOpen(true)}>
+                <span className='text-white font-bold text-base'>
+                  {displayFollowers}
+                </span>
+                <p className='text-zinc-400 text-xs'>Followers</p>
+              </button>
+            )}
+            {isOtherProfile ? (
+              <div className='text-center'>
+                <span className='text-white font-bold text-base'>
+                  {displayFollowing}
+                </span>
+                <p className='text-zinc-400 text-xs'>Following</p>
+              </div>
+            ) : (
+              <button
+                className='text-center cursor-pointer'
+                onClick={() => setIsFollowingModalOpen(true)}>
+                <span className='text-white font-bold text-base'>
+                  {displayFollowing}
+                </span>
+                <p className='text-zinc-400 text-xs'>Following</p>
+              </button>
+            )}
+            {isOtherProfile && (
+              <div className='text-center'>
+                <span className='text-white font-bold text-base'>
+                  {likesGivenCount}
+                </span>
+                <p className='text-zinc-400 text-xs'>Likes</p>
+              </div>
+            )}
           </div>
 
           {/* Bio */}

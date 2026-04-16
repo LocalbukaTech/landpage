@@ -31,7 +31,11 @@ const baseNavItems = [
   {icon: User, label: 'Profile', href: '/profile'},
 ];
 
-const myRestaurantItem = {icon: Store, label: 'My Restaurant', href: '/buka/my-restaurant'};
+const myRestaurantItem = {
+  icon: Store,
+  label: 'My Restaurant',
+  href: '/buka/my-restaurant',
+};
 
 const mobileNavItems = [
   {icon: Home, label: 'Home', href: '/feeds'},
@@ -42,7 +46,7 @@ const mobileNavItems = [
 ];
 
 const footerLinks = [
-  // { label: "Company", href: "https://localbuka.com/" },
+  {label: 'Blogs', href: 'https://localbuka.com/blog'},
   {label: 'Terms & Policies', href: 'https://localbuka.com/privacy/'},
 ];
 
@@ -57,11 +61,7 @@ export function Sidebar() {
 
   // Inject My Restaurant nav item when authenticated
   const navItems = isAuthenticated
-    ? [
-        ...baseNavItems.slice(0, 2),
-        myRestaurantItem,
-        ...baseNavItems.slice(2),
-      ]
+    ? [...baseNavItems.slice(0, 2), myRestaurantItem, ...baseNavItems.slice(2)]
     : baseNavItems;
 
   // Fetch unread notification count

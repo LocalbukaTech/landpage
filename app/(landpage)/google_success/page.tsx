@@ -3,15 +3,16 @@
 import {useEffect, useState, useRef, Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {Loader2} from 'lucide-react';
-import { useExchangeGoogleCodeMutation } from '@/lib/api';
+import {useExchangeGoogleCodeMutation} from '@/lib/api';
 import {useAuth} from '@/context/AuthContext';
+import {trackEvent, setAnalyticsUser} from '@/lib/analytics';
 
 const GoogleSuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {loginUser} = useAuth();
   const [error, setError] = useState(() => {
-    if (typeof window === "undefined") return '';
+    if (typeof window === 'undefined') return '';
     const code = new URLSearchParams(window.location.search).get('code');
     return code ? '' : 'Authentication failed. No code received.';
   });
@@ -35,15 +36,18 @@ const GoogleSuccessContent = () => {
         onSuccess: (response) => {
           const {token, user} = response.data;
           loginUser(user, token.access_token);
+          setAnalyticsUser(user.id);
 
           // Check where the user came from
           const origin = localStorage.getItem('google_auth_origin');
-          
+
           if (origin === 'signup') {
+            trackEvent('sign_up', {method: 'google'});
             // Clear the flag and show the success screen
             localStorage.removeItem('google_auth_origin');
             setShowSuccess(true);
           } else {
+            trackEvent('login', {method: 'google'});
             // Automatically redirect to homepage for signins (or unknown origin)
             localStorage.removeItem('google_auth_origin');
             router.push('/feeds');
@@ -51,8 +55,8 @@ const GoogleSuccessContent = () => {
         },
         onError: () => {
           setError('Authentication failed. Invalid response data.');
-        }
-      }
+        },
+      },
     );
   }, [searchParams, router, loginUser, googleExchangeMutation]);
 

@@ -9,6 +9,7 @@ import {useSigninMutation} from '@/lib/api/services/auth.hooks';
 import {useToast} from '@/hooks/use-toast';
 import {API_BASE_URL} from '@/lib/api/client';
 import {useAuth} from '@/context/AuthContext';
+import {trackEvent, setAnalyticsUser} from '@/lib/analytics';
 
 const onboardingSlides = [
   {
@@ -59,6 +60,8 @@ const SignInContent = () => {
         onSuccess: (response) => {
           const {token, user} = response.data;
           loginUser(user, token.access_token);
+          setAnalyticsUser(user.id);
+          trackEvent('login', {method: 'email'});
           toast({
             title: 'Welcome back! 🎉',
             description: 'You have successfully signed in.',
@@ -71,7 +74,7 @@ const SignInContent = () => {
             'Invalid email or password. Please try again.';
           setError(message);
         },
-      }
+      },
     );
   };
 
@@ -143,7 +146,10 @@ const SignInContent = () => {
             onClick={() => {
               // Remember that the user initiated auth from the signin page
               localStorage.setItem('google_auth_origin', 'signin');
-              const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+              const currentOrigin =
+                typeof window !== 'undefined'
+                  ? window.location.origin
+                  : 'http://localhost:3000';
               window.location.href = `${API_BASE_URL}/auth/google?redirect_uri=${encodeURIComponent(currentOrigin + '/google_success')}&callbackUrl=${encodeURIComponent(currentOrigin + '/google_success')}`;
             }}
             className='w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors'>
@@ -255,15 +261,15 @@ const SignInContent = () => {
 
 const SignInPage = () => {
   return (
-    <Suspense fallback={
-      <div className='min-h-screen flex items-center justify-center'>
-        <Loader2 className='w-8 h-8 animate-spin text-primary' />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className='min-h-screen flex items-center justify-center'>
+          <Loader2 className='w-8 h-8 animate-spin text-primary' />
+        </div>
+      }>
       <SignInContent />
     </Suspense>
   );
 };
 
 export default SignInPage;
-

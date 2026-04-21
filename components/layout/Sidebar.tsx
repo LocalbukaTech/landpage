@@ -20,6 +20,7 @@ import {NotificationOverlay} from '@/components/layout/NotificationOverlay';
 import {cn} from '@/lib/utils';
 import {useAuth} from '@/context/AuthContext';
 import {useUnreadCount} from '@/lib/api/services/notifications.hooks';
+import {feedStore} from '@/lib/feed-state';
 
 const baseNavItems = [
   {icon: Home, label: 'Home', href: '/feeds'},
@@ -71,6 +72,10 @@ export function Sidebar() {
   const isCollapsed = isSearchOpen || isNotificationOpen;
 
   const handleNavClick = (label: string) => {
+    if (label === 'Home') {
+      // Explicit Home tap → reset the feed to the top (TikTok behaviour).
+      feedStore.reset();
+    }
     if (label === 'Search') {
       setIsSearchOpen(true);
       setIsNotificationOpen(false);

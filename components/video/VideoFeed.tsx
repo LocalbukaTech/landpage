@@ -3,6 +3,7 @@
 import {useState, useCallback, useEffect, useRef} from 'react';
 import {motion, AnimatePresence} from 'framer-motion';
 import type {Post} from '@/types/post';
+import {feedStore, type FeedType} from '@/lib/feed-state';
 import {VideoPlayer} from '@/components/video/VideoPlayer';
 import {ActionBar} from '@/components/video/ActionBar';
 import {VideoNavigation} from '@/components/video/VideoNavigation';
@@ -16,6 +17,7 @@ interface VideoFeedProps {
   hideFollowButton?: boolean;
   showTimestamp?: boolean;
   initialCommentsOpen?: boolean;
+  feedType?: FeedType;
 }
 
 export function VideoFeed({
@@ -25,6 +27,7 @@ export function VideoFeed({
   hideFollowButton,
   showTimestamp,
   initialCommentsOpen = false,
+  feedType = 'foryou',
 }: VideoFeedProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -73,6 +76,15 @@ export function VideoFeed({
         clearTimeout(transitionTimeoutRef.current);
     };
   }, []);
+
+  // Persist the current video position so the feed can be restored after
+  // navigating away (to profile, other-profile, etc.) and coming back.
+  useEffect(() => {
+    const post = posts[currentIndex];
+    if (post?.id) {
+      feedStore.save(post.id, feedType);
+    }
+  }, [currentIndex, posts, feedType]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

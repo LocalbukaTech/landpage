@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import { useRef, useState, useEffect, useCallback } from "react";
-import { Volume2, VolumeX, MoreHorizontal, Play, Pause } from "lucide-react";
-import type { Post } from "@/types/post";
-import { VideoOverlay } from "@/components/video/VideoOverlay";
+import {useRef, useState, useEffect, useCallback} from 'react';
+import {Volume2, VolumeX, MoreHorizontal, Play, Pause} from 'lucide-react';
+import Image from 'next/image';
+import type {Post} from '@/types/post';
+import {VideoOverlay} from '@/components/video/VideoOverlay';
 
 interface VideoPlayerProps {
   post: Post;
@@ -15,14 +16,14 @@ interface VideoPlayerProps {
   showTimestamp?: boolean;
 }
 
-export function VideoPlayer({ 
-  post, 
-  isActive, 
-  onSwipeUp, 
-  onSwipeDown, 
-  isMuted, 
+export function VideoPlayer({
+  post,
+  isActive,
+  onSwipeUp,
+  onSwipeDown,
+  isMuted,
   onMuteChange,
-  showTimestamp
+  showTimestamp,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,7 +39,7 @@ export function VideoPlayer({
 
   // Play/pause icon overlay state
   const [showPlayPauseIcon, setShowPlayPauseIcon] = useState(false);
-  const [lastAction, setLastAction] = useState<"play" | "pause">("pause");
+  const [lastAction, setLastAction] = useState<'play' | 'pause'>('pause');
   const iconTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isVideo = post.mediaType === 'video';
@@ -52,16 +53,14 @@ export function VideoPlayer({
         videoRef.current.play().catch(() => {
           // Autoplay might be blocked
         });
-        setIsPlaying(true);
       } else {
         videoRef.current.pause();
         videoRef.current.currentTime = 0;
-        setIsPlaying(false);
       }
     }
   }, [isActive, post.id, isVideo]);
 
-  const showIcon = useCallback((action: "play" | "pause") => {
+  const showIcon = useCallback((action: 'play' | 'pause') => {
     setLastAction(action);
     setShowPlayPauseIcon(true);
     if (iconTimeoutRef.current) clearTimeout(iconTimeoutRef.current);
@@ -84,14 +83,14 @@ export function VideoPlayer({
       isScrolling.current = false;
       return;
     }
-    
+
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
-        showIcon("pause");
+        showIcon('pause');
       } else {
         videoRef.current.play();
-        showIcon("play");
+        showIcon('play');
       }
       setIsPlaying(!isPlaying);
     }
@@ -130,7 +129,7 @@ export function VideoPlayer({
 
     if (Math.abs(diffY) > minSwipeDistance) {
       isScrolling.current = true;
-      
+
       if (diffY > 0 && onSwipeUp) {
         // Swiped up - go to next video
         onSwipeUp();
@@ -149,10 +148,10 @@ export function VideoPlayer({
   const wheelTimeout = useRef<NodeJS.Timeout | null>(null);
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    
+
     // Debounce wheel events
     if (wheelTimeout.current) return;
-    
+
     const minDelta = 50;
 
     if (Math.abs(e.deltaY) > minDelta) {
@@ -163,7 +162,7 @@ export function VideoPlayer({
         // Scrolled up - go to previous video
         onSwipeDown();
       }
-      
+
       // Set debounce timeout
       wheelTimeout.current = setTimeout(() => {
         wheelTimeout.current = null;
@@ -208,43 +207,45 @@ export function VideoPlayer({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      onWheel={handleWheel}
-    >
+      onWheel={handleWheel}>
       {isVideo ? (
         <video
           ref={videoRef}
           src={post.mediaUrl}
           poster={post.thumbnailUrl || undefined}
-          className="w-full h-full object-cover"
+          className='w-full h-full object-cover'
           loop
           muted={isMuted}
           playsInline
-          preload="auto"
+          preload='auto'
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
         />
       ) : (
-        <img
+        <Image
           src={post.mediaUrl}
-          alt={post.caption || "Post Image"}
-          className="w-full h-full object-cover"
+          alt={post.caption || 'Post Image'}
+          fill
+          className='object-cover'
           draggable={false}
+          unoptimized
         />
       )}
 
       {/* TikTok-style Play/Pause Icon Overlay */}
       {isVideo && showPlayPauseIcon && (
         <div
-          className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+          className='absolute inset-0 flex items-center justify-center z-20 pointer-events-none'
           style={{
-            animation: "playPauseFade 0.8s ease-out forwards",
-          }}
-        >
-          <div className="w-20 h-20 rounded-full bg-black/50 flex items-center justify-center backdrop-blur-sm">
-            {lastAction === "pause" ? (
-              <Pause size={40} className="text-white" fill="white" />
+            animation: 'playPauseFade 0.8s ease-out forwards',
+          }}>
+          <div className='w-20 h-20 rounded-full bg-black/50 flex items-center justify-center backdrop-blur-sm'>
+            {lastAction === 'pause' ? (
+              <Pause size={40} className='text-white' fill='white' />
             ) : (
-              <Play size={40} className="text-white ml-1" fill="white" />
+              <Play size={40} className='text-white ml-1' fill='white' />
             )}
           </div>
         </div>
@@ -252,29 +253,29 @@ export function VideoPlayer({
 
       {/* Paused state — persistent subtle icon */}
       {isVideo && !isPlaying && !showPlayPauseIcon && (
-        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-          <div className="w-20 h-20 rounded-full bg-black/40 flex items-center justify-center backdrop-blur-sm opacity-70">
-            <Play size={40} className="text-white ml-1" fill="white" />
+        <div className='absolute inset-0 flex items-center justify-center z-20 pointer-events-none'>
+          <div className='w-20 h-20 rounded-full bg-black/40 flex items-center justify-center backdrop-blur-sm opacity-70'>
+            <Play size={40} className='text-white ml-1' fill='white' />
           </div>
         </div>
       )}
 
       {/* Top Controls */}
-      <div className="absolute top-3 left-3 right-3 flex justify-between items-center z-10">
+      <div className='absolute top-3 left-3 right-3 flex justify-between items-center z-10'>
         {isVideo ? (
           <button
-            className="flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none"
+            className='flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
             onClick={toggleMute}
-            aria-label={isMuted ? "Unmute" : "Mute"}
-          >
+            aria-label={isMuted ? 'Unmute' : 'Mute'}>
             {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
           </button>
-        ) : <div />}
+        ) : (
+          <div />
+        )}
         <button
-          className="flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none"
+          className='flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
           onClick={(e) => e.stopPropagation()}
-          aria-label="More options"
-        >
+          aria-label='More options'>
           <MoreHorizontal size={20} />
         </button>
       </div>
@@ -284,30 +285,28 @@ export function VideoPlayer({
 
       {/* Scrubber / Progress Bar */}
       {isVideo && (
-        <div 
-          className="absolute bottom-0 left-0 right-0 h-1 md:h-1.5 bg-white/30 cursor-pointer group hover:h-2 md:hover:h-3 transition-all duration-200 z-30"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div 
-            className="absolute top-0 left-0 h-full bg-primary rounded-r-full pointer-events-none"
-            style={{ width: `${progress}%` }}
+        <div
+          className='absolute bottom-0 left-0 right-0 h-1 md:h-1.5 bg-white/30 cursor-pointer group hover:h-2 md:hover:h-3 transition-all duration-200 z-30'
+          onClick={(e) => e.stopPropagation()}>
+          <div
+            className='absolute top-0 left-0 h-full bg-primary rounded-r-full pointer-events-none'
+            style={{width: `${progress}%`}}
           />
-          <input 
-            type="range"
-            min="0"
-            max="100"
-            step="0.1"
+          <input
+            type='range'
+            min='0'
+            max='100'
+            step='0.1'
             value={progress}
             onChange={handleSeek}
             onMouseDown={handleSeekStart}
             onMouseUp={handleSeekEnd}
             onTouchStart={handleSeekStart}
             onTouchEnd={handleSeekEnd}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
           />
         </div>
       )}
     </div>
   );
 }
-

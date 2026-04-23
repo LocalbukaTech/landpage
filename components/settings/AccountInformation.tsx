@@ -3,7 +3,8 @@
 import {useState, useRef} from 'react';
 import Image from 'next/image';
 import {useRouter} from 'next/navigation';
-import {Camera, Eye, EyeOff, Loader2} from 'lucide-react';
+import {Camera, Eye, EyeOff, Loader2, MapPin} from 'lucide-react';
+import {AvatarCropModal} from '@/components/ui/AvatarCropModal';
 import {useToast} from '@/hooks/use-toast';
 import {
   useMe,
@@ -86,53 +87,73 @@ function AccountForm({apiUser}: {apiUser: any}) {
   const {updateUser} = useAuth();
   const updateMeMutation = useUpdateMe();
 
+  const BIO_MAX = 300;
+  const LOCATION_MAX = 100;
+
   const [profileImage, setProfileImage] = useState(
     apiUser?.image_url || apiUser?.avatar || '/images/profile.png',
   );
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarBlob, setAvatarBlob] = useState<Blob | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState<{
-    fullName: string;
-    username: string;
-    avatar: string;
-    email: string;
-  }>({
+  const [formData, setFormData] = useState({
     fullName: apiUser?.fullName || '',
     username: apiUser?.username || '',
-    avatar: apiUser?.avatar || '',
     email: apiUser?.email || '',
+    bio: apiUser?.bio || '',
+    location: apiUser?.location || '',
   });
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
+  const handleAvatarClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (ev.target?.result) setCropSrc(ev.target.result as string);
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Optimistically show the image
-      const imageUrl = URL.createObjectURL(file);
-      setProfileImage(imageUrl);
-      setAvatarFile(file);
-    }
+  const handleCropConfirm = (blob: Blob) => {
+    setCropSrc(null);
+    setAvatarBlob(blob);
+    const objectUrl = URL.createObjectURL(blob);
+    setProfileImage(objectUrl);
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const {name, value} = e.target;
+    if (name === 'bio' && value.length > BIO_MAX) return;
+    if (name === 'location' && value.length > LOCATION_MAX) return;
+    setFormData((prev) => ({...prev, [name]: value}));
   };
 
   const handleSave = () => {
-    let payload_data: any;
-    if (avatarFile) {
-      payload_data = new FormData();
-      payload_data.append('fullName', formData.fullName);
-      payload_data.append('username', formData.username);
-      payload_data.append('avatar', avatarFile);
+    let payload: FormData | Record<string, string>;
+
+    if (avatarBlob) {
+      payload = new FormData();
+      payload.append('fullName', formData.fullName);
+      payload.append('bio', formData.bio);
+      payload.append('location', formData.location);
+      payload.append('avatar', avatarBlob, 'avatar.png');
+      if (formData.username) payload.append('username', formData.username);
     } else {
-      payload_data = {
+      payload = {
         fullName: formData.fullName,
-        username: formData.username,
+        bio: formData.bio,
+        location: formData.location,
       };
+      if (formData.username) payload.username = formData.username;
     }
 
-    updateMeMutation.mutate(payload_data, {
+    updateMeMutation.mutate(payload as any, {
       onSuccess: (response: any) => {
         const updatedUser = response?.data?.data || response?.data;
         if (updatedUser) updateUser(updatedUser);
@@ -154,97 +175,139 @@ function AccountForm({apiUser}: {apiUser: any}) {
     });
   };
 
+  const isBusy = updateMeMutation.isPending;
+
   return (
-    <div className='flex flex-col gap-5 max-w-lg'>
-      {/* Avatar */}
-      <div className='relative w-20 h-20'>
-        <Image
-          src={profileImage}
-          alt='Profile'
-          width={80}
-          height={80}
-          className='w-20 h-20 rounded-lg object-cover'
+    <>
+      {cropSrc && (
+        <AvatarCropModal
+          imageSrc={cropSrc}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSrc(null)}
         />
-        <button
-          onClick={handleAvatarClick}
-          className='absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/20 flex items-center justify-center cursor-pointer'>
-          <Camera size={14} className='text-zinc-400' />
-        </button>
-        <input
-          ref={fileInputRef}
-          type='file'
-          accept='image/*'
-          onChange={handleFileChange}
-          className='hidden'
-        />
-      </div>
+      )}
 
-      {/* Full Name */}
-      <div className='relative'>
-        <label className='absolute top-2 left-3 text-[11px] text-zinc-500'>
-          Full Name
-        </label>
-        <input
-          type='text'
-          value={formData.fullName
-            .split(' ')
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ')}
-          onChange={(e) =>
-            setFormData((p) => ({
-              ...p,
-              fullName: e.target.value
-                .split(' ')
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' '),
-            }))
-          }
-          className='w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors'
-        />
-      </div>
+      <div className='flex flex-col gap-5 max-w-lg'>
+        {/* Avatar */}
+        <div className='relative w-20 h-20'>
+          <Image
+            src={profileImage}
+            alt='Profile'
+            width={80}
+            height={80}
+            className='w-20 h-20 rounded-lg object-cover'
+          />
+          <button
+            onClick={handleAvatarClick}
+            className='absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#2a2a2a] border border-white/20 flex items-center justify-center cursor-pointer disabled:opacity-50'>
+            <Camera size={14} className='text-zinc-400' />
+          </button>
+          <input
+            ref={fileInputRef}
+            type='file'
+            accept='image/*'
+            onChange={handleFileChange}
+            className='hidden'
+          />
+        </div>
 
-      {/* Username */}
-      <div className='relative'>
-        <label className='absolute top-2 left-3 text-[11px] text-zinc-500'>
-          Username
-        </label>
-        <input
-          type='text'
-          value={formData.username}
-          onChange={(e) =>
-            setFormData((p) => ({
-              ...p,
-              username: e.target.value,
-            }))
-          }
-          placeholder='Choose a username'
-          className='w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600'
-        />
-      </div>
+        {/* Full Name */}
+        <div className='relative'>
+          <label className='absolute top-2 left-3 text-[11px] text-zinc-500'>
+            Full Name
+          </label>
+          <input
+            type='text'
+            name='fullName'
+            value={formData.fullName}
+            onChange={(e) =>
+              setFormData((p) => ({...p, fullName: e.target.value}))
+            }
+            className='w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors'
+          />
+        </div>
 
-      {/* Email (read-only) */}
-      <div className='relative'>
-        <input
-          type='email'
-          value={formData.email}
-          readOnly
-          className='w-full py-3 px-3 bg-[#333] border border-white/10 rounded-lg text-zinc-500 text-sm cursor-not-allowed'
-        />
-      </div>
+        {/* Username */}
+        <div className='relative'>
+          <label className='absolute top-2 left-3 text-[11px] text-zinc-500'>
+            Username
+          </label>
+          <input
+            type='text'
+            name='username'
+            value={formData.username}
+            onChange={(e) =>
+              setFormData((p) => ({...p, username: e.target.value}))
+            }
+            placeholder='Choose a username'
+            className='w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600'
+          />
+        </div>
 
-      {/* Save Button */}
-      <div className='flex justify-end mt-6'>
-        <button
-          onClick={handleSave}
-          disabled={updateMeMutation.isPending}
-          className='px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-semibold text-sm rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'>
-          {updateMeMutation.isPending && (
-            <Loader2 size={16} className='animate-spin' />
-          )}
-          {updateMeMutation.isPending ? 'Saving...' : 'Save'}
-        </button>
+        {/* Email (read-only) */}
+        <div className='relative'>
+          <input
+            type='email'
+            value={formData.email}
+            readOnly
+            className='w-full py-3 px-3 bg-[#333] border border-white/10 rounded-lg text-zinc-500 text-sm cursor-not-allowed'
+          />
+        </div>
+
+        {/* Location */}
+        <div className='relative'>
+          <label className='absolute top-2 left-3 text-[11px] text-zinc-500 z-10'>
+            Location
+          </label>
+          <MapPin
+            size={14}
+            className='absolute right-3 bottom-3 text-zinc-600 pointer-events-none'
+          />
+          <input
+            type='text'
+            name='location'
+            value={formData.location}
+            onChange={handleChange}
+            placeholder='City, State, Country'
+            maxLength={LOCATION_MAX}
+            className='w-full pt-6 pb-2 px-3 pr-8 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600'
+          />
+          <span className='absolute right-3 top-2 text-[10px] text-zinc-600'>
+            {formData.location.length}/{LOCATION_MAX}
+          </span>
+        </div>
+
+        {/* Bio */}
+        <div className='relative'>
+          <label className='absolute top-2 left-3 text-[11px] text-zinc-500 z-10'>
+            Bio
+          </label>
+          <textarea
+            name='bio'
+            value={formData.bio}
+            onChange={handleChange}
+            placeholder='Tell people a little about yourself...'
+            maxLength={BIO_MAX}
+            rows={4}
+            className='w-full pt-6 pb-2 px-3 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600 resize-none'
+          />
+          <span className='absolute right-3 top-2 text-[10px] text-zinc-600'>
+            {formData.bio.length}/{BIO_MAX}
+          </span>
+        </div>
+
+        {/* Save Button */}
+        <div className='flex justify-end mt-6'>
+          <button
+            onClick={handleSave}
+            disabled={isBusy}
+            className='px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-semibold text-sm rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'>
+            {isBusy && <Loader2 size={16} className='animate-spin' />}
+            {updateMeMutation.isPending ? 'Saving...' : 'Save'}
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -9,15 +9,25 @@ import {usePosts, usePersonalisedFeed} from '@/lib/api/services/posts.hooks';
 import {Loader2} from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {queryKeys} from '@/lib/api/types';
-
-type FeedType = 'foryou' | 'following';
+import {feedStore, type FeedType} from '@/lib/feed-state';
 
 function HomeContent() {
   const searchParams = useSearchParams();
   const videoId = searchParams.get('video');
   const queryClient = useQueryClient();
 
-  const [feedType, setFeedType] = useState<FeedType>('foryou');
+  // Consume the reset flag once on mount (useState initialiser runs exactly
+  // once even under React StrictMode).  If the user clicked Home explicitly
+  // the flag is true → start fresh from the top.
+  const [wasReset] = useState(() => feedStore.consumeReset());
+
+  // Restore the last active feed tab unless we're resetting.
+  const [feedType, setFeedType] = useState<FeedType>(
+    wasReset ? 'foryou' : feedStore.getFeedType(),
+  );
+
+  // The post ID to restore to (null if first visit or reset).
+  const savedPostId = wasReset ? null : feedStore.getPostId();
 
   // Force refetch when user switches back to the app (tab focus)
   useEffect(() => {
@@ -66,12 +76,19 @@ function HomeContent() {
 
   const posts = useMemo(() => activeData?.data || [], [activeData]);
 
-  // Find the index of the selected video (if navigated from profile)
+  // Find the index to start the feed at.
+  // Priority: 1) URL ?video=<id>  2) saved post from store  3) 0
   const initialIndex = useMemo(() => {
-    if (!videoId || posts.length === 0) return 0;
-    const index = posts.findIndex((p) => p.id === videoId);
-    return Math.max(0, index);
-  }, [videoId, posts]);
+    if (videoId && posts.length > 0) {
+      const index = posts.findIndex((p) => p.id === videoId);
+      if (index >= 0) return index;
+    }
+    if (savedPostId && posts.length > 0) {
+      const index = posts.findIndex((p) => p.id === savedPostId);
+      if (index >= 0) return index;
+    }
+    return 0;
+  }, [videoId, savedPostId, posts]);
 
   return (
     <MainLayout>
@@ -126,7 +143,8 @@ function HomeContent() {
           <VideoFeed
             posts={posts}
             initialIndex={initialIndex}
-            initialMuted={!videoId}
+            initialMuted={!videoId && !savedPostId}
+            feedType={feedType}
             hideFollowButton={feedType === 'following'}
             showTimestamp={feedType === 'following'}
           />

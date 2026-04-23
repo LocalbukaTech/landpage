@@ -13,6 +13,11 @@ export function SuspendAccountModal({ isOpen, onClose, onSuspend, isLoading }: S
 
   if (!isOpen) return null;
 
+  const handleSubmit = () => {
+    if (!reason.trim()) return;
+    onSuspend(reason);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
       <div className="bg-white rounded-[24px] p-8 w-full max-w-[500px] shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
@@ -47,20 +52,6 @@ export function SuspendAccountModal({ isOpen, onClose, onSuspend, isLoading }: S
               rows={2}
             />
           </div>
-
-          <div className="relative">
-            <select className="w-full border border-[#1f2937] rounded-xl px-4 py-4 text-[#1f2937] appearance-none focus:outline-none focus:ring-1 bg-white text-[15px] font-medium font-sans">
-              <option value="">Duration</option>
-              <option value="1_day">1 Day</option>
-              <option value="1_week">1 Week</option>
-              <option value="1_month">1 Month</option>
-              <option value="permanent">Permanent</option>
-            </select>
-            {/* Custom dropdown arrow to match the design style */}
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#1f2937]">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-            </div>
-          </div>
         </div>
 
         {/* Footer Buttons */}
@@ -72,8 +63,8 @@ export function SuspendAccountModal({ isOpen, onClose, onSuspend, isLoading }: S
             No, Cancel
           </button>
           <button 
-            onClick={() => onSuspend(reason)}
-            disabled={isLoading}
+            onClick={handleSubmit}
+            disabled={isLoading || !reason.trim()}
             className="flex-1 py-4 bg-[#fbbe15] text-[#0f172a] font-semibold text-[16px] rounded-xl hover:bg-[#eab308] transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
@@ -84,3 +75,4 @@ export function SuspendAccountModal({ isOpen, onClose, onSuspend, isLoading }: S
     </div>
   );
 }
+

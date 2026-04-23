@@ -135,7 +135,7 @@ export function AvatarCropModal({
       : 0;
 
   return (
-    <div className='fixed inset-0 z-200 flex items-center justify-center bg-black/80 backdrop-blur-sm'>
+    <div className='fixed inset-0 z-500 flex items-center justify-center bg-black/80 backdrop-blur-sm'>
       <div className='bg-[#1a1a1a] border border-white/10 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl flex flex-col items-center gap-5'>
         {/* Header */}
         <div className='flex items-center justify-between w-full'>
@@ -160,7 +160,6 @@ export function AvatarCropModal({
             height: VIEWPORT,
             borderRadius: '50%',
             background: '#111',
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)',
           }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}

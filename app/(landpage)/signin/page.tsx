@@ -136,9 +136,7 @@ const SignInContent = () => {
           <h1 className='text-2xl sm:text-3xl font-bold text-[#0A1F44] dark:text-white mb-2'>
             Login
           </h1>
-          <p className='text-gray-500 dark:text-gray-400 mb-8'>
-            Welcome back! 😂
-          </p>
+          <p className='text-gray-500 dark:text-gray-400 mb-8'>Welcome back!</p>
 
           {/* Google Sign Up */}
           <button

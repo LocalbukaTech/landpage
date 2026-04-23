@@ -222,8 +222,14 @@ export function ProfileHeader({
           </div>
 
           {/* Location: shown for own profile only (from geolocation); hidden on other-profile until backend provides it */}
-          {!isOtherProfile && displayLocation && (
-            <p className='text-sm text-zinc-400 mt-0.5'>{displayLocation}</p>
+          {!isOtherProfile ? (
+            <p className='text-sm text-zinc-400 mt-0.5'>
+              {apiUser.location ? apiUser.location : displayLocation}
+            </p>
+          ) : (
+            <p className='text-sm text-zinc-400 mt-0.5'>
+              {apiUser.location && apiUser.location}
+            </p>
           )}
 
           {/* Follow Button */}

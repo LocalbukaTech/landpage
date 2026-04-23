@@ -187,7 +187,7 @@ export default async function RootLayout({
             })(window, document, "clarity", "script", "w03esrpked");
           `}
         </Script>
-        <GoogleAnalytics />
+        <GoogleAnalytics gaId='G-7VR656FT47' />
         <ScrollToTop />
         <Providers initialUser={initialUser} initialToken={tokenCookie}>
           {children}

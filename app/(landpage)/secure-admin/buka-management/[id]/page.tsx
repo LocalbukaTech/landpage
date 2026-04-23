@@ -18,6 +18,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import {RejectBukaModal} from '@/components/admin/ui/RejectBukaModal';
+import {SuspendAccountModal} from '@/components/admin/ui/SuspendAccountModal';
 import {useParams} from 'next/navigation';
 import {
   useRestaurant,
@@ -27,6 +28,7 @@ import {useToast} from '@/hooks/use-toast';
 
 export default function BukaDetails() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [activePhoto, setActivePhoto] = useState(0);
   const params = useParams();
   const id = params?.id as string;
@@ -39,13 +41,17 @@ export default function BukaDetails() {
     try {
       await updateStatusMutation.mutateAsync({
         id,
-        data: {status: newStatus, reason: reason || 'Standard moderation'},
+        data: {
+          status: newStatus, 
+          reason: reason || 'Standard moderation',
+        },
       });
       toast({
         title: 'Success',
         description: `Restaurant is now ${newStatus}.`,
       });
       setIsRejectModalOpen(false);
+      setIsSuspendModalOpen(false);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -382,7 +388,7 @@ export default function BukaDetails() {
               </div>
               {restaurant.status === 'approved' && (
                 <button
-                  onClick={() => handleUpdateStatus('suspended')}
+                  onClick={() => setIsSuspendModalOpen(true)}
                   className='px-6 py-2.5 text-xs text-gray-400 hover:text-red-500 font-medium transition-colors'>
                   Suspend Restaurant
                 </button>
@@ -397,6 +403,13 @@ export default function BukaDetails() {
         onClose={() => setIsRejectModalOpen(false)}
         onReject={(reason) => handleUpdateStatus('rejected', reason)}
         restaurantName={restaurant.name}
+      />
+
+      <SuspendAccountModal
+        isOpen={isSuspendModalOpen}
+        onClose={() => setIsSuspendModalOpen(false)}
+        onSuspend={(reason) => handleUpdateStatus('suspended', reason)}
+        isLoading={updateStatusMutation.isPending}
       />
     </div>
   );

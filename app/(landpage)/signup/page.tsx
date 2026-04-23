@@ -7,8 +7,8 @@ import {useRouter, useSearchParams} from 'next/navigation';
 import {Eye, EyeOff, ChevronRight, Loader2} from 'lucide-react';
 import {useSignupMutation} from '@/lib/api/services/auth.hooks';
 import {useToast} from '@/hooks/use-toast';
-import {VerificationCodeModal} from '@/components/modals';
 import {API_BASE_URL} from '@/lib/api/client';
+import {trackEvent} from '@/lib/analytics';
 
 const onboardingSlides = [
   {
@@ -35,8 +35,6 @@ const SignUpContent = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [showCodeModal, setShowCodeModal] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
   const [formData, setFormData] = useState({
     fullName: '',
     referrerName: '',
@@ -47,12 +45,6 @@ const SignUpContent = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({...formData, [e.target.name]: e.target.value});
     setError(''); // Clear error when user types
-  };
-
-  // Extract code from message (e.g., "Your verification code is 1234")
-  const extractCodeFromMessage = (message: string): string => {
-    const codeMatch = message.match(/\b\d{4,6}\b/);
-    return codeMatch ? codeMatch[0] : '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,19 +60,20 @@ const SignUpContent = () => {
       },
       {
         onSuccess: (response) => {
-          // Extract code from data.message (API returns: { message: "...", data: { message: "...OTP is: \"1234\"" } })
-          const dataMessage = response?.data?.message || '';
-          const code = extractCodeFromMessage(dataMessage);
-          
+          trackEvent('sign_up', {method: 'email'});
           // if (code) {
           //   setVerificationCode(code);
           //   // setShowCodeModal(true);
           // } else {
-            toast({
-              title: 'Account created! 🎉',
-              description: response?.message || 'Please check your email for the verification code.',
-            });
-            router.push(`/signup/verify?email=${encodeURIComponent(formData.email)}&redirect=${encodeURIComponent(redirect)}`);
+          toast({
+            title: 'Account created! 🎉',
+            description:
+              response?.message ||
+              'Please check your email for the verification code.',
+          });
+          router.push(
+            `/signup/verify?email=${encodeURIComponent(formData.email)}&redirect=${encodeURIComponent(redirect)}`,
+          );
           // }
         },
         onError: (err: any) => {
@@ -89,13 +82,8 @@ const SignUpContent = () => {
             'Failed to create account. Please try again.';
           setError(message);
         },
-      }
+      },
     );
-  };
-
-  const handleModalClose = () => {
-    setShowCodeModal(false);
-    router.push(`/signup/verify?email=${encodeURIComponent(formData.email)}`);
   };
 
   const nextSlide = () => {
@@ -167,7 +155,10 @@ const SignUpContent = () => {
             onClick={() => {
               // Remember that the user initiated auth from the signup page
               localStorage.setItem('google_auth_origin', 'signup');
-              const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+              const currentOrigin =
+                typeof window !== 'undefined'
+                  ? window.location.origin
+                  : 'http://localhost:3000';
               window.location.href = `${API_BASE_URL}/auth/google?redirect_uri=${encodeURIComponent(currentOrigin + '/google_success')}&callbackUrl=${encodeURIComponent(currentOrigin + '/google_success')}`;
             }}
             className='w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors'>
@@ -308,27 +299,28 @@ const SignUpContent = () => {
           </p>
         </div>
       </div>
-      
+
       {/* Verification Code Modal */}
-      <VerificationCodeModal
+      {/* <VerificationCodeModal
         open={showCodeModal}
         onOpenChange={handleModalClose}
         code={verificationCode}
         email={formData.email}
-        title="Account Created! 🎉"
+        title='Account Created! 🎉'
         description="Here's your verification code. Copy it and use it on the next screen to verify your account."
-      />
+      /> */}
     </div>
   );
 };
 
 const SignUpPage = () => {
   return (
-    <Suspense fallback={
-      <div className='min-h-screen flex items-center justify-center'>
-        <Loader2 className='w-8 h-8 animate-spin text-primary' />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className='min-h-screen flex items-center justify-center'>
+          <Loader2 className='w-8 h-8 animate-spin text-primary' />
+        </div>
+      }>
       <SignUpContent />
     </Suspense>
   );

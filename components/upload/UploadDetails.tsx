@@ -59,11 +59,23 @@ export function UploadDetails({ file, onPost, onDiscard, isUploading = false }: 
   // ];
 
   const locations = [
-    { name: "Ikeja, Lagos" },
+    { name: "Ikeja, Lagos", address: "Mainland, Lagos" },
+    { name: "Lekki, Lagos", address: "Island, Lagos" },
+    { name: "Victoria Island, Lagos", address: "Island, Lagos" },
+    { name: "Yaba, Lagos", address: "Mainland, Lagos" },
+    { name: "Surulere, Lagos", address: "Mainland, Lagos" },
+    { name: "Abuja", address: "Federal Capital Territory" },
+    { name: "Port Harcourt", address: "Rivers State" },
     { name: "Benin City, Edo", address: "Ekehuan road, Benin" },
-    { name: "Island, Lagos", address: "Lekki, Lagos" },
-    { name: "Island, Lagos", address: "Lekki, Lagos" },
+    { name: "Ibadan", address: "Oyo State" },
+    { name: "Enugu", address: "Enugu State" },
+    { name: "Kano", address: "Kano State" },
   ];
+  const [locationSearchTerm, setLocationSearchTerm] = useState("");
+  const filteredLocations = locations.filter(loc => 
+    loc.name.toLowerCase().includes(locationSearchTerm.toLowerCase()) || 
+    (loc.address && loc.address.toLowerCase().includes(locationSearchTerm.toLowerCase()))
+  );
 
   // Video Event Handlers
   const handleTimeUpdate = () => {
@@ -313,8 +325,24 @@ export function UploadDetails({ file, onPost, onDiscard, isUploading = false }: 
                     <X size={14} />
                   </button>
                 </div>
+                <div className="mb-2">
+                  <input 
+                    type="text" 
+                    placeholder="Search or add custom location... (Press Enter)" 
+                    value={locationSearchTerm}
+                    onChange={(e) => setLocationSearchTerm(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && locationSearchTerm.trim()) {
+                        e.preventDefault();
+                        handleAddLocation(locationSearchTerm.trim());
+                        setLocationSearchTerm("");
+                      }
+                    }}
+                    className="w-full text-xs p-2 bg-zinc-100 rounded-md border-none focus:ring-1 focus:ring-[#fbbe15] outline-none placeholder:text-zinc-400"
+                  />
+                </div>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
-                  {locations.map((loc, i) => (
+                  {filteredLocations.map((loc, i) => (
                     <button 
                       key={i} 
                       onClick={() => handleAddLocation(loc.name)}
@@ -326,6 +354,11 @@ export function UploadDetails({ file, onPost, onDiscard, isUploading = false }: 
                       )}
                     </button>
                   ))}
+                  {filteredLocations.length === 0 && locationSearchTerm.trim() && (
+                    <div className="p-2 text-center">
+                      <span className="text-xs text-zinc-500">Press Enter to add "{locationSearchTerm}"</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

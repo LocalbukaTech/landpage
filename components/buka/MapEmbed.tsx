@@ -126,10 +126,14 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
         setLocationError(null);
       },
       (err) => {
-        console.error("Error getting location:", err);
-        setLocationError("Unable to retrieve your location. Please check browser permissions.");
+        if (err.code === 1) {
+          setLocationError("Unable to retrieve your location. Please check browser permissions.");
+        } else if (!userLocation) {
+          // If the browser times out, give them a mock location in Lagos so the route can still draw
+          setUserLocation([6.5244, 3.3792]);
+        }
       },
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+      { enableHighAccuracy: false, maximumAge: 10000, timeout: 5000 }
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [showRoute]);

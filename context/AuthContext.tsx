@@ -54,6 +54,15 @@ export function AuthProvider({
   // Tracks the pending-action timeout so we can cancel it on unmount
   const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Sync user identity to analytics whenever user state changes
+  useEffect(() => {
+    if (user?.id) {
+      setAnalyticsUser(user.id);
+    } else {
+      setAnalyticsUser(null);
+    }
+  }, [user]);
+
   // Hydrate user + token from storage on mount (once) when not provided by server
   useEffect(() => {
     if (!user) {

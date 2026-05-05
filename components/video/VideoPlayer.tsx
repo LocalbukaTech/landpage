@@ -1,7 +1,7 @@
 'use client';
 
 import {useRef, useState, useEffect, useCallback} from 'react';
-import {Volume2, VolumeX, MoreHorizontal, Play, Pause} from 'lucide-react';
+import {Volume2, VolumeX, Play, Pause} from 'lucide-react';
 import Image from 'next/image';
 import type {Post} from '@/types/post';
 import {VideoOverlay} from '@/components/video/VideoOverlay';
@@ -202,7 +202,7 @@ export function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-[420px] h-full bg-black rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
+      className={`relative w-full md:w-[420px] h-full bg-black md:rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
       onClick={togglePlay}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -272,12 +272,12 @@ export function VideoPlayer({
         ) : (
           <div />
         )}
-        <button
+        {/* <button
           className='flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
           onClick={(e) => e.stopPropagation()}
           aria-label='More options'>
           <MoreHorizontal size={20} />
-        </button>
+        </button> */}
       </div>
 
       {/* Video Overlay */}

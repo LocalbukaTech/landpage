@@ -106,85 +106,108 @@ export function SearchOverlay({isOpen, onClose}: SearchOverlayProps) {
   if (!isOpen) return null;
 
   return (
-    <div className='fixed top-0 left-20 w-[350px] bottom-0 bg-[#1a1a1a] z-100 p-6 flex flex-col border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.4)] animate-[slideInDrawer_0.3s_ease-out]'>
-      <div className='w-full max-w-[500px]'>
-        {/* Header */}
-        <div className='flex items-center justify-between mb-6'>
-          <h2 className='text-white text-lg font-medium'>Search</h2>
-          <button
-            className='flex items-center justify-center w-8 h-8 bg-[#3a3a3a] rounded-md text-[#a0a0a0] transition-all duration-200 hover:bg-[#4a4a4a] hover:text-white border-none cursor-pointer'
-            onClick={onClose}
-            aria-label='Close search'>
-            <X size={20} />
-          </button>
+    <>
+      {/* ── Mobile backdrop ── */}
+      <div
+        className='md:hidden fixed inset-0 bg-black/60 z-99'
+        onClick={onClose}
+        aria-hidden='true'
+      />
+
+      {/* ── Panel ── */}
+      <div
+        className='
+        fixed top-0 bottom-0 bg-[#1a1a1a] z-100 flex flex-col
+        border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.4)]
+        animate-[slideInDrawer_0.3s_ease-out]
+        inset-x-0
+        md:left-20 md:right-auto md:w-[350px]
+      '>
+        <div className='p-6 flex flex-col h-full overflow-y-auto'>
+          {/* Safe-area top spacer on mobile */}
+          <div className='h-safe-top md:hidden' />
+
+          {/* Header */}
+          <div className='flex items-center justify-between mb-6'>
+            <h2 className='text-white text-lg font-medium'>Search</h2>
+            <button
+              className='flex items-center justify-center w-8 h-8 bg-[#3a3a3a] rounded-md text-[#a0a0a0] transition-all duration-200 hover:bg-[#4a4a4a] hover:text-white border-none cursor-pointer'
+              onClick={onClose}
+              aria-label='Close search'>
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Search Input */}
+          <form onSubmit={handleSubmit}>
+            <div className='relative mb-8'>
+              <input
+                ref={inputRef}
+                type='text'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='w-full px-4 py-3 bg-[#3a3a3a] border-none rounded-xl text-white text-base caret-[#fbbe15] placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#fbbe15]/40 transition-all'
+                placeholder='Search restaurants, food…'
+              />
+            </div>
+          </form>
+
+          {/* Recent Search */}
+          {recentSearches.length > 0 && (
+            <div className='mb-8'>
+              <h3 className='text-white text-[15px] font-medium mb-4'>
+                Recent Search
+              </h3>
+              <ul className='list-none p-0 m-0 flex flex-col gap-1'>
+                {recentSearches.slice(0, MAX_HISTORY).map((term) => (
+                  <li
+                    key={term}
+                    className='flex items-center justify-between py-2.5 border-b border-white/5 last:border-0'>
+                    <button
+                      className='flex items-center gap-3 bg-transparent border-none text-white text-[15px] cursor-pointer transition-colors duration-200 hover:text-[#fbbe15] active:text-[#fbbe15]'
+                      onClick={() => handleSearch(term)}>
+                      <Clock size={18} className='text-[#a0a0a0] shrink-0' />
+                      <span className='truncate max-w-[220px]'>{term}</span>
+                    </button>
+                    <button
+                      className='flex items-center justify-center bg-transparent border-none text-zinc-500 cursor-pointer p-2 transition-colors duration-200 hover:text-white'
+                      onClick={() => handleRemoveRecent(term)}
+                      aria-label={`Remove ${term} from recent searches`}>
+                      <X size={16} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Trending */}
+          {TRENDING.length > 0 && (
+            <div className='mb-8'>
+              <h3 className='text-white text-[15px] font-medium mb-4'>
+                Trending
+              </h3>
+              <ul className='list-none p-0 m-0 flex flex-col gap-1'>
+                {TRENDING.slice(0, MAX_TRENDING).map((term) => (
+                  <li
+                    key={term}
+                    className='flex items-center py-2.5 border-b border-white/5 last:border-0'>
+                    <button
+                      className='flex items-center gap-3 bg-transparent border-none text-white text-[15px] cursor-pointer transition-colors duration-200 hover:text-[#fbbe15] active:text-[#fbbe15]'
+                      onClick={() => handleSearch(term)}>
+                      <TrendingUp
+                        size={18}
+                        className='text-[#fbbe15] shrink-0'
+                      />
+                      <span>{term}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
-
-        {/* Search Input */}
-        <form onSubmit={handleSubmit}>
-          <div className='my-10'>
-            <input
-              ref={inputRef}
-              type='text'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className='w-full p-2 4 bg-[#3a3a3a] border-none rounded-lg text-white text-base caret-[#fbbe15] placeholder:text-zinc-500 focus:outline-none'
-              placeholder=''
-            />
-          </div>
-        </form>
-
-        {/* Recent Search */}
-        {recentSearches.length > 0 && (
-          <div className='mb-8'>
-            <h3 className='text-white text-[15px] font-medium mb-4'>
-              Recent Search
-            </h3>
-            <ul className='list-none p-0 m-0 flex flex-col gap-2'>
-              {recentSearches.slice(0, MAX_HISTORY).map((term) => (
-                <li
-                  key={term}
-                  className='flex items-center justify-between py-2'>
-                  <button
-                    className='flex items-center gap-3 bg-transparent border-none text-white text-[15px] cursor-pointer transition-colors duration-200 hover:text-[#fbbe15]'
-                    onClick={() => handleSearch(term)}>
-                    <Clock size={18} className='text-[#a0a0a0]' />
-                    <span>{term}</span>
-                  </button>
-                  <button
-                    className='flex items-center justify-center bg-transparent border-none text-zinc-500 cursor-pointer p-1 transition-colors duration-200 hover:text-white'
-                    onClick={() => handleRemoveRecent(term)}
-                    aria-label={`Remove ${term} from recent searches`}>
-                    <X size={16} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Trending */}
-        {TRENDING.length > 0 && (
-          <div className='mb-8'>
-            <h3 className='text-white text-[15px] font-medium mb-4'>
-              Trending
-            </h3>
-            <ul className='list-none p-0 m-0 flex flex-col gap-2'>
-              {TRENDING.slice(0, MAX_TRENDING).map((term) => (
-                <li
-                  key={term}
-                  className='flex items-center justify-between py-2'>
-                  <button
-                    className='flex items-center gap-3 bg-transparent border-none text-white text-[15px] cursor-pointer transition-colors duration-200 hover:text-[#fbbe15]'
-                    onClick={() => handleSearch(term)}>
-                    <TrendingUp size={18} className='text-[#fbbe15]' />
-                    <span>{term}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
-    </div>
+    </>
   );
 }

@@ -7,7 +7,11 @@ import {ProfileHeader} from '@/components/profile/ProfileHeader';
 import {ProfileTabs} from '@/components/profile/ProfileTabs';
 import {useAuth} from '@/context/AuthContext';
 import {useMe} from '@/lib/api/services/auth.hooks';
-import {useRePosts, useSavedPosts, useUserPosts} from '@/lib/api/services/profile.hooks';
+import {
+  useRePosts,
+  useSavedPosts,
+  useUserPosts,
+} from '@/lib/api/services/profile.hooks';
 import type {Post} from '@/types/post';
 import {Loader2} from 'lucide-react';
 
@@ -59,7 +63,7 @@ function ProfileContent() {
 
     if (activeTab === 'repost') {
       return (rePostsResponse?.data?.data || []).map(
-          (item: any) => item.post || item,
+        (item: any) => item.post || item,
       );
     }
     if (activeTab === 'saved') {
@@ -71,7 +75,12 @@ function ProfileContent() {
     if (Array.isArray(data)) return data;
     if (data && 'data' in data && Array.isArray(data.data)) return data.data;
     return [];
-  }, [activeTab, savedPostsResponse, userPostsResponse, rePostsResponse]) as Post[];
+  }, [
+    activeTab,
+    savedPostsResponse,
+    userPostsResponse,
+    rePostsResponse,
+  ]) as Post[];
 
   const isLoadingData = useMemo(() => {
     if (activeTab === 'saved') return isLoadingSaved;
@@ -100,7 +109,7 @@ function ProfileContent() {
 
   return (
     <MainLayout>
-      <div className='w-full max-w-4xl mx-auto px-4 py-6 overflow-y-auto h-[calc(100vh-3.5rem)] md:h-auto'>
+      <div className='w-full max-w-4xl mx-auto px-4 py-4 md:py-6 overflow-x-hidden'>
         <ProfileHeader userData={apiUser} postsCount={postsCount} />
         <ProfileTabs
           posts={displayPosts}

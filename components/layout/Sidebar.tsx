@@ -293,10 +293,7 @@ export function Sidebar() {
               : pathname?.startsWith(item.href);
 
           const isNotificationItem = item.label === 'Inbox';
-          const activeState =
-            isNotificationItem && isNotificationOpen
-              ? true
-              : isActive && !isNotificationOpen;
+          const activeState = isActive;
 
           if (item.label === 'Upload') {
             return (
@@ -314,16 +311,16 @@ export function Sidebar() {
 
           if (isNotificationItem) {
             return (
-              <button
+              <Link
                 key={item.label}
-                onClick={() => handleNavClick('Notification')}
+                href='/notifications'
                 className={cn(
                   'flex flex-col items-center gap-1 w-12',
                   activeState ? 'text-white' : 'text-zinc-500',
                 )}>
                 <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
                 <span className='text-[10px] font-medium'>{item.label}</span>
-              </button>
+              </Link>
             );
           }
 

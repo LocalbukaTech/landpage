@@ -34,14 +34,14 @@ export function AccountInformation({
   return (
     <div className='flex flex-col h-full'>
       {/* Sub-tabs */}
-      <div className='flex gap-0 border-b border-white/10'>
+      <div className='flex gap-0 border-b border-white/10 overflow-x-auto scrollbar-hide'>
         {subTabs.map((tab) => {
           const isActive = activeSubTab === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => onSubTabChange(tab.id)}
-              className={`px-4 py-3 text-sm font-medium transition-all border-b-2 cursor-pointer bg-transparent whitespace-nowrap ${
+              className={`px-3 md:px-4 py-3 text-xs md:text-sm font-medium transition-all border-b-2 cursor-pointer bg-transparent whitespace-nowrap shrink-0 ${
                 isActive
                   ? 'border-[#FBBE15] text-white'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'

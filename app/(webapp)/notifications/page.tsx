@@ -1,8 +1,9 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
-import {X, Loader2} from 'lucide-react';
+import {useMemo, useState} from 'react';
+import {Loader2, X} from 'lucide-react';
 import Image from 'next/image';
+import {useRouter} from 'next/navigation';
 import {cn} from '@/lib/utils';
 import {
   useNotifications,
@@ -11,15 +12,12 @@ import {
 } from '@/lib/api/services/notifications.hooks';
 import {useFollowUser, useFollowing} from '@/lib/api/services/profile.hooks';
 import {useAuth} from '@/context/AuthContext';
-import {useRouter} from 'next/navigation';
 import {formatDistanceToNow} from 'date-fns';
+import {MainLayout} from '@/components/layout/MainLayout';
 import type {Notification} from '@/types/notification';
+import {formatDistanceToNow as fmt} from 'date-fns';
 
-interface NotificationOverlayProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
+// ─── Restaurant Detail Bottom Sheet ────────────────────────────────────────────
 function RestaurantNotificationDrawer({
   notification,
   onClose,
@@ -43,19 +41,12 @@ function RestaurantNotificationDrawer({
               width={32}
               height={32}
               className='object-contain rounded-full'
-              onError={(e) => {
-                const t = e.target as HTMLImageElement;
-                t.onerror = null;
-                t.src = '/images/profile.png';
-              }}
             />
           </div>
           <div>
             <p className='text-white font-bold text-sm'>LocalBuka</p>
             <p className='text-zinc-500 text-xs'>
-              {formatDistanceToNow(new Date(notification.createdAt), {
-                addSuffix: true,
-              })
+              {fmt(new Date(notification.createdAt), {addSuffix: true})
                 .replace('about ', '')
                 .replace('less than a minute ago', 'just now')}
             </p>
@@ -74,115 +65,13 @@ function RestaurantNotificationDrawer({
   );
 }
 
-export function NotificationOverlay({
-  isOpen,
-  onClose,
-}: NotificationOverlayProps) {
-  const {data: notificationsEntry, isLoading} = useNotifications({
-    page: 1,
-    pageSize: 50,
-  });
-  const markAllAsRead = useMarkAllAsRead();
-  const {user} = useAuth();
-
-  const {data: followingResp} = useFollowing(user?.id || '', {
-    page: 1,
-    limit: 200,
-  });
-
-  const followingIds = useMemo(() => {
-    const list =
-      (followingResp as any)?.data?.data || (followingResp as any)?.data || [];
-    const ids = new Set<string>();
-    list.forEach((entry: any) => {
-      const u = entry.following || entry;
-      if (u?.id) ids.add(u.id);
-    });
-    return ids;
-  }, [followingResp]);
-
-  const notifications = (notificationsEntry as any)?.data?.data || [];
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (isOpen) window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  return (
-    <>
-      {/* Mobile backdrop */}
-      <div
-        className='md:hidden fixed inset-0 bg-black/60 z-99'
-        onClick={onClose}
-        aria-hidden='true'
-      />
-      <div
-        className='
-        fixed top-0 bottom-0 bg-[#1a1a1a] z-100 flex flex-col
-        border-r border-white/5 shadow-[4px_0_24px_rgba(0,0,0,0.4)]
-        animate-[slideInDrawer_0.3s_ease-out]
-        inset-x-0
-        md:left-20 md:right-auto md:w-[350px]
-      '>
-        <div className='p-6 flex flex-col h-full overflow-y-auto'>
-          <div className='flex items-center justify-between mb-8'>
-            <h2 className='text-white text-lg font-medium'>Notifications</h2>
-            <div className='flex items-center gap-3'>
-              <button
-                onClick={() => markAllAsRead.mutate()}
-                disabled={markAllAsRead.isPending || notifications.length === 0}
-                className='text-xs font-semibold text-[#fbbe15] hover:text-[#e5ac10] transition-colors disabled:text-zinc-600 disabled:cursor-not-allowed'>
-                Read all
-              </button>
-              <button
-                className='flex items-center justify-center w-8 h-8 bg-[#3a3a3a] rounded-md text-[#a0a0a0] transition-all duration-200 hover:bg-[#4a4a4a] hover:text-white border-none cursor-pointer'
-                onClick={onClose}>
-                <X size={20} />
-              </button>
-            </div>
-          </div>
-
-          <div className='flex flex-col gap-8 overflow-y-auto h-[calc(100vh-100px)] scrollbar-hide'>
-            {isLoading ? (
-              <div className='flex items-center justify-center py-10'>
-                <Loader2 className='w-6 h-6 animate-spin text-[#fbbe15]' />
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className='flex flex-col items-center justify-center py-20 text-center'>
-                <p className='text-zinc-500 text-sm'>No notifications yet.</p>
-              </div>
-            ) : (
-              <div className='flex flex-col gap-4'>
-                {notifications.map((notif: Notification) => (
-                  <NotificationItem
-                    key={notif.id}
-                    notification={notif}
-                    alreadyFollowing={followingIds.has(notif.actorId)}
-                    onClose={onClose}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
+// ─── Single Notification Row ────────────────────────────────────────────────────
 function NotificationItem({
   notification,
   alreadyFollowing,
-  onClose,
 }: {
   notification: Notification;
   alreadyFollowing: boolean;
-  onClose: () => void;
 }) {
   const markAsRead = useMarkAsRead();
   const followUserMutation = useFollowUser();
@@ -199,30 +88,22 @@ function NotificationItem({
       setShowRestaurantDrawer(true);
       return;
     }
-
     if (
       notification.type === 'comment' ||
       notification.entityType === 'comment'
     ) {
-      onClose();
       router.push(`/posts/${notification.entityId}?openComments=true`);
       return;
     }
-
     if (notification.type === 'follow' || notification.type === 'unfollow') {
-      onClose();
       router.push(`/other-profile?id=${notification.actorId}`);
       return;
     }
-
     if (notification.entityType === 'post') {
-      onClose();
       router.push(`/posts/${notification.entityId}`);
       return;
     }
-
     if (notification.entityType === 'user') {
-      onClose();
       router.push(`/other-profile?id=${notification.entityId}`);
     }
   };
@@ -238,7 +119,6 @@ function NotificationItem({
   const handleActorClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!notification.isRead) markAsRead.mutate(notification.id);
-    onClose();
     router.push(`/other-profile?id=${notification.actorId}`);
   };
 
@@ -263,17 +143,17 @@ function NotificationItem({
       <div
         onClick={handleItemClick}
         className={cn(
-          'flex items-center justify-between gap-3 p-2 rounded-xl transition-all hover:bg-white/5 cursor-pointer relative',
+          'flex items-center justify-between gap-3 p-3 rounded-xl transition-all active:bg-white/8 cursor-pointer relative',
           !notification.isRead && 'bg-[#fbbe15]/5',
         )}>
         {!notification.isRead && (
-          <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-[#fbbe15] rounded-full' />
+          <div className='absolute left-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-[#fbbe15] rounded-full' />
         )}
 
         <div className='flex gap-3 items-center flex-1 ml-2'>
           <div
             className={cn(
-              'w-10 h-10 rounded-full overflow-hidden bg-zinc-700 shrink-0 relative border border-white/10',
+              'w-11 h-11 rounded-full overflow-hidden bg-zinc-700 shrink-0 relative border border-white/10',
               !isRestaurant && 'cursor-pointer',
             )}
             onClick={isRestaurant ? undefined : handleActorClick}>
@@ -283,11 +163,6 @@ function NotificationItem({
                 alt='LocalBuka'
                 fill
                 className='object-contain p-1.5 rounded-full'
-                onError={(e) => {
-                  const t = e.target as HTMLImageElement;
-                  t.onerror = null;
-                  t.src = '/images/profile.png';
-                }}
               />
             ) : (
               <Image
@@ -299,7 +174,7 @@ function NotificationItem({
             )}
           </div>
 
-          <div className='flex flex-col'>
+          <div className='flex flex-col flex-1 min-w-0'>
             <p className='text-white text-sm leading-tight'>
               {!isRestaurant ? (
                 <span
@@ -330,7 +205,7 @@ function NotificationItem({
           <button
             onClick={handleFollowBack}
             disabled={followUserMutation.isPending}
-            className='bg-[#fbbe15] text-[#1a1a1a] text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-[#e5ac10] transition-colors shrink-0 tracking-tighter disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1'>
+            className='bg-[#fbbe15] text-[#1a1a1a] text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-[#e5ac10] transition-colors shrink-0 tracking-tighter disabled:opacity-50 border-none cursor-pointer flex items-center gap-1'>
             {followUserMutation.isPending ? (
               <Loader2 size={10} className='animate-spin' />
             ) : (
@@ -359,5 +234,78 @@ function NotificationItem({
         />
       )}
     </>
+  );
+}
+
+// ─── Page ───────────────────────────────────────────────────────────────────────
+export default function NotificationsPage() {
+  const {user} = useAuth();
+
+  const {data: notificationsEntry, isLoading} = useNotifications({
+    page: 1,
+    pageSize: 50,
+  });
+  const markAllAsRead = useMarkAllAsRead();
+
+  const {data: followingResp} = useFollowing(user?.id || '', {
+    page: 1,
+    limit: 200,
+  });
+
+  const followingIds = useMemo(() => {
+    const list =
+      (followingResp as any)?.data?.data || (followingResp as any)?.data || [];
+    const ids = new Set<string>();
+    list.forEach((entry: any) => {
+      const u = entry.following || entry;
+      if (u?.id) ids.add(u.id);
+    });
+    return ids;
+  }, [followingResp]);
+
+  const notifications: Notification[] =
+    (notificationsEntry as any)?.data?.data || [];
+
+  return (
+    <MainLayout>
+      <div className='w-full max-w-2xl mx-auto flex flex-col min-h-dvh md:min-h-0'>
+        {/* Header */}
+        <button
+          onClick={() => markAllAsRead.mutate()}
+          disabled={markAllAsRead.isPending || notifications.length === 0}
+          className='text-xs font-semibold text-[#fbbe15] hover:text-[#e5ac10] transition-colors disabled:text-zinc-600 disabled:cursor-not-allowed bg-transparent border-none cursor-pointer flex m-4 justify-end'>
+          Mark all read
+        </button>
+
+        {/* List */}
+        <div className='flex flex-col px-2 py-2'>
+          {isLoading ? (
+            <div className='flex items-center justify-center py-20'>
+              <Loader2 className='w-6 h-6 animate-spin text-[#fbbe15]' />
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className='flex flex-col items-center justify-center py-24 text-center gap-3'>
+              <div className='w-14 h-14 rounded-full bg-[#2a2a2a] flex items-center justify-center'>
+                <span className='text-2xl'>🔔</span>
+              </div>
+              <p className='text-white font-semibold text-sm'>
+                You&apos;re all caught up!
+              </p>
+              <p className='text-zinc-500 text-xs'>
+                No new notifications right now.
+              </p>
+            </div>
+          ) : (
+            notifications.map((notif) => (
+              <NotificationItem
+                key={notif.id}
+                notification={notif}
+                alreadyFollowing={followingIds.has(notif.actorId)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </MainLayout>
   );
 }

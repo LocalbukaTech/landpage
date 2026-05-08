@@ -45,12 +45,12 @@ export function RewardsSupport({
   return (
     <div className='flex flex-col gap-0'>
       {/* Sub-tabs */}
-      <div className='flex gap-6 border-b border-white/10'>
+      <div className='flex gap-4 border-b border-white/10 overflow-x-auto scrollbar-hide'>
         {subTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabChange(tab.id)}
-            className={`pb-3 text-sm font-medium transition-colors cursor-pointer bg-transparent border-none ${
+            className={`pb-3 text-sm font-medium transition-colors cursor-pointer bg-transparent border-none whitespace-nowrap shrink-0 ${
               currentTab === tab.id
                 ? 'text-white border-b-2 border-[#FBBE15]'
                 : 'text-zinc-500 hover:text-zinc-300'

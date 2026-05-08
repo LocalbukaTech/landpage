@@ -1,11 +1,12 @@
 'use client';
 
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {ArrowLeft, ChevronDown, MapPin, Search} from 'lucide-react';
+import {ArrowLeft, ChevronDown, Filter, MapPin, Search, X} from 'lucide-react';
 import {useRouter} from 'next/navigation';
 import {CuisineFilters, FilterState} from '@/components/buka/CuisineFilters';
 import {BukaCard, BukaRestaurant} from '@/components/buka/BukaCard';
 import {Pagination} from '@/components/buka/Pagination';
+import {MobileExploreRestaurants} from '@/components/buka/mobile/MobileExploreRestaurants';
 import {useRestaurants, useSearchRestaurants} from '@/lib/api';
 import {CgSpinner} from 'react-icons/cg';
 import {useGeolocation} from '@/hooks/useGeolocation';
@@ -65,6 +66,7 @@ export default function ExploreRestaurantsPage() {
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const locationRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -206,157 +208,174 @@ export default function ExploreRestaurantsPage() {
   };
 
   return (
-    <div className='w-full min-h-screen bg-[#1a1a1a]'>
-      <div className='max-w-[1440px] mx-auto'>
-        {/* ── Compact Header ── */}
-        <div className='w-[92%] mx-auto pt-8 pb-4 flex items-center gap-4'>
-          <button
-            onClick={() => router.back()}
-            className='w-10 h-10 flex items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10 transition-colors cursor-pointer'
-            aria-label='Go back'>
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className='text-white text-2xl font-bold'>
-              Explore Restaurants
-            </h1>
-            <p className='text-zinc-400 text-sm mt-0.5'>
-              Discover the best bukas and restaurants near you
-            </p>
+    <>
+      {/* ─── Mobile View (< md) ─── */}
+      <div className='block md:hidden'>
+        <MobileExploreRestaurants
+          restaurants={apiRestaurants}
+          isLoading={isLoading}
+          selectedLocation={selectedLocation}
+          onLocationChange={(loc) => {
+            setSelectedLocation(loc);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
+
+      {/* ─── Desktop View (≥ md) ─── */}
+      <div className='hidden md:block w-full min-h-screen bg-[#1a1a1a]'>
+        <div className='max-w-[1440px] mx-auto'>
+          {/* ── Compact Header ── */}
+          <div className='w-[92%] mx-auto pt-8 pb-4 flex items-center gap-4'>
+            <button
+              onClick={() => router.back()}
+              className='w-10 h-10 flex items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0'
+              aria-label='Go back'>
+              <ArrowLeft size={20} />
+            </button>
+            <div>
+              <h1 className='text-white text-2xl font-bold'>
+                Explore Restaurants
+              </h1>
+              <p className='text-zinc-400 text-sm mt-0.5'>
+                Discover the best bukas and restaurants near you
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* ── Location & Search Bar ── */}
-        <div className='w-[92%] mx-auto py-4'>
-          <div className='flex items-center justify-between'>
-            {/* Location LOV */}
-            <div className='relative' ref={locationRef}>
-              <button
-                onClick={() => setIsLocationOpen(!isLocationOpen)}
-                className='flex items-center gap-2 h-12 px-5 bg-white rounded-xl cursor-pointer min-w-[220px]'>
-                <MapPin size={16} className='text-[#1a1a1a] shrink-0' />
-                <span className='text-[#1a1a1a] text-sm flex-1 text-left'>
-                  {selectedLocation || 'Enter Location'}
-                </span>
-                <ChevronDown
-                  size={16}
-                  className={`text-zinc-500 shrink-0 transition-transform ${
-                    isLocationOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
+          {/* ── Location & Search Bar ── */}
+          <div className='w-[92%] mx-auto py-4'>
+            <div className='flex items-center justify-between'>
+              {/* Location LOV */}
+              <div className='relative' ref={locationRef}>
+                <button
+                  onClick={() => setIsLocationOpen(!isLocationOpen)}
+                  className='flex items-center gap-2 h-12 px-5 bg-white rounded-xl cursor-pointer min-w-[220px]'>
+                  <MapPin size={16} className='text-[#1a1a1a] shrink-0' />
+                  <span className='text-[#1a1a1a] text-sm flex-1 text-left'>
+                    {selectedLocation || 'Enter Location'}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`text-zinc-500 shrink-0 transition-transform ${
+                      isLocationOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
 
-              {isLocationOpen && (
-                <div className='absolute top-14 left-0 w-full bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50'>
-                  {LOCATIONS.map((loc) => (
-                    <button
-                      key={loc}
-                      onClick={() => {
-                        setSelectedLocation(loc);
-                        setIsLocationOpen(false);
-                        setCurrentPage(1);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-                        selectedLocation === loc
-                          ? 'bg-[#fbbe15]/10 text-[#1a1a1a] font-medium'
-                          : 'text-zinc-700 hover:bg-zinc-100'
-                      }`}>
-                      {loc}
-                    </button>
+                {isLocationOpen && (
+                  <div className='absolute top-14 left-0 w-full bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50'>
+                    {LOCATIONS.map((loc) => (
+                      <button
+                        key={loc}
+                        onClick={() => {
+                          setSelectedLocation(loc);
+                          setIsLocationOpen(false);
+                          setCurrentPage(1);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+                          selectedLocation === loc
+                            ? 'bg-[#fbbe15]/10 text-[#1a1a1a] font-medium'
+                            : 'text-zinc-700 hover:bg-zinc-100'
+                        }`}>
+                        {loc}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Search area */}
+              <div className='flex items-center gap-3'>
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isSearchOpen ? 'w-[300px] opacity-100' : 'w-0 opacity-0'
+                  }`}>
+                  <input
+                    ref={searchInputRef}
+                    type='text'
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder='Search restaurants...'
+                    className='w-full h-12 px-4 bg-[#2a2a2a] border border-zinc-700 rounded-xl text-white text-sm outline-none focus:border-[#fbbe15] transition-colors placeholder:text-zinc-500'
+                  />
+                </div>
+
+                <button
+                  onClick={() => {
+                    setIsSearchOpen(!isSearchOpen);
+                    if (isSearchOpen) setSearchQuery('');
+                  }}
+                  className='w-12 h-12 flex items-center justify-center bg-[#fbbe15] rounded-xl hover:bg-[#e5ac10] transition-colors shrink-0 cursor-pointer'>
+                  <Search size={18} className='text-[#1a1a1a]' />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Main Content ── */}
+          <div className='w-[92%] mx-auto pb-16 flex gap-8'>
+            {/* Sidebar */}
+            <aside className='w-[220px] shrink-0'>
+              <CuisineFilters onFilterChange={handleFilterChange} />
+            </aside>
+
+            {/* Restaurant Grid */}
+            <div className='flex-1 flex flex-col'>
+              {/* Results Header */}
+              <div className='mb-4 md:mb-6'>
+                <p className='text-zinc-400 text-sm'>
+                  Found{' '}
+                  <span className='text-[#fbbe15] font-semibold'>
+                    {filteredRestaurants.length}
+                  </span>{' '}
+                  restaurants in{' '}
+                  <span className='text-[#fbbe15] font-semibold'>
+                    {selectedLocation}
+                  </span>
+                </p>
+              </div>
+
+              {/* Cards Grid */}
+              {isLoading ? (
+                <div className='flex items-center justify-center py-20'>
+                  <CgSpinner className='animate-spin text-[#fbbe15] text-4xl' />
+                </div>
+              ) : (
+                <div className='grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5'>
+                  {filteredRestaurants.map((restaurant) => (
+                    <div key={restaurant.id}>
+                      <BukaCard restaurant={restaurant} />
+                    </div>
                   ))}
                 </div>
               )}
-            </div>
 
-            {/* Search area */}
-            <div className='flex items-center gap-3'>
-              <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                  isSearchOpen ? 'w-[300px] opacity-100' : 'w-0 opacity-0'
-                }`}>
-                <input
-                  ref={searchInputRef}
-                  type='text'
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder='Search restaurants...'
-                  className='w-full h-12 px-4 bg-[#2a2a2a] border border-zinc-700 rounded-xl text-white text-sm outline-none focus:border-[#fbbe15] transition-colors placeholder:text-zinc-500'
+              {/* Empty State */}
+              {!isLoading && filteredRestaurants.length === 0 && (
+                <div className='flex items-center justify-center py-20'>
+                  <p className='text-zinc-500 text-sm'>
+                    No restaurants found. Try adjusting your filters or
+                    location.
+                  </p>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {filteredRestaurants.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
                 />
-              </div>
-
-              <button
-                onClick={() => {
-                  setIsSearchOpen(!isSearchOpen);
-                  if (isSearchOpen) setSearchQuery('');
-                }}
-                className='w-12 h-12 flex items-center justify-center bg-[#fbbe15] rounded-xl hover:bg-[#e5ac10] transition-colors shrink-0 cursor-pointer'>
-                <Search size={18} className='text-[#1a1a1a]' />
-              </button>
+              )}
             </div>
-          </div>
-        </div>
-
-        {/* ── Main Content ── */}
-        <div className='w-[92%] mx-auto pb-16 flex gap-8'>
-          {/* Sidebar */}
-          <aside className='w-[220px] shrink-0'>
-            <CuisineFilters onFilterChange={handleFilterChange} />
-          </aside>
-
-          {/* Restaurant Grid */}
-          <div className='flex-1 flex flex-col'>
-            {/* Results Header */}
-            <div className='mb-6'>
-              <p className='text-zinc-400 text-sm'>
-                Found{' '}
-                <span className='text-[#fbbe15] font-semibold'>
-                  {filteredRestaurants.length}
-                </span>{' '}
-                restaurants in{' '}
-                <span className='text-[#fbbe15] font-semibold'>
-                  {selectedLocation}
-                </span>
-              </p>
-            </div>
-
-            {/* Cards Grid */}
-            {isLoading ? (
-              <div className='flex items-center justify-center py-20'>
-                <CgSpinner className='animate-spin text-[#fbbe15] text-4xl' />
-              </div>
-            ) : (
-              <div className='grid grid-cols-3 gap-5'>
-                {filteredRestaurants.map((restaurant) => (
-                  <div key={restaurant.id}>
-                    <BukaCard restaurant={restaurant} />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!isLoading && filteredRestaurants.length === 0 && (
-              <div className='flex items-center justify-center py-20'>
-                <p className='text-zinc-500 text-sm'>
-                  No restaurants found. Try adjusting your filters or location.
-                </p>
-              </div>
-            )}
-
-            {/* Pagination */}
-            {filteredRestaurants.length > 0 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            )}
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -54,7 +54,7 @@ export function ProfileTabs({
     <div className='w-full mt-6'>
       {/* Tab Headers */}
       <div className='flex items-center justify-between border-b border-white/10'>
-        <div className='flex'>
+        <div className='flex overflow-x-auto scrollbar-hide'>
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -64,7 +64,7 @@ export function ProfileTabs({
                   setActiveTab(tab.id);
                   onTabChange?.(tab.id);
                 }}
-                className={`flex items-center gap-2 px-4 md:px-6 py-3 text-sm font-medium transition-all border-b-2 cursor-pointer bg-transparent ${
+                className={`flex items-center gap-2 px-3 md:px-6 py-3 text-sm font-medium transition-all border-b-2 cursor-pointer bg-transparent whitespace-nowrap shrink-0 ${
                   isActive
                     ? 'border-[#FBBE15] text-white'
                     : 'border-transparent text-zinc-500 hover:text-zinc-300'

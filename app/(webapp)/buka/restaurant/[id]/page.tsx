@@ -507,7 +507,7 @@ function SimilarRestaurants({
           <ChevronRight size={16} />
         </button>
       </div>
-      <div className='grid grid-cols-3 gap-5'>
+      <div className='grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5'>
         {sorted.map((r) => (
           <BukaCard key={r.id} restaurant={r} />
         ))}
@@ -696,7 +696,7 @@ export default function RestaurantDetailPage() {
     <div className='w-full min-h-screen bg-[#1a1a1a]'>
       <div className='max-w-[1440px] mx-auto'>
         {/* ── Hero Carousel ── */}
-        <section className='relative w-full h-[500px] overflow-hidden rounded-b-2xl bg-zinc-900 border-b border-zinc-800'>
+        <section className='relative w-full h-[260px] md:h-[500px] overflow-hidden rounded-b-2xl bg-zinc-900 border-b border-zinc-800'>
           {isPlaceholderPhoto ? (
             <div className='w-full h-full bg-zinc-800 flex items-center justify-center'>
               <UtensilsCrossed size={80} className='text-zinc-600' />
@@ -742,7 +742,7 @@ export default function RestaurantDetailPage() {
           {/* Back button */}
           <button
             onClick={() => router.back()}
-            className='absolute top-8 left-8 z-10 flex items-center justify-center w-10 h-10 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors bg-black/20 cursor-pointer'
+            className='absolute top-4 left-4 md:top-8 md:left-8 z-10 flex items-center justify-center w-10 h-10 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors bg-black/20 cursor-pointer'
             aria-label='Go back'>
             <ArrowLeft size={20} />
           </button>
@@ -752,9 +752,9 @@ export default function RestaurantDetailPage() {
         <div className='w-[92%] mx-auto'>
           <div className='py-6 flex flex-col gap-3'>
             {/* Name + Tags row */}
-            <div className='flex items-center gap-3'>
+            <div className='flex flex-wrap items-center gap-2 md:gap-3'>
               <UtensilsCrossed size={18} className='text-white shrink-0' />
-              <h1 className='text-white text-xl font-bold'>
+              <h1 className='text-white text-lg md:text-xl font-bold'>
                 {restaurant.name}
               </h1>
               <span className='w-4 h-4 rounded-full bg-green-500 shrink-0' />
@@ -768,7 +768,7 @@ export default function RestaurantDetailPage() {
             </div>
 
             {/* Address + Actions */}
-            <div className='flex items-start justify-between'>
+            <div className='flex flex-col md:flex-row md:items-start md:justify-between gap-4'>
               <div className='flex flex-col gap-2'>
                 {/* Address */}
                 <div className='flex items-center gap-1.5'>
@@ -788,7 +788,7 @@ export default function RestaurantDetailPage() {
               </div>
 
               {/* Action buttons */}
-              <div className='flex items-center gap-6'>
+              <div className='flex items-center gap-4 md:gap-6'>
                 <button className='flex flex-col items-center gap-1 cursor-pointer group'>
                   <div className='w-10 h-10 flex items-center justify-center rounded-lg border border-zinc-600 group-hover:border-zinc-400 transition-colors'>
                     <Phone size={16} className='text-white' />
@@ -854,7 +854,7 @@ export default function RestaurantDetailPage() {
           </div>
 
           {/* ── Static Map Preview ── */}
-          <div className='w-full h-[480px] rounded-2xl overflow-hidden bg-zinc-800 z-0 relative'>
+          <div className='w-full h-[260px] md:h-[480px] rounded-2xl overflow-hidden bg-zinc-800 z-0 relative'>
             <MapEmbed
               destinationLat={lat}
               destinationLng={lng}
@@ -927,7 +927,7 @@ export default function RestaurantDetailPage() {
           {/* ── Photos Grid ── */}
           {activeTab === 'photos' && (
             <div className='py-8'>
-              <div className='grid grid-cols-5 gap-3'>
+              <div className='grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-3'>
                 {photos.map((photo: string, i: number) => (
                   <div
                     key={i}

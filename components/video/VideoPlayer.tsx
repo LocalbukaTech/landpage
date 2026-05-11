@@ -44,14 +44,33 @@ export function VideoPlayer({
 
   const isVideo = post.mediaType === 'video';
 
+  // Keep a ref so the play effect always reads the latest muted state
+  // without needing to add isMuted to its dependency array (which would
+  // incorrectly restart the video every time the user taps the mute button).
+  const isMutedRef = useRef(isMuted);
+  isMutedRef.current = isMuted;
+
+  // Imperatively sync the DOM .muted property whenever it changes.
+  // React only sets the HTML attribute, not the JS property, so browsers
+  // (especially mobile Chrome/Safari) can miss the change.
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
   // Play/pause based on active state and video changes
   useEffect(() => {
     if (videoRef.current && isVideo) {
       if (isActive) {
         // Reset video to beginning when switching
         videoRef.current.currentTime = 0;
+        // Set muted imperatively before play() — mobile browsers block
+        // unmuted autoplay, and React's JSX muted prop is not reliable.
+        videoRef.current.muted = isMutedRef.current;
         videoRef.current.play().catch(() => {
-          // Autoplay might be blocked
+          // Autoplay still blocked (e.g. unmuted + no prior interaction)
+          // — silently ignore, user can tap to play
         });
       } else {
         videoRef.current.pause();

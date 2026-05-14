@@ -29,7 +29,6 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab }: Pro
   const router = useRouter();
   const { toast } = useToast();
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
-
   const deletePostMutation = useDeletePost();
   const toggleSaveMutation = useToggleSave();
 

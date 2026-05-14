@@ -94,7 +94,7 @@ function HomeContent() {
     <MainLayout>
       <div className='relative w-full h-full'>
         {/* Following | For You Toggle Overlay */}
-        <div className='absolute top-6 left-0 right-0 z-50 flex justify-center items-center gap-4 pointer-events-none'>
+        <div className='fixed top-14 left-0 right-0 z-50 flex justify-center items-center gap-4 pointer-events-none pt-4 md:absolute md:top-6 md:pt-0'>
           <button
             onClick={() => setFeedType('following')}
             className={cn(

@@ -389,7 +389,7 @@ function EditModal({restaurant, onClose, onSaved}: EditModalProps) {
                 className={INPUT_CLASS}
               />
             </div>
-            <div className='grid grid-cols-3 gap-3'>
+            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
               <div>
                 <label className='block text-sm font-semibold text-zinc-300 mb-2'>
                   City
@@ -544,7 +544,7 @@ function EditModal({restaurant, onClose, onSaved}: EditModalProps) {
             subtitle='How pricy is the experience?'
             isOpen={openSections.price}
             onToggle={() => toggle('price')}>
-            <div className='grid grid-cols-4 gap-3'>
+            <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
               {PRICE_LEVELS.map((pl) => (
                 <button
                   key={pl.value}

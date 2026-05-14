@@ -291,20 +291,17 @@ export function BukaCard({restaurant}: BukaCardProps) {
       {/* Info */}
       <div className='flex flex-col gap-2 mt-3'>
         {/* Name & Rating */}
-        <div className='flex items-center justify-between'>
+        <div className='flex items-start justify-between gap-1'>
           <div className='flex items-center gap-1.5 min-w-0'>
             <UtensilsCrossed size={14} className='text-white shrink-0' />
             <span className='text-white text-sm font-bold truncate'>
               {restaurant.name}
             </span>
           </div>
-          <div className='flex items-center gap-1 shrink-0 ml-2'>
+          <div className='flex items-center gap-1 shrink-0'>
             <Star size={12} className='text-green-500 fill-green-500' />
             <span className='text-green-500 text-xs font-medium'>
               {restaurant.rating}
-            </span>
-            <span className='text-zinc-500 text-xs'>
-              ({restaurant.reviewCount} Reviews)
             </span>
           </div>
         </div>
@@ -329,24 +326,24 @@ export function BukaCard({restaurant}: BukaCardProps) {
         </div>
 
         {/* Scores */}
-        <div className='flex items-center gap-4 mt-1'>
-          <div className='flex items-center gap-1'>
+        <div className='flex items-center gap-2 md:gap-4 mt-1 overflow-x-auto scrollbar-hide'>
+          <div className='flex items-center gap-0.5 shrink-0'>
             <span className='text-primary text-xs font-bold'>
               {restaurant.hygiene.toFixed(1)}
             </span>
             <span className='text-zinc-500 text-[10px]'>Hygiene</span>
           </div>
-          <div className='flex items-center gap-1'>
+          <div className='flex items-center gap-0.5 shrink-0'>
             <span className='text-primary text-xs font-bold'>
               {restaurant.affordability.toFixed(1)}
             </span>
-            <span className='text-zinc-500 text-[10px]'>Affordability</span>
+            <span className='text-zinc-500 text-[10px]'>Afford.</span>
           </div>
-          <div className='flex items-center gap-1'>
+          <div className='flex items-center gap-0.5 shrink-0'>
             <span className='text-primary text-xs font-bold'>
               {restaurant.foodQuality.toFixed(1)}
             </span>
-            <span className='text-zinc-500 text-[10px]'>Food Quality</span>
+            <span className='text-zinc-500 text-[10px]'>Quality</span>
           </div>
         </div>
       </div>

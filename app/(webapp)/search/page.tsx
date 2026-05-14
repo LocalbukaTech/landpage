@@ -1,6 +1,6 @@
 'use client';
 
-import {Suspense, useEffect, useState} from 'react';
+import {Suspense, useState} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {
   Search,
@@ -13,6 +13,7 @@ import {
   MapPin,
   User as UserIcon,
   Play,
+  ArrowLeft,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -142,21 +143,35 @@ function UserResult({item}: {item: any}) {
 
 // ─── Main content ──────────────────────────────────────────────────────────────
 
-function SearchContent() {
+// Reads URL params and remounts SearchContent via key when they change,
+// so useState initializers reset naturally — no effect or render-time ref needed.
+function SearchParamsReader() {
   const searchParams = useSearchParams();
-  const router = useRouter();
-
   const q = searchParams.get('q') ?? '';
   const categoryParam = (searchParams.get('category') ?? 'all') as Category;
+  return (
+    <SearchContent
+      key={`${q}-${categoryParam}`}
+      initialQ={q}
+      initialCategory={categoryParam}
+    />
+  );
+}
 
-  const [inputValue, setInputValue] = useState(q);
-  const [category, setCategory] = useState<Category>(categoryParam);
+function SearchContent({
+  initialQ,
+  initialCategory,
+}: {
+  initialQ: string;
+  initialCategory: Category;
+}) {
+  const router = useRouter();
 
-  // Keep local state in sync when URL params change (e.g. back/forward)
-  useEffect(() => {
-    setInputValue(q);
-    setCategory(categoryParam);
-  }, [q, categoryParam]);
+  const [inputValue, setInputValue] = useState(initialQ);
+  const [category, setCategory] = useState<Category>(initialCategory);
+
+  // q is always the committed URL value — derived from initialQ (set by parent key remount)
+  const q = initialQ;
 
   const {data, isLoading, isFetching} = useSearchAll(
     {q, type: category === 'all' ? undefined : category},
@@ -201,7 +216,18 @@ function SearchContent() {
 
   return (
     <MainLayout>
-      <div className='w-full max-w-2xl mx-auto px-4 py-6 flex flex-col gap-6'>
+      <div className='w-full max-w-2xl mx-auto px-4 pt-2 pb-6 flex flex-col gap-5'>
+        {/* Mobile back button row */}
+        <div className='flex items-center gap-3 md:hidden'>
+          <button
+            onClick={() => router.back()}
+            className='w-9 h-9 flex items-center justify-center rounded-full border border-white/20 text-white shrink-0 bg-transparent'
+            aria-label='Go back'>
+            <ArrowLeft size={18} />
+          </button>
+          <span className='text-white font-semibold text-base'>Search</span>
+        </div>
+
         {/* Search bar */}
         <form onSubmit={handleSearch} className='w-full'>
           <div className='relative'>
@@ -214,7 +240,6 @@ function SearchContent() {
               onChange={(e) => setInputValue(e.target.value)}
               placeholder='Search restaurants, posts, people…'
               className='w-full pl-11 pr-4 py-3.5 rounded-xl bg-[#222] border border-white/10 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-[#fbbe15] transition-colors'
-              autoFocus
             />
             {isSearching && (
               <Loader2
@@ -329,7 +354,7 @@ export default function SearchPage() {
           </div>
         </MainLayout>
       }>
-      <SearchContent />
+      <SearchParamsReader />
     </Suspense>
   );
 }

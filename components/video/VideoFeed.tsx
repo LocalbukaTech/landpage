@@ -117,7 +117,7 @@ export function VideoFeed({
   };
 
   return (
-    <div className='flex items-center justify-center w-full h-full md:gap-4 md:h-[calc(100vh-3rem)] md:max-h-[850px]'>
+    <div className='fixed top-14 bottom-16 left-0 right-0 flex items-center justify-center md:static md:top-auto md:bottom-auto md:left-auto md:right-auto md:w-full md:h-[calc(100vh-3rem)] md:gap-4 md:max-h-[850px]'>
       <div className='flex gap-3 items-end h-full w-full md:w-auto relative'>
         <AnimatePresence mode='wait'>
           {currentPost && (

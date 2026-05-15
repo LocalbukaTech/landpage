@@ -280,10 +280,10 @@ export function VideoPlayer({
       )}
 
       {/* Top Controls */}
-      <div className='absolute top-3 left-3 right-3 flex justify-between items-center z-10'>
+      <div className='absolute top-3 left-3 right-3 flex justify-between items-start z-10'>
         {isVideo ? (
           <button
-            className='flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
+            className='mt-16 ml-4 flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
             onClick={toggleMute}
             aria-label={isMuted ? 'Unmute' : 'Mute'}>
             {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}

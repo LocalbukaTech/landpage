@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {Volume2, VolumeX} from 'lucide-react';
 import Image from 'next/image';
 import type {Post} from '@/types/post';
@@ -41,35 +41,38 @@ export function VideoPlayer({
 
   const isVideo = post.mediaType === 'video';
 
-  const attemptPlay = (
-    video: HTMLVideoElement,
-    allowMutedFallback: boolean = true,
-  ) => {
-    const playPromise = video.play();
+  const attemptPlay = useCallback(
+    function playAttempt(
+      video: HTMLVideoElement,
+      allowMutedFallback: boolean = true,
+    ) {
+      const playPromise = video.play();
 
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          setAutoplayBlocked(false);
-        })
-        .catch((error: unknown) => {
-          if (
-            error instanceof DOMException &&
-            error.name === 'NotAllowedError'
-          ) {
-            if (allowMutedFallback && !video.muted) {
-              video.muted = true;
-              video.defaultMuted = true;
-              onMuteChange(true);
-              attemptPlay(video, false);
-              return;
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setAutoplayBlocked(false);
+          })
+          .catch((error: unknown) => {
+            if (
+              error instanceof DOMException &&
+              error.name === 'NotAllowedError'
+            ) {
+              if (allowMutedFallback && !video.muted) {
+                video.muted = true;
+                video.defaultMuted = true;
+                onMuteChange(true);
+                playAttempt(video, false);
+                return;
+              }
+
+              setAutoplayBlocked(true);
             }
-
-            setAutoplayBlocked(true);
-          }
-        });
-    }
-  };
+          });
+      }
+    },
+    [onMuteChange],
+  );
 
   const unmuteAndPlay = () => {
     if (!isVideo) return;
@@ -116,8 +119,7 @@ export function VideoPlayer({
 
     video.pause();
     video.currentTime = 0;
-    setAutoplayBlocked(false);
-  }, [isActive, isMuted, isVideo, post.id]);
+  }, [attemptPlay, isActive, isMuted, isVideo, post.id]);
 
   const togglePlay = () => {
     if (!isVideo) return;

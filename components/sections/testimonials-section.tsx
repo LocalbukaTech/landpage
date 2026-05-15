@@ -42,7 +42,7 @@ export function TestimonialsSection() {
   }, [api]);
 
   return (
-    <section className='py-20'>
+    <section className='py-20 bg-white dark:bg-black'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader title='Testimonials' />
         <Reveal direction='up' className='w-full mt-8'>

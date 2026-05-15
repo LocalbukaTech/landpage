@@ -10,6 +10,8 @@ import {VideoNavigation} from '@/components/video/VideoNavigation';
 import Comments from '@/components/video/comments';
 import {useToggleLike, useToggleSave} from '@/lib/api/services/posts.hooks';
 
+const FEED_MUTED_SESSION_KEY = 'localbuka:feed-muted';
+
 interface VideoFeedProps {
   posts: Post[];
   initialIndex?: number;
@@ -31,7 +33,15 @@ export function VideoFeed({
 }: VideoFeedProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isGlobalMuted, setIsGlobalMuted] = useState(initialMuted);
+  const [isGlobalMuted, setIsGlobalMuted] = useState(() => {
+    if (typeof window === 'undefined') return initialMuted;
+
+    const savedMuted = window.sessionStorage.getItem(FEED_MUTED_SESSION_KEY);
+    if (savedMuted === 'true') return true;
+    if (savedMuted === 'false') return false;
+
+    return initialMuted;
+  });
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const toggleLikeMutation = useToggleLike();
@@ -76,6 +86,13 @@ export function VideoFeed({
         clearTimeout(transitionTimeoutRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    window.sessionStorage.setItem(
+      FEED_MUTED_SESSION_KEY,
+      String(isGlobalMuted),
+    );
+  }, [isGlobalMuted]);
 
   // Persist the current video position so the feed can be restored after
   // navigating away (to profile, other-profile, etc.) and coming back.

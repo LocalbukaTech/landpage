@@ -42,7 +42,7 @@ export function AuthModal() {
       {
         onSuccess: (response) => {
           const {token, user} = response.data;
-          setAnalyticsUser(user.id);
+          setAnalyticsUser(user.id, user.fullName, user.email, user.created_at);
           trackEvent('login', {method: 'email'});
           loginUser(user, token.access_token);
           // Reset form

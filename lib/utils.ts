@@ -29,7 +29,7 @@ export function slugify(str: string): string {
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  
+
   return slug || 'post';
 }
 
@@ -39,7 +39,7 @@ export function slugify(str: string): string {
 export function formatRelativeShort(dateString: string): string {
   // ...existing implementation...
   if (!dateString) return '';
-  
+
   try {
     const date = new Date(dateString);
     const distance = formatDistanceToNow(date, {addSuffix: false});
@@ -65,6 +65,36 @@ export function formatRelativeShort(dateString: string): string {
 }
 
 /**
+ * Returns a usable thumbnail image URL for a video post.
+ *
+ * Priority:
+ *   1. Server-generated thumbnailUrl (already an image)
+ *   2. Cloudinary on-the-fly thumbnail derived from the video URL
+ *      (works on all devices — no browser preload required)
+ *   3. undefined — caller must show a placeholder
+ */
+export function getVideoThumbnailUrl(post: {
+  thumbnailUrl: string | null;
+  mediaUrl: string;
+  mediaType: string;
+}): string | undefined {
+  if (post.thumbnailUrl) return post.thumbnailUrl;
+  if (post.mediaType !== 'video') return undefined;
+
+  // Cloudinary video URLs can be transformed into a static thumbnail image
+  // by injecting transformation parameters and swapping the extension.
+  // e.g. …/video/upload/v1/my-clip.mp4
+  //   → …/video/upload/so_1,w_400,c_fill/v1/my-clip.jpg
+  if (post.mediaUrl?.includes('res.cloudinary.com')) {
+    return post.mediaUrl
+      .replace('/video/upload/', '/video/upload/so_1,w_400,c_fill/')
+      .replace(/\.(mp4|mov|webm|avi|mkv)(\?.*)?$/i, '.jpg');
+  }
+
+  return undefined;
+}
+
+/**
  * Sort items by a date field in descending order (latest first).
  * Items without the date field are pushed to the end.
  */
@@ -78,4 +108,3 @@ export function sortByLatest<T>(items: T[], dateKey: keyof T): T[] {
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 }
-

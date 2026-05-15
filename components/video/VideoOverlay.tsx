@@ -33,7 +33,7 @@ export function VideoOverlay({post, showTimestamp}: VideoOverlayProps) {
 
   return (
     <div className='absolute bottom-0 left-0 right-0 p-4 bg-linear-to-t from-black/70 to-transparent z-5 pointer-events-none'>
-      <div className='flex flex-col gap-1.5 max-w-[85%] pointer-events-auto'>
+      <div className='flex flex-col gap-2.5 max-w-[85%] pointer-events-auto'>
         <div className='flex items-center gap-1.5 text-white font-semibold text-[15px]'>
           <span onClick={handleAvatarClick} className='cursor-pointer'>
             @{post.user?.username || post.user?.firstName || 'user'}

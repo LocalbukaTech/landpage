@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { Volume2, VolumeX, Navigation } from "lucide-react";
+import {useEffect, useState, useRef, useCallback} from 'react';
+import {MapContainer, TileLayer, Marker, Polyline, useMap} from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import {Volume2, VolumeX, Navigation} from 'lucide-react';
 
 // ---- Types ----
 interface RouteStep {
@@ -21,7 +21,8 @@ function haversineDistance(a: [number, number], b: [number, number]): number {
   const dLon = toRad(b[1] - a[1]);
   const lat1 = toRad(a[0]);
   const lat2 = toRad(b[0]);
-  const sinHalf = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+  const sinHalf =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   return R * 2 * Math.atan2(Math.sqrt(sinHalf), Math.sqrt(1 - sinHalf));
 }
@@ -67,18 +68,33 @@ interface MapEmbedProps {
   address?: string; // Add optional address for geocode fallback
 }
 
-export function MapEmbed({ destinationLat, destinationLng, showRoute, address }: MapEmbedProps) {
+export function MapEmbed({
+  destinationLat,
+  destinationLng,
+  showRoute,
+  address,
+}: MapEmbedProps) {
   const [mounted, setMounted] = useState(false);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(
+    null,
+  );
+
   // Actual destination coordinates to use (handles fallback -> geocode)
-  const [activeDestination, setActiveDestination] = useState<[number, number]>([destinationLat, destinationLng]);
-  
+  const [activeDestination, setActiveDestination] = useState<[number, number]>([
+    destinationLat,
+    destinationLng,
+  ]);
+
   const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
   const [isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [routeInfo, setRouteInfo] = useState<{ duration: number; distance: number } | null>(null);
-  const [destinationAddress, setDestinationAddress] = useState<string | null>(null);
+  const [routeInfo, setRouteInfo] = useState<{
+    duration: number;
+    distance: number;
+  } | null>(null);
+  const [destinationAddress, setDestinationAddress] = useState<string | null>(
+    null,
+  );
 
   // Turn-by-turn state
   const [routeSteps, setRouteSteps] = useState<RouteStep[]>([]);
@@ -88,27 +104,35 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
   const hasGivenWarningRef = useRef<boolean>(false);
 
   // Origin icon — Google Maps style blue pulse marker
-  const userIcon = typeof window !== 'undefined' ? L.divIcon({
-    className: 'user-location-marker-container',
-    html: '<div class="user-location-marker"></div>',
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-  }) : undefined;
+  const userIcon =
+    typeof window !== 'undefined'
+      ? L.divIcon({
+          className: 'user-location-marker-container',
+          html: '<div class="user-location-marker"></div>',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+        })
+      : undefined;
 
   // Destination icon — LocalBuka logo for the restaurant
-  const restaurantIcon = typeof window !== 'undefined' ? new L.Icon({
-    iconUrl: '/images/localBuka_logo.png',
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    className: 'rounded-full shadow-lg border-2 border-white',
-  }) : undefined;
+  const restaurantIcon =
+    typeof window !== 'undefined'
+      ? new L.Icon({
+          iconUrl: '/images/localBuka_logo.png',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
+          className: 'rounded-full shadow-lg border-2 border-white',
+        })
+      : undefined;
 
   useEffect(() => {
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-      iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-      shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+      iconRetinaUrl:
+        'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+      shadowUrl:
+        'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
     });
     setMounted(true);
   }, []);
@@ -117,7 +141,7 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
   useEffect(() => {
     if (!showRoute) return;
     if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser");
+      setLocationError('Geolocation is not supported by your browser');
       return;
     }
     const watchId = navigator.geolocation.watchPosition(
@@ -127,13 +151,15 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
       },
       (err) => {
         if (err.code === 1) {
-          setLocationError("Unable to retrieve your location. Please check browser permissions.");
+          setLocationError(
+            'Unable to retrieve your location. Please check browser permissions.',
+          );
         } else if (!userLocation) {
           // If the browser times out, give them a mock location in Lagos so the route can still draw
           setUserLocation([6.5244, 3.3792]);
         }
       },
-      { enableHighAccuracy: false, maximumAge: 10000, timeout: 5000 }
+      {enableHighAccuracy: false, maximumAge: 10000, timeout: 5000},
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [showRoute]);
@@ -146,25 +172,31 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
         try {
           // Clean Nigerian addresses for Nominatim (e.g. "20/17 Majekodunmi St, Omotayo St" -> "Majekodunmi St, Lagos")
           const cleanNigerianAddress = (addr: string) => {
-            let cleaned = addr.replace(/^(no\.?\s*|plot\s*|block\s*|blk\s*)?[0-9a-zA-Z/-]+\s*/i, "");
-            cleaned = cleaned.split(",")[0].trim();
-            if (!cleaned.toLowerCase().includes("lagos")) {
-              cleaned += ", Lagos";
+            let cleaned = addr.replace(
+              /^(no\.?\s*|plot\s*|block\s*|blk\s*)?[0-9a-zA-Z/-]+\s*/i,
+              '',
+            );
+            cleaned = cleaned.split(',')[0].trim();
+            if (!cleaned.toLowerCase().includes('lagos')) {
+              cleaned += ', Lagos';
             }
             return cleaned;
           };
 
           const searchQuery = cleanNigerianAddress(address);
-          
+
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`,
           );
           const data = await res.json();
           if (data && data.length > 0) {
-            setActiveDestination([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+            setActiveDestination([
+              parseFloat(data[0].lat),
+              parseFloat(data[0].lon),
+            ]);
           }
         } catch (err) {
-          console.error("Geocoding fallback failed", err);
+          console.error('Geocoding fallback failed', err);
         }
       };
       geocode();
@@ -180,18 +212,24 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
         try {
           const [destLat, destLng] = activeDestination;
           const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${destLat}&lon=${destLng}`
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${destLat}&lon=${destLng}`,
           );
           const data = await res.json();
           if (data?.address) {
-            const street = data.address.road || data.address.suburb || data.address.neighbourhood || "";
-            const city = data.address.city || data.address.state || "";
-            setDestinationAddress([street, city].filter(Boolean).join(", ") || "Destination");
+            const street =
+              data.address.road ||
+              data.address.suburb ||
+              data.address.neighbourhood ||
+              '';
+            const city = data.address.city || data.address.state || '';
+            setDestinationAddress(
+              [street, city].filter(Boolean).join(', ') || 'Destination',
+            );
           } else {
-            setDestinationAddress("Destination");
+            setDestinationAddress('Destination');
           }
         } catch {
-          setDestinationAddress("Destination");
+          setDestinationAddress('Destination');
         }
       })();
     }
@@ -213,14 +251,15 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
         const [destLat, destLng] = activeDestination;
         // Request steps=true for turn-by-turn instructions
         const response = await fetch(
-          `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?geometries=geojson&overview=full&steps=true`
+          `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?geometries=geojson&overview=full&steps=true`,
         );
         const data = await response.json();
 
-        if (data.code === "Ok" && data.routes?.length > 0) {
+        if (data.code === 'Ok' && data.routes?.length > 0) {
           const route = data.routes[0];
           const coordinates = route.geometry.coordinates.map(
-            (coord: [number, number]) => [coord[1], coord[0]] as [number, number]
+            (coord: [number, number]) =>
+              [coord[1], coord[0]] as [number, number],
           );
           setRoutePoints(coordinates);
           setRouteInfo({
@@ -231,64 +270,71 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
           // Extract turn-by-turn steps from the first leg
           if (route.legs?.[0]?.steps) {
             const steps: RouteStep[] = route.legs[0].steps
-              .filter((s: any) => s.maneuver?.type !== "arrive" || s.maneuver?.type === "arrive")
+              .filter(
+                (s: any) =>
+                  s.maneuver?.type !== 'arrive' ||
+                  s.maneuver?.type === 'arrive',
+              )
               .map((s: any) => {
                 const maneuver = s.maneuver;
-                let instruction = "";
+                let instruction = '';
 
                 // Build human-readable instruction from OSRM maneuver
                 const type = maneuver.type;
-                const modifier = maneuver.modifier || "";
-                const streetName = s.name || "";
+                const modifier = maneuver.modifier || '';
+                const streetName = s.name || '';
 
-                if (type === "depart") {
+                if (type === 'depart') {
                   instruction = streetName
-                    ? `Head ${modifier || "straight"} on ${streetName}`
-                    : `Head ${modifier || "straight"}`;
-                } else if (type === "arrive") {
-                  instruction = "You have arrived at your destination";
-                } else if (type === "turn") {
+                    ? `Head ${modifier || 'straight'} on ${streetName}`
+                    : `Head ${modifier || 'straight'}`;
+                } else if (type === 'arrive') {
+                  instruction = 'You have arrived at your destination';
+                } else if (type === 'turn') {
                   instruction = streetName
                     ? `Turn ${modifier} onto ${streetName}`
                     : `Turn ${modifier}`;
-                } else if (type === "new name" || type === "continue") {
+                } else if (type === 'new name' || type === 'continue') {
                   instruction = streetName
                     ? `Continue onto ${streetName}`
-                    : `Continue ${modifier || "straight"}`;
-                } else if (type === "merge") {
+                    : `Continue ${modifier || 'straight'}`;
+                } else if (type === 'merge') {
                   instruction = streetName
                     ? `Merge onto ${streetName}`
                     : `Merge ${modifier}`;
-                } else if (type === "roundabout" || type === "rotary") {
-                  const exit = maneuver.exit || "";
+                } else if (type === 'roundabout' || type === 'rotary') {
+                  const exit = maneuver.exit || '';
                   instruction = exit
                     ? `Take exit ${exit} from the roundabout`
                     : `Enter the roundabout`;
-                } else if (type === "fork") {
+                } else if (type === 'fork') {
                   instruction = streetName
                     ? `Take the ${modifier} fork onto ${streetName}`
                     : `Take the ${modifier} fork`;
-                } else if (type === "end of road") {
+                } else if (type === 'end of road') {
                   instruction = streetName
                     ? `Turn ${modifier} onto ${streetName}`
                     : `Turn ${modifier} at the end of the road`;
                 } else {
                   instruction = streetName
-                    ? `${modifier ? modifier.charAt(0).toUpperCase() + modifier.slice(1) : "Continue"} on ${streetName}`
-                    : `Continue ${modifier || "straight"}`;
+                    ? `${modifier ? modifier.charAt(0).toUpperCase() + modifier.slice(1) : 'Continue'} on ${streetName}`
+                    : `Continue ${modifier || 'straight'}`;
                 }
 
                 return {
                   instruction,
                   distance: s.distance,
-                  location: [maneuver.location[0], maneuver.location[1]] as [number, number],
+                  location: [maneuver.location[0], maneuver.location[1]] as [
+                    number,
+                    number,
+                  ],
                 };
               });
             setRouteSteps(steps);
           }
         }
       } catch (err) {
-        console.error("Failed to fetch route:", err);
+        console.error('Failed to fetch route:', err);
       } finally {
         setIsLoadingRoute(false);
       }
@@ -298,46 +344,51 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
   }, [userLocation, activeDestination, showRoute]);
 
   // ---- Speak utility with natural human voice ----
-  const speak = useCallback((text: string) => {
-    if (typeof window === "undefined" || !voiceEnabled) return;
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
+  const speak = useCallback(
+    (text: string) => {
+      if (typeof window === 'undefined' || !voiceEnabled) return;
+      const synth = window.speechSynthesis;
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1;
 
-    // Pick the most natural-sounding voice available
-    const voices = synth.getVoices();
-    const preferredNames = [
-      "Samantha",     // macOS — natural female
-      "Karen",        // macOS — natural female (Australian)
-      "Daniel",       // macOS — natural male (UK)
-      "Moira",        // macOS — natural female (Irish)
-      "Google UK English Female",
-      "Google UK English Male",
-      "Google US English",
-      "Microsoft Zira",   // Windows — female
-      "Microsoft David",  // Windows — male
-    ];
-    let selectedVoice = voices.find(v =>
-      preferredNames.some(name => v.name.includes(name))
-    );
-    // Fallback: pick any English voice that isn't compact/electronic
-    if (!selectedVoice) {
-      selectedVoice = voices.find(v =>
-        v.lang.startsWith("en") && !v.name.toLowerCase().includes("compact")
+      // Pick the most natural-sounding voice available
+      const voices = synth.getVoices();
+      const preferredNames = [
+        'Samantha', // macOS — natural female
+        'Karen', // macOS — natural female (Australian)
+        'Daniel', // macOS — natural male (UK)
+        'Moira', // macOS — natural female (Irish)
+        'Google UK English Female',
+        'Google UK English Male',
+        'Google US English',
+        'Microsoft Zira', // Windows — female
+        'Microsoft David', // Windows — male
+      ];
+      let selectedVoice = voices.find((v) =>
+        preferredNames.some((name) => v.name.includes(name)),
       );
-    }
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
+      // Fallback: pick any English voice that isn't compact/electronic
+      if (!selectedVoice) {
+        selectedVoice = voices.find(
+          (v) =>
+            v.lang.startsWith('en') &&
+            !v.name.toLowerCase().includes('compact'),
+        );
+      }
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
 
-    synth.speak(utterance);
-  }, [voiceEnabled]);
+      synth.speak(utterance);
+    },
+    [voiceEnabled],
+  );
 
   // Preload voices (some browsers load them async)
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       window.speechSynthesis.getVoices();
       window.speechSynthesis.onvoiceschanged = () => {
         window.speechSynthesis.getVoices();
@@ -354,27 +405,33 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
     // If routeSteps.length === 1, we are on the final segment to the destination.
     const currentSegment = routeSteps[0];
     const nextManeuver = routeSteps.length > 1 ? routeSteps[1] : currentSegment;
-    
+
     const maneuverStr = nextManeuver.instruction;
 
     if (maneuverStr !== lastSpokenManeuverRef.current) {
       // NEW maneuver! The user just completed a turn, or just started the route.
       lastSpokenManeuverRef.current = maneuverStr;
       hasGivenWarningRef.current = false;
-      
+
       // If it's far away, announce the long-range instruction
       if (currentSegment.distance > 150) {
-        speak(`Continue for ${Math.round(currentSegment.distance)} meters, then ${maneuverStr.toLowerCase()}`);
+        speak(
+          `Continue for ${Math.round(currentSegment.distance)} meters, then ${maneuverStr.toLowerCase()}`,
+        );
       } else {
         // It's already close, just give the immediate warning
-        speak(`In ${Math.round(currentSegment.distance)} meters, ${maneuverStr.toLowerCase()}`);
+        speak(
+          `In ${Math.round(currentSegment.distance)} meters, ${maneuverStr.toLowerCase()}`,
+        );
         hasGivenWarningRef.current = true;
       }
     } else {
       // We are approaching the SAME maneuver we already know about.
       // Have we given the < 100m warning yet?
       if (!hasGivenWarningRef.current && currentSegment.distance < 100) {
-        speak(`In ${Math.round(currentSegment.distance)} meters, ${maneuverStr.toLowerCase()}`);
+        speak(
+          `In ${Math.round(currentSegment.distance)} meters, ${maneuverStr.toLowerCase()}`,
+        );
         hasGivenWarningRef.current = true;
       }
     }
@@ -382,7 +439,7 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
 
   // Reset tracking when voice is toggled
   const toggleVoice = useCallback(() => {
-    setVoiceEnabled(prev => {
+    setVoiceEnabled((prev) => {
       if (prev) {
         // Turning off
         if (typeof window !== 'undefined') window.speechSynthesis.cancel();
@@ -400,7 +457,7 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (typeof window !== "undefined") {
+      if (typeof window !== 'undefined') {
         window.speechSynthesis.cancel();
       }
     };
@@ -408,7 +465,7 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
 
   if (!mounted) {
     return (
-      <div className="w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-500">
+      <div className='w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-500'>
         Loading Map...
       </div>
     );
@@ -419,38 +476,42 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
   return (
     <>
       {showRoute && locationError && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-1000 bg-red-500/90 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
+        <div className='absolute top-4 left-1/2 -translate-x-1/2 z-1000 bg-red-500/90 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm'>
           {locationError}
         </div>
       )}
 
-      {/* Compact ETA Card - Top Right */}
+      {/* Compact ETA Card - Top Right, stacked lower on mobile to avoid badge overlap */}
       {showRoute && routeInfo && (
-        <div className="absolute top-3 right-3 z-1000 bg-[#2E68E3] rounded-xl shadow-lg px-3 py-2 text-white min-w-[140px] animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="flex items-center gap-2">
-            <Navigation size={14} className="opacity-80 shrink-0" />
-            <span className="text-xs uppercase tracking-wider opacity-80 font-semibold">To</span>
+        <div className='absolute top-20 md:top-3 left-3 right-3 md:left-auto md:right-3 z-1000 bg-[#2E68E3] rounded-xl shadow-lg px-3 py-2 text-white md:min-w-[140px] animate-in fade-in slide-in-from-right-4 duration-300'>
+          <div className='flex items-center gap-2'>
+            <Navigation size={14} className='opacity-80 shrink-0' />
+            <span className='text-xs uppercase tracking-wider opacity-80 font-semibold'>
+              To
+            </span>
           </div>
-          <p className="text-xs font-medium line-clamp-1 mt-0.5 opacity-90">
+          <p className='text-xs font-medium line-clamp-1 mt-0.5 opacity-90'>
             {destinationAddress || 'Locating...'}
           </p>
-          <div className="flex items-baseline gap-1.5 mt-1">
-            <span className="text-xl font-bold leading-none">{routeInfo.duration}</span>
-            <span className="text-xs opacity-80">min</span>
-            <span className="text-xs opacity-60 mx-0.5">·</span>
-            <span className="text-xs opacity-80">{routeInfo.distance} km</span>
+          <div className='flex items-baseline gap-1.5 mt-1'>
+            <span className='text-xl font-bold leading-none'>
+              {routeInfo.duration}
+            </span>
+            <span className='text-xs opacity-80'>min</span>
+            <span className='text-xs opacity-60 mx-0.5'>·</span>
+            <span className='text-xs opacity-80'>{routeInfo.distance} km</span>
           </div>
         </div>
       )}
 
       {/* Turn-by-turn instruction — centered overlay */}
       {showRoute && voiceEnabled && routeSteps.length > 0 && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-1000 w-[85%] max-w-md pointer-events-none">
-          <div className="bg-black/70 backdrop-blur-md text-white px-5 py-4 rounded-2xl text-center shadow-2xl animate-in fade-in zoom-in-95 duration-300">
-            <Navigation size={20} className="mx-auto mb-2 text-[#fbbe15]" />
-            <p className="text-sm font-semibold leading-relaxed">
-              {routeSteps.length > 1 
-                ? `In ${Math.round(routeSteps[0].distance)}m, ${routeSteps[1].instruction}` 
+        <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-1000 w-[85%] max-w-md pointer-events-none'>
+          <div className='bg-black/70 backdrop-blur-md text-white px-5 py-4 rounded-2xl text-center shadow-2xl animate-in fade-in zoom-in-95 duration-300'>
+            <Navigation size={20} className='mx-auto mb-2 text-[#fbbe15]' />
+            <p className='text-sm font-semibold leading-relaxed'>
+              {routeSteps.length > 1
+                ? `In ${Math.round(routeSteps[0].distance)}m, ${routeSteps[1].instruction}`
                 : routeSteps[0].instruction}
             </p>
           </div>
@@ -458,22 +519,21 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
       )}
 
       {/* Right Controls (Recenter) */}
-      <div className="absolute bottom-6 right-3 z-1000">
+      <div className='absolute bottom-6 right-3 z-1000'>
         <button
           onClick={() => {
             const destinationLat: [number, number] = activeDestination;
-            setRecenterTrigger(prev => prev + 1);
+            setRecenterTrigger((prev) => prev + 1);
           }}
-          className="w-12 h-12 rounded-full bg-white text-zinc-700 shadow-lg flex items-center justify-center hover:bg-zinc-50 transition-all border-none cursor-pointer"
-          aria-label="Recenter map"
-        >
-          <Navigation size={20} className="fill-current" />
+          className='w-12 h-12 rounded-full bg-white text-zinc-700 shadow-lg flex items-center justify-center hover:bg-zinc-50 transition-all border-none cursor-pointer'
+          aria-label='Recenter map'>
+          <Navigation size={20} className='fill-current' />
         </button>
       </div>
 
       {/* Left Controls (Voice) */}
       {showRoute && (
-        <div className="absolute bottom-6 left-3 z-1000">
+        <div className='absolute bottom-6 left-3 z-1000'>
           <button
             onClick={toggleVoice}
             className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 border-none cursor-pointer ${
@@ -481,8 +541,9 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
                 ? 'bg-[#2E68E3] text-white'
                 : 'bg-white text-zinc-700 hover:bg-zinc-100'
             }`}
-            aria-label={voiceEnabled ? "Mute voice navigation" : "Enable voice navigation"}
-          >
+            aria-label={
+              voiceEnabled ? 'Mute voice navigation' : 'Enable voice navigation'
+            }>
             {voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
           </button>
         </div>
@@ -491,13 +552,18 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
       <MapContainer
         center={destination}
         zoom={15}
-        style={{ height: "100%", width: "100%", zIndex: 0, background: "#f8f9fa" }}
+        style={{
+          height: '100%',
+          width: '100%',
+          zIndex: 0,
+          background: '#f8f9fa',
+        }}
         scrollWheelZoom={false} // We handle this with a custom handler for Cmd/Ctrl
       >
         <MapZoomHandler />
         <TileLayer
           attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
         />
 
         {/* Destination Marker — LocalBuka Logo */}
@@ -510,8 +576,12 @@ export function MapEmbed({ destinationLat, destinationLng, showRoute, address }:
 
             {/* Route Line - solid */}
             <Polyline
-              positions={routePoints.length > 0 ? routePoints : [userLocation, destination]}
-              pathOptions={{ color: '#fbbe15', weight: 5, opacity: 0.9 }}
+              positions={
+                routePoints.length > 0
+                  ? routePoints
+                  : [userLocation, destination]
+              }
+              pathOptions={{color: '#fbbe15', weight: 5, opacity: 0.9}}
             />
           </>
         )}
@@ -547,8 +617,8 @@ function MapZoomHandler() {
     };
 
     const container = map.getContainer();
-    container.addEventListener('wheel', handleWheel, { passive: false });
-    
+    container.addEventListener('wheel', handleWheel, {passive: false});
+
     // Enable scrollWheelZoom but we control it via the event listener above
     map.scrollWheelZoom.enable();
 
@@ -558,8 +628,8 @@ function MapZoomHandler() {
   }, [map]);
 
   return showHint ? (
-    <div className="absolute inset-0 z-2000 pointer-events-none flex items-center justify-center">
-      <div className="bg-black/70 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm animate-in fade-in zoom-in duration-200">
+    <div className='absolute inset-0 z-2000 pointer-events-none flex items-center justify-center'>
+      <div className='bg-black/70 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm animate-in fade-in zoom-in duration-200'>
         Use {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'} + scroll to zoom
       </div>
     </div>

@@ -143,7 +143,7 @@ function HomeContent() {
           <VideoFeed
             posts={posts}
             initialIndex={initialIndex}
-            initialMuted={!videoId && !savedPostId}
+            initialMuted={true}
             feedType={feedType}
             hideFollowButton={feedType === 'following'}
             showTimestamp={feedType === 'following'}

@@ -15,15 +15,21 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: 'res.cloudinary.com',
         port: '',
-        pathname: '/de97zul4x/image/upload/**',
-      },
-        {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com",
+        pathname: '/de97zul4x/**',
       },
       {
-        protocol: "https",
-        hostname: "maps.googleapis.com",
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/de97zul4x/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'maps.googleapis.com',
       },
     ],
   },

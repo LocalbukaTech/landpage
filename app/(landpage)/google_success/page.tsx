@@ -36,7 +36,7 @@ const GoogleSuccessContent = () => {
         onSuccess: (response) => {
           const {token, user} = response.data;
           loginUser(user, token.access_token);
-          setAnalyticsUser(user.id);
+          setAnalyticsUser(user.id, user.fullName, user.email, user.created_at);
 
           // Check where the user came from
           const origin = localStorage.getItem('google_auth_origin');

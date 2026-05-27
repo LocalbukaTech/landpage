@@ -7,6 +7,7 @@ import {Copy, ChevronRight, Crown} from 'lucide-react';
 interface RewardsSupportProps {
   activeSubTab?: string;
   onSubTabChange?: (tab: string) => void;
+  mode?: 'refer' | 'support' | 'all';
 }
 
 const topEarners = [
@@ -19,17 +20,25 @@ const topEarners = [
 ];
 
 export function RewardsSupport({
-  activeSubTab = 'refer',
+  activeSubTab,
   onSubTabChange,
+  mode = 'all',
 }: RewardsSupportProps) {
-  const [currentTab, setCurrentTab] = useState(activeSubTab);
+  const initialTab = activeSubTab || (mode === 'support' ? 'help' : 'refer');
+  const [currentTab, setCurrentTab] = useState(initialTab);
   const [copied, setCopied] = useState(false);
 
-  const subTabs = [
+  const allSubTabs = [
     {id: 'refer', label: 'Refer & Earn'},
     {id: 'help', label: 'Help & Support / Contact Us'},
     {id: 'terms', label: 'Terms & Policies'},
   ];
+
+  const subTabs = mode === 'support'
+    ? allSubTabs.filter((tab) => tab.id !== 'refer')
+    : mode === 'refer'
+      ? allSubTabs.filter((tab) => tab.id === 'refer')
+      : allSubTabs;
 
   const handleTabChange = (tabId: string) => {
     setCurrentTab(tabId);
@@ -45,23 +54,25 @@ export function RewardsSupport({
   return (
     <div className='flex flex-col gap-0'>
       {/* Sub-tabs */}
-      <div className='flex gap-4 border-b border-white/10 overflow-x-auto scrollbar-hide'>
-        {subTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => handleTabChange(tab.id)}
-            className={`pb-3 text-sm font-medium transition-colors cursor-pointer bg-transparent border-none whitespace-nowrap shrink-0 ${
-              currentTab === tab.id
-                ? 'text-white border-b-2 border-[#FBBE15]'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-            style={
-              currentTab === tab.id ? {borderBottom: '2px solid #FBBE15'} : {}
-            }>
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {mode !== 'refer' && (
+        <div className='flex gap-4 border-b border-white/10 overflow-x-auto scrollbar-hide'>
+          {subTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`pb-3 text-sm font-medium transition-colors cursor-pointer bg-transparent border-none whitespace-nowrap shrink-0 ${
+                currentTab === tab.id
+                  ? 'text-white border-b-2 border-[#FBBE15]'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+              style={
+                currentTab === tab.id ? {borderBottom: '2px solid #FBBE15'} : {}
+              }>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Content */}
       <div className='mt-8'>

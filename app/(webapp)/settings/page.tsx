@@ -44,7 +44,7 @@ export default function SettingsPage() {
         {[
           {id: 'account', label: 'Account'},
           {id: 'notifications', label: 'Notifications'},
-          {id: 'rewards', label: 'Rewards'},
+          {id: 'support', label: 'Help & Support'},
         ].map((item) => (
           <button
             key={item.id}
@@ -86,7 +86,7 @@ export default function SettingsPage() {
             />
           )}
           {activeSection === 'notifications' && <NotificationsPrivacy />}
-          {activeSection === 'rewards' && <RewardsSupport />}
+          {activeSection === 'support' && <RewardsSupport mode='support' />}
         </div>
       </div>
     </div>

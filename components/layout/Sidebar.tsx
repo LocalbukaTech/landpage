@@ -13,6 +13,7 @@ import {
   User,
   Search,
   Store,
+  Gift,
 } from 'lucide-react';
 import Image from 'next/image';
 import {SearchOverlay} from '@/components/layout/SearchOverlay';
@@ -29,6 +30,7 @@ const baseNavItems = [
   {icon: Bell, label: 'Notification', href: '/notifications'},
   {icon: Bookmark, label: 'Saved', href: '/profile?tab=saved'},
   {icon: Users, label: 'Community', href: '#'},
+  {icon: Gift, label: 'Refer & Earn', href: '/rewards'},
   {icon: User, label: 'Profile', href: '/profile'},
 ];
 

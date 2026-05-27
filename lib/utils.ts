@@ -7,6 +7,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Ensures that a URL uses HTTPS instead of HTTP (except localhost)
+ */
+export function ensureHttps(url: string | null | undefined): string {
+  if (!url) return '';
+  if (url.startsWith('http://') && !url.includes('localhost')) {
+    return url.replace('http://', 'https://');
+  }
+  return url;
+}
+
+/**
  * Capitalize first letter of each word in a string
  */
 export function capitalize(str: string): string {
@@ -78,7 +89,7 @@ export function getVideoThumbnailUrl(post: {
   mediaUrl: string;
   mediaType: string;
 }): string | undefined {
-  if (post.thumbnailUrl) return post.thumbnailUrl;
+  if (post.thumbnailUrl) return ensureHttps(post.thumbnailUrl);
   if (post.mediaType !== 'video') return undefined;
 
   // Cloudinary video URLs can be transformed into a static thumbnail image
@@ -86,9 +97,11 @@ export function getVideoThumbnailUrl(post: {
   // e.g. …/video/upload/v1/my-clip.mp4
   //   → …/video/upload/so_1,w_400,c_fill/v1/my-clip.jpg
   if (post.mediaUrl?.includes('res.cloudinary.com')) {
-    return post.mediaUrl
-      .replace('/video/upload/', '/video/upload/so_1,w_400,c_fill/')
-      .replace(/\.(mp4|mov|webm|avi|mkv)(\?.*)?$/i, '.jpg');
+    return ensureHttps(
+      post.mediaUrl
+        .replace('/video/upload/', '/video/upload/so_1,w_400,c_fill/')
+        .replace(/\.(mp4|mov|webm|avi|mkv)(\?.*)?$/i, '.jpg')
+    );
   }
 
   return undefined;

@@ -223,6 +223,7 @@ export default function Comments({postId, open, onClose}: CommentsProps) {
                   key={c.id}
                   comment={c}
                   onReplyClick={(id, username) => setReplyingTo({id, username})}
+                  postId={postId ?? undefined}
                 />
               ))}
 

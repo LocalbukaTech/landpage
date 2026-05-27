@@ -94,7 +94,7 @@ export function UploadDropzone({onFileSelect}: UploadDropzoneProps) {
               <span>File formats</span>
             </div>
             <p className='text-xs md:text-sm text-zinc-500'>
-              Recommended: ".mp4" for videos, ".jpg, .png" for images.
+              Recommended: &quot;.mp4&quot; for videos, &quot;.jpg, .png&quot; for images.
             </p>
           </div>
 

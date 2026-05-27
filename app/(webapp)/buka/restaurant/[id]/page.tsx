@@ -641,7 +641,7 @@ export default function RestaurantDetailPage() {
         maximumAge: 0,
       },
     );
-  }, []);
+  }, [setShowDirectionsModal]);
 
   // Auto-advance carousel
   useEffect(() => {

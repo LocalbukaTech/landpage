@@ -1,28 +1,27 @@
 'use client';
 
-import {ArrowLeft} from 'lucide-react';
-import {useRouter} from 'next/navigation';
-import {BukaCategory} from '@/components/buka/BukaCategory';
-import {BukaRestaurant} from '@/components/buka/BukaCard';
-import {CuisineSection} from '@/components/buka/CuisineSection';
-import {Waitlist} from '@/components/buka/Waitlist';
-import {Images} from '@/public/images';
-import {MobileBukaHome} from '@/components/buka/mobile/MobileBukaHome';
+import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { BukaCategory } from '@/components/buka/BukaCategory';
+import { BukaRestaurant } from '@/components/buka/BukaCard';
+import { CuisineSection } from '@/components/buka/CuisineSection';
+import { Waitlist } from '@/components/buka/Waitlist';
+import { Images } from '@/public/images';
+import { MobileBukaHome } from '@/components/buka/mobile/MobileBukaHome';
 
-import {useEffect, useMemo, useState} from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  useRestaurants,
   useSearchRestaurants,
   useTrendingRestaurants,
 } from '@/lib/api';
-import {Restaurant} from '@/lib/api/services/restaurants.service';
-import {CgSpinner} from 'react-icons/cg';
+import { Restaurant } from '@/lib/api/services/restaurants.service';
+import { CgSpinner } from 'react-icons/cg';
 import Link from 'next/link';
 import Image from 'next/image';
-import {useGeolocation} from '@/hooks/useGeolocation';
-import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
-import {helper} from '@/utils/helper';
-import {useAuth} from '@/context/AuthContext';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { RESTAURANT_PLACEHOLDER_IMG } from '@/lib/constants';
+import { helper } from '@/utils/helper';
+import { useAuth } from '@/context/AuthContext';
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
 
@@ -48,9 +47,9 @@ const mapToBukaRestaurant = (res: Restaurant): BukaRestaurant => ({
 
 // Cuisine Data
 const cuisines = [
-  {name: 'Nigeria Cuisine', image: Images.image1},
-  {name: 'Yoruba Cuisine', image: Images.image2},
-  {name: 'Igbo Cuisine', image: Images.image3},
+  { name: 'Nigeria Cuisine', image: Images.image1 },
+  { name: 'Yoruba Cuisine', image: Images.image2 },
+  { name: 'Igbo Cuisine', image: Images.image3 },
   {
     name: 'Hausa Cuisine',
     image:
@@ -70,9 +69,9 @@ const cuisines = [
 
 export default function BukaPage() {
   const router = useRouter();
-  const {lat, lng, loading: loadingGeo} = useGeolocation();
+  const { lat, lng, loading: loadingGeo } = useGeolocation();
   const [heroBgUrl, setHeroBgUrl] = useState("url('/images/buka.gif')");
-  const {isAuthenticated} = useAuth();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,37 +80,24 @@ export default function BukaPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch from the API
-  const {data: restaurantsData, isLoading: isLoadingAll} = useRestaurants({
-    page: 1,
-    pageSize: 20,
-  });
-  const {data: trendingData, isLoading: isLoadingTrending} =
-    useTrendingRestaurants();
-  // Fetch Google fallback for user location
-  const {data: fallbackData, isLoading: isLoadingFallback} =
+  // Fetch unified restaurants for user location
+  const { data: searchResponse, isLoading: isLoadingSearch } =
     useSearchRestaurants(
       {
         lat: lat || 6.5244,
         lng: lng || 3.3792,
         page: 1,
-        pageSize: 20,
+        pageSize: 30,
       },
       !loadingGeo,
     );
 
-  // Map the API responses to the UI models
-  const allUiRestaurants = useMemo(() => {
-    return restaurantsData?.data?.map(mapToBukaRestaurant) || [];
-  }, [restaurantsData]);
-
-  const searchUiRestaurants = useMemo(() => {
-    return fallbackData?.data?.map(mapToBukaRestaurant) || [];
-  }, [fallbackData]);
+  const { data: trendingData, isLoading: isLoadingTrending } =
+    useTrendingRestaurants();
 
   const trendingUiRestaurants = useMemo(() => {
     const rawData = trendingData as unknown as
-      | {data?: Restaurant[]}
+      | { data?: Restaurant[] }
       | Restaurant[];
     const arrayData = Array.isArray(rawData) ? rawData : rawData?.data;
     const mapped = Array.isArray(arrayData)
@@ -120,16 +106,27 @@ export default function BukaPage() {
     return helper.sortDbFirstThenByDate(mapped);
   }, [trendingData]);
 
-  // We can populate the different UI categories by distributing the dynamic data:
-  // Combine ALL and Fallback into a unified list, removing duplicates by ID
+  // Combine into a unified list
   const combinedAll = useMemo(() => {
-    const combined = [...allUiRestaurants, ...searchUiRestaurants];
-    const uniqueMap = new Map();
-    combined.forEach((r) => {
-      if (!uniqueMap.has(r.id)) uniqueMap.set(r.id, r);
-    });
-    return helper.sortDbFirstThenByDate(Array.from(uniqueMap.values()));
-  }, [allUiRestaurants, searchUiRestaurants]);
+    let rawList: any[] = [];
+    if (
+      searchResponse &&
+      (searchResponse as any).data &&
+      Array.isArray((searchResponse as any).data)
+    ) {
+      rawList = (searchResponse as any).data;
+    } else if (
+      searchResponse &&
+      (searchResponse as any).data?.data &&
+      Array.isArray((searchResponse as any).data.data)
+    ) {
+      rawList = (searchResponse as any).data.data;
+    } else if (Array.isArray(searchResponse)) {
+      rawList = searchResponse;
+    }
+
+    return rawList.map(mapToBukaRestaurant);
+  }, [searchResponse]);
 
   const topRestaurants =
     trendingUiRestaurants.length > 0
@@ -142,7 +139,7 @@ export default function BukaPage() {
       ? trendingUiRestaurants.slice(5)
       : combinedAll.slice(0, 6);
 
-  const isLoading = isLoadingAll || isLoadingTrending || isLoadingFallback;
+  const isLoading = isLoadingTrending || isLoadingSearch;
 
   return (
     <>
@@ -165,7 +162,7 @@ export default function BukaPage() {
           <section className='relative w-full overflow-hidden h-[60vh] md:h-[1007px]'>
             <div
               className='absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000'
-              style={{backgroundImage: heroBgUrl}}
+              style={{ backgroundImage: heroBgUrl }}
             />
             <div className='absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent' />
 
@@ -217,7 +214,7 @@ export default function BukaPage() {
               <>
                 {topRestaurants.length > 0 && (
                   <BukaCategory
-                    title='Top 5 Restaurant'
+                    title='Trending Restaurant'
                     restaurants={topRestaurants}
                   />
                 )}

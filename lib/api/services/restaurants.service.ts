@@ -100,10 +100,15 @@ export const restaurantsService = {
 
   // Search restaurants
   searchRestaurants: (params: {
-    lat: number;
-    lng: number;
+    q?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+    cuisine?: string;
+    city?: string;
     page?: number;
     pageSize?: number;
+    status?: string;
   }) => {
     return api.get<ApiResponse<PaginatedResponse<Restaurant>>>(
       '/restaurants/search',

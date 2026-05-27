@@ -1,17 +1,16 @@
 'use client';
 
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {ArrowLeft, ChevronDown, Filter, MapPin, Search, X} from 'lucide-react';
+import {ArrowLeft, ChevronDown, MapPin, Search} from 'lucide-react';
 import {useRouter} from 'next/navigation';
 import {CuisineFilters, FilterState} from '@/components/buka/CuisineFilters';
 import {BukaCard, BukaRestaurant} from '@/components/buka/BukaCard';
 import {Pagination} from '@/components/buka/Pagination';
 import {MobileExploreRestaurants} from '@/components/buka/mobile/MobileExploreRestaurants';
-import {useRestaurants, useSearchRestaurants} from '@/lib/api';
+import {useSearchRestaurants} from '@/lib/api';
 import {CgSpinner} from 'react-icons/cg';
 import {useGeolocation} from '@/hooks/useGeolocation';
 import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
-import {helper} from '@/utils/helper';
 
 const LOCATIONS = [
   'All Locations',
@@ -22,14 +21,6 @@ const LOCATIONS = [
   'Abuja, FCT',
   'Port Harcourt, Rivers',
 ];
-
-const LOCATION_COORDS: Record<string, {lat: number; lng: number}> = {
-  'Ikeja, Lagos': {lat: 6.6018, lng: 3.3515},
-  'Victoria Island, Lagos': {lat: 6.4281, lng: 3.4219},
-  'Lekki, Lagos': {lat: 6.4698, lng: 3.5852},
-  'Abuja, FCT': {lat: 9.0765, lng: 7.3986},
-  'Port Harcourt, Rivers': {lat: 4.8156, lng: 7.0498},
-};
 
 const ITEMS_PER_PAGE = 30;
 
@@ -66,75 +57,58 @@ export default function ExploreRestaurantsPage() {
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const locationRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Extract city for API call (first part before the comma, e.g. "Ikeja" from "Ikeja, Lagos")
-  const isAllLocations = selectedLocation === 'All Locations';
   const isCurrentLocation = selectedLocation === 'Current Location';
-  const locationParts = selectedLocation.split(', ');
-  const city =
-    isAllLocations || isCurrentLocation ? undefined : locationParts[0];
 
-  // Fetch ALL restaurants from DB
-  const {data: allRes, isLoading: isLoadingAll} = useRestaurants({
-    page: currentPage,
-    pageSize: ITEMS_PER_PAGE,
-    city,
-  });
+  const searchParams = useMemo(() => {
+    const params: any = {
+      page: currentPage,
+      pageSize: ITEMS_PER_PAGE,
+      q: searchQuery || undefined,
+    };
 
-  // Google fallback search — skip when "All Locations" (no single coord makes sense)
-  const coords = isCurrentLocation
-    ? {lat: userLat || 6.5244, lng: userLng || 3.3792}
-    : LOCATION_COORDS[selectedLocation] || {lat: 6.5244, lng: 3.3792};
+    const isCurrent = selectedLocation === 'Current Location';
+    const isAll = selectedLocation === 'All Locations';
 
-  const {data: fallbackRes, isLoading: isLoadingFallback} =
-    useSearchRestaurants(
-      {
-        lat: coords.lat,
-        lng: coords.lng,
-        page: currentPage,
-        pageSize: ITEMS_PER_PAGE,
-      },
-      isAllLocations ? false : isCurrentLocation ? !loadingGeo : true,
-    );
+    if (isCurrent) {
+      params.lat = userLat || 6.5244;
+      params.lng = userLng || 3.3792;
+    } else if (!isAll) {
+      const parts = selectedLocation.split(',');
+      const cityVal = parts.length > 1 ? parts[1].trim() : selectedLocation;
+      params.city = cityVal === 'FCT' ? 'Abuja' : cityVal;
+    }
 
-  const isLoading = isLoadingAll || isLoadingFallback;
+    return params;
+  }, [selectedLocation, userLat, userLng, currentPage, searchQuery]);
 
-  // Combine DB + fallback, deduplicate
+  const {data: searchResponse, isLoading} = useSearchRestaurants(
+    searchParams,
+    isCurrentLocation ? !loadingGeo : true
+  );
+
+  // Map backend returned unified results
   const apiRestaurants: BukaRestaurant[] = useMemo(() => {
-    let rawDb: any[] = [];
+    let rawList: any[] = [];
     if (
-      allRes &&
-      (allRes as any).data?.data &&
-      Array.isArray((allRes as any).data.data)
+      searchResponse &&
+      (searchResponse as any).data &&
+      Array.isArray((searchResponse as any).data)
     ) {
-      rawDb = (allRes as any).data.data;
-    } else if (allRes && Array.isArray((allRes as any).data)) {
-      rawDb = (allRes as any).data;
-    } else if (Array.isArray(allRes)) {
-      rawDb = allRes as any[];
+      rawList = (searchResponse as any).data;
+    } else if (
+      searchResponse &&
+      (searchResponse as any).data?.data &&
+      Array.isArray((searchResponse as any).data.data)
+    ) {
+      rawList = (searchResponse as any).data.data;
+    } else if (Array.isArray(searchResponse)) {
+      rawList = searchResponse;
     }
 
-    let rawFallback: any[] = [];
-    if (fallbackRes && Array.isArray((fallbackRes as any).data)) {
-      rawFallback = (fallbackRes as any).data;
-    } else if (Array.isArray(fallbackRes)) {
-      rawFallback = fallbackRes as any[];
-    }
-
-    const combined = [...rawDb, ...rawFallback];
-    const uniqueMap = new Map();
-    combined.forEach((c: any) => {
-      const id = c.id || c.googlePlaceId;
-      if (id && !uniqueMap.has(id)) uniqueMap.set(id, c);
-    });
-
-    return helper.sortDbFirstThenByDate(
-      Array.from(uniqueMap.values()).map(mapToBukaRestaurant),
-    );
-  }, [allRes, fallbackRes]);
+    return rawList.map(mapToBukaRestaurant);
+  }, [searchResponse]);
 
   // Filters — no default cuisine
   const [filters, setFilters] = useState<FilterState>({
@@ -190,12 +164,10 @@ export default function ExploreRestaurantsPage() {
     });
   }, [filters, searchQuery, apiRestaurants]);
 
-  const totalPages = Math.max(
-    (allRes as any)?.data?.totalPages || 1,
-    (fallbackRes as any)?.totalPages ||
-      (fallbackRes as any)?.data?.totalPages ||
-      1,
-  );
+  const totalPages =
+    (searchResponse as any)?.totalPages ||
+    (searchResponse as any)?.data?.totalPages ||
+    1;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);

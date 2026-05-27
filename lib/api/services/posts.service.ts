@@ -80,4 +80,12 @@ export const postsService = {
   deleteComment: (postId: string, commentId: string) => {
     return api.delete<void>(`/posts/${postId}/comments/${commentId}`);
   },
+
+  /** PATCH /posts/:id/comments/:commentId — edit a comment */
+  editComment: (postId: string, commentId: string, comment: string) => {
+    return api.patch<ApiResponse<PostComment>>(
+      `/posts/${postId}/comments/${commentId}`,
+      { comment }
+    );
+  },
 };

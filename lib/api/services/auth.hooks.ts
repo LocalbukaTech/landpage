@@ -7,11 +7,9 @@ import {
   type SigninPayload,
   type SigninResponse,
   type SignupPayload,
-  type SignupResponse,
   type VerifyPayload,
   type VerifyResponse,
   type ResendCodePayload,
-  type ResendCodeResponse,
   type UpdateProfilePayload,
   type ChangePasswordPayload,
   ExchangeGoogleCodeResponse,
@@ -131,6 +129,16 @@ export const useAcceptContentPolicy = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => userAuthService.acceptContentPolicy(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    },
+  });
+};
+
+export const useSavePreferencesMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (preferences: string[]) => userAuthService.savePreferences(preferences),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
     },

@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {useToast} from '@/hooks/use-toast';
-import {getVideoThumbnailUrl} from '@/lib/utils';
+import {getVideoThumbnailUrl, ensureHttps} from '@/lib/utils';
 
 interface ProfileVideoGridProps {
   posts: Post[];
@@ -116,14 +116,15 @@ export function ProfileVideoGrid({
             {/* Media Rendering (Image or Video) */}
             {post.mediaType === 'image' ||
             !post.mediaUrl.match(/\.(mp4|mov|webm)$/i) ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={post.mediaUrl}
+                src={ensureHttps(post.mediaUrl)}
                 className='w-full h-full object-cover'
                 alt={post.caption || 'Post'}
               />
             ) : (
               <video
-                src={post.mediaUrl}
+                src={ensureHttps(post.mediaUrl)}
                 poster={getVideoThumbnailUrl(post)}
                 className='w-full h-full object-cover'
                 muted

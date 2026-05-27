@@ -86,7 +86,11 @@ export function useGeolocation() {
       });
     }
 
-    getPosition();
+    // Call asynchronously to avoid calling setState synchronously in the effect body
+    const timer = setTimeout(() => {
+      getPosition();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return state;

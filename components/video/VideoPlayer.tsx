@@ -5,6 +5,7 @@ import { Volume2, VolumeX, MoreHorizontal, Play, Pause } from 'lucide-react';
 import Image from 'next/image';
 import type { Post } from '@/types/post';
 import { VideoOverlay } from '@/components/video/VideoOverlay';
+import { ensureHttps } from '@/lib/utils';
 
 interface VideoPlayerProps {
   post: Post;
@@ -211,8 +212,8 @@ export function VideoPlayer({
       {isVideo ? (
         <video
           ref={videoRef}
-          src={post.mediaUrl}
-          poster={post.thumbnailUrl || undefined}
+          src={ensureHttps(post.mediaUrl)}
+          poster={post.thumbnailUrl ? ensureHttps(post.thumbnailUrl) : undefined}
           className='w-full h-full object-cover'
           loop
           muted={isMuted}
@@ -225,7 +226,7 @@ export function VideoPlayer({
         />
       ) : (
         <Image
-          src={post.mediaUrl}
+          src={ensureHttps(post.mediaUrl)}
           alt={post.caption || 'Post Image'}
           fill
           className='object-cover'

@@ -41,14 +41,20 @@ export function SearchOverlay({isOpen, onClose}: SearchOverlayProps) {
 
   // Load history from localStorage on mount (client-only)
   useEffect(() => {
-    setRecentSearches(readHistory());
+    const timer = setTimeout(() => {
+      setRecentSearches(readHistory());
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Reload history whenever the overlay opens so it stays in sync
   // if the search page also pushes to history.
   useEffect(() => {
     if (isOpen) {
-      setRecentSearches(readHistory());
+      const timer = setTimeout(() => {
+        setRecentSearches(readHistory());
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 

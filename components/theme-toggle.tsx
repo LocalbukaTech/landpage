@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { usePathname } from 'next/navigation';
 
 export function ThemeToggle() {
-  const {theme, setTheme, resolvedTheme} = useTheme();
+  const {setTheme, resolvedTheme} = useTheme();
   const pathname = usePathname();
 
   // Hide on restaurant detail pages where the map is prominent

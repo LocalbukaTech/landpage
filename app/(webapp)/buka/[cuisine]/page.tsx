@@ -8,10 +8,9 @@ import {CuisineFilters, FilterState} from '@/components/buka/CuisineFilters';
 import {BukaCard, BukaRestaurant} from '@/components/buka/BukaCard';
 import {Pagination} from '@/components/buka/Pagination';
 import {Images} from '@/public/images';
-import {useRestaurantsByCuisine, useSearchRestaurants} from '@/lib/api';
+import {useSearchRestaurants} from '@/lib/api';
 import {CgSpinner} from 'react-icons/cg';
 import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
-import {helper} from '@/utils/helper';
 
 // Map slug → cuisine filter name
 const SLUG_TO_CUISINE: Record<string, string> = {
@@ -74,14 +73,6 @@ const LOCATIONS = [
   'Port Harcourt, Rivers',
 ];
 
-const LOCATION_COORDS: Record<string, {lat: number; lng: number}> = {
-  'Ikeja, Lagos': {lat: 6.6018, lng: 3.3515},
-  'Victoria Island, Lagos': {lat: 6.4281, lng: 3.4219},
-  'Lekki, Lagos': {lat: 6.4698, lng: 3.5852},
-  'Abuja, FCT': {lat: 9.0765, lng: 7.3986},
-  'Port Harcourt, Rivers': {lat: 4.8156, lng: 7.0498},
-};
-
 const ITEMS_PER_PAGE = 9;
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
@@ -123,66 +114,44 @@ export default function CuisineDetailPage() {
   const locationRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Get actual fetching from APi
+  // Get actual fetching from API
   const apiCuisineName = cuisineSlug.replace('-cuisine', '').replace('-', ' ');
   // Provide a safe default location city for fetching initially maybe?
   // We'll extract city for API call if selectedLocation is e.g. "Ikeja, Lagos" -> "Lagos"
   const locationParts = selectedLocation.split(', ');
-  const city = locationParts.length > 1 ? locationParts[1] : locationParts[0];
+  const city = locationParts.length > 1 ? locationParts[1].trim() : selectedLocation;
+  const cityQuery = city === 'FCT' ? 'Abuja' : city;
 
-  const {data: cuisineRes, isLoading: isLoadingCuisine} =
-    useRestaurantsByCuisine(apiCuisineName, {
-      page: currentPage,
-      pageSize: ITEMS_PER_PAGE,
-      city,
-    });
+  const searchParams = useMemo(() => ({
+    page: currentPage,
+    pageSize: ITEMS_PER_PAGE,
+    cuisine: apiCuisineName,
+    city: cityQuery,
+    q: searchQuery || undefined,
+  }), [currentPage, apiCuisineName, cityQuery, searchQuery]);
 
-  const coords = LOCATION_COORDS[selectedLocation] || {
-    lat: 6.5244,
-    lng: 3.3792,
-  };
-  const {data: fallbackSearchRes, isLoading: isLoadingFallback} =
-    useSearchRestaurants({
-      lat: coords.lat,
-      lng: coords.lng,
-      page: currentPage,
-      pageSize: ITEMS_PER_PAGE,
-    });
-
-  const isLoading = isLoadingCuisine || isLoadingFallback;
+  const {data: searchResponse, isLoading} = useSearchRestaurants(searchParams);
 
   const apiRestaurants: BukaRestaurant[] = useMemo(() => {
-    let rawCuisine: any[] = [];
-    if (cuisineRes && Array.isArray((cuisineRes as any).data)) {
-      rawCuisine = (cuisineRes as any).data;
-    } else if (
-      cuisineRes &&
-      (cuisineRes as any).data?.data &&
-      Array.isArray((cuisineRes as any).data.data)
+    let rawList: any[] = [];
+    if (
+      searchResponse &&
+      (searchResponse as any).data &&
+      Array.isArray((searchResponse as any).data)
     ) {
-      rawCuisine = (cuisineRes as any).data.data;
-    } else if (Array.isArray(cuisineRes)) {
-      rawCuisine = cuisineRes as any[];
+      rawList = (searchResponse as any).data;
+    } else if (
+      searchResponse &&
+      (searchResponse as any).data?.data &&
+      Array.isArray((searchResponse as any).data.data)
+    ) {
+      rawList = (searchResponse as any).data.data;
+    } else if (Array.isArray(searchResponse)) {
+      rawList = searchResponse;
     }
 
-    let rawFallback: any[] = [];
-    if (fallbackSearchRes && Array.isArray((fallbackSearchRes as any).data)) {
-      rawFallback = (fallbackSearchRes as any).data;
-    } else if (Array.isArray(fallbackSearchRes)) {
-      rawFallback = fallbackSearchRes as any[];
-    }
-
-    const combined = [...rawCuisine, ...rawFallback];
-    const uniqueMap = new Map();
-    combined.forEach((c: any) => {
-      const id = c.id || c.googlePlaceId;
-      if (id && !uniqueMap.has(id)) uniqueMap.set(id, c);
-    });
-
-    return helper.sortDbFirstThenByDate(
-      Array.from(uniqueMap.values()).map(mapToBukaRestaurant),
-    );
-  }, [cuisineRes, fallbackSearchRes]);
+    return rawList.map(mapToBukaRestaurant);
+  }, [searchResponse]);
 
   const [filters, setFilters] = useState<FilterState>({
     minPrice: '',
@@ -238,12 +207,10 @@ export default function CuisineDetailPage() {
     });
   }, [filters, searchQuery, apiRestaurants]);
 
-  const totalPages = Math.max(
-    (cuisineRes as any)?.data?.totalPages || 1,
-    (fallbackSearchRes as any)?.totalPages ||
-      (fallbackSearchRes as any)?.data?.totalPages ||
-      1,
-  );
+  const totalPages =
+    (searchResponse as any)?.totalPages ||
+    (searchResponse as any)?.data?.totalPages ||
+    1;
   const paginatedRestaurants = filteredRestaurants; // if pagination is handled by backend, we don't slice here.
 
   const handlePageChange = (page: number) => {

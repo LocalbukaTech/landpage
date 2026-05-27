@@ -1,6 +1,6 @@
 'use client';
 
-import {User, Shield, Target} from 'lucide-react';
+import {User, Shield, HelpCircle} from 'lucide-react';
 import Link from 'next/link';
 
 interface SettingsSidebarProps {
@@ -11,7 +11,7 @@ interface SettingsSidebarProps {
 const sidebarItems = [
   {id: 'account', label: 'Account Information', icon: User},
   {id: 'notifications', label: 'Notifications & Privacy', icon: Shield},
-  {id: 'rewards', label: 'Rewards & Support', icon: Target},
+  {id: 'support', label: 'Help & Support', icon: HelpCircle},
 ];
 
 const footerLinks = [

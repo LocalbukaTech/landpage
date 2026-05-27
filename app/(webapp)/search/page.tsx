@@ -20,6 +20,7 @@ import Link from 'next/link';
 import {MainLayout} from '@/components/layout/MainLayout';
 import {useSearchAll} from '@/lib/api/services/restaurants.hooks';
 import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
+import {ensureHttps} from '@/lib/utils';
 
 type Category = 'all' | 'restaurants' | 'posts' | 'users';
 
@@ -106,7 +107,7 @@ function PostResult({item}: {item: any}) {
 }
 
 function UserResult({item}: {item: any}) {
-  const avatar = item.avatar || item.image_url || item.profilePicture;
+  const avatar = ensureHttps(item.avatar || item.image_url || item.profilePicture);
   return (
     <Link
       href={item.id ? `/other-profile?id=${item.id}` : '#'}

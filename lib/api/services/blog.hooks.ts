@@ -182,7 +182,7 @@ export const useLikeCommentMutation = () => {
   const {toast} = useToast();
 
   return useMutation({
-    mutationFn: ({commentId, blogId}: {commentId: string; blogId: string}) => blogService.likeComment(commentId),
+    mutationFn: ({commentId, blogId: _blogId}: {commentId: string; blogId: string}) => blogService.likeComment(commentId),
     onSuccess: (response, variables) => {
       // Invalidate comments for the specific blog to refetch updated data
       queryClient.invalidateQueries({queryKey: queryKeys.blog.comments(variables.blogId)});

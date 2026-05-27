@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSavePreferencesMutation } from '@/lib/api/services/auth.hooks';
 
 // Steps list
 type OnboardingStep = 'preferences' | 'slide1' | 'slide2' | 'slide3' | 'welcome';
@@ -43,6 +44,8 @@ const PreferencesContent = () => {
   const [direction, setDirection] = useState<number>(1); // For slide transitions direction
   const [selectedPrefs, setSelectedPrefs] = useState<string[]>([]);
 
+  const savePreferencesMutation = useSavePreferencesMutation();
+
   // Toggles the selection of a preference option card
   const togglePreference = (id: string) => {
     setSelectedPrefs((prev) =>
@@ -54,6 +57,19 @@ const PreferencesContent = () => {
   const goToStep = (nextStep: OnboardingStep, isNext: boolean = true) => {
     setDirection(isNext ? 1 : -1);
     setStep(nextStep);
+  };
+
+  // Submit preferences to backend and advance to slide1
+  const handlePreferencesSubmit = () => {
+    savePreferencesMutation.mutate(selectedPrefs, {
+      onSuccess: () => {
+        goToStep('slide1');
+      },
+      onError: (err) => {
+        console.error('Error saving onboarding preferences:', err);
+        goToStep('slide1'); // Proceed anyway so as to not block the user
+      },
+    });
   };
 
   // Skip direct to feed/redirect
@@ -150,9 +166,13 @@ const PreferencesContent = () => {
                 {/* Continue button */}
                 <div className="w-full max-w-2xl px-4 mb-6">
                   <button
-                    onClick={() => goToStep('slide1')}
-                    className="w-full py-4 sm:py-4.5 bg-[#fbbe15] hover:opacity-90 active:scale-[0.99] text-[#0A1F44] font-bold rounded-xl transition-all text-sm sm:text-base shadow-sm cursor-pointer"
+                    onClick={handlePreferencesSubmit}
+                    disabled={savePreferencesMutation.isPending}
+                    className="w-full py-4 sm:py-4.5 bg-[#fbbe15] hover:opacity-90 active:scale-[0.99] text-[#0A1F44] font-bold rounded-xl transition-all text-sm sm:text-base shadow-sm cursor-pointer disabled:opacity-70 flex items-center justify-center gap-2"
                   >
+                    {savePreferencesMutation.isPending && (
+                      <Loader2 className="animate-spin w-5 h-5 mr-2" />
+                    )}
                     Continue
                   </button>
                 </div>

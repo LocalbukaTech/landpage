@@ -190,4 +190,8 @@ export const userAuthService = {
     api.patch<ApiResponse<{hasAcceptedContentPolicy: boolean}>>(
       '/users/me/content-policy',
     ),
+
+  /** PUT /onboarding/preferences — Save user onboarding preferences */
+  savePreferences: (preferences: string[]) =>
+    api.put<ApiResponse<any>>('/onboarding/preferences', { preferences }),
 };

@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSavePreferencesMutation } from '@/lib/api/services/auth.hooks';
 
+<<<<<<< HEAD
 // Steps list
 type OnboardingStep = 'preferences' | 'slide1' | 'slide2' | 'slide3' | 'welcome';
 
@@ -33,6 +34,14 @@ const preferenceOptions = [
     description: 'Discover places with great atmosphere & settings.',
   },
 ];
+=======
+const foodCategories = [
+  { id: 'affordability', label: 'Affordability', description: 'Find food that won\'t break bank.' },
+  { id: 'hidden-gems', label: 'Hidden Gems', description: 'Explore local favorites and unique lesser known spots.' },
+  { id: 'proximity', label: 'Proximity', description: 'Locate the best food options nearby and quickly.' },
+  { id: 'ambiance', label: 'Ambiance', description: 'Discover places with great atmosphere & settings.' },
+]
+>>>>>>> e27e097 (fix: onboarding mobile layout and feeds text alignment)
 
 const PreferencesContent = () => {
   const router = useRouter();
@@ -53,6 +62,7 @@ const PreferencesContent = () => {
     );
   };
 
+<<<<<<< HEAD
   // Navigates to a specific step with animation direction
   const goToStep = (nextStep: OnboardingStep, isNext: boolean = true) => {
     setDirection(isNext ? 1 : -1);
@@ -75,6 +85,10 @@ const PreferencesContent = () => {
   // Skip direct to feed/redirect
   const handleSkipAll = () => {
     router.push(redirect);
+=======
+  const handleGoToFeed = () => {
+    router.push(`/signup/feedsOverview?redirect=${encodeURIComponent(redirect)}`);
+>>>>>>> e27e097 (fix: onboarding mobile layout and feeds text alignment)
   };
 
   // Main custom framer-motion variants
@@ -102,6 +116,7 @@ const PreferencesContent = () => {
   };
 
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-white dark:bg-black flex flex-col justify-between overflow-x-hidden relative">
 
       {/* Top Bar with Skip (except on Welcome page) */}
@@ -114,6 +129,50 @@ const PreferencesContent = () => {
             Skip
           </button>
         )}
+=======
+    <div className='relative min-h-screen flex flex-col items-center justify-center bg-white dark:bg-black px-6 md:px-0'>
+      <button
+        onClick={() => {handleGoToFeed()}}
+        className='absolute top-[71px] right-[16px] md:top-[75px] md:right-[40px] text-[13px] md:text-[19px] font-semibold leading-[1.4] text-[#0A1F44] md:text-[#000000] dark:text-white'>
+        Skip
+      </button>
+      <div className='text-left md:text-center max-w-[576px] w-full'>
+        <h1 className='text-[19px] md:text-[23px] font-bold text-[#151515] dark:text-white mb-2'>
+          What matters to you the most when it comes to food?
+        </h1>
+        <p className='text-[13px] font-normal leading-[1.4] text-[#767676] dark:text-gray-400 mb-10'>
+          Tell us your priority to get personalized recommendation
+        </p>
+
+        <div className='grid grid-cols-2 gap-[10px] mb-12'>
+          {foodCategories.map((category) => {
+            const isSelected = selectedCategories.includes(category.id);
+            return (
+              <button
+                key={category.id}
+                onClick={() => toggleCategory(category.id)}
+                className={`min-h-[82px] px-[16px] py-[10px] rounded-[20px] border text-left transition-all ${
+                  isSelected
+                    ? 'bg-[#E6E9EC] border-[#001F3F] text-gray-700 dark:text-gray-300'
+                    : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-[#EBEBEB] dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+                }`}>
+               <p className='text-[11px] md:text-[19px] font-semibold leading-[1.4] text-[#001F3F] dark:text-white mb-1'>
+               {category.label}
+              </p>
+              <p className='text-[11px] md:text-[13px] font-normal leading-[1.4] text-[#001F3F] dark:text-gray-400'>
+                {category.description}
+              </p>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={handleGoToFeed}
+          className='fixed bottom-6 left-4 right-4 md:relative md:bottom-auto md:left-auto md:right-auto md:w-full h-[48px] px-[40px] bg-[#FBBE15] hover:bg-[#FBBE15]/90 text-[#0A1F44] font-semibold rounded-[12px] transition-colors'>
+          Continue
+        </button>
+>>>>>>> e27e097 (fix: onboarding mobile layout and feeds text alignment)
       </div>
 
       {/* Main Content Area */}
@@ -424,4 +483,8 @@ const PreferencesPage = () => {
   );
 };
 
+<<<<<<< HEAD
 export default PreferencesPage;
+=======
+export default PreferencesPage;
+>>>>>>> e27e097 (fix: onboarding mobile layout and feeds text alignment)

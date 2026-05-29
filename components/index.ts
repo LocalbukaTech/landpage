@@ -20,6 +20,9 @@ export { AccountInformation } from "@/components/settings/AccountInformation";
 export { NotificationsPrivacy } from "@/components/settings/NotificationsPrivacy";
 export { RewardsSupport } from "@/components/settings/RewardsSupport";
 
+// Upload Components
+export { PostCreateOverview } from "@/components/upload/PostCreateOverview";
+
 // Admin Components
 export { AdminLayout } from "@/components/admin/AdminLayout";
 export { AdminSidebar } from "@/components/admin/AdminSidebar";

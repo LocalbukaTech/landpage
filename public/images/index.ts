@@ -11,6 +11,10 @@ const image1 = '/images/1.png';
 const image2 = '/images/2.png';
 const image3 = '/images/3.png';
 const bukaCuisineHero = '/images/bukaDetails_hero.png';
+const bukaHut = '/images/BukaHut.jpg';
+const shiroLanguage = '/images/ShiroLanguage.png';
+const zenGarden = '/images/ZenGarden.jpg';
+const backArrow = '/images/Frame 1272628576.png';
 
 export const Images = {
   foodSmallBackground,
@@ -21,8 +25,12 @@ export const Images = {
   phone1,
   phone2,
   phone3,
-    image1,
+  image1,
   image2,
   image3,
   bukaCuisineHero,
+  bukaHut,
+  shiroLanguage,
+  zenGarden,
+  backArrow,
 };

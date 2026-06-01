@@ -273,12 +273,6 @@ export function VideoPlayer({
         ) : (
           <div />
         )}
-        <button
-          className='flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
-          onClick={(e) => e.stopPropagation()}
-          aria-label='More options'>
-          <MoreHorizontal size={20} />
-        </button>
       </div>
 
       {/* Video Overlay */}

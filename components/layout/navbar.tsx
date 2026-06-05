@@ -84,20 +84,22 @@ export function Navbar() {
                 priority
               />
             </Link>
-
+            
             {/* Right: Nav Links + Buttons */}
             <div className='flex items-center gap-4 md:gap-6 lg:gap-8'>
               {/* Nav Links */}
               <div className='hidden md:flex items-center gap-6 lg:gap-8'>
+                
                 {NAV_LINKS.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={(e) => handleNavClick(e, link.href, link.label)}
                     className='text-gray-800 dark:text-gray-300 text-sm font-medium hover:text-primary transition-colors'>
-                    {link.label}
-                  </Link>
-                ))}
+                    {link.label} 
+                  </Link> 
+                ))} 
+     
               </div>
 
               {/* Auth Section */}

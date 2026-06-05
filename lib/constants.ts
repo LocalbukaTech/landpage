@@ -10,6 +10,7 @@ import {
 
 // Navigation links configuration
 export const NAV_LINKS = [
+   {href: '/about', label: 'About Us'},
   {href: '/blog', label: 'Blog'},
   {href: '/', label: 'Get the App'},
 ] as const;

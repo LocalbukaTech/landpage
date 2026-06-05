@@ -8,6 +8,7 @@ import {
   useSigninMutation,
   useSignupMutation,
 } from '@/lib/api/services/auth.hooks';
+import {userAuthService} from '@/lib/api';
 import {API_BASE_URL} from '@/lib/api/client';
 import {trackEvent, setAnalyticsUser} from '@/lib/analytics';
 
@@ -48,6 +49,20 @@ export function AuthModal() {
           // Reset form
           setSigninData({email: '', password: ''});
           setError('');
+
+          userAuthService.getPreferences()
+            .then((prefResponse) => {
+              const prefs = prefResponse?.data?.preferences;
+              if (!Array.isArray(prefs)) {
+                closeAuthModal();
+                router.push('/signup/preferences?flow=login');
+              }
+            })
+            .catch((err) => {
+              console.log('No preferences found or error fetching, redirecting to onboarding:', err);
+              closeAuthModal();
+              router.push('/signup/preferences?flow=login');
+            });
         },
         onError: (err: any) => {
           setError(

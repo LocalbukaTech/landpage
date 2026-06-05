@@ -38,9 +38,12 @@ const PreferencesContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/feeds';
+  const flow = searchParams.get('flow');
 
   // State machine values
-  const [step, setStep] = useState<OnboardingStep>('preferences');
+  const [step, setStep] = useState<OnboardingStep>(() => {
+    return flow === 'login' ? 'welcome' : 'preferences';
+  });
   const [direction, setDirection] = useState<number>(1); // For slide transitions direction
   const [selectedPrefs, setSelectedPrefs] = useState<string[]>([]);
 
@@ -59,22 +62,38 @@ const PreferencesContent = () => {
     setStep(nextStep);
   };
 
-  // Submit preferences to backend and advance to slide1
+  // Submit preferences to backend and advance to slide1 (or redirect if login flow)
   const handlePreferencesSubmit = () => {
     savePreferencesMutation.mutate(selectedPrefs, {
       onSuccess: () => {
-        goToStep('slide1');
+        if (flow === 'login') {
+          router.push(redirect);
+        } else {
+          goToStep('slide1');
+        }
       },
       onError: (err) => {
         console.error('Error saving onboarding preferences:', err);
-        goToStep('slide1'); // Proceed anyway so as to not block the user
+        if (flow === 'login') {
+          router.push(redirect);
+        } else {
+          goToStep('slide1');
+        }
       },
     });
   };
 
-  // Skip direct to feed/redirect
+  // Skip direct to feed/redirect and persist empty preferences
   const handleSkipAll = () => {
-    router.push(redirect);
+    savePreferencesMutation.mutate([], {
+      onSuccess: () => {
+        router.push(redirect);
+      },
+      onError: (err) => {
+        console.error('Error skipping onboarding preferences:', err);
+        router.push(redirect);
+      },
+    });
   };
 
   // Main custom framer-motion variants
@@ -109,9 +128,16 @@ const PreferencesContent = () => {
         {step !== 'welcome' && (
           <button
             onClick={handleSkipAll}
-            className="text-sm sm:text-base font-semibold text-[#0A1F44] dark:text-white hover:opacity-75 transition-opacity cursor-pointer"
+            disabled={savePreferencesMutation.isPending}
+            className="text-sm sm:text-base font-semibold text-[#0A1F44] dark:text-white hover:opacity-75 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
           >
-            Skip
+            {savePreferencesMutation.isPending ? (
+              <>
+                <Loader2 className="animate-spin w-4 h-4" /> Skipping...
+              </>
+            ) : (
+              'Skip'
+            )}
           </button>
         )}
       </div>
@@ -315,9 +341,10 @@ const PreferencesContent = () => {
 
                   <button
                     onClick={handleSkipAll}
-                    className="mt-4 text-sm font-semibold text-[#0A1F44] dark:text-white hover:opacity-75 transition-all cursor-pointer"
+                    disabled={savePreferencesMutation.isPending}
+                    className="mt-4 text-sm font-semibold text-[#0A1F44] dark:text-white hover:opacity-75 transition-all cursor-pointer disabled:opacity-50"
                   >
-                    Skip
+                    {savePreferencesMutation.isPending ? 'Skipping...' : 'Skip'}
                   </button>
                 </div>
 
@@ -391,10 +418,10 @@ const PreferencesContent = () => {
                 {/* Explore button */}
                 <div className="z-10 w-full max-w-md px-4">
                   <button
-                    onClick={handleSkipAll}
+                    onClick={flow === 'login' ? () => goToStep('preferences') : handleSkipAll}
                     className="w-full py-4 bg-[#fbbe15] hover:opacity-90 active:scale-[0.99] text-[#0A1F44] font-bold rounded-xl transition-all text-sm sm:text-base shadow-sm cursor-pointer"
                   >
-                    Explore
+                    {flow === 'login' ? 'Get Started' : 'Explore'}
                   </button>
                 </div>
               </motion.div>

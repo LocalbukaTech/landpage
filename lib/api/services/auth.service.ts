@@ -49,6 +49,7 @@ export interface User {
   avatar?: string;
   bio?: string;
   location?: string;
+  preferences?: string[];
 }
 
 // Signin
@@ -194,4 +195,15 @@ export const userAuthService = {
   /** PUT /onboarding/preferences — Save user onboarding preferences */
   savePreferences: (preferences: string[]) =>
     api.put<ApiResponse<any>>('/onboarding/preferences', { preferences }),
+
+  /** GET /onboarding/preferences — Get user onboarding preferences */
+  getPreferences: () =>
+    api.get<ApiResponse<{
+      id: string;
+      userId: string;
+      preferences: string[];
+      completedAt: string;
+      createdAt: string;
+      updatedAt: string;
+    }>>('/onboarding/preferences'),
 };

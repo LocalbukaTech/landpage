@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {Eye, EyeOff, ChevronRight, Loader2} from 'lucide-react';
 import {useSigninMutation} from '@/lib/api/services/auth.hooks';
+import {userAuthService} from '@/lib/api';
 import {useToast} from '@/hooks/use-toast';
 import {API_BASE_URL} from '@/lib/api/client';
 import {useAuth} from '@/context/AuthContext';
@@ -57,7 +58,7 @@ const SignInContent = () => {
         password: formData.password,
       },
       {
-        onSuccess: (response) => {
+        onSuccess: async (response) => {
           const {token, user} = response.data;
           loginUser(user, token.access_token);
           setAnalyticsUser(user.id, user.fullName, user.email, user.created_at);
@@ -66,7 +67,19 @@ const SignInContent = () => {
             title: 'Welcome back! 🎉',
             description: 'You have successfully signed in.',
           });
-          router.push(redirect);
+          
+          try {
+            const prefResponse = await userAuthService.getPreferences();
+            const prefs = prefResponse?.data?.preferences;
+            if (Array.isArray(prefs)) {
+              router.push(redirect);
+            } else {
+              router.push(`/signup/preferences?flow=login&redirect=${encodeURIComponent(redirect)}`);
+            }
+          } catch (err) {
+            console.log('No preferences found or error fetching, redirecting to onboarding:', err);
+            router.push(`/signup/preferences?flow=login&redirect=${encodeURIComponent(redirect)}`);
+          }
         },
         onError: (err: any) => {
           const message =

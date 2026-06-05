@@ -3,7 +3,7 @@
 import {useEffect, useState, useRef, Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {Loader2} from 'lucide-react';
-import {useExchangeGoogleCodeMutation} from '@/lib/api';
+import {useExchangeGoogleCodeMutation, userAuthService} from '@/lib/api';
 import {useAuth} from '@/context/AuthContext';
 import {trackEvent, setAnalyticsUser} from '@/lib/analytics';
 
@@ -50,7 +50,20 @@ const GoogleSuccessContent = () => {
             trackEvent('login', {method: 'google'});
             // Automatically redirect to homepage for signins (or unknown origin)
             localStorage.removeItem('google_auth_origin');
-            router.push('/feeds');
+            
+            userAuthService.getPreferences()
+              .then((prefResponse) => {
+                const prefs = prefResponse?.data?.preferences;
+                if (Array.isArray(prefs)) {
+                  router.push('/feeds');
+                } else {
+                  router.push('/signup/preferences?flow=login');
+                }
+              })
+              .catch((err) => {
+                console.log('No preferences found or error fetching, redirecting to onboarding:', err);
+                router.push('/signup/preferences?flow=login');
+              });
           }
         },
         onError: () => {

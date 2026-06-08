@@ -357,25 +357,6 @@ export function MobileBukaHome({
       </div>
 
       {/* ── Waitlist Banner (unauthenticated) ── */}
-      {!isAuthenticated && (
-        <div className='mx-4 mt-4 mb-2'>
-          <div className='bg-[#1e1e1e] rounded-2xl p-4 border border-white/8 flex flex-col gap-3'>
-            <div>
-              <p className='text-white font-bold text-sm'>
-                Join the LocalBuka Family
-              </p>
-              <p className='text-zinc-400 text-xs mt-0.5'>
-                Get early access and exclusive deals near you.
-              </p>
-            </div>
-            <Link
-              href='/join-waitlist'
-              className='bg-[#fbbe15] text-[#1a1a1a] font-bold text-sm py-2.5 rounded-xl text-center active:opacity-80'>
-              Join Waitlist
-            </Link>
-          </div>
-        </div>
-      )}
 
       {/* ── Right-Side Nav Drawer ── */}
       <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen} direction='right'>

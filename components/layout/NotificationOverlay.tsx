@@ -147,7 +147,7 @@ export function NotificationOverlay({
             </div>
           </div>
 
-          <div className='flex flex-col gap-8 overflow-y-auto h-[calc(100vh-100px)] scrollbar-hide'>
+          <div className='flex flex-col gap-8 overflow-y-auto h-[calc(100vh-100px)] max-md:scrollbar-hide md:[&::-webkit-scrollbar]:w-1.5 md:[&::-webkit-scrollbar-track]:bg-transparent md:[&::-webkit-scrollbar-thumb]:bg-zinc-700 md:[&::-webkit-scrollbar-thumb]:rounded-full md:hover:[&::-webkit-scrollbar-thumb]:bg-zinc-600'>
             {isLoading ? (
               <div className='flex items-center justify-center py-10'>
                 <Loader2 className='w-6 h-6 animate-spin text-[#fbbe15]' />

@@ -236,14 +236,14 @@ export default function AboutPage() {
             </h2>
           </Reveal>
           <Reveal direction='up' delay={0.1} duration={0.6}>
-            <p className='text-gray-300 text-base md:text-lg mb-10 max-w-xl mx-auto leading-[1.40] font-nunito whitespace-pre-wrap w-full '>
+            <p className='text-gray-300 text-base md:text-lg mb-10 max-w-xl mx-auto leading-[1.40] font-nunito'>
               Join thousands of food lovers exploring the rich culinary landscape of Africa. Share your
               experiences and connect with a community that cares.
             </p>
           </Reveal>
           <Reveal direction='up' delay={0.2} duration={0.6}>
             <a
-              href='/join-waitlist'
+              href='/signup'
               className='flex items-center justify-center w-full max-w-lg mx-auto bg-[#FBBE15] text-[#111827] hover:bg-[#E5AD13] active:scale-[0.98] transition-all font-semibold rounded-2xl py-4 text-base cursor-pointer'>
               Join Localbuka
             </a>

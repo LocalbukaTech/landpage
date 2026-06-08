@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { BukaCategory } from '@/components/buka/BukaCategory';
 import { BukaRestaurant } from '@/components/buka/BukaCard';
 import { CuisineSection } from '@/components/buka/CuisineSection';
-import { Waitlist } from '@/components/buka/Waitlist';
 import { Images } from '@/public/images';
 import { MobileBukaHome } from '@/components/buka/mobile/MobileBukaHome';
 
@@ -255,12 +254,6 @@ export default function BukaPage() {
               />
             )}
           </div>
-          {/* WaitList Section */}
-          {!isAuthenticated && (
-            <div className='px-4 pb-8 md:px-8 md:pb-16'>
-              <Waitlist />
-            </div>
-          )}
         </div>
       </div>
     </>

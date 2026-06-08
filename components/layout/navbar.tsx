@@ -5,13 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {Button} from '@/components/ui/button';
 import {NAV_LINKS} from '@/lib/constants';
-import {WaitlistModal} from '@/components/modals/waitlist-modal';
 import {useRouter} from 'next/navigation';
 import {getUser, isUserAuthenticated, logoutUser} from '@/lib/auth';
 import {LogOut, User as UserIcon} from 'lucide-react';
 
 export function Navbar() {
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const [user, setUser] = useState<{fullName?: string} | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
@@ -36,12 +34,6 @@ export function Navbar() {
     href: string,
     label: string
   ) => {
-    // Open modal for "Get the App" link
-    if (label === 'Get the App') {
-      e.preventDefault();
-      setIsWaitlistOpen(true);
-      return;
-    }
 
     if (href.startsWith('#')) {
       e.preventDefault();
@@ -142,9 +134,6 @@ export function Navbar() {
           </div>
         </nav>
       </div>
-
-      {/* Waitlist Modal (rendered outside pointer-events-none wrapper) */}
-      <WaitlistModal open={isWaitlistOpen} onOpenChange={setIsWaitlistOpen} />
     </>
   );
 }

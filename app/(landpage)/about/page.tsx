@@ -14,13 +14,14 @@ export default function AboutPage() {
 
       {/* --- HERO SECTION --- */}
       <section className='relative h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden -mt-24 rounded-b-xl'>
-        <div
-          className='absolute inset-0 z-0'
-          style={{
-            backgroundImage: "url('/images/aboutUsHero.jpg')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}>
+        <div className='absolute inset-0 z-0'>
+          <Image
+            src='/images/aboutUsHero.jpg'
+            alt='About LocalBuka hero'
+            fill
+            className='object-cover object-center'
+            priority
+          />
           <div className='absolute inset-0 bg-black/65' />
         </div>
 
@@ -100,6 +101,7 @@ export default function AboutPage() {
                   className='object-cover'
                   sizes='(max-width: 1024px) 100vw, 50vw'
                   priority
+                  unoptimized={false}
                 />
               </div>
             </Reveal>

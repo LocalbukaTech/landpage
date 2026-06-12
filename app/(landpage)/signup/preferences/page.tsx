@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSavePreferencesMutation } from '@/lib/api/services/auth.hooks';
+import confetti from 'canvas-confetti';
 
 // Steps list
 type OnboardingStep = 'preferences' | 'slide1' | 'slide2' | 'slide3' | 'welcome';
@@ -60,6 +61,18 @@ const PreferencesContent = () => {
   const goToStep = (nextStep: OnboardingStep, isNext: boolean = true) => {
     setDirection(isNext ? 1 : -1);
     setStep(nextStep);
+
+    if (nextStep === 'welcome') {
+      setTimeout(() => {
+        confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#fbbe15', '#0A1F44', '#ffffff'],
+          zIndex: 100
+        });
+      }, 400); // Wait for the transition to finish before firing
+    }
   };
 
   // Submit preferences to backend and advance to slide1 (or redirect if login flow)

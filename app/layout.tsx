@@ -54,6 +54,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://localbuka.com'),
+
   // Basic metadata
   title: {
     default: 'LocalBuka - Taste the world, one plate at a time',

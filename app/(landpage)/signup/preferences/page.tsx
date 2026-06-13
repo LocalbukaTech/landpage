@@ -71,7 +71,7 @@ const PreferencesContent = () => {
           colors: ['#fbbe15', '#0A1F44', '#ffffff'],
           zIndex: 100
         });
-      }, 400); // Wait for the transition to finish before firing
+      }, 400); 
     }
   };
 

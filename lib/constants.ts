@@ -21,19 +21,19 @@ export const RESTAURANT_PLACEHOLDER_IMG = '__no_photo__';
 // Feature cards data
 export const FEATURES = [
   {
-    image: '/images/FindResturantsNearYou.jpg',
+    image: '/images/FindResturantsNearYou.png',
     title: 'Find Restaurants Near You',
   },
   {
-    image: '/images/ShareYourFodReel.jpg',
+    image: '/images/ShareYourFodReel.png',
     title: 'Share Your Food Reels',
   },
   {
-    image: '/images/ChatWithBukaGenieAi.jpg',
+    image: '/images/ChatWithBukaGenieAi.png',
     title: 'Chat with Buka Genie AI',
   },
   {
-    image: '/images/FollowTopFoodCrerators.jpg',
+    image: '/images/FollowTopFoodCrerators.png',
     title: 'Follow Top Food Creators',
   },
 ] as const;

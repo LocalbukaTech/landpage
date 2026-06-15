@@ -1,7 +1,7 @@
 'use client';
 
-import {useEffect, useMemo, useRef, useState} from 'react';
-import {ArrowLeft, ChevronDown, MapPin, Search} from 'lucide-react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {ArrowLeft, MapPin, Search, X, LocateFixed} from 'lucide-react';
 import {useRouter} from 'next/navigation';
 import {CuisineFilters, FilterState} from '@/components/buka/CuisineFilters';
 import {BukaCard, BukaRestaurant} from '@/components/buka/BukaCard';
@@ -11,16 +11,6 @@ import {useSearchRestaurants} from '@/lib/api';
 import {CgSpinner} from 'react-icons/cg';
 import {useGeolocation} from '@/hooks/useGeolocation';
 import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
-
-const LOCATIONS = [
-  'All Locations',
-  'Current Location',
-  'Ikeja, Lagos',
-  'Victoria Island, Lagos',
-  'Lekki, Lagos',
-  'Abuja, FCT',
-  'Port Harcourt, Rivers',
-];
 
 const ITEMS_PER_PAGE = 30;
 
@@ -53,13 +43,28 @@ export default function ExploreRestaurantsPage() {
   const {lat: userLat, lng: userLng, loading: loadingGeo} = useGeolocation();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedLocation, setSelectedLocation] = useState('Current Location');
-  const [isLocationOpen, setIsLocationOpen] = useState(false);
+  // Location state: 'current' means use geolocation, otherwise it's a typed city string
+  const [locationMode, setLocationMode] = useState<'current' | 'custom'>('current');
+  const [locationInput, setLocationInput] = useState('');
+  const [debouncedLocation, setDebouncedLocation] = useState('');
+  const [isLocationFocused, setIsLocationFocused] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const locationRef = useRef<HTMLDivElement>(null);
+  const locationInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const isCurrentLocation = selectedLocation === 'Current Location';
+
+  // Debounce location input so API calls don't fire on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedLocation(locationInput.trim());
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [locationInput]);
+
+  // Display label for the current location state
+  const locationDisplayLabel = locationMode === 'current' ? 'Current Location' : (locationInput || 'Type a location...');
 
   const searchParams = useMemo(() => {
     const params: any = {
@@ -68,24 +73,20 @@ export default function ExploreRestaurantsPage() {
       q: searchQuery || undefined,
     };
 
-    const isCurrent = selectedLocation === 'Current Location';
-    const isAll = selectedLocation === 'All Locations';
-
-    if (isCurrent) {
+    if (locationMode === 'current') {
       params.lat = userLat || 6.5244;
       params.lng = userLng || 3.3792;
-    } else if (!isAll) {
-      const parts = selectedLocation.split(',');
-      const cityVal = parts.length > 1 ? parts[1].trim() : selectedLocation;
-      params.city = cityVal === 'FCT' ? 'Abuja' : cityVal;
+    } else if (debouncedLocation) {
+      params.city = debouncedLocation;
     }
 
     return params;
-  }, [selectedLocation, userLat, userLng, currentPage, searchQuery]);
+  }, [locationMode, userLat, userLng, debouncedLocation, currentPage, searchQuery]);
 
+  const isUsingCurrentLocation = locationMode === 'current';
   const {data: searchResponse, isLoading} = useSearchRestaurants(
     searchParams,
-    isCurrentLocation ? !loadingGeo : true
+    isUsingCurrentLocation ? !loadingGeo : true
   );
 
   // Map backend returned unified results
@@ -119,14 +120,14 @@ export default function ExploreRestaurantsPage() {
     cuisines: [],
   });
 
-  // Close location dropdown
+  // Close location dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
         locationRef.current &&
         !locationRef.current.contains(e.target as Node)
       ) {
-        setIsLocationOpen(false);
+        setIsLocationFocused(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -179,6 +180,28 @@ export default function ExploreRestaurantsPage() {
     setCurrentPage(1);
   };
 
+  const handleUseCurrentLocation = useCallback(() => {
+    setLocationMode('current');
+    setLocationInput('');
+    setDebouncedLocation('');
+    setIsLocationFocused(false);
+    setCurrentPage(1);
+  }, []);
+
+  const handleLocationInputChange = useCallback((value: string) => {
+    setLocationInput(value);
+    if (value.trim()) {
+      setLocationMode('custom');
+    }
+  }, []);
+
+  const handleClearLocation = useCallback(() => {
+    setLocationInput('');
+    setDebouncedLocation('');
+    setLocationMode('current');
+    setCurrentPage(1);
+  }, []);
+
   return (
     <>
       {/* ─── Mobile View (< md) ─── */}
@@ -186,10 +209,16 @@ export default function ExploreRestaurantsPage() {
         <MobileExploreRestaurants
           restaurants={apiRestaurants}
           isLoading={isLoading}
-          selectedLocation={selectedLocation}
+          selectedLocation={locationMode === 'current' ? 'Current Location' : locationInput}
           onLocationChange={(loc) => {
-            setSelectedLocation(loc);
-            setCurrentPage(1);
+            if (loc === 'Current Location') {
+              handleUseCurrentLocation();
+            } else {
+              setLocationMode('custom');
+              setLocationInput(loc);
+              setDebouncedLocation(loc);
+              setCurrentPage(1);
+            }
           }}
         />
       </div>
@@ -218,41 +247,46 @@ export default function ExploreRestaurantsPage() {
           {/* ── Location & Search Bar ── */}
           <div className='w-[92%] mx-auto py-4'>
             <div className='flex items-center justify-between'>
-              {/* Location LOV */}
+              {/* Location input with typeahead */}
               <div className='relative' ref={locationRef}>
-                <button
-                  onClick={() => setIsLocationOpen(!isLocationOpen)}
-                  className='flex items-center gap-2 h-12 px-5 bg-white rounded-xl cursor-pointer min-w-[220px]'>
+                <div className='flex items-center gap-2 h-12 px-4 bg-white rounded-xl min-w-[280px]'>
                   <MapPin size={16} className='text-[#1a1a1a] shrink-0' />
-                  <span className='text-[#1a1a1a] text-sm flex-1 text-left'>
-                    {selectedLocation || 'Enter Location'}
-                  </span>
-                  <ChevronDown
-                    size={16}
-                    className={`text-zinc-500 shrink-0 transition-transform ${
-                      isLocationOpen ? 'rotate-180' : ''
-                    }`}
+                  <input
+                    ref={locationInputRef}
+                    type='text'
+                    value={locationMode === 'current' && !isLocationFocused ? '' : locationInput}
+                    onChange={(e) => handleLocationInputChange(e.target.value)}
+                    onFocus={() => setIsLocationFocused(true)}
+                    placeholder={locationMode === 'current' ? '📍 Current Location' : 'Type a city or area...'}
+                    className='flex-1 bg-transparent text-[#1a1a1a] text-sm outline-none placeholder:text-zinc-500'
                   />
-                </button>
+                  {locationMode === 'custom' && locationInput && (
+                    <button
+                      onClick={handleClearLocation}
+                      className='shrink-0 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer'>
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
 
-                {isLocationOpen && (
+                {/* Dropdown hint when focused */}
+                {isLocationFocused && (
                   <div className='absolute top-14 left-0 w-full bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50'>
-                    {LOCATIONS.map((loc) => (
-                      <button
-                        key={loc}
-                        onClick={() => {
-                          setSelectedLocation(loc);
-                          setIsLocationOpen(false);
-                          setCurrentPage(1);
-                        }}
-                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-                          selectedLocation === loc
-                            ? 'bg-[#fbbe15]/10 text-[#1a1a1a] font-medium'
-                            : 'text-zinc-700 hover:bg-zinc-100'
-                        }`}>
-                        {loc}
-                      </button>
-                    ))}
+                    {/* Use Current Location option */}
+                    <button
+                      onClick={handleUseCurrentLocation}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 ${
+                        locationMode === 'current'
+                          ? 'bg-[#fbbe15]/10 text-[#1a1a1a] font-medium'
+                          : 'text-zinc-700 hover:bg-zinc-100'
+                      }`}>
+                      <LocateFixed size={14} className='text-[#fbbe15] shrink-0' />
+                      Use Current Location
+                    </button>
+                    <div className='border-t border-zinc-100 my-1' />
+                    <p className='px-4 py-1.5 text-[10px] uppercase tracking-wider text-zinc-400 font-semibold'>
+                      Or type any city / area above
+                    </p>
                   </div>
                 )}
               </div>
@@ -306,7 +340,7 @@ export default function ExploreRestaurantsPage() {
                   </span>{' '}
                   restaurants in{' '}
                   <span className='text-[#fbbe15] font-semibold'>
-                    {selectedLocation}
+                    {locationDisplayLabel}
                   </span>
                 </p>
               </div>

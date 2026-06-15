@@ -10,25 +10,17 @@ import {
   MapPin,
 } from 'lucide-react';
 import {useRouter} from 'next/navigation';
+import Image from 'next/image';
 import {CgSpinner} from 'react-icons/cg';
 import type {BukaRestaurant} from '@/components/buka/BukaCard';
 import {MobileRestaurantRow} from './MobileRestaurantRow';
-import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
-
-const CUISINE_CHIPS = [
-  'All',
-  'Nigerian',
-  'Yoruba',
-  'Igbo',
-  'Hausa',
-  'Calabar',
-  'Edo',
-  'Continental',
-];
 
 const RATING_CHIPS = ['All Ratings', '⭐ 4+', '⭐ 3+'];
 
 interface Props {
+  cuisineName: string;
+  cuisineDescription: string;
+  cuisineImages: string[];
   restaurants: BukaRestaurant[];
   isLoading: boolean;
   selectedLocation: string;
@@ -36,11 +28,14 @@ interface Props {
 }
 
 /**
- * Mobile-native explore/search page for restaurants.
- * Replaces the desktop sidebar + grid layout with a touch-friendly
- * sticky header, chip filters, and vertical list.
+ * Mobile-native cuisine detail page.
+ * Shows a compact hero, search, location picker, rating chips,
+ * and a vertical restaurant list.
  */
-export function MobileExploreRestaurants({
+export function MobileCuisinePage({
+  cuisineName,
+  cuisineDescription,
+  cuisineImages,
   restaurants,
   isLoading,
   selectedLocation,
@@ -48,16 +43,27 @@ export function MobileExploreRestaurants({
 }: Props) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCuisine, setActiveCuisine] = useState('All');
   const [activeRating, setActiveRating] = useState('All Ratings');
   const [showLocationSheet, setShowLocationSheet] = useState(false);
   const [locationInput, setLocationInput] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const locationSheetInputRef = useRef<HTMLInputElement>(null);
 
+  // Hero carousel state
+  const [activeSlide, setActiveSlide] = useState(0);
+
   const isCurrentLocation = selectedLocation === 'Current Location';
 
-  // Filter restaurants client-side based on chips
+  // Auto-advance hero carousel
+  useEffect(() => {
+    if (cuisineImages.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % cuisineImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [cuisineImages.length]);
+
+  // Filter restaurants client-side
   const filtered = useMemo(() => {
     let list = restaurants;
 
@@ -71,14 +77,6 @@ export function MobileExploreRestaurants({
       );
     }
 
-    if (activeCuisine !== 'All') {
-      list = list.filter((r) =>
-        r.tags.some((t) =>
-          t.toLowerCase().includes(activeCuisine.toLowerCase()),
-        ),
-      );
-    }
-
     if (activeRating === '⭐ 4+') {
       list = list.filter((r) => r.rating >= 4);
     } else if (activeRating === '⭐ 3+') {
@@ -86,13 +84,11 @@ export function MobileExploreRestaurants({
     }
 
     return list;
-  }, [restaurants, searchQuery, activeCuisine, activeRating]);
+  }, [restaurants, searchQuery, activeRating]);
 
-  const hasActiveFilters =
-    activeCuisine !== 'All' || activeRating !== 'All Ratings';
+  const hasActiveFilters = activeRating !== 'All Ratings';
 
   const clearFilters = () => {
-    setActiveCuisine('All');
     setActiveRating('All Ratings');
   };
 
@@ -127,29 +123,69 @@ export function MobileExploreRestaurants({
 
   return (
     <div className='w-full min-h-screen bg-[#111] pb-24'>
-      {/* ── Sticky Header ── */}
-      <div className='sticky top-0 z-30 bg-[#111]/96 backdrop-blur-md border-b border-white/5'>
-        {/* Top bar */}
-        <div className='flex items-center gap-3 px-4 pt-4 pb-2'>
-          <button
-            onClick={() => router.back()}
-            className='w-9 h-9 flex items-center justify-center rounded-full bg-[#1e1e1e] border border-white/8 shrink-0 active:bg-[#2a2a2a] transition-colors'>
-            <ArrowLeft size={18} className='text-white' />
-          </button>
-          <h1 className='text-white font-bold text-base flex-1'>
-            Explore Restaurants
+      {/* ── Compact Hero ── */}
+      <section className='relative w-full h-[240px] overflow-hidden'>
+        {/* Hero images carousel */}
+        {cuisineImages.map((img, i) => (
+          <div
+            key={i}
+            className={`absolute inset-0 transition-opacity duration-700 ${
+              i === activeSlide ? 'opacity-100' : 'opacity-0'
+            }`}>
+            <Image
+              src={img}
+              alt={`${cuisineName} slide ${i + 1}`}
+              fill
+              className='object-cover'
+              sizes='100vw'
+              priority={i === 0}
+            />
+          </div>
+        ))}
+
+        {/* Gradient overlay */}
+        <div className='absolute inset-0 bg-gradient-to-t from-[#111] via-black/40 to-transparent' />
+
+        {/* Back button */}
+        <button
+          onClick={() => router.back()}
+          className='absolute top-4 left-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/40 border border-white/20 active:bg-black/60 transition-colors'>
+          <ArrowLeft size={18} className='text-white' />
+        </button>
+
+        {/* Hero text */}
+        <div className='absolute bottom-4 left-4 right-4 z-10'>
+          <h1 className='text-white text-lg font-bold leading-tight mb-1'>
+            {cuisineName}
           </h1>
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className='text-[#fbbe15] text-xs font-medium flex items-center gap-1 active:opacity-70'>
-              Clear <X size={12} />
-            </button>
-          )}
+          <p className='text-white/70 text-xs leading-relaxed line-clamp-2'>
+            {cuisineDescription}
+          </p>
         </div>
 
+        {/* Dots */}
+        {cuisineImages.length > 1 && (
+          <div className='absolute bottom-3 right-4 z-10 flex gap-1.5'>
+            {cuisineImages.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setActiveSlide(i)}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === activeSlide
+                    ? 'bg-white w-4'
+                    : 'bg-white/40 w-1.5'
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Sticky Header ── */}
+      <div className='sticky top-0 z-30 bg-[#111]/96 backdrop-blur-md border-b border-white/5'>
         {/* Search input */}
-        <div className='px-4 pb-2'>
+        <div className='px-4 pt-3 pb-2'>
           <div className='relative'>
             <Search
               size={16}
@@ -160,7 +196,7 @@ export function MobileExploreRestaurants({
               type='text'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search restaurants, cuisines...'
+              placeholder={`Search ${cuisineName.toLowerCase()}...`}
               className='w-full bg-[#1e1e1e] border border-white/8 rounded-2xl pl-10 pr-10 py-2.5 text-white text-sm placeholder:text-zinc-600 outline-none focus:border-[#fbbe15]/40 transition-colors'
             />
             {searchQuery && (
@@ -188,23 +224,6 @@ export function MobileExploreRestaurants({
           {/* Divider */}
           <div className='w-px h-5 bg-white/10 shrink-0' />
 
-          {/* Cuisine chips */}
-          {CUISINE_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              onClick={() => setActiveCuisine(chip)}
-              className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
-                activeCuisine === chip
-                  ? 'bg-[#fbbe15] text-[#1a1a1a]'
-                  : 'bg-[#1e1e1e] text-zinc-400 border border-white/8'
-              }`}>
-              {chip}
-            </button>
-          ))}
-
-          {/* Divider */}
-          <div className='w-px h-5 bg-white/10 shrink-0' />
-
           {/* Rating chips */}
           {RATING_CHIPS.map((chip) => (
             <button
@@ -218,6 +237,18 @@ export function MobileExploreRestaurants({
               {chip}
             </button>
           ))}
+
+          {/* Clear filters */}
+          {hasActiveFilters && (
+            <>
+              <div className='w-px h-5 bg-white/10 shrink-0' />
+              <button
+                onClick={clearFilters}
+                className='text-[#fbbe15] text-xs font-medium flex items-center gap-1 shrink-0 active:opacity-70'>
+                Clear <X size={10} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -231,7 +262,7 @@ export function MobileExploreRestaurants({
           <div className='flex flex-col items-center justify-center py-20 gap-3'>
             <SlidersHorizontal size={40} className='text-zinc-700' />
             <p className='text-zinc-400 text-sm text-center'>
-              No restaurants match your filters.
+              No restaurants found for {cuisineName.toLowerCase()}.
             </p>
             {hasActiveFilters && (
               <button

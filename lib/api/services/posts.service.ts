@@ -88,4 +88,11 @@ export const postsService = {
       { comment }
     );
   },
+
+  /** POST /posts/:id/comments/:commentId/like — toggle comment/reply like */
+  toggleCommentLike: (postId: string, commentId: string) => {
+    return api.post<ApiResponse<{ liked: boolean; likeCount: number }>>(
+      `/posts/${postId}/comments/${commentId}/like`
+    );
+  },
 };

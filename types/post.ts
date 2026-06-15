@@ -50,6 +50,7 @@ export interface PostComment {
   text: string;
   parentId: string | null;
   likeCount: number;
+  isLiked?: boolean;
   createdAt: string;
   updatedAt?: string;
   user: PostUser;

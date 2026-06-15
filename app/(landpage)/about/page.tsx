@@ -16,7 +16,7 @@ export default function AboutPage() {
       <section className='relative h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden -mt-24 rounded-b-xl'>
         <div className='absolute inset-0 z-0'>
           <Image
-            src='/images/aboutUsHero.jpg'
+            src='/images/aboutUsHero.png'
             alt='About LocalBuka hero'
             fill
             className='object-cover object-center'
@@ -95,7 +95,7 @@ export default function AboutPage() {
             <Reveal direction='up' delay={0.3} duration={0.6} className='w-full'>
               <div className='relative w-full aspect-[4/3] lg:aspect-square rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm'>
                 <Image
-                  src='/images/peopleInResturant.jpg'
+                  src='/images/peopleInResturant.png'
                   alt='People enjoying a meal together at a restaurant'
                   fill
                   className='object-cover'
@@ -104,7 +104,7 @@ export default function AboutPage() {
                   unoptimized={false}
                 />
               </div>
-            </Reveal>
+            </Reveal> 
 
           </div>
         </div>

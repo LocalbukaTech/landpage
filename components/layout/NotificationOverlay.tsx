@@ -9,7 +9,7 @@ import {
   useMarkAllAsRead,
   useMarkAsRead,
 } from '@/lib/api/services/notifications.hooks';
-import {useFollowUser, useFollowing} from '@/lib/api/services/profile.hooks';
+import {useFollowUser, useUserProfile} from '@/lib/api/services/profile.hooks';
 import {useAuth} from '@/context/AuthContext';
 import {useRouter} from 'next/navigation';
 import {formatDistanceToNow} from 'date-fns';
@@ -85,21 +85,7 @@ export function NotificationOverlay({
   const markAllAsRead = useMarkAllAsRead();
   const {user} = useAuth();
 
-  const {data: followingResp} = useFollowing(user?.id || '', {
-    page: 1,
-    limit: 200,
-  });
 
-  const followingIds = useMemo(() => {
-    const list =
-      (followingResp as any)?.data?.data || (followingResp as any)?.data || [];
-    const ids = new Set<string>();
-    list.forEach((entry: any) => {
-      const u = entry.following || entry;
-      if (u?.id) ids.add(u.id);
-    });
-    return ids;
-  }, [followingResp]);
 
   const notifications = (notificationsEntry as any)?.data?.data || [];
 
@@ -162,7 +148,6 @@ export function NotificationOverlay({
                   <NotificationItem
                     key={notif.id}
                     notification={notif}
-                    alreadyFollowing={followingIds.has(notif.actorId)}
                     onClose={onClose}
                   />
                 ))}
@@ -177,11 +162,9 @@ export function NotificationOverlay({
 
 function NotificationItem({
   notification,
-  alreadyFollowing,
   onClose,
 }: {
   notification: Notification;
-  alreadyFollowing: boolean;
   onClose: () => void;
 }) {
   const markAsRead = useMarkAsRead();
@@ -189,6 +172,12 @@ function NotificationItem({
   const router = useRouter();
   const [isFollowingBack, setIsFollowingBack] = useState(false);
   const [showRestaurantDrawer, setShowRestaurantDrawer] = useState(false);
+
+  const {data: actorProfile} = useUserProfile(
+    notification.type === 'follow' ? notification.actorId : '',
+  );
+  const actorProfileData = (actorProfile as any)?.data?.data || (actorProfile as any)?.data;
+  const alreadyFollowing = actorProfileData?.isFollowing ?? false;
 
   const isRestaurant = notification.entityType === 'restaurant';
 

@@ -246,3 +246,17 @@ export const useRepostPost = () => {
     },
   });
 };
+
+/** Toggle comment like */
+export const useToggleCommentLike = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({postId, commentId}: {postId: string; commentId: string}) =>
+      postsService.toggleCommentLike(postId, commentId),
+    onSuccess: (_, {postId}) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.posts.comments(postId),
+      });
+    },
+  });
+};

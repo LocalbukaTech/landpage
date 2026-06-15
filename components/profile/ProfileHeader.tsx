@@ -62,11 +62,6 @@ export function ProfileHeader({
     page: 1,
     limit: 1,
   });
-  // Fetch the logged-in user's own following list to check if they follow this profile
-  const {data: myFollowingResponse} = useFollowing(authUser?.id || '', {
-    page: 1,
-    limit: 200,
-  });
 
   const followersCount = useMemo(() => {
     // Try from main response first
@@ -143,28 +138,11 @@ export function ProfileHeader({
   const displayFollowers = followersCount;
   const displayFollowing = followingCount;
 
-  // Derive follow status from the logged-in user's following list
-  const isAlreadyFollowing = useMemo(() => {
-    const apiUserId = apiUser?.id;
-    const authUserId = authUser?.id;
-    if (!apiUserId || !authUserId) return false;
-    const list =
-      (myFollowingResponse as any)?.data?.data ||
-      (myFollowingResponse as any)?.data ||
-      [];
-    return list.some((entry: any) => {
-      const u = entry.following || entry;
-      return u?.id === apiUserId;
-    });
-  }, [myFollowingResponse, apiUser?.id, authUser?.id]);
-
   const [isFollowing, setIsFollowing] = useState(apiUser?.isFollowing || false);
-  const [prevIsAlreadyFollowing, setPrevIsAlreadyFollowing] = useState(isAlreadyFollowing);
 
-  if (isOtherProfile && isAlreadyFollowing !== prevIsAlreadyFollowing) {
-    setPrevIsAlreadyFollowing(isAlreadyFollowing);
-    setIsFollowing(isAlreadyFollowing);
-  }
+  useEffect(() => {
+    setIsFollowing(apiUser?.isFollowing || false);
+  }, [apiUser?.isFollowing]);
 
   const handleFollowToggle = () => {
     if (!apiUser?.id) return;

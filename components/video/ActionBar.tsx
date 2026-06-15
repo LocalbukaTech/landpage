@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {useState, useEffect} from 'react';
 import {cn} from '@/lib/utils';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
-import {useFollowUser, useFollowing} from '@/lib/api/services/profile.hooks';
+import {useFollowUser, useUserProfile} from '@/lib/api/services/profile.hooks';
 import {useRepostPost} from '@/lib/api/services/posts.hooks';
 import {useAuth} from '@/context/AuthContext';
 import {useRouter} from 'next/navigation';
@@ -35,12 +35,13 @@ export function ActionBar({
   const repostPostMutation = useRepostPost();
   const [isShareOpen, setIsShareOpen] = useState(false);
 
-  // Fetch following list to check if already followed
-  const {data: followingResponse} = useFollowing(user?.id as string);
-  const followingList = (followingResponse as any)?.data?.data || [];
-  const isAlreadyFollowed = followingList.some(
-    (u: any) => u.id === post?.user?.id,
+  // Fetch user profile of post creator to check if already followed
+  const {data: profileResponse} = useUserProfile(
+    user?.id && post?.user?.id && post?.user?.id !== user?.id ? post.user.id : ''
   );
+  const profileData =
+    (profileResponse as any)?.data?.data || (profileResponse as any)?.data;
+  const isAlreadyFollowed = profileData?.isFollowing ?? false;
 
   const [isFollowing, setIsFollowing] = useState(isAlreadyFollowed);
 

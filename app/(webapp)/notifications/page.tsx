@@ -10,7 +10,7 @@ import {
   useMarkAllAsRead,
   useMarkAsRead,
 } from '@/lib/api/services/notifications.hooks';
-import {useFollowUser, useFollowing} from '@/lib/api/services/profile.hooks';
+import {useFollowUser, useUserProfile} from '@/lib/api/services/profile.hooks';
 import {useAuth} from '@/context/AuthContext';
 import {formatDistanceToNow} from 'date-fns';
 import {MainLayout} from '@/components/layout/MainLayout';
@@ -68,16 +68,20 @@ function RestaurantNotificationDrawer({
 // ─── Single Notification Row ────────────────────────────────────────────────────
 function NotificationItem({
   notification,
-  alreadyFollowing,
 }: {
   notification: Notification;
-  alreadyFollowing: boolean;
 }) {
   const markAsRead = useMarkAsRead();
   const followUserMutation = useFollowUser();
   const router = useRouter();
   const [isFollowingBack, setIsFollowingBack] = useState(false);
   const [showRestaurantDrawer, setShowRestaurantDrawer] = useState(false);
+
+  const {data: actorProfile} = useUserProfile(
+    notification.type === 'follow' ? notification.actorId : '',
+  );
+  const actorProfileData = (actorProfile as any)?.data?.data || (actorProfile as any)?.data;
+  const alreadyFollowing = actorProfileData?.isFollowing ?? false;
 
   const isRestaurant = notification.entityType === 'restaurant';
 
@@ -247,21 +251,7 @@ export default function NotificationsPage() {
   });
   const markAllAsRead = useMarkAllAsRead();
 
-  const {data: followingResp} = useFollowing(user?.id || '', {
-    page: 1,
-    limit: 200,
-  });
 
-  const followingIds = useMemo(() => {
-    const list =
-      (followingResp as any)?.data?.data || (followingResp as any)?.data || [];
-    const ids = new Set<string>();
-    list.forEach((entry: any) => {
-      const u = entry.following || entry;
-      if (u?.id) ids.add(u.id);
-    });
-    return ids;
-  }, [followingResp]);
 
   const notifications: Notification[] =
     (notificationsEntry as any)?.data?.data || [];
@@ -300,7 +290,6 @@ export default function NotificationsPage() {
               <NotificationItem
                 key={notif.id}
                 notification={notif}
-                alreadyFollowing={followingIds.has(notif.actorId)}
               />
             ))
           )}

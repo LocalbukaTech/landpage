@@ -5,14 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {Button} from '@/components/ui/button';
 import {SOCIAL_LINKS} from '@/lib/constants';
-import AdSenseUnit from '@/components/AdSenseUnit';
+// import AdSenseUnit from '@/components/AdSenseUnit';
 
 export function Footer() {
   return (
     <footer className='bg-secondary dark:bg-black text-secondary-foreground py-20'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className="mb-12">
-          <AdSenseUnit />
+          {/* <AdSenseUnit /> */}
         </div>
         <div className='grid md:grid-cols-12 gap-y-12 md:gap-x-6 mb-16'>
           {/* Brand + tagline + socials */}

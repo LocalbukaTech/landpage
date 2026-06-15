@@ -1,9 +1,10 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, Heart } from "lucide-react";
 import type { PostComment } from "@/types/post";
 import { formatDistanceToNow } from "date-fns";
-import { useState } from "react";
-import { useDeleteComment, useEditComment } from "@/lib/api/services/posts.hooks";
+import { useState, useEffect } from "react";
+import { useDeleteComment, useEditComment, useToggleCommentLike } from "@/lib/api/services/posts.hooks";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useMe } from "@/lib/api/services/auth.hooks";
 import { cn, ensureHttps } from "@/lib/utils";
 import {
@@ -33,6 +34,34 @@ export default function CommentItem({ comment, onReplyClick, isReply = false, po
   const { data: me } = useMe();
   const deleteCommentMutation = useDeleteComment();
   const editCommentMutation = useEditComment();
+  const toggleLikeMutation = useToggleCommentLike();
+  const { requireAuth } = useRequireAuth();
+
+  const [isLiked, setIsLiked] = useState(comment.isLiked || false);
+  const [likeCount, setLikeCount] = useState(comment.likeCount || 0);
+
+  useEffect(() => {
+    setIsLiked(comment.isLiked || false);
+    setLikeCount(comment.likeCount || 0);
+  }, [comment.isLiked, comment.likeCount]);
+
+  const handleLikeToggle = () => {
+    requireAuth(() => {
+      const newLiked = !isLiked;
+      setIsLiked(newLiked);
+      setLikeCount((prev) => (newLiked ? prev + 1 : Math.max(0, prev - 1)));
+
+      toggleLikeMutation.mutate({
+        postId: postId || comment.postId || "",
+        commentId: comment.id,
+      }, {
+        onError: () => {
+          setIsLiked(!newLiked);
+          setLikeCount((prev) => (!newLiked ? prev + 1 : Math.max(0, prev - 1)));
+        }
+      });
+    });
+  };
 
   const isAuthor = me?.data?.id === comment.userId;
   const isLongComment = comment.text.length > 150;
@@ -149,11 +178,22 @@ export default function CommentItem({ comment, onReplyClick, isReply = false, po
                   </AlertDialog>
                 </>
               )}
-              {/* <Heart
-                size={16}
-                strokeWidth={1.5}
-                className="text-neutral-500 hover:text-white cursor-pointer transition-colors"
-              /> */}
+              <button
+                onClick={handleLikeToggle}
+                className="flex items-center gap-1 text-neutral-500 hover:text-red-500 transition-colors p-1"
+                aria-label="Like comment"
+              >
+                <Heart
+                  size={14}
+                  className={cn(
+                    isLiked ? "text-red-500 fill-red-500" : "text-neutral-500",
+                    "transition-colors"
+                  )}
+                />
+                {likeCount > 0 && (
+                  <span className="text-xs text-neutral-400">{likeCount}</span>
+                )}
+              </button>
             </div>
           </div>
  

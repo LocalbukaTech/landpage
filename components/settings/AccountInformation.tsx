@@ -11,6 +11,8 @@ import {
   useUpdateMe,
   useDeleteMe,
   useChangePassword,
+  usePasswordStatus,
+  useCreatePassword,
 } from '@/lib/api/services/auth.hooks';
 import {useAuth} from '@/context/AuthContext';
 import {useQueryClient} from '@tanstack/react-query';
@@ -314,6 +316,8 @@ function AccountForm({apiUser}: {apiUser: any}) {
 function PasswordTab() {
   const {toast} = useToast();
   const changePasswordMutation = useChangePassword();
+  const createPasswordMutation = useCreatePassword();
+  const {data: statusData, isLoading: isLoadingStatus} = usePasswordStatus();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -322,8 +326,11 @@ function PasswordTab() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const canCreate = statusData?.canCreatePassword === true;
+  const isPending = changePasswordMutation.isPending || createPasswordMutation.isPending;
+
   const handleSave = () => {
-    if (!currentPassword) {
+    if (!canCreate && !currentPassword) {
       toast({
         title: 'Current Password Required',
         description: 'Please enter your current password.',
@@ -348,63 +355,103 @@ function PasswordTab() {
       return;
     }
 
-    changePasswordMutation.mutate(
-      {currentPassword, newPassword},
-      {
-        onSuccess: () => {
-          toast({
-            title: 'Password Updated',
-            description: 'Your password has been changed successfully.',
-            variant: 'success',
-          });
-          setCurrentPassword('');
-          setNewPassword('');
-          setConfirmPassword('');
+    if (canCreate) {
+      createPasswordMutation.mutate(
+        {password: newPassword},
+        {
+          onSuccess: () => {
+            toast({
+              title: 'Password Created',
+              description: 'Your password has been successfully created. You can now use it to sign in.',
+              variant: 'success',
+            });
+            setNewPassword('');
+            setConfirmPassword('');
+          },
+          onError: (err: any) => {
+            toast({
+              title: 'Password Creation Failed',
+              description:
+                err?.response?.data?.message ||
+                'Unable to create password. Please try again.',
+              variant: 'destructive',
+            });
+          },
+        }
+      );
+    } else {
+      changePasswordMutation.mutate(
+        {currentPassword, newPassword},
+        {
+          onSuccess: () => {
+            toast({
+              title: 'Password Updated',
+              description: 'Your password has been changed successfully.',
+              variant: 'success',
+            });
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+          },
+          onError: (err: any) => {
+            toast({
+              title: 'Password Change Failed',
+              description:
+                err?.response?.data?.message ||
+                'Unable to change password. Please check your current password and try again.',
+              variant: 'destructive',
+            });
+          },
         },
-        onError: (err: any) => {
-          toast({
-            title: 'Password Change Failed',
-            description:
-              err?.response?.data?.message ||
-              'Unable to change password. Please check your current password and try again.',
-            variant: 'destructive',
-          });
-        },
-      },
-    );
+      );
+    }
   };
+
+  if (isLoadingStatus) {
+    return (
+      <div className='flex items-center justify-center h-40'>
+        <Loader2 className='w-6 h-6 animate-spin text-[#fbbe15]' />
+      </div>
+    );
+  }
 
   return (
     <div className='flex flex-col gap-5 max-w-lg'>
-      {/* Current Password */}
-      <div className='relative'>
-        <label className='absolute top-2 left-3 text-[11px] text-zinc-500 z-10'>
-          Current Password
-        </label>
-        <input
-          type={showCurrent ? 'text' : 'password'}
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-          placeholder='Enter current password'
-          className='w-full pt-6 pb-2 px-3 pr-10 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600'
-        />
-        <button
-          onClick={() => setShowCurrent(!showCurrent)}
-          className='absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 cursor-pointer bg-transparent border-0'>
-          {showCurrent ? <Eye size={18} /> : <EyeOff size={18} />}
-        </button>
-      </div>
+      {canCreate ? (
+        <div className='bg-[#fbbe15]/10 border border-[#fbbe15]/20 p-4 rounded-xl text-sm text-zinc-300 mb-2'>
+          You signed in via Google and don&apos;t have a password. Create one below to log in directly with your email next time.
+        </div>
+      ) : (
+        /* Current Password (only show if not creating) */
+        <div className='relative'>
+          <label className='absolute top-2 left-3 text-[11px] text-zinc-500 z-10'>
+            Current Password
+          </label>
+          <input
+            type={showCurrent ? 'text' : 'password'}
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder='Enter current password'
+            className='w-full pt-6 pb-2 px-3 pr-10 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600'
+          />
+          <button
+            onClick={() => setShowCurrent(!showCurrent)}
+            className='absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 cursor-pointer bg-transparent border-0'>
+            {showCurrent ? <Eye size={18} /> : <EyeOff size={18} />}
+          </button>
+        </div>
+      )}
 
       {/* New Password */}
       <div className='relative'>
         <label className='absolute top-2 left-3 text-[11px] text-zinc-500 z-10'>
-          New Password
+          {canCreate ? 'Password' : 'New Password'}
         </label>
         <input
           type={showNew ? 'text' : 'password'}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          placeholder='Enter new password'
+          placeholder={canCreate ? 'Enter password' : 'Enter new password'}
           className='w-full pt-6 pb-2 px-3 pr-10 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600'
         />
         <button
@@ -417,13 +464,13 @@ function PasswordTab() {
       {/* Confirm Password */}
       <div className='relative'>
         <label className='absolute top-2 left-3 text-[11px] text-zinc-500 z-10'>
-          Confirm New Password
+          {canCreate ? 'Confirm Password' : 'Confirm New Password'}
         </label>
         <input
           type={showConfirm ? 'text' : 'password'}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder='Re-enter new password'
+          placeholder={canCreate ? 'Re-enter password' : 'Re-enter new password'}
           className='w-full pt-6 pb-2 px-3 pr-10 bg-[#2a2a2a] border border-[#FBBE15]/50 rounded-lg text-white text-sm focus:outline-none focus:border-[#FBBE15] transition-colors placeholder:text-zinc-600'
         />
         <button
@@ -437,12 +484,12 @@ function PasswordTab() {
       <div className='flex justify-end mt-6'>
         <button
           onClick={handleSave}
-          disabled={changePasswordMutation.isPending}
+          disabled={isPending}
           className='px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-semibold text-sm rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'>
-          {changePasswordMutation.isPending && (
+          {isPending && (
             <Loader2 size={16} className='animate-spin' />
           )}
-          {changePasswordMutation.isPending ? 'Updating...' : 'Save'}
+          {isPending ? (canCreate ? 'Creating...' : 'Updating...') : (canCreate ? 'Create Password' : 'Save')}
         </button>
       </div>
     </div>

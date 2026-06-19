@@ -144,3 +144,24 @@ export const useSavePreferencesMutation = () => {
     },
   });
 };
+
+export const usePasswordStatus = (enabled = true) => {
+  return useQuery({
+    queryKey: ['user', 'password-status'],
+    queryFn: async () => {
+      const response = await userAuthService.getPasswordStatus();
+      return response.data;
+    },
+    enabled: enabled,
+  });
+};
+
+export const useCreatePassword = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {password: string}) => userAuthService.createPassword(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'password-status'] });
+    },
+  });
+};

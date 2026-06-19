@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BukaCategory } from '@/components/buka/BukaCategory';
 import { BukaRestaurant } from '@/components/buka/BukaCard';
@@ -20,7 +20,6 @@ import Image from 'next/image';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { RESTAURANT_PLACEHOLDER_IMG } from '@/lib/constants';
 import { helper } from '@/utils/helper';
-import { useAuth } from '@/context/AuthContext';
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
 
@@ -70,7 +69,6 @@ export default function BukaPage() {
   const router = useRouter();
   const { lat, lng, loading: loadingGeo } = useGeolocation();
   const [heroBgUrl, setHeroBgUrl] = useState("url('/images/buka.gif')");
-  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -201,10 +199,28 @@ export default function BukaPage() {
                 </Link>
               </div>
             </div>
+            {/* Animated Scroll Down Indicator for Desktop */}
+            <div
+              onClick={() => {
+                const categoriesElement = document.getElementById('buka-categories');
+                if (categoriesElement) {
+                  categoriesElement.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  window.scrollTo({
+                    top: window.innerHeight * 0.9,
+                    behavior: 'smooth',
+                  });
+                }
+              }}
+              className='absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex min-[1441px]:hidden flex-col items-center gap-1 z-10 cursor-pointer text-white/70 hover:text-[#fbbe15] transition-colors group animate-bounce'
+            >
+              <span className='text-[10px] font-bold tracking-widest uppercase opacity-80 group-hover:opacity-100 transition-opacity'>Scroll Down</span>
+              <ChevronDown size={20} className='text-white/60 group-hover:text-[#fbbe15] transition-colors' />
+            </div>
           </section>
 
           {/* Categories Sections */}
-          <div className='flex flex-col gap-8 md:gap-16 px-4 py-8 md:px-8 md:py-16'>
+          <div id='buka-categories' className='flex flex-col gap-8 md:gap-16 px-4 py-8 md:px-8 md:py-16'>
             {isLoading ? (
               <div className='flex items-center justify-center p-20'>
                 <CgSpinner className='animate-spin text-[#fbbe15] text-4xl' />

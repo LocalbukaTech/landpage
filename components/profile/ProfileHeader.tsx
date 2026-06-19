@@ -141,7 +141,10 @@ export function ProfileHeader({
   const [isFollowing, setIsFollowing] = useState(apiUser?.isFollowing || false);
 
   useEffect(() => {
-    setIsFollowing(apiUser?.isFollowing || false);
+    const timer = setTimeout(() => {
+      setIsFollowing(apiUser?.isFollowing || false);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [apiUser?.isFollowing]);
 
   const handleFollowToggle = () => {

@@ -196,7 +196,7 @@ export const userAuthService = {
   savePreferences: (preferences: string[]) =>
     api.put<ApiResponse<any>>('/onboarding/preferences', { preferences }),
 
-  /** GET /onboarding/preferences — Get user onboarding preferences */
+  /** GET /users/me/preferences — Get user onboarding preferences */
   getPreferences: () =>
     api.get<ApiResponse<{
       id: string;
@@ -206,4 +206,16 @@ export const userAuthService = {
       createdAt: string;
       updatedAt: string;
     }>>('/onboarding/preferences'),
+
+  /** GET /users/me/password-status — Get password status (hasPassword, etc) */
+  getPasswordStatus: () =>
+    api.get<ApiResponse<{
+      hasPassword: boolean;
+      canCreatePassword: boolean;
+      canChangePassword: boolean;
+    }>>('/users/me/password-status'),
+
+  /** POST /users/me/password — Create password for OAuth users */
+  createPassword: (data: {password: string}) =>
+    api.post<ApiResponse<{message: string}>>('/users/me/password', data),
 };

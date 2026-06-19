@@ -41,8 +41,11 @@ export default function CommentItem({ comment, onReplyClick, isReply = false, po
   const [likeCount, setLikeCount] = useState(comment.likeCount || 0);
 
   useEffect(() => {
-    setIsLiked(comment.isLiked || false);
-    setLikeCount(comment.likeCount || 0);
+    const timer = setTimeout(() => {
+      setIsLiked(comment.isLiked || false);
+      setLikeCount(comment.likeCount || 0);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [comment.isLiked, comment.likeCount]);
 
   const handleLikeToggle = () => {

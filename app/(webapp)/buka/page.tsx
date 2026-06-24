@@ -125,16 +125,32 @@ export default function BukaPage() {
     return rawList.map(mapToBukaRestaurant);
   }, [searchResponse]);
 
-  const topRestaurants =
-    trendingUiRestaurants.length > 0
-      ? trendingUiRestaurants.slice(0, 5)
-      : combinedAll.slice(0, 5);
-  const topBukas = combinedAll.slice(5, 10);
-  const hiddenGems = combinedAll.slice(10, 16);
-  const streetFavorites =
-    trendingUiRestaurants.length > 5
-      ? trendingUiRestaurants.slice(5)
-      : combinedAll.slice(0, 6);
+  // 1. Determine topRestaurants (prefer trending, fallback to location-based combinedAll)
+  const topRestaurants = useMemo(() => {
+    if (trendingUiRestaurants.length > 0) {
+      return trendingUiRestaurants.slice(0, 5);
+    }
+    return combinedAll.slice(0, 5);
+  }, [trendingUiRestaurants, combinedAll]);
+
+  // To prevent duplicates across sections, determine which items in combinedAll (location-based) are not already used in topRestaurants.
+  const remainingLocal = useMemo(() => {
+    const usedIds = new Set(topRestaurants.map((r) => r.id));
+    return combinedAll.filter((r) => !usedIds.has(r.id));
+  }, [combinedAll, topRestaurants]);
+
+  // 2. Allocate the remaining local restaurants to avoid overlap
+  const topBukas = useMemo(() => {
+    return remainingLocal.slice(0, 5);
+  }, [remainingLocal]);
+
+  const hiddenGems = useMemo(() => {
+    return remainingLocal.slice(5, 11);
+  }, [remainingLocal]);
+
+  const streetFavorites = useMemo(() => {
+    return remainingLocal.slice(11, 17);
+  }, [remainingLocal]);
 
   const isLoading = isLoadingTrending || isLoadingSearch;
 

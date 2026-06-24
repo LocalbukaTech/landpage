@@ -13,7 +13,6 @@ import {useRouter} from 'next/navigation';
 import {CgSpinner} from 'react-icons/cg';
 import type {BukaRestaurant} from '@/components/buka/BukaCard';
 import {MobileRestaurantRow} from './MobileRestaurantRow';
-import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
 
 const CUISINE_CHIPS = [
   'All',
@@ -54,6 +53,39 @@ export function MobileExploreRestaurants({
   const [locationInput, setLocationInput] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const locationSheetInputRef = useRef<HTMLInputElement>(null);
+
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
+  useEffect(() => {
+    if (!locationInput.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setIsLoadingSuggestions(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationInput)}&limit=3&countrycodes=ng`
+        );
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const names = data.map((item: any) => {
+            const parts = item.display_name.split(',');
+            return parts.slice(0, 3).map((p: string) => p.trim()).join(', ');
+          });
+          setSuggestions([...new Set(names)]);
+        }
+      } catch (error) {
+        console.error('Error fetching mobile suggestions:', error);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [locationInput]);
 
   const isCurrentLocation = selectedLocation === 'Current Location';
 
@@ -300,6 +332,35 @@ export function MobileExploreRestaurants({
                   </button>
                 )}
               </div>
+
+              {/* Mobile location suggestions */}
+              {isLoadingSuggestions ? (
+                <div className='mb-3 bg-[#222]/30 border border-white/5 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-zinc-500 text-xs'>
+                  <CgSpinner className='animate-spin text-[#fbbe15] text-sm shrink-0' />
+                  <span>Searching locations...</span>
+                </div>
+              ) : locationInput.trim() && suggestions.length > 0 ? (
+                <div className='mb-3 bg-[#222]/50 border border-white/5 rounded-2xl overflow-hidden'>
+                  {suggestions.map((loc) => (
+                    <button
+                      key={loc}
+                      onClick={() => {
+                        setLocationInput(loc);
+                        onLocationChange(loc);
+                        setShowLocationSheet(false);
+                      }}
+                      className='w-full text-left px-4 py-3.5 text-sm text-zinc-300 border-none bg-transparent active:bg-white/5 border-b border-white/5 last:border-b-0 flex items-center gap-2'
+                    >
+                      <MapPin size={14} className='text-zinc-500 shrink-0' />
+                      <span>{loc}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : locationInput.trim() ? (
+                <div className='mb-3 bg-[#222]/30 border border-white/5 rounded-2xl py-3 px-4 text-center text-zinc-500 text-xs'>
+                  No locations found
+                </div>
+              ) : null}
 
               {/* Search button */}
               {locationInput.trim() && (

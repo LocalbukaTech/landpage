@@ -108,6 +108,40 @@ export default function CuisineDetailPage() {
   const [locationInput, setLocationInput] = useState('');
   const [debouncedLocation, setDebouncedLocation] = useState('');
   const [isLocationFocused, setIsLocationFocused] = useState(false);
+
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
+  useEffect(() => {
+    if (!locationInput.trim() || locationMode === 'current') {
+      setSuggestions([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setIsLoadingSuggestions(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationInput)}&limit=3&countrycodes=ng`
+        );
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const names = data.map((item: any) => {
+            const parts = item.display_name.split(',');
+            return parts.slice(0, 3).map((p: string) => p.trim()).join(', ');
+          });
+          setSuggestions([...new Set(names)]);
+        }
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [locationInput, locationMode]);
+
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const locationRef = useRef<HTMLDivElement>(null);
@@ -305,7 +339,7 @@ export default function CuisineDetailPage() {
           <div className='flex items-center justify-between'>
             {/* Location input with typeahead */}
             <div className='relative' ref={locationRef}>
-              <div className='flex items-center gap-2 h-12 px-4 bg-white rounded-xl min-w-[280px]'>
+              <div className='flex items-center gap-2 h-12 px-6 bg-white rounded-xl'>
                 <MapPin size={16} className='text-[#1a1a1a] shrink-0' />
                 <input
                   ref={locationInputRef}
@@ -313,7 +347,7 @@ export default function CuisineDetailPage() {
                   value={locationMode === 'current' && !isLocationFocused ? '' : locationInput}
                   onChange={(e) => handleLocationInputChange(e.target.value)}
                   onFocus={() => setIsLocationFocused(true)}
-                  placeholder={locationMode === 'current' ? '📍 Current Location' : 'Type a city or area...'}
+                  placeholder={locationMode === 'current' ? '📍 Search Location' : 'Type a city or area...'}
                   className='flex-1 bg-transparent text-[#1a1a1a] text-sm outline-none placeholder:text-zinc-500'
                 />
                 {locationMode === 'custom' && locationInput && (
@@ -339,10 +373,46 @@ export default function CuisineDetailPage() {
                     <LocateFixed size={14} className='text-[#fbbe15] shrink-0' />
                     Use Current Location
                   </button>
-                  <div className='border-t border-zinc-100 my-1' />
-                  <p className='px-4 py-1.5 text-[10px] uppercase tracking-wider text-zinc-400 font-semibold'>
-                    Or type any city / area above
-                  </p>
+
+                  {isLoadingSuggestions ? (
+                    <>
+                      <div className='border-t border-zinc-100 my-1' />
+                      <div className='flex items-center justify-center py-3 gap-2 text-zinc-500 text-xs'>
+                        <CgSpinner className='animate-spin text-[#fbbe15] text-sm' />
+                        Searching locations...
+                      </div>
+                    </>
+                  ) : locationInput.trim() && suggestions.length > 0 ? (
+                    <>
+                      <div className='border-t border-zinc-100 my-1' />
+                      <p className='px-4 py-1 text-[10px] uppercase tracking-wider text-zinc-400 font-semibold'>
+                        Suggested Locations
+                      </p>
+                      {suggestions.map((loc) => (
+                        <button
+                          key={loc}
+                          onClick={() => {
+                            setLocationInput(loc);
+                            setLocationMode('custom');
+                            setDebouncedLocation(loc);
+                            setCurrentPage(1);
+                            setIsLocationFocused(false);
+                          }}
+                          className='w-full text-left px-4 py-2 text-sm text-[#1a1a1a] hover:bg-zinc-100 transition-colors cursor-pointer flex items-center gap-2 border-none bg-transparent'
+                        >
+                          <MapPin size={12} className='text-zinc-400 shrink-0' />
+                          <span>{loc}</span>
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <div className='border-t border-zinc-100 my-1' />
+                      <p className='px-4 py-1.5 text-[10px] uppercase tracking-wider text-zinc-400 font-semibold'>
+                        {locationInput.trim() ? 'No locations found' : 'Or type any city / area above'}
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>

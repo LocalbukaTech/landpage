@@ -218,4 +218,12 @@ export const userAuthService = {
   /** POST /users/me/password — Create password for OAuth users */
   createPassword: (data: {password: string}) =>
     api.post<ApiResponse<{message: string}>>('/users/me/password', data),
+
+  /** POST /auth/forgot-password — Request password reset code */
+  forgotPassword: (data: {email: string}) =>
+    api.post<ApiResponse<{message: string}>>('/auth/forgot-password', data),
+
+  /** POST /auth/reset-password — Reset password with code */
+  resetPassword: (data: {email: string; code: string; newPassword: string}) =>
+    api.post<ApiResponse<{message: string}>>('/auth/reset-password', data),
 };

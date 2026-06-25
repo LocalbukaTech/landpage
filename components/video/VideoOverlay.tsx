@@ -6,6 +6,7 @@ import type {Post} from '@/types/post';
 import {cn, formatRelativeShort} from '@/lib/utils';
 import {useRouter} from 'next/navigation';
 import {useAuth} from '@/context/AuthContext';
+import {useRequireAuth} from '@/hooks/useRequireAuth';
 
 interface VideoOverlayProps {
   post: Post;
@@ -15,16 +16,19 @@ interface VideoOverlayProps {
 export function VideoOverlay({post, showTimestamp}: VideoOverlayProps) {
   const router = useRouter();
   const {user} = useAuth();
+  const {requireAuth} = useRequireAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   if (!post) return null;
 
   const handleAvatarClick = () => {
     if (!post?.user?.id) return;
-    if (post.user.id === user?.id) {
-      router.push('/profile');
-    } else {
-      router.push(`/other-profile?id=${post.user.id}`);
-    }
+    requireAuth(() => {
+      if (post.user.id === user?.id) {
+        router.push('/profile');
+      } else {
+        router.push(`/other-profile?id=${post.user.id}`);
+      }
+    });
   };
 
   const displayedCaption = post.caption?.replace(/#\w+/g, '').trim();

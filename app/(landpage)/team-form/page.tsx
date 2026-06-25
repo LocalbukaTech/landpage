@@ -146,6 +146,9 @@ const TeamForm = () => {
 
 
   const departments:IDepartment[] =[{
+    label: 'Leadership',
+    value: 'leadership',
+  },{
     label: 'Operations',
     value: 'operations',
   }, {

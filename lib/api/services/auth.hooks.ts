@@ -165,3 +165,16 @@ export const useCreatePassword = () => {
     },
   });
 };
+
+export const useForgotPasswordMutation = () => {
+  return useMutation({
+    mutationFn: (data: {email: string}) => userAuthService.forgotPassword(data),
+  });
+};
+
+export const useResetPasswordMutation = () => {
+  return useMutation({
+    mutationFn: (data: {email: string; code: string; newPassword: string}) =>
+      userAuthService.resetPassword(data),
+  });
+};

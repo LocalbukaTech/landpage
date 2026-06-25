@@ -8,10 +8,11 @@ import type {Team} from '@/lib/api/services/teams.service';
 import {capitalize} from '@/lib/utils';
 
 const DEPARTMENTS: {key: string; label: string}[] = [
-  {key: 'operations', label: 'Operations'},
+  {key: 'leadership', label: 'Leadership'},
   {key: 'engineering', label: 'Engineering'},
-  {key: 'product', label: 'Product'},
+  {key: 'operations', label: 'Operations'},
   {key: 'human_resource', label: 'Human Resource'},
+  {key: 'product', label: 'Product'},
   {key: 'brand_finance', label: 'Brand & Finance'},
 ];
 

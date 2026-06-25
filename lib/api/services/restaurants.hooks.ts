@@ -18,13 +18,24 @@ export const useRestaurants = (params?: {
   });
 };
 
-export const useTrendingRestaurants = () => {
+export const useTrendingRestaurants = (
+  params?: {
+    location?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+    page?: number;
+    pageSize?: number;
+  },
+  enabled = true,
+) => {
   return useQuery({
-    queryKey: [...queryKeys.restaurants.trending()],
+    queryKey: [...queryKeys.restaurants.trending(params)],
     queryFn: async () => {
-      const response = await restaurantsService.getTrendingRestaurants();
+      const response = await restaurantsService.getTrendingRestaurants(params);
       return response.data;
     },
+    enabled,
   });
 };
 

@@ -72,7 +72,7 @@ export const queryKeys = {
     all: ['restaurants'] as const,
     list: (filters?: Record<string, unknown>) =>
       [...queryKeys.restaurants.all, 'list', filters] as const,
-    trending: () => [...queryKeys.restaurants.all, 'trending'] as const,
+    trending: (filters?: Record<string, unknown>) => [...queryKeys.restaurants.all, 'trending', filters] as const,
     search: (filters?: Record<string, unknown>) =>
       [...queryKeys.restaurants.all, 'search', filters] as const,
     cuisine: (cuisine: string, filters?: Record<string, unknown>) =>

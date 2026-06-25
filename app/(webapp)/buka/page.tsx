@@ -90,7 +90,16 @@ export default function BukaPage() {
     );
 
   const { data: trendingData, isLoading: isLoadingTrending } =
-    useTrendingRestaurants();
+    useTrendingRestaurants(
+      {
+        lat: lat || 6.5244,
+        lng: lng || 3.3792,
+        radius: 50000,
+        page: 1,
+        pageSize: 20,
+      },
+      !loadingGeo,
+    );
 
   const trendingUiRestaurants = useMemo(() => {
     const rawData = trendingData as unknown as

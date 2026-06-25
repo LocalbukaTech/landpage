@@ -94,8 +94,17 @@ export const restaurantsService = {
   },
 
   // Get trending restaurants
-  getTrendingRestaurants: () => {
-    return api.get<ApiResponse<Restaurant[]>>('/restaurants/trending');
+  getTrendingRestaurants: (params?: {
+    location?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    return api.get<ApiResponse<Restaurant[]>>('/restaurants/trending', {
+      params,
+    });
   },
 
   // Search restaurants

@@ -112,11 +112,13 @@ export function ActionBar({
 
   const handleAvatarClick = () => {
     if (!post?.user?.id) return;
-    if (post.user.id === user?.id) {
-      router.push('/profile');
-    } else {
-      router.push(`/other-profile?id=${post.user.id}`);
-    }
+    requireAuth(() => {
+      if (post.user.id === user?.id) {
+        router.push('/profile');
+      } else {
+        router.push(`/other-profile?id=${post.user.id}`);
+      }
+    });
   };
 
   const handleLike = () => {

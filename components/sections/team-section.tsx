@@ -114,20 +114,38 @@ function TeamMemberCard({member}: {member: Team}) {
   );
 }
 
+const DEPARTMENTS_ORDER = [
+  'leadership',
+  'engineering',
+  'operations',
+  'human_resource',
+  'product',
+  'brand_finance',
+];
+
+function normalizeDept(dept: string): string {
+  return dept
+    .toLowerCase()
+    .replace(/[\s&]+/g, '_') // spaces and & → underscore
+    .replace(/_+/g, '_') // collapse multiple underscores
+    .replace(/^_|_$/g, ''); // trim leading/trailing underscores
+}
+
 export function TeamSection() {
   const {data, isLoading, isError} = useTeamsQuery();
   const teams: Team[] = data?.data.docs ?? [];
   
-//   [
-//     "Human Resource",
-//     "Operations",
-//     "Human Resource",
-//     "Product",
-//     "Brand & Finance"
-// ]
-  // filter by non-selected department
-  // const filteredDepartemnt = teams.filter((item) => item.department !== 'Human Resource' && item.department !== 'Brand & Finance')
-  const featuredTeams = teams.slice(0, 10);
+  const sortedTeams = [...teams].sort((a, b) => {
+    const aDept = normalizeDept(a.department ?? '');
+    const bDept = normalizeDept(b.department ?? '');
+    let aIndex = DEPARTMENTS_ORDER.indexOf(aDept);
+    let bIndex = DEPARTMENTS_ORDER.indexOf(bDept);
+    if (aIndex === -1) aIndex = 999;
+    if (bIndex === -1) bIndex = 999;
+    return aIndex - bIndex;
+  });
+
+  const featuredTeams = sortedTeams.slice(0, 10);
   // console.log(featuredTeams, 'teams')
 
   return (

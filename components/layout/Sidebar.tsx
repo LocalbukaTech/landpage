@@ -13,6 +13,7 @@ import {
   User,
   Search,
   Store,
+  Gift,
 } from 'lucide-react';
 import Image from 'next/image';
 import {SearchOverlay} from '@/components/layout/SearchOverlay';
@@ -29,6 +30,7 @@ const baseNavItems = [
   {icon: Bell, label: 'Notification', href: '/notifications'},
   {icon: Bookmark, label: 'Saved', href: '/profile?tab=saved'},
   {icon: Users, label: 'Community', href: '#'},
+  {icon: Gift, label: 'Refer & Earn', href: '/rewards'},
   {icon: User, label: 'Profile', href: '/profile'},
 ];
 
@@ -61,9 +63,17 @@ export function Sidebar() {
     : null;
 
   // Inject My Restaurant nav item when authenticated
+  const filteredBaseNavItems = isAuthenticated
+    ? baseNavItems
+    : baseNavItems.filter((item) => item.label !== 'Upload');
+
   const navItems = isAuthenticated
-    ? [...baseNavItems.slice(0, 2), myRestaurantItem, ...baseNavItems.slice(2)]
-    : baseNavItems;
+    ? [...filteredBaseNavItems.slice(0, 2), myRestaurantItem, ...filteredBaseNavItems.slice(2)]
+    : filteredBaseNavItems;
+
+  const displayMobileNavItems = isAuthenticated
+    ? mobileNavItems
+    : mobileNavItems.filter((item) => item.label !== 'Upload');
 
   // Fetch unread notification count
   const {data: unreadCountResponse} = useUnreadCount();
@@ -286,7 +296,7 @@ export function Sidebar() {
 
       {/* ── Mobile Bottom Nav ── */}
       <div className='md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#1a1a1a] border-t border-white/5 flex items-center justify-around z-50 pb-safe'>
-        {mobileNavItems.map((item) => {
+        {displayMobileNavItems.map((item) => {
           const isActive =
             item.href === '/'
               ? pathname === '/'

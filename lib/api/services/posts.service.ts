@@ -80,4 +80,19 @@ export const postsService = {
   deleteComment: (postId: string, commentId: string) => {
     return api.delete<void>(`/posts/${postId}/comments/${commentId}`);
   },
+
+  /** PATCH /posts/:id/comments/:commentId — edit a comment */
+  editComment: (postId: string, commentId: string, comment: string) => {
+    return api.patch<ApiResponse<PostComment>>(
+      `/posts/${postId}/comments/${commentId}`,
+      { comment }
+    );
+  },
+
+  /** POST /posts/:id/comments/:commentId/like — toggle comment/reply like */
+  toggleCommentLike: (postId: string, commentId: string) => {
+    return api.post<ApiResponse<{ liked: boolean; likeCount: number }>>(
+      `/posts/${postId}/comments/${commentId}/like`
+    );
+  },
 };

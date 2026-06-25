@@ -622,6 +622,27 @@ export default function RestaurantDetailPage() {
   const [showDirectionsModal, setShowDirectionsModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
 
+  const handleOpenDirections = useCallback(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setShowDirectionsModal(true);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        setShowDirectionsModal(true);
+      },
+      () => {
+        setShowDirectionsModal(true);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+        maximumAge: 0,
+      },
+    );
+  }, [setShowDirectionsModal]);
+
   // Auto-advance carousel
   useEffect(() => {
     if (photos.length <= 1) return;
@@ -866,7 +887,7 @@ export default function RestaurantDetailPage() {
           {/* Get Directions — opens fullscreen modal */}
           <div className='flex justify-center py-6'>
             <button
-              onClick={() => setShowDirectionsModal(true)}
+              onClick={handleOpenDirections}
               className='flex items-center gap-2 px-8 py-2.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer'>
               <Route size={18} />
               Get Directions
@@ -885,9 +906,11 @@ export default function RestaurantDetailPage() {
               </button>
 
               {/* Restaurant name badge */}
-              <div className='absolute top-6 left-20 z-1001 bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-xl'>
+              <div className='hidden md:block absolute top-6 left-20 right-4 md:right-auto z-1001 bg-black/60 backdrop-blur-sm text-white px-4 py-2 rounded-xl md:max-w-[420px]'>
                 <p className='text-sm font-semibold'>{restaurant.name}</p>
-                <p className='text-xs text-zinc-400'>{restaurant.address}</p>
+                <p className='text-xs text-zinc-400 line-clamp-2 md:line-clamp-1'>
+                  {restaurant.address}
+                </p>
               </div>
 
               {/* Full screen map */}

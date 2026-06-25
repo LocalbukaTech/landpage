@@ -1,5 +1,5 @@
-import {TeamMember} from './types';
-import type {IconType} from 'react-icons';
+import { TeamMember } from './types';
+import type { IconType } from 'react-icons';
 import {
   RiLinkedinFill,
   RiInstagramFill,
@@ -10,8 +10,8 @@ import {
 
 // Navigation links configuration
 export const NAV_LINKS = [
-  {href: '/blog', label: 'Blog'},
-  {href: '/', label: 'Get the App'},
+  { href: '/about', label: 'About Us' },
+  { href: '/blog', label: 'Blog' },
 ] as const;
 
 // Sentinel value for restaurants without photos – used to trigger the icon placeholder in UI
@@ -20,23 +20,19 @@ export const RESTAURANT_PLACEHOLDER_IMG = '__no_photo__';
 // Feature cards data
 export const FEATURES = [
   {
-    image:
-      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&auto=format&fit=crop',
+    image: '/images/FindResturantsNearYou.png',
     title: 'Find Restaurants Near You',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&auto=format&fit=crop',
+    image: '/images/ShareYourFodReel.png',
     title: 'Share Your Food Reels',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=400&auto=format&fit=crop',
+    image: '/images/ChatWithBukaGenieAi.png',
     title: 'Chat with Buka Genie AI',
   },
   {
-    image:
-      'https://images.unsplash.com/photo-1559339352-11d035aa65de?w=400&auto=format&fit=crop',
+    image: '/images/FollowTopFoodCrerators.png',
     title: 'Follow Top Food Creators',
   },
 ] as const;
@@ -193,12 +189,12 @@ export const FAQS = [
 
 // Footer links
 export const FOOTER_LINKS = {
-  how: [{href: '#app', label: 'Get the App'}],
-  company: [{href: '#', label: 'About'}],
+  how: [{ href: '#app', label: 'Get the App' }],
+  company: [{ href: '#', label: 'About' }],
 } as const;
 
 // Social media links
-type SocialLink = {href: string; label: string; Icon: IconType};
+type SocialLink = { href: string; label: string; Icon: IconType };
 
 export const SOCIAL_LINKS: ReadonlyArray<SocialLink> = [
   {
@@ -216,6 +212,6 @@ export const SOCIAL_LINKS: ReadonlyArray<SocialLink> = [
     label: 'Tiktok',
     Icon: RiTiktokFill,
   },
-  {href: 'https://x.com/LocalBuka_app/', label: 'Twitter/X', Icon: RiTwitterXFill},
-  {href: 'https://web.facebook.com/profile.php?id=61567778991994', label: 'Facebook', Icon: RiFacebookFill},
+  { href: 'https://x.com/LocalBuka_app/', label: 'Twitter/X', Icon: RiTwitterXFill },
+  { href: 'https://web.facebook.com/profile.php?id=61567778991994', label: 'Facebook', Icon: RiFacebookFill },
 ];

@@ -10,6 +10,7 @@ import {Loader2} from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {queryKeys} from '@/lib/api/types';
 import {feedStore, type FeedType} from '@/lib/feed-state';
+import {PasswordPromptModal} from '@/components/modals';
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -143,12 +144,13 @@ function HomeContent() {
           <VideoFeed
             posts={posts}
             initialIndex={initialIndex}
-            initialMuted={!videoId && !savedPostId}
+            initialMuted={true}
             feedType={feedType}
             hideFollowButton={feedType === 'following'}
             showTimestamp={feedType === 'following'}
           />
         )}
+        <PasswordPromptModal />
       </div>
     </MainLayout>
   );

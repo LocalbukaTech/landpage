@@ -7,17 +7,24 @@ import {useAuth} from '@/context/AuthContext';
 import {
   useSigninMutation,
   useSignupMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
 } from '@/lib/api/services/auth.hooks';
+import {useToast} from '@/hooks/use-toast';
+import {userAuthService} from '@/lib/api';
 import {API_BASE_URL} from '@/lib/api/client';
 import {trackEvent, setAnalyticsUser} from '@/lib/analytics';
 
-type AuthTab = 'signin' | 'signup';
+type AuthTab = 'signin' | 'signup' | 'forgot' | 'reset';
 
 export function AuthModal() {
   const {isAuthModalOpen, closeAuthModal, loginUser} = useAuth();
+  const {toast} = useToast();
   const router = useRouter();
   const signinMutation = useSigninMutation();
   const signupMutation = useSignupMutation();
+  const forgotPasswordMutation = useForgotPasswordMutation();
+  const resetPasswordMutation = useResetPasswordMutation();
 
   const [tab, setTab] = useState<AuthTab>('signin');
   const [showPassword, setShowPassword] = useState(false);
@@ -30,6 +37,13 @@ export function AuthModal() {
     email: '',
     password: '',
   });
+
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   if (!isAuthModalOpen) return null;
 
@@ -48,6 +62,20 @@ export function AuthModal() {
           // Reset form
           setSigninData({email: '', password: ''});
           setError('');
+
+          userAuthService.getPreferences()
+            .then((prefResponse) => {
+              const prefs = prefResponse?.data?.preferences;
+              if (!Array.isArray(prefs)) {
+                closeAuthModal();
+                router.push('/signup/preferences?flow=login');
+              }
+            })
+            .catch((err) => {
+              console.log('No preferences found or error fetching, redirecting to onboarding:', err);
+              closeAuthModal();
+              router.push('/signup/preferences?flow=login');
+            });
         },
         onError: (err: any) => {
           setError(
@@ -96,6 +124,71 @@ export function AuthModal() {
     );
   };
 
+  const handleForgotSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!forgotEmail) return;
+
+    forgotPasswordMutation.mutate(
+      {email: forgotEmail},
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Code Sent! ✉️',
+            description: 'Check your inbox for a password reset code.',
+          });
+          setTab('reset');
+        },
+        onError: (err: any) => {
+          setError(
+            err?.response?.data?.message ||
+              'Failed to request reset. Please try again.'
+          );
+        },
+      }
+    );
+  };
+
+  const handleResetSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (!resetCode || !newPassword || !confirmNewPassword) return;
+
+    if (newPassword !== confirmNewPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
+    resetPasswordMutation.mutate(
+      {
+        email: forgotEmail,
+        code: resetCode,
+        newPassword: newPassword,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Password Reset Successful! 🎉',
+            description: 'Please sign in with your new password.',
+          });
+          setTab('signin');
+          setSigninData((prev) => ({...prev, email: forgotEmail, password: ''}));
+        },
+        onError: (err: any) => {
+          setError(
+            err?.response?.data?.message ||
+              'Failed to reset password. Please check the code and try again.'
+          );
+        },
+      }
+    );
+  };
+
   const handleGoogleAuth = () => {
     localStorage.setItem('google_auth_origin', tab);
     const currentOrigin =
@@ -133,73 +226,83 @@ export function AuthModal() {
         {/* Header */}
         <div className='px-8 pt-8 pb-4'>
           <h2 className='text-white text-xl font-bold'>
-            {tab === 'signin' ? 'Welcome back' : 'Create an account'}
+            {tab === 'signin' && 'Welcome back'}
+            {tab === 'signup' && 'Create an account'}
+            {tab === 'forgot' && 'Forgot Password'}
+            {tab === 'reset' && 'Reset Password'}
           </h2>
           <p className='text-zinc-400 text-sm mt-1'>
-            {tab === 'signin'
-              ? 'Sign in to access all features'
-              : 'Join LocalBuka to discover great restaurants'}
+            {tab === 'signin' && 'Sign in to access all features'}
+            {tab === 'signup' && 'Join LocalBuka to discover great restaurants'}
+            {tab === 'forgot' && 'Enter your email to receive a password reset code.'}
+            {tab === 'reset' && `Enter the code sent to ${forgotEmail} and your new password.`}
           </p>
         </div>
 
         {/* Tabs */}
-        <div className='flex mx-8 mb-6 bg-[#111] rounded-xl p-1 gap-1'>
-          <button
-            onClick={() => switchTab('signin')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all cursor-pointer ${
-              tab === 'signin'
-                ? 'bg-[#fbbe15] text-[#1a1a1a]'
-                : 'text-zinc-400 hover:text-white'
-            }`}>
-            Sign In
-          </button>
-          <button
-            onClick={() => switchTab('signup')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all cursor-pointer ${
-              tab === 'signup'
-                ? 'bg-[#fbbe15] text-[#1a1a1a]'
-                : 'text-zinc-400 hover:text-white'
-            }`}>
-            Sign Up
-          </button>
-        </div>
+        {(tab === 'signin' || tab === 'signup') && (
+          <div className='flex mx-8 mb-6 bg-[#111] rounded-xl p-1 gap-1'>
+            <button
+              onClick={() => switchTab('signin')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                tab === 'signin'
+                  ? 'bg-[#fbbe15] text-[#1a1a1a]'
+                  : 'text-zinc-400 hover:text-white'
+              }`}>
+              Sign In
+            </button>
+            <button
+              onClick={() => switchTab('signup')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                tab === 'signup'
+                  ? 'bg-[#fbbe15] text-[#1a1a1a]'
+                  : 'text-zinc-400 hover:text-white'
+              }`}>
+              Sign Up
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <div className='px-8 pb-8'>
           {/* Google Auth */}
-          <button
-            type='button'
-            onClick={handleGoogleAuth}
-            className='w-full flex items-center justify-center gap-3 px-4 py-3 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer'>
-            <svg className='w-5 h-5' viewBox='0 0 24 24'>
-              <path
-                fill='#4285F4'
-                d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'
-              />
-              <path
-                fill='#34A853'
-                d='M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z'
-              />
-              <path
-                fill='#FBBC05'
-                d='M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z'
-              />
-              <path
-                fill='#EA4335'
-                d='M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z'
-              />
-            </svg>
-            <span className='text-white text-sm font-medium'>
-              Continue with Google
-            </span>
-          </button>
+          {(tab === 'signin' || tab === 'signup') && (
+            <>
+              <button
+                type='button'
+                onClick={handleGoogleAuth}
+                className='w-full flex items-center justify-center gap-3 px-4 py-3 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer'>
+                <svg className='w-5 h-5' viewBox='0 0 24 24'>
+                  <path
+                    fill='#4285F4'
+                    d='M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z'
+                  />
+                  <path
+                    fill='#34A853'
+                    d='M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z'
+                  />
+                  <path
+                    fill='#FBBC05'
+                    d='M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z'
+                  />
+                  <path
+                    fill='#EA4335'
+                    d='M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z'
+                  />
+                </svg>
+                <span className='text-white text-sm font-medium'>
+                  Continue with Google
+                </span>
+              </button>
 
-          {/* Divider */}
-          <div className='flex items-center gap-4 my-5'>
-            <div className='flex-1 h-px bg-white/10' />
-            <span className='text-zinc-500 text-xs'>or</span>
-            <div className='flex-1 h-px bg-white/10' />
-          </div>
+              {/* Divider */}
+              <div className='flex items-center gap-4 my-5'>
+                <div className='flex-1 h-px bg-white/10' />
+                <span className='text-zinc-500 text-xs'>or</span>
+                <div className='flex-1 h-px bg-white/10' />
+              </div>
+            </>
+          )}
 
           {/* Error */}
           {error && (
@@ -241,6 +344,20 @@ export function AuthModal() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
+              <div className='flex justify-end'>
+                <button
+                  type='button'
+                  onClick={() => {
+                    setForgotEmail(signinData.email);
+                    setTab('forgot');
+                    setError('');
+                  }}
+                  className='text-xs text-[#fbbe15] hover:underline font-semibold bg-transparent border-0 cursor-pointer p-0'>
+                  Forgot Password?
+                </button>
+              </div>
+
               <button
                 type='submit'
                 disabled={isLoading}
@@ -337,6 +454,122 @@ export function AuthModal() {
                 ) : (
                   'Sign Up'
                 )}
+              </button>
+            </form>
+          )}
+
+          {/* Forgot Password Form */}
+          {tab === 'forgot' && (
+            <form onSubmit={handleForgotSubmit} className='space-y-3'>
+              <input
+                type='email'
+                placeholder='Email'
+                value={forgotEmail}
+                onChange={(e) => {
+                  setForgotEmail(e.target.value);
+                  setError('');
+                }}
+                required
+                className='w-full px-4 py-3 border border-white/10 rounded-xl bg-white/5 text-white placeholder-zinc-500 focus:outline-none focus:border-[#fbbe15] transition-colors text-sm'
+              />
+              <button
+                type='submit'
+                disabled={forgotPasswordMutation.isPending}
+                className='w-full py-3.5 bg-[#fbbe15] hover:bg-[#e5ac10] text-[#1a1a1a] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer text-sm'>
+                {forgotPasswordMutation.isPending ? (
+                  <>
+                    <Loader2 size={18} className='animate-spin' />
+                    Sending Code...
+                  </>
+                ) : (
+                  'Send Reset Code'
+                )}
+              </button>
+              <button
+                type='button'
+                onClick={() => {
+                  setTab('signin');
+                  setError('');
+                }}
+                className='w-full py-3.5 bg-transparent border border-white/10 text-white font-semibold rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-sm'>
+                Back to Sign In
+              </button>
+            </form>
+          )}
+
+          {/* Reset Password Form */}
+          {tab === 'reset' && (
+            <form onSubmit={handleResetSubmit} className='space-y-3'>
+              <input
+                type='text'
+                placeholder='Verification Code'
+                value={resetCode}
+                onChange={(e) => {
+                  setResetCode(e.target.value);
+                  setError('');
+                }}
+                required
+                className='w-full px-4 py-3 border border-white/10 rounded-xl bg-white/5 text-white placeholder-zinc-500 focus:outline-none focus:border-[#fbbe15] transition-colors text-sm'
+              />
+              <div className='relative'>
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  placeholder='New Password'
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setError('');
+                  }}
+                  required
+                  className='w-full px-4 py-3 pr-12 border border-white/10 rounded-xl bg-white/5 text-white placeholder-zinc-500 focus:outline-none focus:border-[#fbbe15] transition-colors text-sm'
+                />
+                <button
+                  type='button'
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className='absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors'>
+                  {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              <div className='relative'>
+                <input
+                  type={showConfirmNewPassword ? 'text' : 'password'}
+                  placeholder='Confirm New Password'
+                  value={confirmNewPassword}
+                  onChange={(e) => {
+                    setConfirmNewPassword(e.target.value);
+                    setError('');
+                  }}
+                  required
+                  className='w-full px-4 py-3 pr-12 border border-white/10 rounded-xl bg-white/5 text-white placeholder-zinc-500 focus:outline-none focus:border-[#fbbe15] transition-colors text-sm'
+                />
+                <button
+                  type='button'
+                  onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                  className='absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors'>
+                  {showConfirmNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              <button
+                type='submit'
+                disabled={resetPasswordMutation.isPending}
+                className='w-full py-3.5 bg-[#fbbe15] hover:bg-[#e5ac10] text-[#1a1a1a] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer text-sm'>
+                {resetPasswordMutation.isPending ? (
+                  <>
+                    <Loader2 size={18} className='animate-spin' />
+                    Resetting...
+                  </>
+                ) : (
+                  'Reset Password'
+                )}
+              </button>
+              <button
+                type='button'
+                onClick={() => {
+                  setTab('forgot');
+                  setError('');
+                }}
+                className='w-full py-3.5 bg-transparent border border-white/10 text-white font-semibold rounded-xl hover:bg-white/5 transition-colors cursor-pointer text-sm'>
+                Back
               </button>
             </form>
           )}

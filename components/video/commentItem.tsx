@@ -1,11 +1,12 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Heart, Trash2, MoreHorizontal } from "lucide-react";
+import { Trash2, Pencil, Heart } from "lucide-react";
 import type { PostComment } from "@/types/post";
 import { formatDistanceToNow } from "date-fns";
-import { useState } from "react";
-import { useDeleteComment } from "@/lib/api/services/posts.hooks";
+import { useState, useEffect } from "react";
+import { useDeleteComment, useEditComment, useToggleCommentLike } from "@/lib/api/services/posts.hooks";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useMe } from "@/lib/api/services/auth.hooks";
-import { cn } from "@/lib/utils";
+import { cn, ensureHttps } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,13 +23,48 @@ interface CommentItemProps {
   comment: PostComment;
   onReplyClick?: (commentId: string, username: string) => void;
   isReply?: boolean;
+  postId?: string;
 }
 
-export default function CommentItem({ comment, onReplyClick, isReply = false }: CommentItemProps) {
+export default function CommentItem({ comment, onReplyClick, isReply = false, postId }: CommentItemProps) {
   const [showReplies, setShowReplies] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.text);
   const { data: me } = useMe();
   const deleteCommentMutation = useDeleteComment();
+  const editCommentMutation = useEditComment();
+  const toggleLikeMutation = useToggleCommentLike();
+  const { requireAuth } = useRequireAuth();
+
+  const [isLiked, setIsLiked] = useState(comment.isLiked || false);
+  const [likeCount, setLikeCount] = useState(comment.likeCount || 0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLiked(comment.isLiked || false);
+      setLikeCount(comment.likeCount || 0);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [comment.isLiked, comment.likeCount]);
+
+  const handleLikeToggle = () => {
+    requireAuth(() => {
+      const newLiked = !isLiked;
+      setIsLiked(newLiked);
+      setLikeCount((prev) => (newLiked ? prev + 1 : Math.max(0, prev - 1)));
+
+      toggleLikeMutation.mutate({
+        postId: postId || comment.postId || "",
+        commentId: comment.id,
+      }, {
+        onError: () => {
+          setIsLiked(!newLiked);
+          setLikeCount((prev) => (!newLiked ? prev + 1 : Math.max(0, prev - 1)));
+        }
+      });
+    });
+  };
 
   const isAuthor = me?.data?.id === comment.userId;
   const isLongComment = comment.text.length > 150;
@@ -42,18 +78,31 @@ export default function CommentItem({ comment, onReplyClick, isReply = false }: 
     if (comment.createdAt) {
       timeAgo = formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true });
     }
-  } catch (e) {
+  } catch (_e) {
     // ignore
   }
 
   const handleDelete = () => {
     deleteCommentMutation.mutate({ 
-      postId: (comment as any).postId || "", 
+      postId: postId || (comment as any).postId || "", 
       commentId: comment.id 
     });
   };
 
-  const avatarSrc = comment.user?.avatar || comment.user?.profilePicture || "/images/profile.png";
+  const handleSave = () => {
+    if (!editText.trim()) return;
+    editCommentMutation.mutate({
+      postId: postId || (comment as any).postId || "",
+      commentId: comment.id,
+      comment: editText.trim()
+    }, {
+      onSuccess: () => {
+        setIsEditing(false);
+      }
+    });
+  };
+
+  const avatarSrc = ensureHttps(comment.user?.avatar || comment.user?.profilePicture || "/images/profile.png");
   const username = comment.user?.fullName || comment.user?.username || "Unknown User";
   const initial = username !== "Unknown User" ? username.charAt(0).toUpperCase() : "U";
 
@@ -87,56 +136,113 @@ export default function CommentItem({ comment, onReplyClick, isReply = false }: 
             {/* Action Buttons */}
             <div className="flex items-center gap-3">
               {isAuthor && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button 
-                      className="text-neutral-500 hover:text-red-500 transition-colors p-1"
-                      disabled={deleteCommentMutation.isPending}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-[#1f1f1f] border-[#3a3a3a] text-white">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete comment?</AlertDialogTitle>
-                      <AlertDialogDescription className="text-neutral-400">
-                        Are you sure you want to delete this comment? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-transparent border-[#3a3a3a] text-white hover:bg-[#333] hover:text-white">
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={handleDelete}
-                        className="bg-red-500 hover:bg-red-600 text-white border-none"
+                <>
+                  <button 
+                    onClick={() => {
+                      setIsEditing(true);
+                      setEditText(comment.text);
+                    }}
+                    className="text-neutral-500 hover:text-[#fbbe15] transition-colors p-1"
+                    disabled={deleteCommentMutation.isPending}
+                    aria-label="Edit comment"
+                  >
+                    <Pencil size={14} />
+                  </button>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button 
+                        className="text-neutral-500 hover:text-red-500 transition-colors p-1"
+                        disabled={deleteCommentMutation.isPending}
+                        aria-label="Delete comment"
                       >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Trash2 size={14} />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-[#1f1f1f] border-[#3a3a3a] text-white">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete comment?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-neutral-400">
+                          Are you sure you want to delete this comment? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-transparent border-[#3a3a3a] text-white hover:bg-[#333] hover:text-white">
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleDelete}
+                          className="bg-red-500 hover:bg-red-600 text-white border-none"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
               )}
-              {/* <Heart
-                size={16}
-                strokeWidth={1.5}
-                className="text-neutral-500 hover:text-white cursor-pointer transition-colors"
-              /> */}
+              <button
+                onClick={handleLikeToggle}
+                className="flex items-center gap-1 text-neutral-500 hover:text-red-500 transition-colors p-1"
+                aria-label="Like comment"
+              >
+                <Heart
+                  size={14}
+                  className={cn(
+                    isLiked ? "text-red-500 fill-red-500" : "text-neutral-500",
+                    "transition-colors"
+                  )}
+                />
+                {likeCount > 0 && (
+                  <span className="text-xs text-neutral-400">{likeCount}</span>
+                )}
+              </button>
             </div>
           </div>
-
+ 
           {/* Text */}
-          <div className="text-sm mt-1 mb-1 leading-snug">
-            {displayedComment}
-            {isLongComment && (
-              <button 
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="ml-1 text-neutral-400 font-medium hover:text-white"
-              >
-                {isExpanded ? "less" : "more"}
-              </button>
-            )}
-          </div>
+          {isEditing ? (
+            <div className="flex flex-col gap-2 mt-1.5 mb-1.5">
+              <textarea
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                className="w-full min-h-[60px] bg-[#2a2a2a] border border-neutral-700 rounded p-2 text-sm text-white focus:outline-none focus:border-[#fbbe15] resize-none"
+                placeholder="Edit your comment..."
+                disabled={editCommentMutation.isPending}
+              />
+              <div className="flex items-center gap-2 self-end">
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditText(comment.text);
+                  }}
+                  className="px-2.5 py-1 text-xs text-neutral-400 hover:text-white transition-colors bg-[#333] rounded hover:bg-[#444] disabled:opacity-50"
+                  disabled={editCommentMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-2.5 py-1 text-xs text-black font-semibold bg-[#fbbe15] hover:bg-[#e5ac10] transition-colors rounded disabled:opacity-50 flex items-center gap-1"
+                  disabled={editCommentMutation.isPending || !editText.trim()}
+                >
+                  {editCommentMutation.isPending ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm mt-1 mb-1 leading-snug">
+              {displayedComment}
+              {isLongComment && (
+                <button 
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="ml-1 text-neutral-400 font-medium hover:text-white"
+                >
+                  {isExpanded ? "less" : "more"}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Action Row */}
           <div className="flex items-center gap-4 mt-1.5 px-0.5">
@@ -174,6 +280,7 @@ export default function CommentItem({ comment, onReplyClick, isReply = false }: 
               comment={reply} 
               isReply={true} 
               onReplyClick={onReplyClick}
+              postId={postId}
             />
           ))}
           

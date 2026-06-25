@@ -94,16 +94,30 @@ export const restaurantsService = {
   },
 
   // Get trending restaurants
-  getTrendingRestaurants: () => {
-    return api.get<ApiResponse<Restaurant[]>>('/restaurants/trending');
+  getTrendingRestaurants: (params?: {
+    location?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    return api.get<ApiResponse<Restaurant[]>>('/restaurants/trending', {
+      params,
+    });
   },
 
   // Search restaurants
   searchRestaurants: (params: {
-    lat: number;
-    lng: number;
+    q?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+    cuisine?: string;
+    city?: string;
     page?: number;
     pageSize?: number;
+    status?: string;
   }) => {
     return api.get<ApiResponse<PaginatedResponse<Restaurant>>>(
       '/restaurants/search',

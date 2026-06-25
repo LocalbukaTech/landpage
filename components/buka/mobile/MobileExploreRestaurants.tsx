@@ -3,26 +3,16 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {
   ArrowLeft,
-  ChevronDown,
   Search,
   SlidersHorizontal,
   X,
+  LocateFixed,
+  MapPin,
 } from 'lucide-react';
 import {useRouter} from 'next/navigation';
-import Image from 'next/image';
 import {CgSpinner} from 'react-icons/cg';
 import type {BukaRestaurant} from '@/components/buka/BukaCard';
 import {MobileRestaurantRow} from './MobileRestaurantRow';
-import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
-
-const LOCATIONS = [
-  'Current Location',
-  'Ikeja, Lagos',
-  'Victoria Island, Lagos',
-  'Lekki, Lagos',
-  'Abuja, FCT',
-  'Port Harcourt, Rivers',
-];
 
 const CUISINE_CHIPS = [
   'All',
@@ -60,7 +50,44 @@ export function MobileExploreRestaurants({
   const [activeCuisine, setActiveCuisine] = useState('All');
   const [activeRating, setActiveRating] = useState('All Ratings');
   const [showLocationSheet, setShowLocationSheet] = useState(false);
+  const [locationInput, setLocationInput] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const locationSheetInputRef = useRef<HTMLInputElement>(null);
+
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
+  useEffect(() => {
+    if (!locationInput.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setIsLoadingSuggestions(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationInput)}&limit=3&countrycodes=ng`
+        );
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const names = data.map((item: any) => {
+            const parts = item.display_name.split(',');
+            return parts.slice(0, 3).map((p: string) => p.trim()).join(', ');
+          });
+          setSuggestions([...new Set(names)]);
+        }
+      } catch (error) {
+        console.error('Error fetching mobile suggestions:', error);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [locationInput]);
+
+  const isCurrentLocation = selectedLocation === 'Current Location';
 
   // Filter restaurants client-side based on chips
   const filtered = useMemo(() => {
@@ -108,6 +135,27 @@ export function MobileExploreRestaurants({
       document.body.style.overflow = '';
     };
   }, [showLocationSheet]);
+
+  // Focus input when sheet opens
+  useEffect(() => {
+    if (showLocationSheet && locationSheetInputRef.current) {
+      setTimeout(() => locationSheetInputRef.current?.focus(), 300);
+    }
+  }, [showLocationSheet]);
+
+  const handleLocationSubmit = () => {
+    const trimmed = locationInput.trim();
+    if (trimmed) {
+      onLocationChange(trimmed);
+    }
+    setShowLocationSheet(false);
+  };
+
+  const handleUseCurrentLocation = () => {
+    setLocationInput('');
+    onLocationChange('Current Location');
+    setShowLocationSheet(false);
+  };
 
   return (
     <div className='w-full min-h-screen bg-[#111] pb-24'>
@@ -163,10 +211,10 @@ export function MobileExploreRestaurants({
           <button
             onClick={() => setShowLocationSheet(true)}
             className='flex items-center gap-1.5 bg-[#1e1e1e] border border-white/8 rounded-full px-3 py-1.5 shrink-0 active:bg-[#2a2a2a] transition-colors'>
+            <MapPin size={12} className='text-[#fbbe15] shrink-0' />
             <span className='text-zinc-300 text-xs font-medium truncate max-w-[120px]'>
-              {selectedLocation}
+              {isCurrentLocation ? '📍 Current' : selectedLocation}
             </span>
-            <ChevronDown size={12} className='text-zinc-500 shrink-0' />
           </button>
 
           {/* Divider */}
@@ -254,39 +302,103 @@ export function MobileExploreRestaurants({
             <div className='flex justify-center pt-3 pb-1'>
               <div className='w-10 h-1 rounded-full bg-zinc-700' />
             </div>
-            <div className='px-4 pt-2 pb-4'>
+            <div className='px-4 pt-2 pb-6'>
               <h3 className='text-white font-bold text-base mb-4'>
-                Select Location
+                Search Location
               </h3>
-              <div className='flex flex-col gap-1'>
-                {LOCATIONS.map((loc) => (
+
+              {/* Location text input */}
+              <div className='relative mb-3'>
+                <MapPin
+                  size={16}
+                  className='absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500'
+                />
+                <input
+                  ref={locationSheetInputRef}
+                  type='text'
+                  value={locationInput}
+                  onChange={(e) => setLocationInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleLocationSubmit();
+                  }}
+                  placeholder='Type a city or area...'
+                  className='w-full bg-[#222] border border-white/10 rounded-2xl pl-10 pr-10 py-3 text-white text-sm placeholder:text-zinc-600 outline-none focus:border-[#fbbe15]/40 transition-colors'
+                />
+                {locationInput && (
                   <button
-                    key={loc}
-                    onClick={() => {
-                      onLocationChange(loc);
-                      setShowLocationSheet(false);
-                    }}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors ${
-                      selectedLocation === loc
-                        ? 'bg-[#fbbe15]/10 border border-[#fbbe15]/30'
-                        : 'bg-[#222] border border-transparent active:bg-[#2a2a2a]'
-                    }`}>
-                    <span
-                      className={`text-sm font-medium ${
-                        selectedLocation === loc
-                          ? 'text-[#fbbe15]'
-                          : 'text-zinc-300'
-                      }`}>
-                      {loc}
-                    </span>
-                    {selectedLocation === loc && (
-                      <span className='ml-auto text-[#fbbe15] text-xs font-bold'>
-                        ✓
-                      </span>
-                    )}
+                    onClick={() => setLocationInput('')}
+                    className='absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 active:text-white'>
+                    <X size={15} />
                   </button>
-                ))}
+                )}
               </div>
+
+              {/* Mobile location suggestions */}
+              {isLoadingSuggestions ? (
+                <div className='mb-3 bg-[#222]/30 border border-white/5 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-zinc-500 text-xs'>
+                  <CgSpinner className='animate-spin text-[#fbbe15] text-sm shrink-0' />
+                  <span>Searching locations...</span>
+                </div>
+              ) : locationInput.trim() && suggestions.length > 0 ? (
+                <div className='mb-3 bg-[#222]/50 border border-white/5 rounded-2xl overflow-hidden'>
+                  {suggestions.map((loc) => (
+                    <button
+                      key={loc}
+                      onClick={() => {
+                        setLocationInput(loc);
+                        onLocationChange(loc);
+                        setShowLocationSheet(false);
+                      }}
+                      className='w-full text-left px-4 py-3.5 text-sm text-zinc-300 border-none bg-transparent active:bg-white/5 border-b border-white/5 last:border-b-0 flex items-center gap-2'
+                    >
+                      <MapPin size={14} className='text-zinc-500 shrink-0' />
+                      <span>{loc}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : locationInput.trim() ? (
+                <div className='mb-3 bg-[#222]/30 border border-white/5 rounded-2xl py-3 px-4 text-center text-zinc-500 text-xs'>
+                  No locations found
+                </div>
+              ) : null}
+
+              {/* Search button */}
+              {locationInput.trim() && (
+                <button
+                  onClick={handleLocationSubmit}
+                  className='w-full py-3 bg-[#fbbe15] text-[#1a1a1a] font-semibold text-sm rounded-2xl mb-3 active:scale-[0.98] transition-transform'>
+                  Search in &ldquo;{locationInput.trim()}&rdquo;
+                </button>
+              )}
+
+              {/* Divider */}
+              <div className='flex items-center gap-3 my-3'>
+                <div className='flex-1 h-px bg-white/10' />
+                <span className='text-zinc-600 text-xs'>or</span>
+                <div className='flex-1 h-px bg-white/10' />
+              </div>
+
+              {/* Use Current Location */}
+              <button
+                onClick={handleUseCurrentLocation}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-colors ${
+                  isCurrentLocation
+                    ? 'bg-[#fbbe15]/10 border border-[#fbbe15]/30'
+                    : 'bg-[#222] border border-transparent active:bg-[#2a2a2a]'
+                }`}>
+                <LocateFixed size={18} className='text-[#fbbe15] shrink-0' />
+                <span
+                  className={`text-sm font-medium ${
+                    isCurrentLocation ? 'text-[#fbbe15]' : 'text-zinc-300'
+                  }`}>
+                  Use Current Location
+                </span>
+                {isCurrentLocation && (
+                  <span className='ml-auto text-[#fbbe15] text-xs font-bold'>
+                    ✓
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </>

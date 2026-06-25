@@ -1,7 +1,13 @@
 import type {NextConfig} from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: path.join(__dirname),
+  turbopack: {
+    root: path.join(__dirname),
+  },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -15,15 +21,21 @@ const nextConfig: NextConfig = {
         protocol: 'http',
         hostname: 'res.cloudinary.com',
         port: '',
-        pathname: '/de97zul4x/image/upload/**',
-      },
-        {
-        protocol: "https",
-        hostname: "lh3.googleusercontent.com",
+        pathname: '/de97zul4x/**',
       },
       {
-        protocol: "https",
-        hostname: "maps.googleapis.com",
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/de97zul4x/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'maps.googleapis.com',
       },
     ],
   },

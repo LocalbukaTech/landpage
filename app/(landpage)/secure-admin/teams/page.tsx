@@ -106,6 +106,7 @@ const TeamsPage = () => {
 
   const departments = [
     'All',
+    'Leadership',
     'Operations',
     'Engineering',
     'Product',
@@ -809,6 +810,8 @@ const TeamsPage = () => {
                     value={editForm.department}
                     onChange={handleEditChange}
                     className='w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700'>
+                    <option value='Select'>Select</option>
+                    <option value='Leadership'>Leadership</option>
                     <option value='Operations'>Operations</option>
                     <option value='Engineering'>Engineering</option>
                     <option value='Product'>Product</option>

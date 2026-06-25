@@ -22,6 +22,14 @@ export function VerificationCodeModal({
   description = "Use this code to verify your account. This is a temporary feature while email delivery is being set up.",
 }: VerificationCodeModalProps) {
   const [copied, setCopied] = useState(false);
+  const [prevOpen, setPrevOpen] = useState(open);
+
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (!open) {
+      setCopied(false);
+    }
+  }
 
   useEffect(() => {
     if (open) {
@@ -32,12 +40,6 @@ export function VerificationCodeModal({
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) {
-      setCopied(false);
-    }
   }, [open]);
 
   const handleClose = () => {

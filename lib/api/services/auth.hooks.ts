@@ -7,11 +7,9 @@ import {
   type SigninPayload,
   type SigninResponse,
   type SignupPayload,
-  type SignupResponse,
   type VerifyPayload,
   type VerifyResponse,
   type ResendCodePayload,
-  type ResendCodeResponse,
   type UpdateProfilePayload,
   type ChangePasswordPayload,
   ExchangeGoogleCodeResponse,
@@ -134,5 +132,49 @@ export const useAcceptContentPolicy = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
     },
+  });
+};
+
+export const useSavePreferencesMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (preferences: string[]) => userAuthService.savePreferences(preferences),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    },
+  });
+};
+
+export const usePasswordStatus = (enabled = true) => {
+  return useQuery({
+    queryKey: ['user', 'password-status'],
+    queryFn: async () => {
+      const response = await userAuthService.getPasswordStatus();
+      return response.data;
+    },
+    enabled: enabled,
+  });
+};
+
+export const useCreatePassword = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {password: string}) => userAuthService.createPassword(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'password-status'] });
+    },
+  });
+};
+
+export const useForgotPasswordMutation = () => {
+  return useMutation({
+    mutationFn: (data: {email: string}) => userAuthService.forgotPassword(data),
+  });
+};
+
+export const useResetPasswordMutation = () => {
+  return useMutation({
+    mutationFn: (data: {email: string; code: string; newPassword: string}) =>
+      userAuthService.resetPassword(data),
   });
 };

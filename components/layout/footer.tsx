@@ -5,16 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {Button} from '@/components/ui/button';
 import {SOCIAL_LINKS} from '@/lib/constants';
-import {WaitlistModal} from '@/components/modals/waitlist-modal';
-import AdSenseUnit from '@/components/AdSenseUnit';
+// import AdSenseUnit from '@/components/AdSenseUnit';
 
 export function Footer() {
-  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   return (
     <footer className='bg-secondary dark:bg-black text-secondary-foreground py-20'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <div className="mb-12">
-          <AdSenseUnit />
+          {/* <AdSenseUnit /> */}
         </div>
         <div className='grid md:grid-cols-12 gap-y-12 md:gap-x-6 mb-16'>
           {/* Brand + tagline + socials */}
@@ -64,11 +62,6 @@ export function Footer() {
               className='text-lg hover:text-primary transition-colors'>
               FAQs
             </Link>
-            <button
-              onClick={() => setIsWaitlistOpen(true)}
-              className='text-lg hover:text-primary transition-colors text-left'>
-              Get the App
-            </button>
           </div>
 
           {/* Newsletter */}
@@ -99,9 +92,6 @@ export function Footer() {
           </Link>
         </div>
       </div>
-
-      {/* Waitlist Modal */}
-      <WaitlistModal open={isWaitlistOpen} onOpenChange={setIsWaitlistOpen} />
     </footer>
   );
 }

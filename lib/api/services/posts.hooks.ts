@@ -2,13 +2,11 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
-  useInfiniteQuery,
 } from '@tanstack/react-query';
 import {useEffect} from 'react';
 import {postsService} from './posts.service';
 import {queryKeys} from '../types';
 import type {
-  Post,
   PostsQueryParams,
   FeedQueryParams,
   CommentsQueryParams,
@@ -123,7 +121,7 @@ export const useToggleLike = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (postId: string) => postsService.toggleLike(postId),
-    onMutate: async (postId) => {
+    onMutate: async (_postId) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({queryKey: queryKeys.posts.all});
 
@@ -203,6 +201,28 @@ export const useDeleteComment = () => {
   });
 };
 
+/** Edit a comment */
+export const useEditComment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      postId,
+      commentId,
+      comment,
+    }: {
+      postId: string;
+      commentId: string;
+      comment: string;
+    }) => postsService.editComment(postId, commentId, comment),
+    onSuccess: (_, {postId}) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.posts.comments(postId),
+      });
+      queryClient.invalidateQueries({queryKey: queryKeys.posts.all});
+    },
+  });
+};
+
 /** Share a post */
 export const useSharePost = () => {
   const queryClient = useQueryClient();
@@ -223,6 +243,20 @@ export const useRepostPost = () => {
     onSuccess: (_, postId) => {
       queryClient.invalidateQueries({queryKey: queryKeys.posts.detail(postId)});
       queryClient.invalidateQueries({queryKey: queryKeys.posts.all});
+    },
+  });
+};
+
+/** Toggle comment like */
+export const useToggleCommentLike = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({postId, commentId}: {postId: string; commentId: string}) =>
+      postsService.toggleCommentLike(postId, commentId),
+    onSuccess: (_, {postId}) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.posts.comments(postId),
+      });
     },
   });
 };

@@ -49,6 +49,7 @@ export interface User {
   avatar?: string;
   bio?: string;
   location?: string;
+  preferences?: string[];
 }
 
 // Signin
@@ -190,4 +191,39 @@ export const userAuthService = {
     api.patch<ApiResponse<{hasAcceptedContentPolicy: boolean}>>(
       '/users/me/content-policy',
     ),
+
+  /** PUT /onboarding/preferences — Save user onboarding preferences */
+  savePreferences: (preferences: string[]) =>
+    api.put<ApiResponse<any>>('/onboarding/preferences', { preferences }),
+
+  /** GET /users/me/preferences — Get user onboarding preferences */
+  getPreferences: () =>
+    api.get<ApiResponse<{
+      id: string;
+      userId: string;
+      preferences: string[];
+      completedAt: string;
+      createdAt: string;
+      updatedAt: string;
+    }>>('/onboarding/preferences'),
+
+  /** GET /users/me/password-status — Get password status (hasPassword, etc) */
+  getPasswordStatus: () =>
+    api.get<ApiResponse<{
+      hasPassword: boolean;
+      canCreatePassword: boolean;
+      canChangePassword: boolean;
+    }>>('/users/me/password-status'),
+
+  /** POST /users/me/password — Create password for OAuth users */
+  createPassword: (data: {password: string}) =>
+    api.post<ApiResponse<{message: string}>>('/users/me/password', data),
+
+  /** POST /auth/forgot-password — Request password reset code */
+  forgotPassword: (data: {email: string}) =>
+    api.post<ApiResponse<{message: string}>>('/auth/forgot-password', data),
+
+  /** POST /auth/reset-password — Reset password with code */
+  resetPassword: (data: {email: string; code: string; newPassword: string}) =>
+    api.post<ApiResponse<{message: string}>>('/auth/reset-password', data),
 };

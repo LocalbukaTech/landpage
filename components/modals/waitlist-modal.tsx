@@ -4,7 +4,6 @@ import {useState, useEffect} from 'react';
 import Image from 'next/image';
 import {X, Loader2, Check} from 'lucide-react';
 import {Button} from '@/components/ui/button';
-import {Input} from '@/components/ui/input';
 import {Images} from '@/public/images';
 import {useCreateWaitlistMutation} from '@/lib/api/services/waitlist.hooks';
 import {useToast} from '@/hooks/use-toast';

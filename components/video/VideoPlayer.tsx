@@ -1,10 +1,11 @@
 'use client';
 
-import {useRef, useState, useEffect, useCallback} from 'react';
-import {Volume2, VolumeX, Play, Pause} from 'lucide-react';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { Volume2, VolumeX, MoreHorizontal, Play, Pause } from 'lucide-react';
 import Image from 'next/image';
-import type {Post} from '@/types/post';
-import {VideoOverlay} from '@/components/video/VideoOverlay';
+import type { Post } from '@/types/post';
+import { VideoOverlay } from '@/components/video/VideoOverlay';
+import { ensureHttps } from '@/lib/utils';
 
 interface VideoPlayerProps {
   post: Post;
@@ -44,33 +45,14 @@ export function VideoPlayer({
 
   const isVideo = post.mediaType === 'video';
 
-  // Keep a ref so the play effect always reads the latest muted state
-  // without needing to add isMuted to its dependency array (which would
-  // incorrectly restart the video every time the user taps the mute button).
-  const isMutedRef = useRef(isMuted);
-  isMutedRef.current = isMuted;
-
-  // Imperatively sync the DOM .muted property whenever it changes.
-  // React only sets the HTML attribute, not the JS property, so browsers
-  // (especially mobile Chrome/Safari) can miss the change.
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-    }
-  }, [isMuted]);
-
   // Play/pause based on active state and video changes
   useEffect(() => {
     if (videoRef.current && isVideo) {
       if (isActive) {
         // Reset video to beginning when switching
         videoRef.current.currentTime = 0;
-        // Set muted imperatively before play() — mobile browsers block
-        // unmuted autoplay, and React's JSX muted prop is not reliable.
-        videoRef.current.muted = isMutedRef.current;
         videoRef.current.play().catch(() => {
-          // Autoplay still blocked (e.g. unmuted + no prior interaction)
-          // — silently ignore, user can tap to play
+          // Autoplay might be blocked
         });
       } else {
         videoRef.current.pause();
@@ -221,7 +203,7 @@ export function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-full md:w-[420px] h-full bg-black md:rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
+      className={`relative w-[420px] h-full bg-black rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
       onClick={togglePlay}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -230,8 +212,8 @@ export function VideoPlayer({
       {isVideo ? (
         <video
           ref={videoRef}
-          src={post.mediaUrl}
-          poster={post.thumbnailUrl || undefined}
+          src={ensureHttps(post.mediaUrl)}
+          poster={post.thumbnailUrl ? ensureHttps(post.thumbnailUrl) : undefined}
           className='w-full h-full object-cover'
           loop
           muted={isMuted}
@@ -244,7 +226,7 @@ export function VideoPlayer({
         />
       ) : (
         <Image
-          src={post.mediaUrl}
+          src={ensureHttps(post.mediaUrl)}
           alt={post.caption || 'Post Image'}
           fill
           className='object-cover'
@@ -283,7 +265,7 @@ export function VideoPlayer({
       <div className='absolute top-3 left-3 right-3 flex justify-between items-start z-10'>
         {isVideo ? (
           <button
-            className='mt-16 ml-4 flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
+            className='mt-16 md:mt-0 ml-4 md:ml-0 flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
             onClick={toggleMute}
             aria-label={isMuted ? 'Unmute' : 'Mute'}>
             {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
@@ -291,12 +273,6 @@ export function VideoPlayer({
         ) : (
           <div />
         )}
-        {/* <button
-          className='flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
-          onClick={(e) => e.stopPropagation()}
-          aria-label='More options'>
-          <MoreHorizontal size={20} />
-        </button> */}
       </div>
 
       {/* Video Overlay */}
@@ -309,7 +285,7 @@ export function VideoPlayer({
           onClick={(e) => e.stopPropagation()}>
           <div
             className='absolute top-0 left-0 h-full bg-primary rounded-r-full pointer-events-none'
-            style={{width: `${progress}%`}}
+            style={{ width: `${progress}%` }}
           />
           <input
             type='range'

@@ -7,8 +7,11 @@ export const useUser = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    setUser(getUser());
-    setIsAuthenticated(isUserAuthenticated());
+    const timer = setTimeout(() => {
+      setUser(getUser());
+      setIsAuthenticated(isUserAuthenticated());
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return {user, isAuthenticated};

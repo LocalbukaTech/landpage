@@ -22,7 +22,7 @@ export const useFollowMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => socialService.followUser(userId),
-    onSuccess: (_, userId) => {
+    onSuccess: () => {
       // Invalidate both followers and following queries for both users
       queryClient.invalidateQueries({ queryKey: queryKeys.social.all });
     },
@@ -33,7 +33,7 @@ export const useUnfollowMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (userId: string) => socialService.unfollowUser(userId),
-    onSuccess: (_, userId) => {
+    onSuccess: () => {
       // Invalidate both followers and following queries for both users
       queryClient.invalidateQueries({ queryKey: queryKeys.social.all });
     },

@@ -1,17 +1,18 @@
 'use client';
 
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useParams} from 'next/navigation';
-import {ChevronDown, MapPin, Search} from 'lucide-react';
+import {MapPin, Search, X, LocateFixed} from 'lucide-react';
+import {MobileCuisinePage} from '@/components/buka/mobile/MobileCuisinePage';
 import {CuisineHero} from '@/components/buka/CuisineHero';
 import {CuisineFilters, FilterState} from '@/components/buka/CuisineFilters';
 import {BukaCard, BukaRestaurant} from '@/components/buka/BukaCard';
 import {Pagination} from '@/components/buka/Pagination';
 import {Images} from '@/public/images';
-import {useRestaurantsByCuisine, useSearchRestaurants} from '@/lib/api';
+import {useSearchRestaurants} from '@/lib/api';
 import {CgSpinner} from 'react-icons/cg';
 import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
-import {helper} from '@/utils/helper';
+import {useGeolocation} from '@/hooks/useGeolocation';
 
 // Map slug → cuisine filter name
 const SLUG_TO_CUISINE: Record<string, string> = {
@@ -66,22 +67,6 @@ const CUISINE_META: Record<
   },
 };
 
-const LOCATIONS = [
-  'Ikeja, Lagos',
-  'Victoria Island, Lagos',
-  'Lekki, Lagos',
-  'Abuja, FCT',
-  'Port Harcourt, Rivers',
-];
-
-const LOCATION_COORDS: Record<string, {lat: number; lng: number}> = {
-  'Ikeja, Lagos': {lat: 6.6018, lng: 3.3515},
-  'Victoria Island, Lagos': {lat: 6.4281, lng: 3.4219},
-  'Lekki, Lagos': {lat: 6.4698, lng: 3.5852},
-  'Abuja, FCT': {lat: 9.0765, lng: 7.3986},
-  'Port Harcourt, Rivers': {lat: 4.8156, lng: 7.0498},
-};
-
 const ITEMS_PER_PAGE = 9;
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
@@ -115,74 +100,113 @@ export default function CuisineDetailPage() {
     CUISINE_META[cuisineSlug] || CUISINE_META['nigeria-cuisine'];
   const activeCuisine = SLUG_TO_CUISINE[cuisineSlug] || '';
 
+  const {lat: userLat, lng: userLng, loading: loadingGeo} = useGeolocation();
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedLocation, setSelectedLocation] = useState('Ikeja, Lagos');
-  const [isLocationOpen, setIsLocationOpen] = useState(false);
+  // Location state: 'current' means use geolocation, otherwise it's a typed city string
+  const [locationMode, setLocationMode] = useState<'current' | 'custom'>('current');
+  const [locationInput, setLocationInput] = useState('');
+  const [debouncedLocation, setDebouncedLocation] = useState('');
+  const [isLocationFocused, setIsLocationFocused] = useState(false);
+
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+
+  useEffect(() => {
+    if (!locationInput.trim() || locationMode === 'current') {
+      setSuggestions([]);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setIsLoadingSuggestions(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationInput)}&limit=3&countrycodes=ng`
+        );
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const names = data.map((item: any) => {
+            const parts = item.display_name.split(',');
+            return parts.slice(0, 3).map((p: string) => p.trim()).join(', ');
+          });
+          setSuggestions([...new Set(names)]);
+        }
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [locationInput, locationMode]);
+
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const locationRef = useRef<HTMLDivElement>(null);
+  const locationInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Get actual fetching from APi
+  // Debounce location input so API calls don't fire on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedLocation(locationInput.trim());
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [locationInput]);
+
+  // Display label for the current location state
+  const locationDisplayLabel = locationMode === 'current' ? 'Current Location' : (locationInput || 'Type a location...');
+
+  // Get actual fetching from API
   const apiCuisineName = cuisineSlug.replace('-cuisine', '').replace('-', ' ');
-  // Provide a safe default location city for fetching initially maybe?
-  // We'll extract city for API call if selectedLocation is e.g. "Ikeja, Lagos" -> "Lagos"
-  const locationParts = selectedLocation.split(', ');
-  const city = locationParts.length > 1 ? locationParts[1] : locationParts[0];
 
-  const {data: cuisineRes, isLoading: isLoadingCuisine} =
-    useRestaurantsByCuisine(apiCuisineName, {
+  const searchParams = useMemo(() => {
+    const params: any = {
       page: currentPage,
       pageSize: ITEMS_PER_PAGE,
-      city,
-    });
+      cuisine: apiCuisineName,
+      q: searchQuery || undefined,
+    };
 
-  const coords = LOCATION_COORDS[selectedLocation] || {
-    lat: 6.5244,
-    lng: 3.3792,
-  };
-  const {data: fallbackSearchRes, isLoading: isLoadingFallback} =
-    useSearchRestaurants({
-      lat: coords.lat,
-      lng: coords.lng,
-      page: currentPage,
-      pageSize: ITEMS_PER_PAGE,
-    });
+    if (locationMode === 'current') {
+      params.lat = userLat || 6.5244;
+      params.lng = userLng || 3.3792;
+    } else if (debouncedLocation) {
+      params.city = debouncedLocation;
+    }
 
-  const isLoading = isLoadingCuisine || isLoadingFallback;
+    return params;
+  }, [currentPage, apiCuisineName, locationMode, userLat, userLng, debouncedLocation, searchQuery]);
+
+  const isUsingCurrentLocation = locationMode === 'current';
+  const {data: searchResponse, isLoading} = useSearchRestaurants(
+    searchParams,
+    isUsingCurrentLocation ? !loadingGeo : true
+  );
 
   const apiRestaurants: BukaRestaurant[] = useMemo(() => {
-    let rawCuisine: any[] = [];
-    if (cuisineRes && Array.isArray((cuisineRes as any).data)) {
-      rawCuisine = (cuisineRes as any).data;
-    } else if (
-      cuisineRes &&
-      (cuisineRes as any).data?.data &&
-      Array.isArray((cuisineRes as any).data.data)
+    let rawList: any[] = [];
+    if (
+      searchResponse &&
+      (searchResponse as any).data &&
+      Array.isArray((searchResponse as any).data)
     ) {
-      rawCuisine = (cuisineRes as any).data.data;
-    } else if (Array.isArray(cuisineRes)) {
-      rawCuisine = cuisineRes as any[];
+      rawList = (searchResponse as any).data;
+    } else if (
+      searchResponse &&
+      (searchResponse as any).data?.data &&
+      Array.isArray((searchResponse as any).data.data)
+    ) {
+      rawList = (searchResponse as any).data.data;
+    } else if (Array.isArray(searchResponse)) {
+      rawList = searchResponse;
     }
 
-    let rawFallback: any[] = [];
-    if (fallbackSearchRes && Array.isArray((fallbackSearchRes as any).data)) {
-      rawFallback = (fallbackSearchRes as any).data;
-    } else if (Array.isArray(fallbackSearchRes)) {
-      rawFallback = fallbackSearchRes as any[];
-    }
-
-    const combined = [...rawCuisine, ...rawFallback];
-    const uniqueMap = new Map();
-    combined.forEach((c: any) => {
-      const id = c.id || c.googlePlaceId;
-      if (id && !uniqueMap.has(id)) uniqueMap.set(id, c);
-    });
-
-    return helper.sortDbFirstThenByDate(
-      Array.from(uniqueMap.values()).map(mapToBukaRestaurant),
-    );
-  }, [cuisineRes, fallbackSearchRes]);
+    return rawList.map(mapToBukaRestaurant);
+  }, [searchResponse]);
 
   const [filters, setFilters] = useState<FilterState>({
     minPrice: '',
@@ -199,7 +223,7 @@ export default function CuisineDetailPage() {
         locationRef.current &&
         !locationRef.current.contains(e.target as Node)
       ) {
-        setIsLocationOpen(false);
+        setIsLocationFocused(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -238,12 +262,10 @@ export default function CuisineDetailPage() {
     });
   }, [filters, searchQuery, apiRestaurants]);
 
-  const totalPages = Math.max(
-    (cuisineRes as any)?.data?.totalPages || 1,
-    (fallbackSearchRes as any)?.totalPages ||
-      (fallbackSearchRes as any)?.data?.totalPages ||
-      1,
-  );
+  const totalPages =
+    (searchResponse as any)?.totalPages ||
+    (searchResponse as any)?.data?.totalPages ||
+    1;
   const paginatedRestaurants = filteredRestaurants; // if pagination is handled by backend, we don't slice here.
 
   const handlePageChange = (page: number) => {
@@ -256,8 +278,54 @@ export default function CuisineDetailPage() {
     setCurrentPage(1);
   };
 
+  const handleUseCurrentLocation = useCallback(() => {
+    setLocationMode('current');
+    setLocationInput('');
+    setDebouncedLocation('');
+    setIsLocationFocused(false);
+    setCurrentPage(1);
+  }, []);
+
+  const handleLocationInputChange = useCallback((value: string) => {
+    setLocationInput(value);
+    if (value.trim()) {
+      setLocationMode('custom');
+    }
+  }, []);
+
+  const handleClearLocation = useCallback(() => {
+    setLocationInput('');
+    setDebouncedLocation('');
+    setLocationMode('current');
+    setCurrentPage(1);
+  }, []);
+
   return (
-    <div className='w-full min-h-screen bg-[#1a1a1a]'>
+    <>
+      {/* ─── Mobile View (< md) ─── */}
+      <div className='block md:hidden'>
+        <MobileCuisinePage
+          cuisineName={cuisineData.name}
+          cuisineDescription={cuisineData.description}
+          cuisineImages={cuisineData.images}
+          restaurants={apiRestaurants}
+          isLoading={isLoading}
+          selectedLocation={locationMode === 'current' ? 'Current Location' : locationInput}
+          onLocationChange={(loc) => {
+            if (loc === 'Current Location') {
+              handleUseCurrentLocation();
+            } else {
+              setLocationMode('custom');
+              setLocationInput(loc);
+              setDebouncedLocation(loc);
+              setCurrentPage(1);
+            }
+          }}
+        />
+      </div>
+
+      {/* ─── Desktop View (≥ md) ─── */}
+      <div className='hidden md:block w-full min-h-screen bg-[#1a1a1a]'>
       <div className='max-w-[1440px] mx-auto'>
         {/* Hero Carousel */}
         <CuisineHero
@@ -269,41 +337,82 @@ export default function CuisineDetailPage() {
         {/* Location & Search Bar */}
         <div className='w-[92%] mx-auto py-8'>
           <div className='flex items-center justify-between'>
-            {/* Location LOV */}
+            {/* Location input with typeahead */}
             <div className='relative' ref={locationRef}>
-              <button
-                onClick={() => setIsLocationOpen(!isLocationOpen)}
-                className='flex items-center gap-2 h-12 px-5 bg-white rounded-xl cursor-pointer min-w-[220px]'>
+              <div className='flex items-center gap-2 h-12 px-6 bg-white rounded-xl'>
                 <MapPin size={16} className='text-[#1a1a1a] shrink-0' />
-                <span className='text-[#1a1a1a] text-sm flex-1 text-left'>
-                  {selectedLocation || 'Enter Location'}
-                </span>
-                <ChevronDown
-                  size={16}
-                  className={`text-zinc-500 shrink-0 transition-transform ${
-                    isLocationOpen ? 'rotate-180' : ''
-                  }`}
+                <input
+                  ref={locationInputRef}
+                  type='text'
+                  value={locationMode === 'current' && !isLocationFocused ? '' : locationInput}
+                  onChange={(e) => handleLocationInputChange(e.target.value)}
+                  onFocus={() => setIsLocationFocused(true)}
+                  placeholder={locationMode === 'current' ? '📍 Search Location' : 'Type a city or area...'}
+                  className='flex-1 bg-transparent text-[#1a1a1a] text-sm outline-none placeholder:text-zinc-500'
                 />
-              </button>
+                {locationMode === 'custom' && locationInput && (
+                  <button
+                    onClick={handleClearLocation}
+                    className='shrink-0 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer'>
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
 
-              {/* Dropdown */}
-              {isLocationOpen && (
+              {/* Dropdown hint when focused */}
+              {isLocationFocused && (
                 <div className='absolute top-14 left-0 w-full bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50'>
-                  {LOCATIONS.map((loc) => (
-                    <button
-                      key={loc}
-                      onClick={() => {
-                        setSelectedLocation(loc);
-                        setIsLocationOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
-                        selectedLocation === loc
-                          ? 'bg-[#fbbe15]/10 text-[#1a1a1a] font-medium'
-                          : 'text-zinc-700 hover:bg-zinc-100'
-                      }`}>
-                      {loc}
-                    </button>
-                  ))}
+                  {/* Use Current Location option */}
+                  <button
+                    onClick={handleUseCurrentLocation}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer flex items-center gap-2 ${
+                      locationMode === 'current'
+                        ? 'bg-[#fbbe15]/10 text-[#1a1a1a] font-medium'
+                        : 'text-zinc-700 hover:bg-zinc-100'
+                    }`}>
+                    <LocateFixed size={14} className='text-[#fbbe15] shrink-0' />
+                    Use Current Location
+                  </button>
+
+                  {isLoadingSuggestions ? (
+                    <>
+                      <div className='border-t border-zinc-100 my-1' />
+                      <div className='flex items-center justify-center py-3 gap-2 text-zinc-500 text-xs'>
+                        <CgSpinner className='animate-spin text-[#fbbe15] text-sm' />
+                        Searching locations...
+                      </div>
+                    </>
+                  ) : locationInput.trim() && suggestions.length > 0 ? (
+                    <>
+                      <div className='border-t border-zinc-100 my-1' />
+                      <p className='px-4 py-1 text-[10px] uppercase tracking-wider text-zinc-400 font-semibold'>
+                        Suggested Locations
+                      </p>
+                      {suggestions.map((loc) => (
+                        <button
+                          key={loc}
+                          onClick={() => {
+                            setLocationInput(loc);
+                            setLocationMode('custom');
+                            setDebouncedLocation(loc);
+                            setCurrentPage(1);
+                            setIsLocationFocused(false);
+                          }}
+                          className='w-full text-left px-4 py-2 text-sm text-[#1a1a1a] hover:bg-zinc-100 transition-colors cursor-pointer flex items-center gap-2 border-none bg-transparent'
+                        >
+                          <MapPin size={12} className='text-zinc-400 shrink-0' />
+                          <span>{loc}</span>
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <div className='border-t border-zinc-100 my-1' />
+                      <p className='px-4 py-1.5 text-[10px] uppercase tracking-wider text-zinc-400 font-semibold'>
+                        {locationInput.trim() ? 'No locations found' : 'Or type any city / area above'}
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -362,7 +471,7 @@ export default function CuisineDetailPage() {
                 </span>{' '}
                 restaurants in{' '}
                 <span className='text-[#fbbe15] font-semibold'>
-                  {selectedLocation}
+                  {locationDisplayLabel}
                 </span>
               </p>
             </div>
@@ -403,5 +512,6 @@ export default function CuisineDetailPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

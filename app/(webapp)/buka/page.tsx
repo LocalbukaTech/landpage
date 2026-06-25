@@ -1,28 +1,25 @@
 'use client';
 
-import {ArrowLeft} from 'lucide-react';
-import {useRouter} from 'next/navigation';
-import {BukaCategory} from '@/components/buka/BukaCategory';
-import {BukaRestaurant} from '@/components/buka/BukaCard';
-import {CuisineSection} from '@/components/buka/CuisineSection';
-import {Waitlist} from '@/components/buka/Waitlist';
-import {Images} from '@/public/images';
-import {MobileBukaHome} from '@/components/buka/mobile/MobileBukaHome';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { BukaCategory } from '@/components/buka/BukaCategory';
+import { BukaRestaurant } from '@/components/buka/BukaCard';
+import { CuisineSection } from '@/components/buka/CuisineSection';
+import { Images } from '@/public/images';
+import { MobileBukaHome } from '@/components/buka/mobile/MobileBukaHome';
 
-import {useEffect, useMemo, useState} from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  useRestaurants,
   useSearchRestaurants,
   useTrendingRestaurants,
 } from '@/lib/api';
-import {Restaurant} from '@/lib/api/services/restaurants.service';
-import {CgSpinner} from 'react-icons/cg';
+import { Restaurant } from '@/lib/api/services/restaurants.service';
+import { CgSpinner } from 'react-icons/cg';
 import Link from 'next/link';
 import Image from 'next/image';
-import {useGeolocation} from '@/hooks/useGeolocation';
-import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
-import {helper} from '@/utils/helper';
-import {useAuth} from '@/context/AuthContext';
+import { useGeolocation } from '@/hooks/useGeolocation';
+import { RESTAURANT_PLACEHOLDER_IMG } from '@/lib/constants';
+import { helper } from '@/utils/helper';
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
 
@@ -48,9 +45,9 @@ const mapToBukaRestaurant = (res: Restaurant): BukaRestaurant => ({
 
 // Cuisine Data
 const cuisines = [
-  {name: 'Nigeria Cuisine', image: Images.image1},
-  {name: 'Yoruba Cuisine', image: Images.image2},
-  {name: 'Igbo Cuisine', image: Images.image3},
+  { name: 'Nigeria Cuisine', image: Images.image1 },
+  { name: 'Yoruba Cuisine', image: Images.image2 },
+  { name: 'Igbo Cuisine', image: Images.image3 },
   {
     name: 'Hausa Cuisine',
     image:
@@ -70,9 +67,8 @@ const cuisines = [
 
 export default function BukaPage() {
   const router = useRouter();
-  const {lat, lng, loading: loadingGeo} = useGeolocation();
+  const { lat, lng, loading: loadingGeo } = useGeolocation();
   const [heroBgUrl, setHeroBgUrl] = useState("url('/images/buka.gif')");
-  const {isAuthenticated} = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,37 +77,33 @@ export default function BukaPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch from the API
-  const {data: restaurantsData, isLoading: isLoadingAll} = useRestaurants({
-    page: 1,
-    pageSize: 20,
-  });
-  const {data: trendingData, isLoading: isLoadingTrending} =
-    useTrendingRestaurants();
-  // Fetch Google fallback for user location
-  const {data: fallbackData, isLoading: isLoadingFallback} =
+  // Fetch unified restaurants for user location
+  const { data: searchResponse, isLoading: isLoadingSearch } =
     useSearchRestaurants(
       {
         lat: lat || 6.5244,
         lng: lng || 3.3792,
+        page: 1,
+        pageSize: 30,
+      },
+      !loadingGeo,
+    );
+
+  const { data: trendingData, isLoading: isLoadingTrending } =
+    useTrendingRestaurants(
+      {
+        lat: lat || 6.5244,
+        lng: lng || 3.3792,
+        radius: 50000,
         page: 1,
         pageSize: 20,
       },
       !loadingGeo,
     );
 
-  // Map the API responses to the UI models
-  const allUiRestaurants = useMemo(() => {
-    return restaurantsData?.data?.map(mapToBukaRestaurant) || [];
-  }, [restaurantsData]);
-
-  const searchUiRestaurants = useMemo(() => {
-    return fallbackData?.data?.map(mapToBukaRestaurant) || [];
-  }, [fallbackData]);
-
   const trendingUiRestaurants = useMemo(() => {
     const rawData = trendingData as unknown as
-      | {data?: Restaurant[]}
+      | { data?: Restaurant[] }
       | Restaurant[];
     const arrayData = Array.isArray(rawData) ? rawData : rawData?.data;
     const mapped = Array.isArray(arrayData)
@@ -120,29 +112,56 @@ export default function BukaPage() {
     return helper.sortDbFirstThenByDate(mapped);
   }, [trendingData]);
 
-  // We can populate the different UI categories by distributing the dynamic data:
-  // Combine ALL and Fallback into a unified list, removing duplicates by ID
+  // Combine into a unified list
   const combinedAll = useMemo(() => {
-    const combined = [...allUiRestaurants, ...searchUiRestaurants];
-    const uniqueMap = new Map();
-    combined.forEach((r) => {
-      if (!uniqueMap.has(r.id)) uniqueMap.set(r.id, r);
-    });
-    return helper.sortDbFirstThenByDate(Array.from(uniqueMap.values()));
-  }, [allUiRestaurants, searchUiRestaurants]);
+    let rawList: any[] = [];
+    if (
+      searchResponse &&
+      (searchResponse as any).data &&
+      Array.isArray((searchResponse as any).data)
+    ) {
+      rawList = (searchResponse as any).data;
+    } else if (
+      searchResponse &&
+      (searchResponse as any).data?.data &&
+      Array.isArray((searchResponse as any).data.data)
+    ) {
+      rawList = (searchResponse as any).data.data;
+    } else if (Array.isArray(searchResponse)) {
+      rawList = searchResponse;
+    }
 
-  const topRestaurants =
-    trendingUiRestaurants.length > 0
-      ? trendingUiRestaurants.slice(0, 5)
-      : combinedAll.slice(0, 5);
-  const topBukas = combinedAll.slice(5, 10);
-  const hiddenGems = combinedAll.slice(10, 16);
-  const streetFavorites =
-    trendingUiRestaurants.length > 5
-      ? trendingUiRestaurants.slice(5)
-      : combinedAll.slice(0, 6);
+    return rawList.map(mapToBukaRestaurant);
+  }, [searchResponse]);
 
-  const isLoading = isLoadingAll || isLoadingTrending || isLoadingFallback;
+  // 1. Determine topRestaurants (prefer trending, fallback to location-based combinedAll)
+  const topRestaurants = useMemo(() => {
+    if (trendingUiRestaurants.length > 0) {
+      return trendingUiRestaurants.slice(0, 5);
+    }
+    return combinedAll.slice(0, 5);
+  }, [trendingUiRestaurants, combinedAll]);
+
+  // To prevent duplicates across sections, determine which items in combinedAll (location-based) are not already used in topRestaurants.
+  const remainingLocal = useMemo(() => {
+    const usedIds = new Set(topRestaurants.map((r) => r.id));
+    return combinedAll.filter((r) => !usedIds.has(r.id));
+  }, [combinedAll, topRestaurants]);
+
+  // 2. Allocate the remaining local restaurants to avoid overlap
+  const topBukas = useMemo(() => {
+    return remainingLocal.slice(0, 5);
+  }, [remainingLocal]);
+
+  const hiddenGems = useMemo(() => {
+    return remainingLocal.slice(5, 11);
+  }, [remainingLocal]);
+
+  const streetFavorites = useMemo(() => {
+    return remainingLocal.slice(11, 17);
+  }, [remainingLocal]);
+
+  const isLoading = isLoadingTrending || isLoadingSearch;
 
   return (
     <>
@@ -162,10 +181,10 @@ export default function BukaPage() {
       <div className='hidden md:block w-full min-h-screen bg-[#1a1a1a]'>
         <div className='max-w-[1440px] mx-auto'>
           {/* Hero Section */}
-          <section className='relative w-full overflow-hidden h-[60vh] md:h-[1007px]'>
+          <section className='relative w-full overflow-hidden h-[60vh] md:h-[90vh]'>
             <div
               className='absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000'
-              style={{backgroundImage: heroBgUrl}}
+              style={{ backgroundImage: heroBgUrl }}
             />
             <div className='absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent' />
 
@@ -205,10 +224,28 @@ export default function BukaPage() {
                 </Link>
               </div>
             </div>
+            {/* Animated Scroll Down Indicator for Desktop */}
+            <div
+              onClick={() => {
+                const categoriesElement = document.getElementById('buka-categories');
+                if (categoriesElement) {
+                  categoriesElement.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                  window.scrollTo({
+                    top: window.innerHeight * 0.9,
+                    behavior: 'smooth',
+                  });
+                }
+              }}
+              className='absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:flex min-[1441px]:hidden flex-col items-center gap-1 z-10 cursor-pointer text-white/70 hover:text-[#fbbe15] transition-colors group animate-bounce'
+            >
+              <span className='text-[10px] font-bold tracking-widest uppercase opacity-80 group-hover:opacity-100 transition-opacity'>Scroll Down</span>
+              <ChevronDown size={20} className='text-white/60 group-hover:text-[#fbbe15] transition-colors' />
+            </div>
           </section>
 
           {/* Categories Sections */}
-          <div className='flex flex-col gap-8 md:gap-16 px-4 py-8 md:px-8 md:py-16'>
+          <div id='buka-categories' className='flex flex-col gap-8 md:gap-16 px-4 py-8 md:px-8 md:py-16'>
             {isLoading ? (
               <div className='flex items-center justify-center p-20'>
                 <CgSpinner className='animate-spin text-[#fbbe15] text-4xl' />
@@ -217,7 +254,7 @@ export default function BukaPage() {
               <>
                 {topRestaurants.length > 0 && (
                   <BukaCategory
-                    title='Top 5 Restaurant'
+                    title='Trending Restaurant'
                     restaurants={topRestaurants}
                   />
                 )}
@@ -258,12 +295,6 @@ export default function BukaPage() {
               />
             )}
           </div>
-          {/* WaitList Section */}
-          {!isAuthenticated && (
-            <div className='px-4 pb-8 md:px-8 md:pb-16'>
-              <Waitlist />
-            </div>
-          )}
         </div>
       </div>
     </>

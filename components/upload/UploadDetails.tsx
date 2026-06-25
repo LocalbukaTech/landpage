@@ -414,7 +414,7 @@ export function UploadDetails({
                     locationSearchTerm.trim() && (
                       <div className='p-2 text-center'>
                         <span className='text-xs text-zinc-500'>
-                          Press Enter to add "{locationSearchTerm}"
+                          Press Enter to add &quot;{locationSearchTerm}&quot;
                         </span>
                       </div>
                     )}

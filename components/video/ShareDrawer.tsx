@@ -2,7 +2,7 @@
 
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Copy, Check, Mail, MessageCircle, Send, Info } from "lucide-react";
+import { Copy, Check, Mail, Info } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSharePost } from "@/lib/api/services/posts.hooks";

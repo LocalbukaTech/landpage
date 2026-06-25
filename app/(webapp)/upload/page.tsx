@@ -7,11 +7,12 @@ import {Prohibition} from '@/components/upload/Prohibition';
 import {UploadDropzone} from '@/components/upload/UploadDropzone';
 import {UploadDetails} from '@/components/upload/UploadDetails';
 import {UploadSuccess} from '@/components/upload/UploadSuccess';
+import {ImageCropper} from '@/components/upload/ImageCropper';
 import {useCreatePost} from '@/lib/api/services/posts.hooks';
 import {useMe, useAcceptContentPolicy} from '@/lib/api/services/auth.hooks';
 import {Loader2} from 'lucide-react';
 
-type UploadStep = 'PROHIBITION' | 'SELECT' | 'DETAILS' | 'SUCCESS';
+type UploadStep = 'PROHIBITION' | 'SELECT' | 'CROP' | 'DETAILS' | 'SUCCESS';
 
 export default function UploadPage() {
   const router = useRouter();
@@ -64,8 +65,29 @@ export default function UploadPage() {
   };
 
   const handleFileSelect = (file: File) => {
-    setSelectedFile(file);
-    setStep('DETAILS');
+    if (file.type.startsWith('image/')) {
+      const img = new window.Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const aspect = img.width / img.height;
+        URL.revokeObjectURL(img.src);
+        if (aspect > 0.563) {
+          setSelectedFile(file);
+          setStep('CROP');
+        } else {
+          setSelectedFile(file);
+          setStep('DETAILS');
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        setSelectedFile(file);
+        setStep('DETAILS');
+      };
+    } else {
+      setSelectedFile(file);
+      setStep('DETAILS');
+    }
   };
 
   const handlePost = (data: {
@@ -124,6 +146,17 @@ export default function UploadPage() {
 
         {step === 'SELECT' && (
           <UploadDropzone onFileSelect={handleFileSelect} />
+        )}
+
+        {step === 'CROP' && selectedFile && (
+          <ImageCropper
+            file={selectedFile}
+            onCrop={(croppedFile) => {
+              setSelectedFile(croppedFile);
+              setStep('DETAILS');
+            }}
+            onCancel={handleDiscard}
+          />
         )}
 
         {step === 'DETAILS' && selectedFile && (

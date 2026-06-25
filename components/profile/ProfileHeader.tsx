@@ -10,6 +10,7 @@ import {IoMdShareAlt} from 'react-icons/io';
 import {usePathname, useRouter} from 'next/navigation';
 import {useAuth} from '@/context/AuthContext';
 import {useMe} from '@/lib/api/services/auth.hooks';
+import { ensureHttps } from '@/lib/utils';
 import {
   useFollowUser,
   useUnfollowUser,
@@ -51,11 +52,12 @@ export function ProfileHeader({
 
   const apiUser = isOtherProfile ? userData : meData || authUser;
 
-  // Fetch followers and following counts
+  // Fetch followers count for the viewed profile
   const {data: followersResponse} = useFollowers(apiUser?.id || '', {
     page: 1,
     limit: 1,
   });
+  // Fetch following count for the viewed profile (for displaying stats)
   const {data: followingResponse} = useFollowing(apiUser?.id || '', {
     page: 1,
     limit: 1,
@@ -86,11 +88,12 @@ export function ProfileHeader({
     `${apiUser?.firstName || ''} ${apiUser?.lastName || ''}`.trim() ||
     '';
 
-  const displayAvatar =
+  const displayAvatar = ensureHttps(
     apiUser?.avatar ||
     apiUser?.image_url ||
     apiUser?.profilePicture ||
-    '/images/profile.png';
+    '/images/profile.png'
+  );
 
   // Reverse-geocode the user's own location from browser geolocation
   const {lat, lng} = useGeolocation();
@@ -136,6 +139,13 @@ export function ProfileHeader({
   const displayFollowing = followingCount;
 
   const [isFollowing, setIsFollowing] = useState(apiUser?.isFollowing || false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsFollowing(apiUser?.isFollowing || false);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [apiUser?.isFollowing]);
 
   const handleFollowToggle = () => {
     if (!apiUser?.id) return;

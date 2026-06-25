@@ -18,18 +18,39 @@ export const useRestaurants = (params?: {
   });
 };
 
-export const useTrendingRestaurants = () => {
+export const useTrendingRestaurants = (
+  params?: {
+    location?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+    page?: number;
+    pageSize?: number;
+  },
+  enabled = true,
+) => {
   return useQuery({
-    queryKey: [...queryKeys.restaurants.trending()],
+    queryKey: [...queryKeys.restaurants.trending(params)],
     queryFn: async () => {
-      const response = await restaurantsService.getTrendingRestaurants();
+      const response = await restaurantsService.getTrendingRestaurants(params);
       return response.data;
     },
+    enabled,
   });
 };
 
 export const useSearchRestaurants = (
-  params: {lat: number; lng: number; page?: number; pageSize?: number},
+  params: {
+    q?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+    cuisine?: string;
+    city?: string;
+    page?: number;
+    pageSize?: number;
+    status?: string;
+  },
   enabled = true,
 ) => {
   return useQuery({
@@ -38,7 +59,7 @@ export const useSearchRestaurants = (
       const response = await restaurantsService.searchRestaurants(params);
       return response.data;
     },
-    enabled: enabled && !!params.lat && !!params.lng,
+    enabled: enabled,
   });
 };
 

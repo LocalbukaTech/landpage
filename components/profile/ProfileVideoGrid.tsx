@@ -1,11 +1,20 @@
 "use client";
 
+<<<<<<< Updated upstream
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Play, Trash2 } from "lucide-react";
 import type { Post } from "@/types/post";
 import { formatCount } from "@/constants/mockVideos";
 import { useDeletePost, useToggleSave } from "@/lib/api/services/posts.hooks";
+=======
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Play, Trash2 } from 'lucide-react';
+import type { Post } from '@/types/post';
+import { formatCount } from '@/constants/mockVideos';
+import { useDeletePost, useToggleSave } from '@/lib/api/services/posts.hooks';
+>>>>>>> Stashed changes
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,23 +24,70 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+<<<<<<< Updated upstream
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+=======
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { getVideoThumbnailUrl, ensureHttps } from '@/lib/utils';
+>>>>>>> Stashed changes
 
 interface ProfileVideoGridProps {
   posts: Post[];
   isLoading?: boolean;
   isEditing?: boolean;
   activeTab?: string;
+  onToggleEdit?: () => void;
 }
 
+<<<<<<< Updated upstream
 export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab }: ProfileVideoGridProps) {
+=======
+export function ProfileVideoGrid({
+  posts,
+  isLoading,
+  isEditing,
+  activeTab,
+  onToggleEdit,
+}: ProfileVideoGridProps) {
+>>>>>>> Stashed changes
   const router = useRouter();
   const { toast } = useToast();
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
   const deletePostMutation = useDeletePost();
   const toggleSaveMutation = useToggleSave();
+  const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const [didLongPress, setDidLongPress] = useState(false)
 
+  const handlePressStart = () => {
+    setDidLongPress(false)
+
+    //handle press after 6 seconds
+    const timer = setTimeout(() => {
+      setDidLongPress(true)
+      onToggleEdit?.()
+    }, 600);
+
+    setPressTimer(timer)
+  }
+
+  //stop pressing (mouse up)
+  const handlePressEnd = () => {
+    if (pressTimer) {
+      clearTimeout(pressTimer)
+      setPressTimer(null)
+    }
+  }
+
+  const handleVideoClick = (videoId: string) => {
+    if (didLongPress) {
+      setDidLongPress(false);
+      return;
+    }
+
+    router.push(`/posts/${videoId}`)
+  }
   const handleAction = () => {
     if (!postToDelete) return;
 
@@ -74,9 +130,7 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab }: Pro
     }
   };
 
-  const handleVideoClick = (videoId: string) => {
-    router.push(`/posts/${videoId}`);
-  };
+
 
   if (isLoading) {
     return (
@@ -102,6 +156,7 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab }: Pro
         <div key={post.id} className="relative group">
           <button
             onClick={() => !isEditing && handleVideoClick(post.id)}
+<<<<<<< Updated upstream
             className={`relative w-full aspect-3/4 rounded-lg overflow-hidden group cursor-pointer bg-[#2a2a2a] border-0 ${isEditing ? "cursor-default" : ""}`}
           >
             {/* Video Thumbnail */}
@@ -111,6 +166,23 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab }: Pro
                 src={post.mediaUrl} 
                 className="w-full h-full object-cover" 
                 alt={post.caption || "Post"}
+=======
+            onMouseDown={handlePressStart}
+            onMouseUp={handlePressEnd}
+            onMouseLeave={handlePressEnd}
+            onTouchStart={handlePressStart}
+            onTouchEnd={handlePressEnd}
+            className={`relative w-full aspect-3/4 rounded-lg overflow-hidden group cursor-pointer bg-[#2a2a2a] border-0 ${isEditing ? 'cursor-default' : ''}`}>
+            {/* Video Thumbnail */}
+            {/* Media Rendering (Image or Video) */}
+            {post.mediaType === 'image' ||
+              !post.mediaUrl.match(/\.(mp4|mov|webm)$/i) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={ensureHttps(post.mediaUrl)}
+                className='w-full h-full object-cover'
+                alt={post.caption || 'Post'}
+>>>>>>> Stashed changes
               />
             ) : (
               <video

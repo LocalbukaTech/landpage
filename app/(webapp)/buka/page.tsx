@@ -181,7 +181,7 @@ export default function BukaPage() {
       <div className='hidden md:block w-full min-h-screen bg-[#1a1a1a]'>
         <div className='max-w-[1440px] mx-auto'>
           {/* Hero Section */}
-          <section className='relative w-full overflow-hidden h-[60vh] md:h-[1007px]'>
+          <section className='relative w-full overflow-hidden h-[60vh] md:h-[90vh]'>
             <div
               className='absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000'
               style={{ backgroundImage: heroBgUrl }}

@@ -345,9 +345,9 @@ export function MobileBukaHome({
           href='/buka/list-resturant'
           className='w-full flex items-center justify-between bg-linear-to-r from-[#fbbe15]/15 to-transparent border border-[#fbbe15]/25 rounded-2xl p-4 active:opacity-80'>
           <div>
-            <p className='text-white font-bold text-sm'>Own a restaurant?</p>
+            <p className='text-white font-bold text-sm'>List your restaurant</p>
             <p className='text-zinc-400 text-xs mt-0.5'>
-              List it on LocalBuka for free
+              Get discovered by hungry food lovers
             </p>
           </div>
           <div className='w-10 h-10 rounded-full bg-[#fbbe15] flex items-center justify-center shrink-0'>

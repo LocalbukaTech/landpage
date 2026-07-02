@@ -36,7 +36,7 @@ function getVideoThumbnailUrl(post: Post) {
 
 export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onToggleEdit }: ProfileVideoGridProps) {
   const router = useRouter();
-  const {toast} = useToast();
+  const { toast } = useToast();
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
   const deletePostMutation = useDeletePost();
   const toggleSaveMutation = useToggleSave();
@@ -46,7 +46,7 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onTog
   const handlePressStart = () => {
     setDidLongPress(false)
 
-    // trigger edit mode after 600ms long-press
+
     const timer = setTimeout(() => {
       setDidLongPress(true)
       onToggleEdit?.()
@@ -55,7 +55,6 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onTog
     setPressTimer(timer)
   }
 
-  //stop pressing (mouse up)
   const handlePressEnd = () => {
     if (pressTimer) {
       clearTimeout(pressTimer)
@@ -152,9 +151,9 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onTog
             {/* Video Thumbnail */}
             {/* Media Rendering (Image or Video) */}
             {post.mediaType === 'image' || !post.mediaUrl.match(/\.(mp4|mov|webm)$/i) ? (
-              <img 
-                src={post.mediaUrl} 
-                className="w-full h-full object-cover" 
+              <img
+                src={post.mediaUrl}
+                className="w-full h-full object-cover"
                 alt={post.caption || "Post"}
               />
             ) : (

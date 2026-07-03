@@ -42,50 +42,50 @@ const SignUpContent = () => {
     password: '',
   });
 
-  const [referrerStatus, setReferrerStatus] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
-  const [referrerMessage, setReferrerMessage] = useState('');
-  const [referrerData, setReferrerData] = useState({ name: '', avatar: '' });
-  const lastValidReferrer = useRef<string>('');
+  // const [referrerStatus, setReferrerStatus] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
+  // const [referrerMessage, setReferrerMessage] = useState('');
+  // const [referrerData, setReferrerData] = useState({ name: '', avatar: '' });
+  // const lastValidReferrer = useRef<string>('');
 
-  useEffect(() => {
-    const checkReferrer = async () => {
-      if (!formData.referrerName) {
-        setReferrerStatus('idle');
-        setReferrerMessage('');
-        lastValidReferrer.current = '';
-        return;
-      }
+  // useEffect(() => {
+  //   const checkReferrer = async () => {
+  //     if (!formData.referrerName) {
+  //       setReferrerStatus('idle');
+  //       setReferrerMessage('');
+  //       lastValidReferrer.current = '';
+  //       return;
+  //     }
 
-      setReferrerStatus('loading');
+  //     setReferrerStatus('loading');
 
-      // Simulate API call or validation
-      if (/\d/.test(formData.referrerName)) {
-        setReferrerStatus('invalid');
-        setReferrerMessage('This code is not valid. Check it and try again.');
-        setReferrerData({ name: '', avatar: '' });
-        lastValidReferrer.current = '';
-      } else if (formData.referrerName.length >= 10) {
-        setReferrerStatus('valid');
-        setReferrerMessage('This code is valid.');
-        const name = formData.referrerName;
-        const avatarSrc = '/images/referrer-avatar.jpg';
-        setReferrerData({ name, avatar: avatarSrc });
+  //     // Simulate API call or validation
+  //     if (/\d/.test(formData.referrerName)) {
+  //       setReferrerStatus('invalid');
+  //       setReferrerMessage('This code is not valid. Check it and try again.');
+  //       setReferrerData({ name: '', avatar: '' });
+  //       lastValidReferrer.current = '';
+  //     } else if (formData.referrerName.length >= 10) {
+  //       setReferrerStatus('valid');
+  //       setReferrerMessage('This code is valid.');
+  //       const name = formData.referrerName;
+  //       const avatarSrc = '/images/referrer-avatar.jpg';
+  //       setReferrerData({ name, avatar: avatarSrc });
 
 
-      } else {
-        setReferrerStatus('invalid');
-        setReferrerMessage('This code is not valid. Check it and try again.');
-        setReferrerData({ name: '', avatar: '' });
-        lastValidReferrer.current = '';
-      }
-    };
+  //     } else {
+  //       setReferrerStatus('invalid');
+  //       setReferrerMessage('This code is not valid. Check it and try again.');
+  //       setReferrerData({ name: '', avatar: '' });
+  //       lastValidReferrer.current = '';
+  //     }
+  //   };
 
-    const timeoutId = setTimeout(() => {
-      checkReferrer();
-    }, 500); // 500ms debounce
+  //   const timeoutId = setTimeout(() => {
+  //     checkReferrer();
+  //   }, 500); // 500ms debounce
 
-    return () => clearTimeout(timeoutId);
-  }, [formData.referrerName, toast]);
+  //   return () => clearTimeout(timeoutId);
+  // }, [formData.referrerName, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -188,7 +188,7 @@ const SignUpContent = () => {
         <div className='w-full max-w-md'>
 
           {/* Referrer Banner */}
-          {referrerStatus === 'valid' && (
+          {/* {referrerStatus === 'valid' && (
             <div className='flex items-center justify-between bg-[#f6fcf8] border border-green-200 dark:bg-green-900/20 dark:border-green-800 rounded-full px-4 py-2 mb-8'>
               <div className='flex items-center gap-3'>
                 <Image
@@ -211,7 +211,7 @@ const SignUpContent = () => {
                 className='w-6 h-6 flex-shrink-0 ml-2'
               />
             </div>
-          )}
+          )} */}
 
           <h1 className='text-2xl sm:text-3xl font-bold text-[#0A1F44] dark:text-white mb-2'>
             Create an account
@@ -290,12 +290,9 @@ const SignUpContent = () => {
                 placeholder='Referrer Name'
                 value={formData.referrerName}
                 onChange={handleInputChange}
-                className={`w-full px-4 py-3 border rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors peer ${referrerStatus === 'valid' ? 'border-green-500 bg-green-50/50 dark:bg-green-900/20' :
-                  referrerStatus === 'invalid' ? 'border-red-500 bg-red-50/50 dark:bg-red-900/20' :
-                    'border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900'
-                  }`}
+                className={`w-full px-4 py-3 border rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors peer`}
               />
-              {formData.referrerName && (
+              {/* {formData.referrerName && (
                 <label className={`absolute -top-2 left-3 px-1 text-xs transition-colors ${referrerStatus === 'valid' ? 'text-green-600 bg-[#f6fcf8] dark:bg-[#072412]' :
                   referrerStatus === 'invalid' ? 'text-red-500 bg-[#fef5f5] dark:bg-[#2A0808]' :
                     'text-primary bg-white dark:bg-gray-900'
@@ -324,7 +321,7 @@ const SignUpContent = () => {
                   </svg>
                   <span className='text-sm text-red-500'>{referrerMessage}</span>
                 </div>
-              )}
+              )} */}
             </div>
 
             <div className='relative'>

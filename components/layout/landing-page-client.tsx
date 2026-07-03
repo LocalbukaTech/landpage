@@ -13,8 +13,6 @@ import { FAQSection } from '@/components/sections/faq-section';
 import { Footer } from '@/components/layout/footer';
 
 export function LandingPageClient() {
-
-
   return (
     <>
       <Navbar />

@@ -2,6 +2,7 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
+  useInfiniteQuery,
 } from '@tanstack/react-query';
 import {useEffect} from 'react';
 import {postsService} from './posts.service';
@@ -27,6 +28,23 @@ export const usePosts = (params?: PostsQueryParams) => {
   });
 };
 
+/** Fetch chronological posts feed (infinite scroll) */
+export const useInfinitePosts = (params?: Omit<PostsQueryParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.posts.list((params || {}) as Record<string, unknown>), 'infinite'],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await postsService.getPosts({ ...params, page: pageParam as number });
+      return response.data;
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined;
+    },
+    refetchInterval: 2000,
+    staleTime: 1000,
+  });
+};
+
 /** Fetch personalised feed (paginated) */
 export const usePersonalisedFeed = (params?: FeedQueryParams) => {
   return useQuery({
@@ -36,6 +54,23 @@ export const usePersonalisedFeed = (params?: FeedQueryParams) => {
       return response.data;
     },
     refetchInterval: 2000, // Refresh every 2 seconds for real-time cross-browser updates
+    staleTime: 1000,
+  });
+};
+
+/** Fetch personalised feed (infinite scroll) */
+export const useInfinitePersonalisedFeed = (params?: Omit<FeedQueryParams, 'page'>) => {
+  return useInfiniteQuery({
+    queryKey: [...queryKeys.posts.feed((params || {}) as Record<string, unknown>), 'infinite'],
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await postsService.getPersonalisedFeed({ ...params, page: pageParam as number });
+      return response.data;
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined;
+    },
+    refetchInterval: 2000,
     staleTime: 1000,
   });
 };

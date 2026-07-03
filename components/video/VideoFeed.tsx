@@ -2,6 +2,7 @@
 
 import {useState, useCallback, useEffect, useRef} from 'react';
 import {motion, AnimatePresence} from 'framer-motion';
+import {Loader2} from 'lucide-react';
 import type {Post} from '@/types/post';
 import {feedStore, type FeedType} from '@/lib/feed-state';
 import {VideoPlayer} from '@/components/video/VideoPlayer';
@@ -20,6 +21,9 @@ interface VideoFeedProps {
   showTimestamp?: boolean;
   initialCommentsOpen?: boolean;
   feedType?: FeedType;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
 
 export function VideoFeed({
@@ -30,6 +34,9 @@ export function VideoFeed({
   showTimestamp,
   initialCommentsOpen = false,
   feedType = 'foryou',
+  onLoadMore,
+  hasMore,
+  isLoadingMore,
 }: VideoFeedProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -93,6 +100,13 @@ export function VideoFeed({
       String(isGlobalMuted),
     );
   }, [isGlobalMuted]);
+
+  // Load more posts when approaching the end of the current list (e.g. 3 posts left)
+  useEffect(() => {
+    if (posts.length - currentIndex <= 3 && hasMore && !isLoadingMore && onLoadMore) {
+      onLoadMore();
+    }
+  }, [currentIndex, posts.length, hasMore, isLoadingMore, onLoadMore]);
 
   // Persist the current video position so the feed can be restored after
   // navigating away (to profile, other-profile, etc.) and coming back.
@@ -177,6 +191,14 @@ export function VideoFeed({
           open={isCommentsOpen} // controlled by ActionBar button
           onClose={() => setIsCommentsOpen(false)} // closes drawer
         />
+
+        {/* --- LOADING MORE SPINNER --- */}
+        {isLoadingMore && (
+          <div className='absolute bottom-20 left-1/2 -translate-x-1/2 z-30 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2 border border-white/10'>
+            <Loader2 className='w-4 h-4 animate-spin text-[#fbbe15]' />
+            <span className='text-xs text-white/80 font-medium'>Loading more...</span>
+          </div>
+        )}
       </div>
 
       <div className='hidden md:block'>

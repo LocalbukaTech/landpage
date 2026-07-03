@@ -95,6 +95,7 @@ export function ProfileTabs({
           isLoading={isLoading}
           isEditing={isEditing}
           activeTab={activeTab}
+          onToggleEdit = {() => setIsEditing(prev => !prev)}
         />
       </div>
     </div>

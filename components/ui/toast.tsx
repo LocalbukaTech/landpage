@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import {cva, type VariantProps} from 'class-variance-authority';
-import {cn} from '@/lib/utils';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
 const toastVariants = cva(
   'pointer-events-auto relative flex w-full items-center gap-3 overflow-hidden rounded-lg border bg-white px-4 py-3 text-sm shadow-lg transition-all dark:border-neutral-800 dark:bg-neutral-900',
@@ -33,9 +33,10 @@ export type ToastProps = {
   action?: React.ReactNode;
   duration?: number;
   variant?: ToastVariant;
+  className?: string;
 };
 
-type ToastInternal = ToastProps & {createdAt: number};
+type ToastInternal = ToastProps & { createdAt: number };
 
 type ToastContextValue = {
   toasts: ToastInternal[];
@@ -45,7 +46,7 @@ type ToastContextValue = {
 
 const ToastContext = React.createContext<ToastContextValue | null>(null);
 
-export function ToastProvider({children}: {children: React.ReactNode}) {
+export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<ToastInternal[]>([]);
   const idRef = React.useRef(1);
 
@@ -68,6 +69,7 @@ export function ToastProvider({children}: {children: React.ReactNode}) {
           action: toast.action,
           duration,
           variant: toast.variant ?? 'default',
+          className: toast.className,
           createdAt,
         },
       ]);
@@ -80,7 +82,7 @@ export function ToastProvider({children}: {children: React.ReactNode}) {
   );
 
   const value = React.useMemo(
-    () => ({toasts, show, dismiss}),
+    () => ({ toasts, show, dismiss }),
     [toasts, show, dismiss]
   );
 
@@ -97,12 +99,14 @@ export function useToastContext() {
   return ctx;
 }
 
-export function ToastView({toast}: {toast: ToastInternal}) {
+export function ToastView({ toast }: { toast: ToastInternal }) {
   return (
     <div
       className={cn(
-        toastVariants({variant: toast.variant}),
-        'animate-in slide-in-from-right-5 fade-in-0'
+        toastVariants({ variant: toast.variant }),
+        'animate-in fade-in-0',
+        toast.className?.includes('slide-in') ? '' : 'slide-in-from-right-5',
+        toast.className
       )}>
       <div className='flex flex-1 flex-col gap-0.5'>
         {toast.title ? (
@@ -122,7 +126,7 @@ export function ToastView({toast}: {toast: ToastInternal}) {
 }
 
 export function Toaster() {
-  const {toasts} = useToastContext();
+  const { toasts } = useToastContext();
 
   return (
     <div className='pointer-events-none fixed inset-0 z-10000 flex flex-col items-end justify-end gap-2 px-4 py-6 sm:px-6'>

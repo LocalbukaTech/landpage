@@ -122,7 +122,7 @@ export function AppDownloadSection() {
                 <div className='flex items-center gap-3'>
                   <span className='text-xl'>📱</span>
                   <div>
-                    <span className='font-bold text-sm block'>Exclusive Style Video Feed</span>
+                    <span className='font-bold text-sm block'>Exclusive Video Feed</span>
                     <span className='text-xs text-zinc-400 block mt-0.5'>Follow top food creators and share your food reels</span>
                   </div>
                 </div>

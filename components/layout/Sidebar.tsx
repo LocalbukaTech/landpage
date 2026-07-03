@@ -14,6 +14,8 @@ import {
   Search,
   Store,
   Gift,
+  Menu,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
 import {SearchOverlay} from '@/components/layout/SearchOverlay';
@@ -22,6 +24,7 @@ import {cn} from '@/lib/utils';
 import {useAuth} from '@/context/AuthContext';
 import {useUnreadCount} from '@/lib/api/services/notifications.hooks';
 import {feedStore} from '@/lib/feed-state';
+import {Drawer, DrawerContent, DrawerTitle} from '@/components/ui/drawer';
 
 const baseNavItems = [
   {icon: Home, label: 'Home', href: '/feeds'},
@@ -57,6 +60,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {user, isAuthenticated} = useAuth();
   const userAvatar = isAuthenticated
     ? user?.avatar || '/images/profile.png'
@@ -261,9 +265,9 @@ export function Sidebar() {
                     </Link>
                   ))}
                 </div>
-                <span className='text-[11px] text-zinc-600 mt-1'>
+                <Link href="/company" className='text-[11px] text-zinc-600 mt-1'>
                   © 2025 Localbuka
-                </span>
+                </Link>
               </footer>
             </>
           )}
@@ -272,7 +276,11 @@ export function Sidebar() {
 
       {/* ── Mobile Top Header ── */}
       <div className='md:hidden fixed top-0 left-0 right-0 h-14 bg-[#1a1a1a] border-b border-white/5 flex items-center justify-between px-4 z-50'>
-        <div className='w-8' />
+        <button
+          onClick={() => setIsMenuOpen(true)}
+          className='w-8 flex items-center justify-start text-white hover:opacity-80 active:opacity-75 transition-opacity cursor-pointer border-none bg-transparent'>
+          <Menu size={22} />
+        </button>
         <div className='flex items-center gap-2'>
           <span
             className='text-xl text-white font-normal'
@@ -374,6 +382,119 @@ export function Sidebar() {
         isOpen={isNotificationOpen}
         onClose={() => setIsNotificationOpen(false)}
       />
+
+      {/* ── Mobile Left-Side Nav Drawer ── */}
+      <Drawer open={isMenuOpen} onOpenChange={setIsMenuOpen} direction='left'>
+        <DrawerContent className='fixed top-0 bottom-0 left-0 right-auto w-[78vw] max-w-[320px] h-full mt-0 rounded-none rounded-r-2xl bg-[#141414] border-r border-white/8 flex flex-col overflow-y-auto z-50'>
+          <DrawerTitle>{''}</DrawerTitle>
+          {/* Header */}
+          <div className='flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/8'>
+            <div className='flex items-center gap-2'>
+              <Image
+                src='/images/localBuka_logo.png'
+                alt='LocalBuka'
+                width={28}
+                height={28}
+                className='rounded-xl'
+              />
+              <span className='text-white font-bold text-base tracking-tight'>
+                LocalBuka
+              </span>
+            </div>
+            <button
+              onClick={() => setIsMenuOpen(false)}
+              className='w-8 h-8 flex items-center justify-center rounded-full bg-[#2a2a2a] text-zinc-400 active:opacity-70 border-none'>
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Profile pill (authenticated) */}
+          {isAuthenticated && (
+            <Link
+              href='/profile'
+              onClick={() => setIsMenuOpen(false)}
+              className='flex items-center gap-3 mx-4 mt-4 p-3 rounded-xl bg-[#1e1e1e] border border-white/8 active:opacity-70'>
+              {userAvatar && (
+                <Image
+                  src={userAvatar}
+                  alt='Profile'
+                  width={36}
+                  height={36}
+                  className='rounded-full object-cover ring-2 ring-[#fbbe15]/40'
+                  style={{width: 36, height: 36}}
+                />
+              )}
+              <div className='flex flex-col min-w-0'>
+                <span className='text-white text-sm font-semibold truncate'>
+                  {user?.fullName || user?.username || 'My Profile'}
+                </span>
+                <span className='text-zinc-500 text-xs truncate'>
+                  @{user?.username || 'profile'}
+                </span>
+              </div>
+            </Link>
+          )}
+
+          {/* Nav Items */}
+          <nav className='flex flex-col gap-1 px-3 mt-4 flex-1'>
+            {navItems.map((item) => {
+              const isActive =
+                item.href === '/'
+                  ? pathname === '/'
+                  : pathname?.startsWith(item.href.split('?')[0]);
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3.5 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors active:opacity-70 relative',
+                    isActive
+                      ? 'bg-[#fbbe15]/10 text-[#fbbe15]'
+                      : 'text-zinc-300 hover:bg-white/5',
+                  )}>
+                  {item.label === 'Profile' && userAvatar ? (
+                    <Image
+                      src={userAvatar}
+                      alt='Profile'
+                      width={22}
+                      height={22}
+                      className={cn(
+                        'rounded-full object-cover',
+                        isActive ? 'ring-2 ring-[#fbbe15]' : '',
+                      )}
+                      style={{width: 22, height: 22}}
+                    />
+                  ) : (
+                    <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  )}
+                  <span>{item.label}</span>
+                  {item.label === 'Notification' && unreadCount > 0 && (
+                    <span className='ml-auto min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1'>
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Footer */}
+          <div className='px-5 pb-8 pt-4 border-t border-white/8 mt-auto flex flex-col gap-1.5'>
+            {footerLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className='text-xs text-zinc-500 hover:text-zinc-300 transition-colors'>
+                {link.label}
+              </Link>
+            ))}
+            <span className='text-[11px] text-zinc-700 mt-1'>
+              &copy; 2025 Localbuka
+            </span>
+          </div>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

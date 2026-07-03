@@ -5,7 +5,10 @@ import {useSearchParams} from 'next/navigation';
 import {useQueryClient} from '@tanstack/react-query';
 import {MainLayout} from '@/components/layout/MainLayout';
 import {VideoFeed} from '@/components/video/VideoFeed';
-import {usePosts, usePersonalisedFeed} from '@/lib/api/services/posts.hooks';
+import {
+  useInfinitePosts,
+  useInfinitePersonalisedFeed,
+} from '@/lib/api/services/posts.hooks';
 import {Loader2} from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {queryKeys} from '@/lib/api/types';
@@ -53,19 +56,24 @@ function HomeContent() {
     };
   }, [queryClient]);
 
-  // Fetch both feeds (React Query will cache them and we can disable one if needed, but for now we'll just fetch based on enabled state or let them fetch concurrently)
-  // To avoid unnecessary requests, we only fetch the active feed
+  // Fetch both feeds using infinite query
   const {
     data: personalisedData,
     isLoading: isLoadingPersonalised,
     isError: isErrorPersonalised,
-  } = usePersonalisedFeed({page: 1, pageSize: 20});
+    fetchNextPage: fetchNextPersonalisedPage,
+    hasNextPage: hasNextPersonalisedPage,
+    isFetchingNextPage: isFetchingNextPersonalisedPage,
+  } = useInfinitePersonalisedFeed({pageSize: 20});
 
   const {
     data: chronologicalData,
     isLoading: isLoadingChronological,
     isError: isErrorChronological,
-  } = usePosts({page: 1, pageSize: 20});
+    fetchNextPage: fetchNextChronologicalPage,
+    hasNextPage: hasNextChronologicalPage,
+    isFetchingNextPage: isFetchingNextChronologicalPage,
+  } = useInfinitePosts({pageSize: 20});
 
   // Mapping: Following -> personalisedFeed (/posts/feed), For You -> posts (/posts)
   const activeData =
@@ -75,7 +83,16 @@ function HomeContent() {
   const isError =
     feedType === 'following' ? isErrorPersonalised : isErrorChronological;
 
-  const posts = useMemo(() => activeData?.data || [], [activeData]);
+  const fetchNextPage =
+    feedType === 'following' ? fetchNextPersonalisedPage : fetchNextChronologicalPage;
+  const hasNextPage =
+    feedType === 'following' ? hasNextPersonalisedPage : hasNextChronologicalPage;
+  const isFetchingNextPage =
+    feedType === 'following' ? isFetchingNextPersonalisedPage : isFetchingNextChronologicalPage;
+
+  const posts = useMemo(() => {
+    return activeData?.pages.flatMap((page) => page.data) || [];
+  }, [activeData]);
 
   // Find the index to start the feed at.
   // Priority: 1) URL ?video=<id>  2) saved post from store  3) 0
@@ -142,12 +159,16 @@ function HomeContent() {
           </div>
         ) : (
           <VideoFeed
+            key={feedType}
             posts={posts}
             initialIndex={initialIndex}
             initialMuted={true}
             feedType={feedType}
             hideFollowButton={feedType === 'following'}
             showTimestamp={feedType === 'following'}
+            onLoadMore={fetchNextPage}
+            hasMore={!!hasNextPage}
+            isLoadingMore={isFetchingNextPage}
           />
         )}
         <PasswordPromptModal />

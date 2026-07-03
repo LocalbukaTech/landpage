@@ -347,6 +347,11 @@ export default function CuisineDetailPage() {
                   value={locationMode === 'current' && !isLocationFocused ? '' : locationInput}
                   onChange={(e) => handleLocationInputChange(e.target.value)}
                   onFocus={() => setIsLocationFocused(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setIsLocationFocused(false);
+                    }
+                  }}
                   placeholder={locationMode === 'current' ? '📍 Search Location' : 'Type a city or area...'}
                   className='flex-1 bg-transparent text-[#1a1a1a] text-sm outline-none placeholder:text-zinc-500'
                 />

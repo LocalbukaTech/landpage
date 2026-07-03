@@ -4,7 +4,7 @@ import { Typewriter } from '../anim/Typewriter';
 
 export function HeroSection() {
   return (
-    <section className='relative h-[460px] md:h-[520px] lg:h-[580px] overflow-hidden -mt-24 rounded-b-xl'>
+    <section className='relative h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden -mt-24 rounded-b-xl'>
       <div
         className='absolute inset-0 z-0'
         style={{

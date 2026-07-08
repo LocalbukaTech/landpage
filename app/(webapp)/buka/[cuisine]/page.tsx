@@ -13,6 +13,7 @@ import {useSearchRestaurants} from '@/lib/api';
 import {CgSpinner} from 'react-icons/cg';
 import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
 import {useGeolocation} from '@/hooks/useGeolocation';
+import {getPriceRangeForLevel} from '@/lib/utils';
 
 // Map slug → cuisine filter name
 const SLUG_TO_CUISINE: Record<string, string> = {
@@ -239,10 +240,16 @@ export default function CuisineDetailPage() {
 
   // Apply filters on client side
   const filteredRestaurants = useMemo(() => {
-    return apiRestaurants.filter((r) => {
+    let result = apiRestaurants.filter((r) => {
       if (filters.rating && r.rating < filters.rating) return false;
       if (filters.foodQuality && r.foodQuality < filters.foodQuality)
         return false;
+      if (filters.minPrice || filters.maxPrice) {
+        const priceRange = getPriceRangeForLevel(r.rawRestaurant?.priceLevel);
+        const minFilter = filters.minPrice ? parseInt(filters.minPrice, 10) : 0;
+        const maxFilter = filters.maxPrice ? parseInt(filters.maxPrice, 10) : 350000;
+        if (priceRange.max < minFilter || priceRange.min > maxFilter) return false;
+      }
       if (filters.cuisines.length > 0) {
         // Just checking if any tag partially matches one of the filters
         const hasCuisine = r.tags.some((tag) =>
@@ -260,6 +267,11 @@ export default function CuisineDetailPage() {
       }
       return true;
     });
+
+    if (filters.rating) {
+      result = [...result].sort((a, b) => a.rating - b.rating);
+    }
+    return result;
   }, [filters, searchQuery, apiRestaurants]);
 
   const totalPages =

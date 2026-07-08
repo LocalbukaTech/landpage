@@ -121,3 +121,22 @@ export function sortByLatest<T>(items: T[], dateKey: keyof T): T[] {
     return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 }
+
+/**
+ * Map restaurant priceLevel (1-4) to numeric Naira price ranges.
+ */
+export function getPriceRangeForLevel(level: number | null | undefined): { min: number; max: number } {
+  const l = level || 1;
+  switch (l) {
+    case 1:
+      return { min: 0, max: 5000 };
+    case 2:
+      return { min: 5001, max: 20000 };
+    case 3:
+      return { min: 20001, max: 100000 };
+    case 4:
+      return { min: 100001, max: 350000 };
+    default:
+      return { min: 0, max: 5000 };
+  }
+}

@@ -29,7 +29,7 @@ const CUISINE_OPTIONS = [
 ];
 
 const PRICE_MIN = 0;
-const PRICE_MAX = 10000;
+const PRICE_MAX = 350000;
 
 /* ── Star Rating Row ── */
 function StarRating({
@@ -88,9 +88,10 @@ function PriceRangeSlider({
     if (!trackRef.current) return 0;
     const rect = trackRef.current.getBoundingClientRect();
     const pct = (clientX - rect.left) / rect.width;
-    return Math.round(
-      clamp(pct * (PRICE_MAX - PRICE_MIN) + PRICE_MIN, PRICE_MIN, PRICE_MAX),
-    );
+    const rawVal = pct * (PRICE_MAX - PRICE_MIN) + PRICE_MIN;
+    const step = 1000;
+    const steppedVal = Math.round(rawVal / step) * step;
+    return clamp(steppedVal, PRICE_MIN, PRICE_MAX);
   };
 
   const handlePointerDown =
@@ -257,7 +258,7 @@ export function CuisineFilters({
             </label>
             <input
               type='text'
-              placeholder='10000'
+              placeholder='350000'
               value={filters.maxPrice}
               onChange={(e) => handleMaxInputChange(e.target.value)}
               className='w-full h-9 px-3 text-xs text-white bg-transparent border border-zinc-600 rounded-lg outline-none focus:border-[#fbbe15] transition-colors'

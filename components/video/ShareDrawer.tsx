@@ -10,7 +10,9 @@ import { useSharePost } from "@/lib/api/services/posts.hooks";
 interface ShareDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  postId: string;
+  postId?: string;
+  shareUrl?: string;
+  shareText?: string;
 }
 
 // Premium SVG Icons for Social Media
@@ -57,17 +59,25 @@ const Icons = {
   ),
 };
 
-export function ShareDrawer({ open, onOpenChange, postId }: ShareDrawerProps) {
+export function ShareDrawer({
+  open,
+  onOpenChange,
+  postId,
+  shareUrl: customShareUrl,
+  shareText: customShareText,
+}: ShareDrawerProps) {
   const [copied, setCopied] = useState(false);
   const [activeInfoPlatform, setActiveInfoPlatform] = useState<any | null>(null);
   const { toast } = useToast();
   const sharePostMutation = useSharePost();
   
-  const shareUrl = `https://www.localbuka.com/posts/${postId}`;
-  const shareText = "Check out this post on LocalBuka!";
+  const shareUrl = customShareUrl || (postId ? `https://www.localbuka.com/posts/${postId}` : "");
+  const shareText = customShareText || "Check out this post on LocalBuka!";
 
   const triggerShareMutation = () => {
-    sharePostMutation.mutate(postId);
+    if (postId) {
+      sharePostMutation.mutate(postId);
+    }
   };
 
   const handleCopy = () => {

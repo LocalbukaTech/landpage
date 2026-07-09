@@ -7,6 +7,7 @@ import {useGeolocation} from '@/hooks/useGeolocation';
 import {Settings, Loader2, Camera} from 'lucide-react';
 import SocialModal from '../social/SocialModal';
 import {IoMdShareAlt} from 'react-icons/io';
+import {ShareDrawer} from '../video/ShareDrawer';
 import {usePathname, useRouter} from 'next/navigation';
 import {useAuth} from '@/context/AuthContext';
 import {useMe, useUpdateMe} from '@/lib/api/services/auth.hooks';
@@ -38,6 +39,7 @@ export function ProfileHeader({
 }: ProfileHeaderProps) {
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
   const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const route = usePathname();
   const router = useRouter();
 
@@ -235,24 +237,26 @@ export function ProfileHeader({
 
   return (
     <div className='w-full'>
-      {!isOtherProfile && (
-        <>
-          <SocialModal
-            open={isFollowersModalOpen}
-            onClose={() => setIsFollowersModalOpen(false)}
-            userId={apiUser?.id || ''}
-            userName={displayName}
-            initialTab='followers'
-          />
-          <SocialModal
-            open={isFollowingModalOpen}
-            onClose={() => setIsFollowingModalOpen(false)}
-            userId={apiUser?.id || ''}
-            userName={displayName}
-            initialTab='following'
-          />
-        </>
-      )}
+      <SocialModal
+        open={isFollowersModalOpen}
+        onClose={() => setIsFollowersModalOpen(false)}
+        userId={apiUser?.id || ''}
+        userName={displayName}
+        initialTab='followers'
+      />
+      <SocialModal
+        open={isFollowingModalOpen}
+        onClose={() => setIsFollowingModalOpen(false)}
+        userId={apiUser?.id || ''}
+        userName={displayName}
+        initialTab='following'
+      />
+      <ShareDrawer
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+        shareUrl={`https://www.localbuka.com/other-profile?id=${apiUser?.id}`}
+        shareText={`Check out ${displayName}'s profile on LocalBuka!`}
+      />
       <div className='flex items-start gap-4 md:gap-6'>
         {/* Avatar */}
         <div className='relative shrink-0'>
@@ -300,7 +304,13 @@ export function ProfileHeader({
               <h2 className='text-lg md:text-2xl font-bold text-white capitalize truncate'>
                 {displayName}
               </h2>
-              <IoMdShareAlt size={18} className='text-white' />
+              <button
+                onClick={() => setIsShareOpen(true)}
+                className='p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center'
+                title='Share Profile'
+              >
+                <IoMdShareAlt size={18} className='text-white' />
+              </button>
             </div>
             <Link
               href='/settings'
@@ -357,40 +367,22 @@ export function ProfileHeader({
               </span>
               <p className='text-zinc-400 text-xs'>Posts</p>
             </div>
-            {isOtherProfile ? (
-              <div className='text-center'>
-                <span className='text-white font-bold text-base'>
-                  {displayFollowers}
-                </span>
-                <p className='text-zinc-400 text-xs'>Followers</p>
-              </div>
-            ) : (
-              <button
-                className='text-center cursor-pointer'
-                onClick={() => setIsFollowersModalOpen(true)}>
-                <span className='text-white font-bold text-base'>
-                  {displayFollowers}
-                </span>
-                <p className='text-zinc-400 text-xs'>Followers</p>
-              </button>
-            )}
-            {isOtherProfile ? (
-              <div className='text-center'>
-                <span className='text-white font-bold text-base'>
-                  {displayFollowing}
-                </span>
-                <p className='text-zinc-400 text-xs'>Following</p>
-              </div>
-            ) : (
-              <button
-                className='text-center cursor-pointer'
-                onClick={() => setIsFollowingModalOpen(true)}>
-                <span className='text-white font-bold text-base'>
-                  {displayFollowing}
-                </span>
-                <p className='text-zinc-400 text-xs'>Following</p>
-              </button>
-            )}
+            <button
+              className='text-center cursor-pointer border-none bg-transparent p-0'
+              onClick={() => setIsFollowersModalOpen(true)}>
+              <span className='text-white font-bold text-base'>
+                {displayFollowers}
+              </span>
+              <p className='text-zinc-400 text-xs hover:text-white transition-colors'>Followers</p>
+            </button>
+            <button
+              className='text-center cursor-pointer border-none bg-transparent p-0'
+              onClick={() => setIsFollowingModalOpen(true)}>
+              <span className='text-white font-bold text-base'>
+                {displayFollowing}
+              </span>
+              <p className='text-zinc-400 text-xs hover:text-white transition-colors'>Following</p>
+            </button>
             {isOtherProfile && (
               <div className='text-center'>
                 <span className='text-white font-bold text-base'>

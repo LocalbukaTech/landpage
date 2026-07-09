@@ -3,7 +3,7 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Copy, Check, Mail, Info } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSharePost } from "@/lib/api/services/posts.hooks";
 
@@ -59,6 +59,20 @@ const Icons = {
   ),
 };
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 767px)').matches;
+  });
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return isMobile;
+}
+
 export function ShareDrawer({
   open,
   onOpenChange,
@@ -66,6 +80,7 @@ export function ShareDrawer({
   shareUrl: customShareUrl,
   shareText: customShareText,
 }: ShareDrawerProps) {
+  const isMobile = useIsMobile();
   const [copied, setCopied] = useState(false);
   const [activeInfoPlatform, setActiveInfoPlatform] = useState<any | null>(null);
   const { toast } = useToast();
@@ -107,46 +122,119 @@ export function ShareDrawer({
   ];
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} direction="right">
-      <DrawerContent className="bg-[#121212] border-neutral-800 text-white md:w-[450px] h-full rounded-l-[32px] overflow-hidden">
-        <DrawerHeader className="border-b border-neutral-800/50 pb-6 mt-10 px-8">
-          <DrawerTitle className="text-3xl font-black text-white tracking-tight">Share to</DrawerTitle>
-          <DrawerDescription className="text-neutral-400 text-base mt-2">
+    <Drawer open={open} onOpenChange={onOpenChange} direction={isMobile ? "bottom" : "right"}>
+      <DrawerContent className={
+        isMobile
+          ? "bg-[#121212] border-t border-neutral-800 text-white w-full h-[70vh] max-h-[70vh] mt-0 rounded-t-[32px] overflow-hidden flex flex-col"
+          : "bg-[#121212] border-neutral-800 text-white md:w-[450px] h-full rounded-l-[32px] overflow-hidden"
+      }>
+        <DrawerHeader className="border-b border-neutral-800/50 pb-3 px-6 md:pb-6 md:px-8 mt-4 md:mt-10">
+          <DrawerTitle className="text-xl md:text-3xl font-black text-white tracking-tight">Share to</DrawerTitle>
+          <DrawerDescription className="text-neutral-400 text-xs md:text-base mt-1 md:mt-2">
             Choose your favorite platform to share this experience.
           </DrawerDescription>
         </DrawerHeader>
 
-        <div className="flex-1 overflow-y-auto px-8 py-8 custom-scrollbar">
-          <div className="grid grid-cols-3 gap-y-10 gap-x-6">
-            {socialPlatforms.map((platform) => {
-              const handleClick = (e: React.MouseEvent) => {
-                triggerShareMutation();
-                if ('isCopyOnly' in platform && platform.isCopyOnly) {
-                  e.preventDefault();
-                  handleCopy();
-                  setActiveInfoPlatform(platform);
-                }
-              };
+        <div className="flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8 custom-scrollbar">
+          {isMobile ? (
+            <div className="space-y-6">
+              {/* Row 1: Direct Messaging & Socials */}
+              <div className="flex gap-5 overflow-x-auto scrollbar-hide py-1 px-1">
+                {socialPlatforms.slice(0, 5).map((platform) => {
+                  const handleClick = (e: React.MouseEvent) => {
+                    triggerShareMutation();
+                    if ('isCopyOnly' in platform && platform.isCopyOnly) {
+                      e.preventDefault();
+                      handleCopy();
+                      setActiveInfoPlatform(platform);
+                    }
+                  };
 
-              return (
-                <a
-                  key={platform.name}
-                  href={'url' in platform ? platform.url : "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={handleClick}
-                  className="flex flex-col items-center gap-3 group no-underline transition-all duration-300"
-                >
-                  <div className={`${platform.color} w-16 h-16 rounded-[22px] flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-1 group-hover:rotate-[8deg] shadow-[0_10px_30px_rgba(0,0,0,0.5)] group-hover:shadow-[0_15px_35px_rgba(255,199,39,0.2)]`}>
-                    <platform.icon className="w-8 h-8 text-white drop-shadow-md" />
-                  </div>
-                  <span className="text-[10px] font-bold text-neutral-500 group-hover:text-white transition-colors uppercase tracking-[0.15em]">
-                    {platform.name}
-                  </span>
-                </a>
-              );
-            })}
-          </div>
+                  return (
+                    <a
+                      key={platform.name}
+                      href={'url' in platform ? platform.url : "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleClick}
+                      className="flex flex-col items-center gap-2 shrink-0 no-underline"
+                    >
+                      <div className={`${platform.color} w-12 h-12 rounded-xl flex items-center justify-center shadow-md active:scale-95 transition-transform`}>
+                        <platform.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider text-center w-14 truncate">
+                        {platform.name}
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+
+              {/* Row 2: Media & Actions */}
+              <div className="flex gap-5 overflow-x-auto scrollbar-hide py-1 px-1">
+                {socialPlatforms.slice(5).map((platform) => {
+                  const handleClick = (e: React.MouseEvent) => {
+                    triggerShareMutation();
+                    if ('isCopyOnly' in platform && platform.isCopyOnly) {
+                      e.preventDefault();
+                      handleCopy();
+                      setActiveInfoPlatform(platform);
+                    }
+                  };
+
+                  return (
+                    <a
+                      key={platform.name}
+                      href={'url' in platform ? platform.url : "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleClick}
+                      className="flex flex-col items-center gap-2 shrink-0 no-underline"
+                    >
+                      <div className={`${platform.color} w-12 h-12 rounded-xl flex items-center justify-center shadow-md active:scale-95 transition-transform`}>
+                        <platform.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider text-center w-14 truncate">
+                        {platform.name}
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* Desktop View: Grid Layout */
+            <div className="grid grid-cols-3 gap-y-10 gap-x-6">
+              {socialPlatforms.map((platform) => {
+                const handleClick = (e: React.MouseEvent) => {
+                  triggerShareMutation();
+                  if ('isCopyOnly' in platform && platform.isCopyOnly) {
+                    e.preventDefault();
+                    handleCopy();
+                    setActiveInfoPlatform(platform);
+                  }
+                };
+
+                return (
+                  <a
+                    key={platform.name}
+                    href={'url' in platform ? platform.url : "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleClick}
+                    className="flex flex-col items-center gap-3 group no-underline transition-all duration-300"
+                  >
+                    <div className={`${platform.color} w-16 h-16 rounded-[22px] flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-1 group-hover:rotate-[8deg] shadow-[0_10px_30px_rgba(0,0,0,0.5)] group-hover:shadow-[0_15px_35px_rgba(255,199,39,0.2)]`}>
+                      <platform.icon className="w-8 h-8 text-white drop-shadow-md" />
+                    </div>
+                    <span className="text-[10px] font-bold text-neutral-500 group-hover:text-white transition-colors uppercase tracking-[0.15em]">
+                      {platform.name}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          )}
 
           <div className="mt-12 space-y-6">
             <div className="flex items-center gap-4">
@@ -172,14 +260,16 @@ export function ShareDrawer({
           </div>
         </div>
         
-        <div className="p-8 border-t border-neutral-800/50 bg-neutral-900/30 backdrop-blur-md">
-            <button 
-              onClick={() => onOpenChange(false)}
-              className="w-full py-4 rounded-2xl border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800 font-bold uppercase tracking-[0.2em] transition-all active:scale-[0.98]"
-            >
-              Close
-            </button>
-        </div>
+        {!isMobile && (
+          <div className="p-8 border-t border-neutral-800/50 bg-neutral-900/30 backdrop-blur-md">
+              <button 
+                onClick={() => onOpenChange(false)}
+                className="w-full py-4 rounded-2xl border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800 font-bold uppercase tracking-[0.2em] transition-all active:scale-[0.98]"
+              >
+                Close
+              </button>
+          </div>
+        )}
       </DrawerContent>
       <Dialog open={!!activeInfoPlatform} onOpenChange={(open) => !open && setActiveInfoPlatform(null)}>
         <DialogContent className="bg-[#121212] border-neutral-800 text-white max-w-[400px] rounded-3xl p-8">

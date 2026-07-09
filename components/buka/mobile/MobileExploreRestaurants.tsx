@@ -25,7 +25,14 @@ const CUISINE_CHIPS = [
   'Continental',
 ];
 
-const RATING_CHIPS = ['All Ratings', '⭐ 4+', '⭐ 3+'];
+const RATING_CHIPS = [
+  'All Ratings',
+  '⭐ 5',
+  '⭐ 4+',
+  '⭐ 3+',
+  '⭐ 2+',
+  '⭐ 1+',
+];
 
 interface Props {
   restaurants: BukaRestaurant[];
@@ -111,10 +118,17 @@ export function MobileExploreRestaurants({
       );
     }
 
-    if (activeRating === '⭐ 4+') {
-      list = list.filter((r) => r.rating >= 4);
-    } else if (activeRating === '⭐ 3+') {
-      list = list.filter((r) => r.rating >= 3);
+    if (activeRating !== 'All Ratings') {
+      const match = activeRating.match(/\d+/);
+      if (match) {
+        const minStars = parseInt(match[0], 10);
+        if (activeRating.includes('+')) {
+          list = list.filter((r) => r.rating >= minStars);
+        } else {
+          list = list.filter((r) => r.rating === minStars);
+        }
+        list = [...list].sort((a, b) => a.rating - b.rating);
+      }
     }
 
     return list;

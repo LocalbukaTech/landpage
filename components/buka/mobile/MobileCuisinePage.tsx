@@ -15,7 +15,25 @@ import {CgSpinner} from 'react-icons/cg';
 import type {BukaRestaurant} from '@/components/buka/BukaCard';
 import {MobileRestaurantRow} from './MobileRestaurantRow';
 
-const RATING_CHIPS = ['All Ratings', '⭐ 4+', '⭐ 3+'];
+const CUISINE_CHIPS = [
+  'All',
+  'Nigerian',
+  'Yoruba',
+  'Igbo',
+  'Hausa',
+  'Calabar',
+  'Edo',
+  'Continental',
+];
+
+const RATING_CHIPS = [
+  'All Ratings',
+  '⭐ 5',
+  '⭐ 4+',
+  '⭐ 3+',
+  '⭐ 2+',
+  '⭐ 1+',
+];
 
 interface Props {
   cuisineName: string;
@@ -44,6 +62,29 @@ export function MobileCuisinePage({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeRating, setActiveRating] = useState('All Ratings');
+
+  // Map the page's cuisineName to the corresponding chip name
+  const initialCuisineChip = useMemo(() => {
+    const firstWord = cuisineName.split(' ')[0]; // e.g. "Nigeria", "Yoruba"
+    if (firstWord === 'Nigeria') return 'Nigerian';
+    return firstWord;
+  }, [cuisineName]);
+
+  const [activeCuisine, setActiveCuisine] = useState(initialCuisineChip);
+
+  useEffect(() => {
+    const firstWord = cuisineName.split(' ')[0];
+    const initialChip = firstWord === 'Nigeria' ? 'Nigerian' : firstWord;
+    setActiveCuisine(initialChip);
+  }, [cuisineName]);
+
+  const emptyStateCuisineName = useMemo(() => {
+    if (activeCuisine === 'All') {
+      return cuisineName.toLowerCase();
+    }
+    return `${activeCuisine.toLowerCase()} cuisine`;
+  }, [activeCuisine, cuisineName]);
+
   const [showLocationSheet, setShowLocationSheet] = useState(false);
   const [locationInput, setLocationInput] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -110,18 +151,36 @@ export function MobileCuisinePage({
       );
     }
 
-    if (activeRating === '⭐ 4+') {
-      list = list.filter((r) => r.rating >= 4);
-    } else if (activeRating === '⭐ 3+') {
-      list = list.filter((r) => r.rating >= 3);
+    if (activeCuisine !== 'All') {
+      list = list.filter((r) =>
+        r.tags.some((t) =>
+          t.toLowerCase().includes(activeCuisine.toLowerCase()) ||
+          (activeCuisine.toLowerCase() === 'nigerian' && t.toLowerCase().includes('nigeria')),
+        ),
+      );
+    }
+
+    if (activeRating !== 'All Ratings') {
+      const match = activeRating.match(/\d+/);
+      if (match) {
+        const minStars = parseInt(match[0], 10);
+        if (activeRating.includes('+')) {
+          list = list.filter((r) => r.rating >= minStars);
+        } else {
+          list = list.filter((r) => r.rating === minStars);
+        }
+        list = [...list].sort((a, b) => a.rating - b.rating);
+      }
     }
 
     return list;
-  }, [restaurants, searchQuery, activeRating]);
+  }, [restaurants, searchQuery, activeCuisine, activeRating]);
 
-  const hasActiveFilters = activeRating !== 'All Ratings';
+  const hasActiveFilters =
+    activeCuisine !== 'All' || activeRating !== 'All Ratings';
 
   const clearFilters = () => {
+    setActiveCuisine('All');
     setActiveRating('All Ratings');
   };
 
@@ -257,6 +316,23 @@ export function MobileCuisinePage({
           {/* Divider */}
           <div className='w-px h-5 bg-white/10 shrink-0' />
 
+          {/* Cuisine chips */}
+          {CUISINE_CHIPS.map((chip) => (
+            <button
+              key={chip}
+              onClick={() => setActiveCuisine(chip)}
+              className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
+                activeCuisine === chip
+                  ? 'bg-[#fbbe15] text-[#1a1a1a]'
+                  : 'bg-[#1e1e1e] text-zinc-400 border border-white/8'
+              }`}>
+              {chip}
+            </button>
+          ))}
+
+          {/* Divider */}
+          <div className='w-px h-5 bg-white/10 shrink-0' />
+
           {/* Rating chips */}
           {RATING_CHIPS.map((chip) => (
             <button
@@ -295,7 +371,7 @@ export function MobileCuisinePage({
           <div className='flex flex-col items-center justify-center py-20 gap-3'>
             <SlidersHorizontal size={40} className='text-zinc-700' />
             <p className='text-zinc-400 text-sm text-center'>
-              No restaurants found for {cuisineName.toLowerCase()}.
+              No restaurants found for {emptyStateCuisineName}.
             </p>
             {hasActiveFilters && (
               <button

@@ -20,6 +20,20 @@ function HomeContent() {
   const videoId = searchParams.get('video');
   const queryClient = useQueryClient();
 
+  // Disable pull-to-refresh / overscroll bounce on mobile browsers while on the feeds page
+  useEffect(() => {
+    const originalHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+    const originalBodyOverscroll = document.body.style.overscrollBehavior;
+
+    document.documentElement.style.overscrollBehavior = 'none';
+    document.body.style.overscrollBehavior = 'none';
+
+    return () => {
+      document.documentElement.style.overscrollBehavior = originalHtmlOverscroll;
+      document.body.style.overscrollBehavior = originalBodyOverscroll;
+    };
+  }, []);
+
   // Consume the reset flag once on mount (useState initialiser runs exactly
   // once even under React StrictMode).  If the user clicked Home explicitly
   // the flag is true → start fresh from the top.
@@ -110,7 +124,7 @@ function HomeContent() {
 
   return (
     <MainLayout>
-      <div className='relative w-full h-full'>
+      <div className='relative w-full h-full overscroll-none'>
         {/* Following | For You Toggle Overlay */}
         <div className='fixed top-14 left-0 right-0 z-50 flex justify-center items-center gap-4 pointer-events-none pt-4 md:absolute md:top-6 md:pt-0'>
           <button

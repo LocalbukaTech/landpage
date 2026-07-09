@@ -4,8 +4,9 @@ import {VideoFeed} from '@/components/video/VideoFeed';
 import {usePost} from '@/lib/api/services/posts.hooks';
 import {Loader2, ArrowLeft} from 'lucide-react';
 import Link from 'next/link';
-import {useRouter, useSearchParams} from 'next/navigation';
+import {useSearchParams} from 'next/navigation';
 import type {Post} from '@/types/post';
+import {useDynamicBack} from '@/hooks/useDynamicBack';
 
 interface PostClientProps {
   id: string;
@@ -27,11 +28,11 @@ export function PostClient({id, initialPost}: PostClientProps) {
 
   const post =
     (response as any)?.data?.data || (response as any)?.data || response;
-  const router = useRouter();
+  const goBack = useDynamicBack();
   return (
     <div className='relative w-full h-full bg-black'>
       <button
-        onClick={() => router.back()}
+        onClick={() => goBack('/feeds')}
         className='absolute top-6 left-6 z-50 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white transition-all backdrop-blur-sm'>
         <ArrowLeft size={24} />
       </button>

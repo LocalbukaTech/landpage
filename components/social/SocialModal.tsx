@@ -119,7 +119,7 @@ export default function SocialModal({
                     key={`${activeTab}-${userData.id}`}
                     user={userData}
                     isFollowingInitial={
-                      activeTab === 'following' || userData.isFollowing
+                      (isMe && activeTab === 'following') || !!userData.isFollowing
                     }
                   />
                 );

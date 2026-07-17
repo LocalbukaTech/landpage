@@ -268,7 +268,7 @@ export function VideoPlayer({
                 <img
                   src={ensureHttps(url)}
                   alt={post.caption || `Post Image ${idx + 1}`}
-                  className='w-full h-full object-contain'
+                  className='w-full h-full object-cover md:object-contain'
                   draggable={false}
                 />
 

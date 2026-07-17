@@ -25,25 +25,62 @@ export function ImageCropper({file, onCrop, onCancel}: ImageCropperProps) {
   const dragStart = useRef({x: 0, y: 0});
   const imageRef = useRef<HTMLImageElement>(null);
 
-  // Load selected file as data URL
+  // Load selected file as temporary object URL (faster & memory efficient on mobile)
   useEffect(() => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        setImgSrc(e.target.result as string);
-      }
+    setLoading(true);
+    setZoom(1);
+    setOffset({x: 0, y: 0});
+
+    const url = URL.createObjectURL(file);
+    setImgSrc(url);
+
+    return () => {
+      URL.revokeObjectURL(url);
     };
-    reader.readAsDataURL(file);
   }, [file]);
 
-  // Initial calculation when image is loaded
+  // Direct DOM listener binding to avoid timing/synthetic event race conditions on WebKit
+  useEffect(() => {
+    if (!imgSrc || !imageRef.current) return;
+    const img = imageRef.current;
+
+    const handleLoad = () => {
+      if (img.naturalWidth > 0) {
+        setNaturalSize({
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+        });
+        setLoading(false);
+      }
+    };
+
+    const handleError = () => {
+      setLoading(false);
+    };
+
+    if (img.complete && img.naturalWidth > 0) {
+      handleLoad();
+    } else {
+      img.addEventListener('load', handleLoad);
+      img.addEventListener('error', handleError);
+
+      return () => {
+        img.removeEventListener('load', handleLoad);
+        img.removeEventListener('error', handleError);
+      };
+    }
+  }, [imgSrc]);
+
+  // Fallback synthetic handler
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
-    setNaturalSize({
-      width: img.naturalWidth,
-      height: img.naturalHeight,
-    });
-    setLoading(false);
+    if (img.naturalWidth > 0) {
+      setNaturalSize({
+        width: img.naturalWidth,
+        height: img.naturalHeight,
+      });
+      setLoading(false);
+    }
   };
 
   // Helper to calculate constrained offsets

@@ -13,14 +13,12 @@ import {
 } from '@/lib/api/services/profile.hooks';
 import {Loader2} from 'lucide-react';
 import type {Post} from '@/types/post';
-import {useAuth} from '@/context/AuthContext';
 import {useDynamicBack} from '@/hooks/useDynamicBack';
 
 function OtherProfileContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const userId = searchParams.get('id');
-  const {isAuthenticated} = useAuth();
   const goBack = useDynamicBack();
   const tabParam = searchParams.get('tab') || 'videos';
   const normalizedTab = tabParam === 'repost' ? 'repost' : 'videos';
@@ -91,56 +89,7 @@ function OtherProfileContent() {
     return isLoadingPosts;
   }, [activeTab, isLoadingPosts, isLoadingReposts]);
 
-  if (!isAuthenticated) {
-    return (
-      <MainLayout>
-        <div className='flex-1 flex flex-col items-center justify-center min-h-[70vh] px-4 text-center'>
-          <div className='max-w-md w-full bg-[#1e1e1e] border border-white/5 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden backdrop-blur-md'>
-            {/* Top decorative glow */}
-            <div className='absolute -top-24 -left-24 w-48 h-48 bg-[#fbbe15]/10 rounded-full blur-3xl pointer-events-none' />
-            <div className='absolute -bottom-24 -right-24 w-48 h-48 bg-[#fbbe15]/5 rounded-full blur-3xl pointer-events-none' />
 
-            {/* Lock/Shield Icon */}
-            <div className='mx-auto w-16 h-16 rounded-full bg-[#fbbe15]/10 flex items-center justify-center mb-6 border border-[#fbbe15]/20 animate-pulse'>
-              <svg
-                xmlns='http://www.w3.org/2000/svg'
-                width='28'
-                height='28'
-                viewBox='0 0 24 24'
-                fill='none'
-                stroke='#fbbe15'
-                strokeWidth='2'
-                strokeLinecap='round'
-                strokeLinejoin='round'>
-                <rect width='18' height='11' x='3' y='11' rx='2' ry='2' />
-                <path d='M7 11V7a5 5 0 0 1 10 0v4' />
-              </svg>
-            </div>
-
-            <h2 className='text-white text-xl md:text-2xl font-bold tracking-tight mb-3'>
-              Authentication Required
-            </h2>
-            <p className='text-zinc-400 text-sm md:text-base leading-relaxed mb-8'>
-              This page requires Authentication, please login and access it again.
-            </p>
-
-            <div className='flex flex-col sm:flex-row gap-3 justify-center'>
-              <button
-                onClick={() => router.push('/signin')}
-                className='px-6 py-3 bg-[#fbbe15] text-[#1a1a1a] font-bold text-sm rounded-xl hover:bg-[#e5ac10] active:scale-[0.98] transition-all cursor-pointer border-none shadow-md shadow-[#fbbe15]/10'>
-                Login Now
-              </button>
-              <button
-                onClick={() => router.push('/feeds')}
-                className='px-6 py-3 bg-white/5 text-white border border-white/10 font-medium text-sm rounded-xl hover:bg-white/10 active:scale-[0.98] transition-all cursor-pointer'>
-                Go to Feeds
-              </button>
-            </div>
-          </div>
-        </div>
-      </MainLayout>
-    );
-  }
 
   if (isLoadingProfile) {
     return (

@@ -59,7 +59,10 @@ export const usePersonalisedFeed = (params?: FeedQueryParams) => {
 };
 
 /** Fetch personalised feed (infinite scroll) */
-export const useInfinitePersonalisedFeed = (params?: Omit<FeedQueryParams, 'page'>) => {
+export const useInfinitePersonalisedFeed = (
+  params?: Omit<FeedQueryParams, 'page'>,
+  options?: { enabled?: boolean }
+) => {
   return useInfiniteQuery({
     queryKey: [...queryKeys.posts.feed((params || {}) as Record<string, unknown>), 'infinite'],
     queryFn: async ({ pageParam = 1 }) => {
@@ -72,6 +75,7 @@ export const useInfinitePersonalisedFeed = (params?: Omit<FeedQueryParams, 'page
     },
     refetchInterval: 2000,
     staleTime: 1000,
+    enabled: options?.enabled ?? true,
   });
 };
 

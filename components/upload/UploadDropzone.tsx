@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 interface UploadDropzoneProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (files: File[]) => void;
 }
 
 export function UploadDropzone({onFileSelect}: UploadDropzoneProps) {
@@ -31,13 +31,13 @@ export function UploadDropzone({onFileSelect}: UploadDropzoneProps) {
     e.preventDefault();
     setIsDragOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onFileSelect(e.dataTransfer.files[0]);
+      onFileSelect(Array.from(e.dataTransfer.files));
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      onFileSelect(e.target.files[0]);
+      onFileSelect(Array.from(e.target.files));
     }
   };
 
@@ -48,6 +48,7 @@ export function UploadDropzone({onFileSelect}: UploadDropzoneProps) {
           ref={inputRef}
           type='file'
           accept='video/mp4,video/*,image/*'
+          multiple
           className='hidden'
           onChange={handleFileChange}
         />

@@ -17,7 +17,9 @@ type UploadStep = 'PROHIBITION' | 'SELECT' | 'CROP' | 'DETAILS' | 'SUCCESS';
 export default function UploadPage() {
   const router = useRouter();
   const [manualStep, setManualStep] = useState<UploadStep | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [cropIndices, setCropIndices] = useState<number[]>([]);
+  const [currentCropPointer, setCurrentCropPointer] = useState<number>(0);
 
   const createPostMutation = useCreatePost();
   const {data: meResponse, isLoading: isLoadingMe} = useMe();
@@ -64,47 +66,64 @@ export default function UploadPage() {
     router.push('/feeds');
   };
 
-  const handleFileSelect = (file: File) => {
-    if (file.type.startsWith('image/')) {
-      const img = new window.Image();
-      img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        const aspect = img.width / img.height;
-        URL.revokeObjectURL(img.src);
-        if (aspect > 0.563) {
-          setSelectedFile(file);
-          setStep('CROP');
-        } else {
-          setSelectedFile(file);
-          setStep('DETAILS');
-        }
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        setSelectedFile(file);
-        setStep('DETAILS');
-      };
-    } else {
-      setSelectedFile(file);
+  const handleFileSelect = (files: File[]) => {
+    if (files.length === 0) return;
+
+    const hasVideo = files.some((file) => file.type.startsWith('video/'));
+
+    if (hasVideo) {
+      const videoFile = files.find((file) => file.type.startsWith('video/'))!;
+      setSelectedFiles([videoFile]);
       setStep('DETAILS');
+    } else {
+      // By default, crop ALL selected images to ensure composition consistency
+      const indicesToCrop = files.map((_, i) => i);
+      setSelectedFiles(files);
+      setCropIndices(indicesToCrop);
+      setCurrentCropPointer(0);
+      setStep('CROP');
     }
   };
 
   const handlePost = (data: {
     description: string;
+    imageCaptions?: string[];
     tags: string[];
     location: string;
     restaurantId?: string;
   }) => {
-    if (!selectedFile) return;
+    if (selectedFiles.length === 0) return;
 
     const formData = new FormData();
-    formData.append('media', selectedFile);
 
-    // Append caption if available
-    if (data.description) {
-      formData.append('caption', data.description);
+    // Auto-detect and send mediaType (required)
+    const isVideo = selectedFiles[0].type.startsWith('video/');
+    formData.append('mediaType', isVideo ? 'video' : 'image');
+
+    if (isVideo) {
+      formData.append('media', selectedFiles[0]);
+      if (data.description) {
+        formData.append('caption', data.description);
+      }
+    } else {
+      // Append all selected image files to 'media' key
+      selectedFiles.forEach((file) => {
+        formData.append('media', file);
+      });
+
+      // Send the general caption to our normal caption payload
+      if (data.description) {
+        formData.append('caption', data.description);
+      }
+
+      // Send the imageCaptions list
+      if (data.imageCaptions && data.imageCaptions.length > 0) {
+        data.imageCaptions.forEach((cap) => {
+          formData.append('imageCaptions', cap);
+        });
+      }
     }
+
     // Append location
     if (data.location) {
       formData.append('location', data.location);
@@ -113,10 +132,10 @@ export default function UploadPage() {
     if (data.tags && data.tags.length > 0) {
       data.tags.forEach((tag) => formData.append('tags', tag));
     }
-
-    // Auto-detect and send mediaType (required)
-    const isVideo = selectedFile.type.startsWith('video/');
-    formData.append('mediaType', isVideo ? 'video' : 'image');
+    // Append restaurantId if selected
+    if (data.restaurantId) {
+      formData.append('restaurantId', data.restaurantId);
+    }
 
     createPostMutation.mutate(formData, {
       onSuccess: () => {
@@ -129,8 +148,33 @@ export default function UploadPage() {
     });
   };
 
+  const handleAddFiles = (newFiles: File[]) => {
+    const newImages = newFiles.filter((file) => file.type.startsWith('image/'));
+    if (newImages.length === 0) return;
+
+    const startIndex = selectedFiles.length;
+    const updatedFiles = [...selectedFiles, ...newImages];
+    const newCropIndices = newImages.map((_, i) => startIndex + i);
+
+    setSelectedFiles(updatedFiles);
+    setCropIndices(newCropIndices);
+    setCurrentCropPointer(0);
+    setStep('CROP');
+  };
+
+  const handleRemoveFile = (index: number) => {
+    if (selectedFiles.length <= 1) {
+      handleDiscard();
+      return;
+    }
+    const updatedFiles = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(updatedFiles);
+  };
+
   const handleDiscard = () => {
-    setSelectedFile(null);
+    setSelectedFiles([]);
+    setCropIndices([]);
+    setCurrentCropPointer(0);
     setStep('SELECT');
   };
 
@@ -148,23 +192,44 @@ export default function UploadPage() {
           <UploadDropzone onFileSelect={handleFileSelect} />
         )}
 
-        {step === 'CROP' && selectedFile && (
-          <ImageCropper
-            file={selectedFile}
-            onCrop={(croppedFile) => {
-              setSelectedFile(croppedFile);
-              setStep('DETAILS');
-            }}
-            onCancel={handleDiscard}
-          />
+        {step === 'CROP' && selectedFiles.length > 0 && cropIndices.length > 0 && (
+          <div className='flex flex-col gap-4 w-full max-w-5xl mx-auto'>
+            {cropIndices.length > 1 && (
+              <div className='bg-zinc-900 text-white rounded-xl p-4 flex items-center justify-between shadow-md'>
+                <span className='text-xs font-bold'>
+                  ✂️ Cropping images...
+                </span>
+                <span className='text-xs font-bold bg-[#fbbe15] text-[#1a1a1a] px-3.5 py-1.5 rounded-full'>
+                  Image {currentCropPointer + 1} of {cropIndices.length}
+                </span>
+              </div>
+            )}
+            <ImageCropper
+              file={selectedFiles[cropIndices[currentCropPointer]]}
+              onCrop={(croppedFile) => {
+                const updatedFiles = [...selectedFiles];
+                updatedFiles[cropIndices[currentCropPointer]] = croppedFile;
+                setSelectedFiles(updatedFiles);
+
+                if (currentCropPointer < cropIndices.length - 1) {
+                  setCurrentCropPointer((prev) => prev + 1);
+                } else {
+                  setStep('DETAILS');
+                }
+              }}
+              onCancel={handleDiscard}
+            />
+          </div>
         )}
 
-        {step === 'DETAILS' && selectedFile && (
+        {step === 'DETAILS' && selectedFiles.length > 0 && (
           <UploadDetails
-            file={selectedFile}
+            files={selectedFiles}
             onPost={handlePost}
             onDiscard={handleDiscard}
             isUploading={createPostMutation.isPending}
+            onAddFiles={handleAddFiles}
+            onRemoveFile={handleRemoveFile}
           />
         )}
 

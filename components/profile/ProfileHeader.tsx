@@ -9,6 +9,7 @@ import SocialModal from '../social/SocialModal';
 import {IoMdShareAlt} from 'react-icons/io';
 import {ShareDrawer} from '../video/ShareDrawer';
 import {usePathname, useRouter} from 'next/navigation';
+import {useRequireAuth} from '@/hooks/useRequireAuth';
 import {useAuth} from '@/context/AuthContext';
 import {useMe, useUpdateMe} from '@/lib/api/services/auth.hooks';
 import { ensureHttps, cn } from '@/lib/utils';
@@ -42,6 +43,7 @@ export function ProfileHeader({
   const [isShareOpen, setIsShareOpen] = useState(false);
   const route = usePathname();
   const router = useRouter();
+  const {requireAuth} = useRequireAuth();
 
   // Auth & Mutations
   const {user: authUser} = useAuth();
@@ -213,17 +215,19 @@ export function ProfileHeader({
   const handleFollowToggle = () => {
     if (!apiUser?.id) return;
 
-    if (isFollowing) {
-      setIsFollowing(false);
-      unfollowUserMutation.mutate(apiUser.id, {
-        onError: () => setIsFollowing(true),
-      });
-    } else {
-      setIsFollowing(true);
-      followUserMutation.mutate(apiUser.id, {
-        onError: () => setIsFollowing(false),
-      });
-    }
+    requireAuth(() => {
+      if (isFollowing) {
+        setIsFollowing(false);
+        unfollowUserMutation.mutate(apiUser.id, {
+          onError: () => setIsFollowing(true),
+        });
+      } else {
+        setIsFollowing(true);
+        followUserMutation.mutate(apiUser.id, {
+          onError: () => setIsFollowing(false),
+        });
+      }
+    });
   };
 
   // Show loading for own profile if not passed explicitly as userData
@@ -369,7 +373,7 @@ export function ProfileHeader({
             </div>
             <button
               className='text-center cursor-pointer border-none bg-transparent p-0'
-              onClick={() => setIsFollowersModalOpen(true)}>
+              onClick={() => requireAuth(() => setIsFollowersModalOpen(true))}>
               <span className='text-white font-bold text-base'>
                 {displayFollowers}
               </span>
@@ -377,7 +381,7 @@ export function ProfileHeader({
             </button>
             <button
               className='text-center cursor-pointer border-none bg-transparent p-0'
-              onClick={() => setIsFollowingModalOpen(true)}>
+              onClick={() => requireAuth(() => setIsFollowingModalOpen(true))}>
               <span className='text-white font-bold text-base'>
                 {displayFollowing}
               </span>

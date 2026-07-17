@@ -4,6 +4,7 @@ import type {PostUser} from '@/types/post';
 import {useFollowUser, useUnfollowUser} from '@/lib/api/services/profile.hooks';
 import {useState} from 'react';
 import {Loader2} from 'lucide-react';
+import {useRequireAuth} from '@/hooks/useRequireAuth';
 
 interface Props {
   user: PostUser;
@@ -19,19 +20,23 @@ export default function UserRow({user, isFollowingInitial = false}: Props) {
 
   const isLoading = followMutation.isPending || unfollowMutation.isPending;
 
+  const {requireAuth} = useRequireAuth();
+
   const handleToggleFollow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isFollowing) {
-      setIsFollowing(false);
-      unfollowMutation.mutate(user.id, {
-        onError: () => setIsFollowing(true),
-      });
-    } else {
-      setIsFollowing(true);
-      followMutation.mutate(user.id, {
-        onError: () => setIsFollowing(false),
-      });
-    }
+    requireAuth(() => {
+      if (isFollowing) {
+        setIsFollowing(false);
+        unfollowMutation.mutate(user.id, {
+          onError: () => setIsFollowing(true),
+        });
+      } else {
+        setIsFollowing(true);
+        followMutation.mutate(user.id, {
+          onError: () => setIsFollowing(false),
+        });
+      }
+    });
   };
 
   const name =

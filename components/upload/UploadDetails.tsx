@@ -1,6 +1,6 @@
 'use client';
 
-import {useRef, useState} from 'react';
+import {useRef, useState, useEffect, useMemo} from 'react';
 import Image from 'next/image';
 import {
   Hash,
@@ -12,6 +12,10 @@ import {
   Volume2,
   VolumeX,
   X,
+  ChevronLeft,
+  ChevronRight,
+  PlusCircle,
+  Trash2,
 } from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {useRestaurants} from '@/lib/api/services/restaurants.hooks';
@@ -22,29 +26,107 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
+import { RiRestaurant2Fill } from 'react-icons/ri';
 
 interface UploadDetailsProps {
-  file: File;
+  files: File[];
   onPost: (data: {
     description: string;
+    imageCaptions?: string[];
     tags: string[];
     location: string;
     restaurantId?: string;
   }) => void;
   onDiscard: () => void;
   isUploading?: boolean;
+  onAddFiles?: (newFiles: File[]) => void;
+  onRemoveFile?: (index: number) => void;
 }
 
 export function UploadDetails({
-  file,
+  files,
   onPost,
   onDiscard,
   isUploading = false,
+  onAddFiles,
+  onRemoveFile,
 }: UploadDetailsProps) {
-  const isImage = file.type.startsWith('image/');
-  const [description, setDescription] = useState('');
-  const [mediaUrl] = useState(() => URL.createObjectURL(file));
+  const isImage = files[0].type.startsWith('image/');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [captions, setCaptions] = useState<string[]>(() => Array(files.length).fill(''));
+  const [generalCaption, setGeneralCaption] = useState('');
+
+  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const touchStart = useRef<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync captions state length when files list expands
+  useEffect(() => {
+    setCaptions((prev) => {
+      if (prev.length === files.length) return prev;
+      if (prev.length < files.length) {
+        const diff = files.length - prev.length;
+        return [...prev, ...Array(diff).fill('')];
+      } else {
+        return prev.slice(0, files.length);
+      }
+    });
+  }, [files.length]);
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0 && onAddFiles) {
+      const selectedList = Array.from(e.target.files);
+      onAddFiles(selectedList);
+    }
+  };
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRemoveFile) {
+      // Filter out deleted caption to keep remaining captions synced with correct slides
+      setCaptions((prev) => prev.filter((_, i) => i !== activeIndex));
+      
+      onRemoveFile(activeIndex);
+      
+      // Shift active slide index if we deleted the last slide
+      if (activeIndex >= files.length - 1) {
+        setActiveIndex(Math.max(0, files.length - 2));
+      }
+    }
+  };
+
+  useEffect(() => {
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setMediaUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart.current === null) return;
+    const diff = touchStart.current - e.changedTouches[0].clientX;
+    const threshold = 50;
+    if (diff > threshold && activeIndex < files.length - 1) {
+      setActiveIndex((prev) => prev + 1);
+    } else if (diff < -threshold && activeIndex > 0) {
+      setActiveIndex((prev) => prev - 1);
+    }
+    touchStart.current = null;
+  };
+
+  const description = captions[activeIndex] || '';
+
+  const handleDescriptionChange = (val: string) => {
+    const updated = [...captions];
+    updated[activeIndex] = val;
+    setCaptions(updated);
+  };
 
   // UI States
   const [showLocations, setShowLocations] = useState(false);
@@ -155,10 +237,7 @@ export function UploadDetails({
   };
 
   const handleHashtagClick = () => {
-    setDescription((prev) => {
-      const trimmed = prev.trimEnd();
-      return trimmed + (trimmed ? ' #' : '#');
-    });
+    setGeneralCaption((prev) => prev.trimEnd() + (prev.trimEnd() ? ' #' : '#'));
   };
 
   const extractHashtags = (text: string) => {
@@ -174,25 +253,89 @@ export function UploadDetails({
         <div className='flex-1 bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm flex flex-col lg:flex-row gap-6 md:gap-8'>
           {/* Left Column: Form */}
           <div className='flex-1 flex flex-col relative'>
-            <h2 className='text-lg font-bold text-[#1a1a1a] mb-4'>
-              Description
-            </h2>
-
-            <div className='relative mb-4'>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onFocus={() => setInputFocus(true)}
-                onBlur={() => setTimeout(() => setInputFocus(false), 200)}
-                placeholder="What's happening?"
-                maxLength={4000}
-                className='w-full h-48 bg-[#f4f4f5] rounded-xl p-4 resize-none border-none focus:ring-2 focus:ring-[#fbbe15] focus:outline-none placeholder:text-zinc-400 text-zinc-800'
-                disabled={isUploading}
-              />
-              <span className='absolute bottom-4 right-4 text-xs text-zinc-400'>
-                {description.length}/4000
-              </span>
+            {/* General Caption Section */}
+            <div className='relative mb-5 flex flex-col'>
+              <div className='flex justify-between items-center mb-2'>
+                <h3 className='text-sm font-bold text-zinc-800 uppercase tracking-wide'>
+                  Post Description
+                </h3>
+                <button
+                  onClick={handleHashtagClick}
+                  disabled={isUploading}
+                  className='flex items-center gap-1 text-[11px] font-bold text-[#fbbe15] hover:text-[#e5ac10] transition-colors border border-[#fbbe15]/30 bg-transparent px-2.5 py-1 rounded-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none'
+                >
+                  <Hash size={12} /> Add Hashtag
+                </button>
+              </div>
+              <div className='relative'>
+                <textarea
+                  value={generalCaption}
+                  onChange={(e) => setGeneralCaption(e.target.value)}
+                  placeholder="Tell your followers about this post... Add details, tags, and reviews!"
+                  maxLength={4000}
+                  className='w-full h-24 bg-[#f4f4f5] rounded-xl p-4 resize-none border border-zinc-200/50 focus:ring-2 focus:ring-[#fbbe15] focus:outline-none placeholder:text-zinc-400 text-zinc-800 text-sm'
+                  disabled={isUploading}
+                />
+                <span className='absolute bottom-3 right-3 text-[10px] text-zinc-400'>
+                  {generalCaption.length}/4000
+                </span>
+              </div>
             </div>
+
+            {/* Slide-Specific Text Overlay Caption */}
+            {isImage && (
+              <div className='relative mb-5 flex flex-col'>
+                <h3 className='text-sm font-bold text-zinc-800 uppercase tracking-wide mb-2 flex items-center justify-between'>
+                  <span>Image Slide Text Overlay {files.length > 1 && `(Slide ${activeIndex + 1} of ${files.length})`}</span>
+                  {files.length > 1 && (
+                    <span className='text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full border border-zinc-200/60'>
+                      Slide {activeIndex + 1} of {files.length}
+                    </span>
+                  )}
+                </h3>
+                <div className='relative'>
+                  <input
+                    type='text'
+                    value={description}
+                    onChange={(e) => handleDescriptionChange(e.target.value)}
+                    placeholder="e.g. Buzz cut, Juicy burger, Fries (overlays in center of image)..."
+                    maxLength={80}
+                    className='w-full bg-[#f4f4f5] rounded-xl p-3.5 border border-zinc-200/50 focus:ring-2 focus:ring-[#fbbe15] focus:outline-none placeholder:text-zinc-400 text-zinc-800 text-sm pr-16'
+                    disabled={isUploading}
+                  />
+                  <span className='absolute right-4 top-3.5 text-[10px] text-zinc-400'>
+                    {description.length}/80
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {isImage && files.length > 1 && (
+              <div className='bg-[#fbbe15]/10 border border-[#fbbe15]/20 rounded-xl p-4 mb-4 flex flex-col gap-3'>
+                <p className='text-zinc-700 text-xs font-semibold leading-relaxed'>
+                <strong>Multi-Image Tip:</strong> You can add a different text overlay caption centered on each image slide! Switch slides using the controls below or by swiping the preview image.
+                </p>
+                <div className='flex items-center justify-between border-t border-[#fbbe15]/15 pt-2.5'>
+                  <button
+                    onClick={() => setActiveIndex((prev) => Math.max(0, prev - 1))}
+                    disabled={activeIndex === 0}
+                    className='px-3.5 py-2 text-xs font-bold text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs'
+                  >
+                    ← Prev Slide
+                  </button>
+                  <span className='text-xs font-bold text-zinc-800 bg-zinc-100 px-3 py-1.5 rounded-full border border-zinc-200/60'>
+                    Slide {activeIndex + 1} of {files.length}
+                  </span>
+                  <button
+                    onClick={() => setActiveIndex((prev) => Math.min(files.length - 1, prev + 1))}
+                    disabled={activeIndex === files.length - 1}
+                    className='px-3.5 py-2 text-xs font-bold text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs'
+                  >
+                    Next Slide →
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className='flex gap-4 mb-6'>
               <button
@@ -220,14 +363,14 @@ export function UploadDetails({
                       'flex items-center gap-1.5 text-xs font-bold transition-colors disabled:opacity-50',
                       showUsers ? 'text-[#fbbe15]' : 'text-[#1a1a1a]',
                     )}>
-                    <Tag size={16} />
-                    Mention
+                    <RiRestaurant2Fill size={16} />
+                    Tag Buka
                   </button>
                 </DrawerTrigger>
                 <DrawerContent className='bg-white border-none h-[70vh] w-full md:w-[40%] mx-auto'>
                   <DrawerHeader className='border-b border-gray-100'>
                     <DrawerTitle className='text-center font-bold text-lg'>
-                      Mention
+                      Buka Restaurants
                     </DrawerTitle>
                   </DrawerHeader>
                   <div className='p-4 flex flex-col gap-4 overflow-hidden h-full'>
@@ -343,14 +486,15 @@ export function UploadDetails({
               <button
                 onClick={() =>
                   onPost({
-                    description,
-                    tags: extractHashtags(description),
+                    description: generalCaption,
+                    imageCaptions: captions,
+                    tags: extractHashtags(generalCaption),
                     location: selectedLocations[0],
                     restaurantId: selectedRestaurant?.id,
                   })
                 }
                 className='w-full py-3 bg-[#fbbe15] text-[#1a1a1a] font-bold rounded-xl hover:bg-[#e5ac10] transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed'
-                disabled={(!description && !file) || isUploading}>
+                disabled={isUploading}>
                 {isUploading ? (
                   <Loader2 className='w-5 h-5 animate-spin' />
                 ) : (
@@ -432,27 +576,141 @@ export function UploadDetails({
             )}
 
             {isImage ? (
-              <Image
-                src={mediaUrl}
-                alt='Preview'
-                fill
-                className='object-cover'
-                unoptimized
-              />
+              <div 
+                className='relative w-full h-full overflow-hidden select-none'
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                {/* Slides Flex Wrapper */}
+                <div 
+                  className='flex w-full h-full transition-transform duration-300 ease-out'
+                  style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+                >
+                  {mediaUrls.map((url, idx) => (
+                    <div key={idx} className='w-full h-full flex-shrink-0 relative flex items-center justify-center bg-black'>
+                      <img
+                        src={url}
+                        alt={`Preview ${idx + 1}`}
+                        className='w-full h-full object-contain'
+                        draggable={false}
+                      />
+                      
+                      {/* Text overlay in the middle of the image */}
+                      {captions[idx] && (
+                        <div className='absolute inset-0 flex items-center justify-center p-4 pointer-events-none z-10 select-none'>
+                          <span 
+                            className='text-white font-extrabold text-xl text-center break-words drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] font-sans max-w-[90%]'
+                            style={{ textShadow: '0px 0px 4px rgba(0,0,0,1), -1px -1px 0px rgba(0,0,0,1), 1px -1px 0px rgba(0,0,0,1), -1px 1px 0px rgba(0,0,0,1), 1px 1px 0px rgba(0,0,0,1)' }}
+                          >
+                            {captions[idx]}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Left/Right Navigation Chevrons */}
+                {files.length > 1 && (
+                  <>
+                    {activeIndex > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveIndex((prev) => prev - 1);
+                        }}
+                        className='absolute left-2.5 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white border-none cursor-pointer z-20 transition-all hover:scale-105 active:scale-95'
+                        aria-label='Previous slide'
+                      >
+                        <ChevronLeft size={20} />
+                      </button>
+                    )}
+                    {activeIndex < files.length - 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveIndex((prev) => prev + 1);
+                        }}
+                        className='absolute right-2.5 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white border-none cursor-pointer z-20 transition-all hover:scale-105 active:scale-95'
+                        aria-label='Next slide'
+                      >
+                        <ChevronRight size={20} />
+                      </button>
+                    )}
+
+                    {/* Add Image slide button */}
+                    {isImage && onAddFiles && (
+                      <>
+                        <input
+                          ref={fileInputRef}
+                          type='file'
+                          multiple
+                          accept='image/*'
+                          onChange={handleFileInputChange}
+                          className='hidden'
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fileInputRef.current?.click();
+                          }}
+                          className='absolute bottom-4 right-4 z-20 flex items-center gap-1.5 bg-black/60 hover:bg-black/80 backdrop-blur-xs text-white text-xs font-bold px-3 py-2 rounded-lg border border-white/10 transition-all active:scale-95 cursor-pointer pointer-events-auto'
+                          aria-label='Add more images'
+                        >
+                          <PlusCircle size={14} />
+                          <span>Add Image</span>
+                        </button>
+                      </>
+                    )}
+
+                    {/* Remove Image slide button */}
+                    {isImage && onRemoveFile && (
+                      <button
+                        onClick={handleRemove}
+                        className='absolute bottom-4 left-4 z-20 flex items-center gap-1.5 bg-red-600/70 hover:bg-red-600/90 backdrop-blur-xs text-white text-xs font-bold px-3 py-2 rounded-lg border border-red-500/20 transition-all active:scale-95 cursor-pointer pointer-events-auto shadow-sm'
+                        aria-label='Delete this image'
+                      >
+                        <Trash2 size={14} />
+                        <span>Delete</span>
+                      </button>
+                    )}
+
+                    {/* Dots Carousel Indicators */}
+                    <div className='absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 bg-black/40 px-2.5 py-1.5 rounded-full backdrop-blur-xs'>
+                      {files.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveIndex(idx);
+                          }}
+                          className={cn(
+                            'w-1.5 h-1.5 rounded-full border-none p-0 cursor-pointer transition-all',
+                            idx === activeIndex ? 'bg-[#fbbe15] scale-110' : 'bg-white/50 hover:bg-white/80'
+                          )}
+                          aria-label={`Go to slide ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             ) : (
-              <video
-                ref={videoRef}
-                src={mediaUrl}
-                className='w-full h-full object-cover'
-                loop
-                autoPlay
-                muted={isMuted} // Controlled by state
-                playsInline
-                onTimeUpdate={handleTimeUpdate}
-                onWaiting={() => setIsLoading(true)}
-                onPlaying={() => setIsLoading(false)}
-                onLoadedData={() => setIsLoading(false)}
-              />
+              mediaUrls[0] ? (
+                <video
+                  ref={videoRef}
+                  src={mediaUrls[0]}
+                  className='w-full h-full object-cover'
+                  loop
+                  autoPlay
+                  muted={isMuted} // Controlled by state
+                  playsInline
+                  onTimeUpdate={handleTimeUpdate}
+                  onWaiting={() => setIsLoading(true)}
+                  onPlaying={() => setIsLoading(false)}
+                  onLoadedData={() => setIsLoading(false)}
+                />
+              ) : null
             )}
 
             {/* Overlay UI */}
@@ -461,7 +719,7 @@ export function UploadDetails({
                 <div className='font-bold text-sm'>You</div>
               </div>
               <div className='text-xs opacity-80 mb-3 line-clamp-2'>
-                {description || 'Description preview...'}
+                {generalCaption || 'Description preview...'}
               </div>
 
               {/* Progress Bar & Stats (Hide for images) */}

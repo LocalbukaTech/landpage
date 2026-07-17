@@ -1,11 +1,11 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Volume2, VolumeX, MoreHorizontal, Play, Pause } from 'lucide-react';
+import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import type { Post } from '@/types/post';
 import { VideoOverlay } from '@/components/video/VideoOverlay';
-import { ensureHttps } from '@/lib/utils';
+import { cn, ensureHttps } from '@/lib/utils';
 
 interface VideoPlayerProps {
   post: Post;
@@ -29,9 +29,16 @@ export function VideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const touchStartY = useRef<number | null>(null);
   const touchEndY = useRef<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
   const isScrolling = useRef(false);
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+  }, [post.id]);
 
   // Scrubber state
   const [progress, setProgress] = useState(0);
@@ -44,6 +51,7 @@ export function VideoPlayer({
   const iconTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isVideo = post.mediaType === 'video';
+  const mediaUrls = post.mediaUrls || [];
 
   // Play/pause based on active state and video changes
   useEffect(() => {
@@ -109,40 +117,64 @@ export function VideoPlayer({
   // Touch handlers for swipe gestures
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
     touchEndY.current = null;
+    touchEndX.current = null;
     isScrolling.current = false;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     touchEndY.current = e.touches[0].clientY;
+    touchEndX.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = () => {
-    // Only process if we have valid start and end positions
     if (touchStartY.current === null || touchEndY.current === null) {
+      if (touchStartX.current !== null && touchEndX.current !== null) {
+        const diffX = touchStartX.current - touchEndX.current;
+        const minSwipeDistance = 50;
+        if (Math.abs(diffX) > minSwipeDistance && !isVideo && mediaUrls.length > 1) {
+          if (diffX > 0 && activeImageIndex < mediaUrls.length - 1) {
+            setActiveImageIndex((prev) => prev + 1);
+          } else if (diffX < 0 && activeImageIndex > 0) {
+            setActiveImageIndex((prev) => prev - 1);
+          }
+        }
+      }
       touchStartY.current = null;
       touchEndY.current = null;
+      touchStartX.current = null;
+      touchEndX.current = null;
       return;
     }
 
     const diffY = touchStartY.current - touchEndY.current;
+    const diffX = touchStartX.current !== null && touchEndX.current !== null 
+      ? touchStartX.current - touchEndX.current 
+      : 0;
+
     const minSwipeDistance = 50;
 
-    if (Math.abs(diffY) > minSwipeDistance) {
+    if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > minSwipeDistance) {
       isScrolling.current = true;
-
       if (diffY > 0 && onSwipeUp) {
-        // Swiped up - go to next video
         onSwipeUp();
       } else if (diffY < 0 && onSwipeDown) {
-        // Swiped down - go to previous video
         onSwipeDown();
+      }
+    } else if (Math.abs(diffX) > minSwipeDistance && !isVideo && mediaUrls.length > 1) {
+      isScrolling.current = true;
+      if (diffX > 0 && activeImageIndex < mediaUrls.length - 1) {
+        setActiveImageIndex((prev) => prev + 1);
+      } else if (diffX < 0 && activeImageIndex > 0) {
+        setActiveImageIndex((prev) => prev - 1);
       }
     }
 
-    // Reset touch positions
     touchStartY.current = null;
     touchEndY.current = null;
+    touchStartX.current = null;
+    touchEndX.current = null;
   };
 
   // Mouse wheel handler for desktop scrolling (with debounce)
@@ -225,14 +257,88 @@ export function VideoPlayer({
           onPause={() => setIsPlaying(false)}
         />
       ) : (
-        <Image
-          src={ensureHttps(post.mediaUrl)}
-          alt={post.caption || 'Post Image'}
-          fill
-          className='object-cover'
-          draggable={false}
-          unoptimized
-        />
+        <div className='relative w-full h-full overflow-hidden select-none'>
+          {/* Slide container shifting horizontally */}
+          <div 
+            className='flex w-full h-full transition-transform duration-300 ease-out'
+            style={{ transform: `translateX(-${activeImageIndex * 100}%)` }}
+          >
+            {(mediaUrls.length > 0 ? mediaUrls : [post.mediaUrl]).map((url, idx) => (
+              <div key={idx} className='w-full h-full flex-shrink-0 relative flex items-center justify-center bg-black'>
+                <img
+                  src={ensureHttps(url)}
+                  alt={post.caption || `Post Image ${idx + 1}`}
+                  className='w-full h-full object-contain'
+                  draggable={false}
+                />
+
+                {/* Slide Text Overlay Caption */}
+                {post.imageCaptions && post.imageCaptions[idx] && (
+                  <div className='absolute inset-0 flex items-center justify-center p-4 pointer-events-none z-10 select-none'>
+                    <span 
+                      className='text-white font-extrabold text-2xl md:text-3xl text-center break-words drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] font-sans max-w-[90%]'
+                      style={{ textShadow: '0px 0px 4px rgba(0,0,0,1), -1px -1px 0px rgba(0,0,0,1), 1px -1px 0px rgba(0,0,0,1), -1px 1px 0px rgba(0,0,0,1), 1px 1px 0px rgba(0,0,0,1)' }}
+                    >
+                      {post.imageCaptions[idx]}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {mediaUrls.length > 1 && (
+            <div className='hidden md:flex absolute bottom-6 left-1/2 -translate-x-1/2 items-center gap-3.5 z-20 bg-black/45 px-3 py-1.5 rounded-full backdrop-blur-xs shadow-md border border-white/10'>
+              {/* Left Chevron Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (activeImageIndex > 0) {
+                    setActiveImageIndex((prev) => prev - 1);
+                  }
+                }}
+                disabled={activeImageIndex === 0}
+                className='text-white/80 hover:text-white disabled:opacity-20 cursor-pointer border-none bg-transparent flex items-center justify-center p-0.5 transition-all outline-none disabled:cursor-not-allowed'
+                aria-label='Previous slide'
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {/* Dots */}
+              <div className='flex gap-1.5 items-center select-none'>
+                {mediaUrls.map((_: string, idx: number) => (
+                  <button
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImageIndex(idx);
+                    }}
+                    className={cn(
+                      'w-1.5 h-1.5 rounded-full border-none p-0 cursor-pointer transition-all',
+                      idx === activeImageIndex ? 'bg-[#FFC727] scale-110' : 'bg-white/50 hover:bg-white/80'
+                    )}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Right Chevron Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (activeImageIndex < mediaUrls.length - 1) {
+                    setActiveImageIndex((prev) => prev + 1);
+                  }
+                }}
+                disabled={activeImageIndex === mediaUrls.length - 1}
+                className='text-white/80 hover:text-white disabled:opacity-20 cursor-pointer border-none bg-transparent flex items-center justify-center p-0.5 transition-all outline-none disabled:cursor-not-allowed'
+                aria-label='Next slide'
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {/* TikTok-style Play/Pause Icon Overlay */}
@@ -276,7 +382,12 @@ export function VideoPlayer({
       </div>
 
       {/* Video Overlay */}
-      <VideoOverlay post={post} showTimestamp={showTimestamp} />
+      <VideoOverlay 
+        post={post} 
+        showTimestamp={showTimestamp} 
+        activeImageIndex={activeImageIndex}
+        setActiveImageIndex={setActiveImageIndex}
+      />
 
       {/* Scrubber / Progress Bar */}
       {isVideo && (

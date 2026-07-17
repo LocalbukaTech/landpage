@@ -2,7 +2,7 @@
 
 import {useState} from 'react';
 import Link from 'next/link';
-import {usePathname} from 'next/navigation';
+import {usePathname, useRouter, useSearchParams} from 'next/navigation';
 import {
   Home,
   UtensilsCrossed,
@@ -23,8 +23,9 @@ import {NotificationOverlay} from '@/components/layout/NotificationOverlay';
 import {cn} from '@/lib/utils';
 import {useAuth} from '@/context/AuthContext';
 import {useUnreadCount} from '@/lib/api/services/notifications.hooks';
-import {feedStore} from '@/lib/feed-state';
+import {feedStore, type FeedType} from '@/lib/feed-state';
 import {Drawer, DrawerContent, DrawerTitle} from '@/components/ui/drawer';
+import {useRequireAuth} from '@/hooks/useRequireAuth';
 
 const baseNavItems = [
   {icon: Home, label: 'Home', href: '/feeds'},
@@ -58,6 +59,17 @@ const footerLinks = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const {requireAuth} = useRequireAuth();
+  const isFeedPage = pathname === '/feeds';
+
+  const typeParam = searchParams.get('type');
+  const feedType: FeedType = typeParam === 'following' ? 'following' : 'foryou';
+
+  const setFeedType = (type: FeedType) => {
+    router.push(`/feeds?type=${type}`);
+  };
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -275,29 +287,75 @@ export function Sidebar() {
       </aside>
 
       {/* ── Mobile Top Header ── */}
-      <div className='md:hidden fixed top-0 left-0 right-0 h-14 bg-[#1a1a1a] border-b border-white/5 flex items-center justify-between px-4 z-50'>
+      <div className={cn(
+        'md:hidden fixed top-0 left-0 right-0 h-14 z-50 flex items-center justify-between px-4 transition-all duration-300',
+        isFeedPage 
+          ? 'bg-transparent border-none' 
+          : 'bg-[#1a1a1a] border-b border-white/5'
+      )}>
         <button
           onClick={() => setIsMenuOpen(true)}
           className='w-8 flex items-center justify-start text-white hover:opacity-80 active:opacity-75 transition-opacity cursor-pointer border-none bg-transparent'>
           <Menu size={22} />
         </button>
-        <div className='flex items-center gap-2'>
-          <span
-            className='text-xl text-white font-normal'
-            style={{fontFamily: 'var(--font-hakuna), sans-serif'}}>
-            LocalBuka
-          </span>
-          <Image
-            src='/images/localBuka_logo.png'
-            alt='LocalBuka'
-            width={24}
-            height={24}
-            className='h-6 w-6 rounded-full'
-          />
-        </div>
+
+        {isFeedPage ? (
+          <div className='flex items-center gap-5 select-none'>
+            <button 
+              onClick={() => alert("Community feed coming soon!")}
+              className='text-[15px] font-bold text-white/50 hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none relative py-1'
+            >
+              Community
+            </button>
+            <button 
+              onClick={() => {
+                requireAuth(() => {
+                  setFeedType('following');
+                });
+              }}
+              className={cn(
+                'text-[15px] font-bold transition-all bg-transparent border-none outline-none relative py-1 cursor-pointer',
+                feedType === 'following' ? 'text-white' : 'text-white/50 hover:text-white'
+              )}
+            >
+              Following
+              {feedType === 'following' && (
+                <div className='absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-xs' />
+              )}
+            </button>
+            <button 
+              onClick={() => setFeedType('foryou')}
+              className={cn(
+                'text-[15px] font-bold transition-all bg-transparent border-none outline-none relative py-1 cursor-pointer',
+                feedType === 'foryou' ? 'text-white' : 'text-white/50 hover:text-white'
+              )}
+            >
+              For You
+              {feedType === 'foryou' && (
+                <div className='absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-xs' />
+              )}
+            </button>
+          </div>
+        ) : (
+          <div className='flex items-center gap-2'>
+            <span
+              className='text-xl text-white font-normal'
+              style={{fontFamily: 'var(--font-hakuna), sans-serif'}}>
+              LocalBuka
+            </span>
+            <Image
+              src='/images/localBuka_logo.png'
+              alt='LocalBuka'
+              width={24}
+              height={24}
+              className='h-6 w-6 rounded-full'
+            />
+          </div>
+        )}
+
         <button
           onClick={() => handleNavClick('Search')}
-          className='w-8 flex justify-end text-white'>
+          className='w-8 flex justify-end text-white hover:opacity-80 active:opacity-75 transition-opacity cursor-pointer border-none bg-transparent outline-none'>
           <Search size={22} />
         </button>
       </div>

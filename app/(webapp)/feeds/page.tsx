@@ -14,11 +14,15 @@ import {cn} from '@/lib/utils';
 import {queryKeys} from '@/lib/api/types';
 import {feedStore, type FeedType} from '@/lib/feed-state';
 import {PasswordPromptModal} from '@/components/modals';
+import {useAuth} from '@/context/AuthContext';
+import {useRequireAuth} from '@/hooks/useRequireAuth';
 
 function HomeContent() {
   const searchParams = useSearchParams();
   const videoId = searchParams.get('video');
   const queryClient = useQueryClient();
+  const {isAuthenticated} = useAuth();
+  const {requireAuth} = useRequireAuth();
 
   // Disable pull-to-refresh / overscroll bounce on mobile browsers while on the feeds page
   useEffect(() => {
@@ -43,6 +47,29 @@ function HomeContent() {
   const [feedType, setFeedType] = useState<FeedType>(
     wasReset ? 'foryou' : feedStore.getFeedType(),
   );
+
+  const typeParam = searchParams.get('type');
+  useEffect(() => {
+    if (typeParam === 'following') {
+      if (!isAuthenticated) {
+        setFeedType('foryou');
+        requireAuth(() => {
+          setFeedType('following');
+        });
+      } else {
+        setFeedType('following');
+      }
+    } else if (typeParam === 'foryou') {
+      setFeedType('foryou');
+    }
+  }, [typeParam, isAuthenticated]);
+
+  // Handle runtime logout/auth change state sync
+  useEffect(() => {
+    if (feedType === 'following' && !isAuthenticated) {
+      setFeedType('foryou');
+    }
+  }, [feedType, isAuthenticated]);
 
   // The post ID to restore to (null if first visit or reset).
   const savedPostId = wasReset ? null : feedStore.getPostId();
@@ -78,7 +105,7 @@ function HomeContent() {
     fetchNextPage: fetchNextPersonalisedPage,
     hasNextPage: hasNextPersonalisedPage,
     isFetchingNextPage: isFetchingNextPersonalisedPage,
-  } = useInfinitePersonalisedFeed({pageSize: 20});
+  } = useInfinitePersonalisedFeed({pageSize: 20}, {enabled: isAuthenticated});
 
   const {
     data: chronologicalData,
@@ -125,27 +152,32 @@ function HomeContent() {
   return (
     <MainLayout>
       <div className='relative w-full h-full overscroll-none'>
-        {/* Following | For You Toggle Overlay */}
-        <div className='fixed top-14 left-0 right-0 z-50 flex justify-center items-center gap-4 pointer-events-none pt-4 md:absolute md:top-6 md:pt-0'>
-          <button
-            onClick={() => setFeedType('following')}
-            className={cn(
-              'text-lg font-bold transition-all hover:scale-105 pointer-events-auto cursor-pointer bg-transparent border-none drop-shadow-md',
-              feedType === 'following'
-                ? 'text-white scale-110'
-                : 'text-white/60',
-            )}>
-            Following
-          </button>
-          <div className='w-px h-4 bg-white/30' />
-          <button
-            onClick={() => setFeedType('foryou')}
-            className={cn(
-              'text-lg font-bold transition-all hover:scale-105 pointer-events-auto cursor-pointer bg-transparent border-none drop-shadow-md',
-              feedType === 'foryou' ? 'text-white scale-110' : 'text-white/60',
-            )}>
-            For You
-          </button>
+        <div className='hidden md:flex absolute top-6 left-0 right-0 z-50 justify-center items-center pointer-events-none'>
+          <div className='flex items-center gap-4 bg-black/35 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg pointer-events-auto'>
+            <button
+              onClick={() => {
+                requireAuth(() => {
+                  setFeedType('following');
+                });
+              }}
+              className={cn(
+                'text-sm font-bold transition-all hover:scale-105 pointer-events-auto cursor-pointer bg-transparent border-none drop-shadow-xs outline-none',
+                feedType === 'following'
+                  ? 'text-white scale-105'
+                  : 'text-white/60',
+              )}>
+              Following
+            </button>
+            <div className='w-px h-3.5 bg-white/20' />
+            <button
+              onClick={() => setFeedType('foryou')}
+              className={cn(
+                'text-sm font-bold transition-all hover:scale-105 pointer-events-auto cursor-pointer bg-transparent border-none drop-shadow-xs outline-none',
+                feedType === 'foryou' ? 'text-white scale-105' : 'text-white/60',
+              )}>
+              For You
+            </button>
+          </div>
         </div>
 
         {/* State rendering */}

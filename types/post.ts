@@ -40,6 +40,8 @@ export interface Post {
     id: string;
     name: string;
   } | null;
+  mediaUrls?: string[];
+  imageCaptions?: string[];
 }
 
 /** Comment on a post */

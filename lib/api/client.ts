@@ -15,7 +15,7 @@ const TOKEN_KEY = 'localbuka_admin_token';
 // Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 seconds
+  timeout: 300000, // 5 minutes
   headers: {
     'Content-Type': 'application/json',
   },

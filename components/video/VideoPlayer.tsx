@@ -177,32 +177,6 @@ export function VideoPlayer({
     touchEndX.current = null;
   };
 
-  // Mouse wheel handler for desktop scrolling (with debounce)
-  const wheelTimeout = useRef<NodeJS.Timeout | null>(null);
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-
-    // Debounce wheel events
-    if (wheelTimeout.current) return;
-
-    const minDelta = 50;
-
-    if (Math.abs(e.deltaY) > minDelta) {
-      if (e.deltaY > 0 && onSwipeUp) {
-        // Scrolled down - go to next video
-        onSwipeUp();
-      } else if (e.deltaY < 0 && onSwipeDown) {
-        // Scrolled up - go to previous video
-        onSwipeDown();
-      }
-
-      // Set debounce timeout
-      wheelTimeout.current = setTimeout(() => {
-        wheelTimeout.current = null;
-      }, 500);
-    }
-  };
-
   // Video scrubber handlers
   const handleTimeUpdate = () => {
     if (videoRef.current && !isDragging) {
@@ -239,8 +213,7 @@ export function VideoPlayer({
       onClick={togglePlay}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onWheel={handleWheel}>
+      onTouchEnd={handleTouchEnd}>
       {isVideo ? (
         <video
           ref={videoRef}

@@ -61,31 +61,35 @@ export function VideoFeed({
     setIsGlobalMuted(muted);
   }, []);
 
+  const isTransitioningRef = useRef(false);
+
   const handlePrevious = useCallback(() => {
-    if (currentIndex > 0 && !isTransitioning) {
+    if (currentIndex > 0 && !isTransitioningRef.current) {
+      isTransitioningRef.current = true;
       setIsTransitioning(true);
       setCurrentIndex((prev) => prev - 1);
       if (transitionTimeoutRef.current)
         clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = setTimeout(
-        () => setIsTransitioning(false),
-        400,
-      );
+      transitionTimeoutRef.current = setTimeout(() => {
+        isTransitioningRef.current = false;
+        setIsTransitioning(false);
+      }, 600);
     }
-  }, [currentIndex, isTransitioning]);
+  }, [currentIndex]);
 
   const handleNext = useCallback(() => {
-    if (currentIndex < posts.length - 1 && !isTransitioning) {
+    if (currentIndex < posts.length - 1 && !isTransitioningRef.current) {
+      isTransitioningRef.current = true;
       setIsTransitioning(true);
       setCurrentIndex((prev) => prev + 1);
       if (transitionTimeoutRef.current)
         clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = setTimeout(
-        () => setIsTransitioning(false),
-        400,
-      );
+      transitionTimeoutRef.current = setTimeout(() => {
+        isTransitioningRef.current = false;
+        setIsTransitioning(false);
+      }, 600);
     }
-  }, [currentIndex, posts.length, isTransitioning]);
+  }, [currentIndex, posts.length]);
 
   useEffect(() => {
     return () => {
@@ -130,6 +134,45 @@ export function VideoFeed({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleNext, handlePrevious]);
+
+  // External mouse wheel & trackpad scrolling listener across the feeds page
+  const wheelLockUntilRef = useRef<number>(0);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Don't intercept wheel if comments drawer is open
+      if (isCommentsOpen) return;
+
+      // Don't intercept if user is inside form inputs, textareas or interactive elements
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('textarea, input, select, [data-prevent-swipe]')) return;
+
+      const delta = e.deltaY;
+      if (Math.abs(delta) < 4) return;
+
+      const now = Date.now();
+
+      // If within active scroll momentum lock window, absorb event & extend lock to swallow trailing inertia
+      if (now < wheelLockUntilRef.current || isTransitioningRef.current) {
+        wheelLockUntilRef.current = Math.max(wheelLockUntilRef.current, now + 350);
+        return;
+      }
+
+      // Lock out any new scroll triggers for 800ms
+      wheelLockUntilRef.current = now + 800;
+
+      if (delta > 0) {
+        handleNext();
+      } else if (delta < 0) {
+        handlePrevious();
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, {passive: true});
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleNext, handlePrevious, isCommentsOpen]);
 
   if (!posts || posts.length === 0) {
     return (

@@ -19,7 +19,7 @@ interface VideoOverlayProps {
 
 export function VideoOverlay({
   post,
-  showTimestamp,
+  showTimestamp = true,
   activeCaptionOverride,
   activeImageIndex,
   setActiveImageIndex,
@@ -30,15 +30,14 @@ export function VideoOverlay({
   const [isExpanded, setIsExpanded] = useState(false);
   if (!post) return null;
 
-  const handleAvatarClick = () => {
+  const handleAvatarClick = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (!post?.user?.id) return;
-    requireAuth(() => {
-      if (post.user.id === user?.id) {
-        router.push('/profile');
-      } else {
-        router.push(`/other-profile?id=${post.user.id}`);
-      }
-    });
+    if (user?.id && post.user.id === user.id) {
+      router.push('/profile');
+    } else {
+      router.push(`/other-profile?id=${post.user.id}`);
+    }
   };
 
   const rawCaption = activeCaptionOverride !== undefined ? activeCaptionOverride : post.caption;

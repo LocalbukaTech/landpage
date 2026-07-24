@@ -211,7 +211,7 @@ function HomeContent() {
             initialMuted={true}
             feedType={feedType}
             hideFollowButton={feedType === 'following'}
-            showTimestamp={feedType === 'following'}
+            showTimestamp={true}
             onLoadMore={fetchNextPage}
             hasMore={!!hasNextPage}
             isLoadingMore={isFetchingNextPage}

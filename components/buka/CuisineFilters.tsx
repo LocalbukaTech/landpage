@@ -287,38 +287,7 @@ export function CuisineFilters({
         />
       </div>
 
-      {/* ── Cuisine ── */}
-      <div className='flex flex-col gap-3'>
-        <span className='text-[#fbbe15] text-xs font-semibold'>Cuisine</span>
-        <div className='flex flex-col gap-2'>
-          {CUISINE_OPTIONS.map((cuisine) => (
-            <label
-              key={cuisine}
-              className='flex items-center gap-2 cursor-pointer group'>
-              <div
-                onClick={() => toggleCuisine(cuisine)}
-                className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                  filters.cuisines.includes(cuisine)
-                    ? 'bg-[#fbbe15] border-[#fbbe15]'
-                    : 'border-zinc-600 group-hover:border-zinc-400'
-                }`}>
-                {filters.cuisines.includes(cuisine) && (
-                  <svg width='10' height='8' viewBox='0 0 10 8' fill='none'>
-                    <path
-                      d='M1 4L3.5 6.5L9 1'
-                      stroke='#1a1a1a'
-                      strokeWidth='2'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                  </svg>
-                )}
-              </div>
-              <span className='text-white text-xs'>{cuisine}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+      {/* ── Cuisine Filter Hidden For Now ── */}
 
       {/* ── Ask BukaGenie ── */}
       <div className='flex items-center gap-2 h-11 px-3 bg-white/90 rounded-lg overflow-hidden'>

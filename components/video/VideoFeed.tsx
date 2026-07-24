@@ -10,6 +10,7 @@ import {ActionBar} from '@/components/video/ActionBar';
 import {VideoNavigation} from '@/components/video/VideoNavigation';
 import Comments from '@/components/video/comments';
 import {useToggleLike, useToggleSave} from '@/lib/api/services/posts.hooks';
+import {useRequireAuth} from '@/hooks/useRequireAuth';
 
 const FEED_MUTED_SESSION_KEY = 'localbuka:feed-muted';
 
@@ -31,7 +32,7 @@ export function VideoFeed({
   initialIndex = 0,
   initialMuted = true,
   hideFollowButton,
-  showTimestamp,
+  showTimestamp = true,
   initialCommentsOpen = false,
   feedType = 'foryou',
   onLoadMore,
@@ -61,31 +62,35 @@ export function VideoFeed({
     setIsGlobalMuted(muted);
   }, []);
 
+  const isTransitioningRef = useRef(false);
+
   const handlePrevious = useCallback(() => {
-    if (currentIndex > 0 && !isTransitioning) {
+    if (currentIndex > 0 && !isTransitioningRef.current) {
+      isTransitioningRef.current = true;
       setIsTransitioning(true);
       setCurrentIndex((prev) => prev - 1);
       if (transitionTimeoutRef.current)
         clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = setTimeout(
-        () => setIsTransitioning(false),
-        400,
-      );
+      transitionTimeoutRef.current = setTimeout(() => {
+        isTransitioningRef.current = false;
+        setIsTransitioning(false);
+      }, 600);
     }
-  }, [currentIndex, isTransitioning]);
+  }, [currentIndex]);
 
   const handleNext = useCallback(() => {
-    if (currentIndex < posts.length - 1 && !isTransitioning) {
+    if (currentIndex < posts.length - 1 && !isTransitioningRef.current) {
+      isTransitioningRef.current = true;
       setIsTransitioning(true);
       setCurrentIndex((prev) => prev + 1);
       if (transitionTimeoutRef.current)
         clearTimeout(transitionTimeoutRef.current);
-      transitionTimeoutRef.current = setTimeout(
-        () => setIsTransitioning(false),
-        400,
-      );
+      transitionTimeoutRef.current = setTimeout(() => {
+        isTransitioningRef.current = false;
+        setIsTransitioning(false);
+      }, 600);
     }
-  }, [currentIndex, posts.length, isTransitioning]);
+  }, [currentIndex, posts.length]);
 
   useEffect(() => {
     return () => {
@@ -131,6 +136,45 @@ export function VideoFeed({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleNext, handlePrevious]);
 
+  // External mouse wheel & trackpad scrolling listener across the feeds page
+  const wheelLockUntilRef = useRef<number>(0);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Don't intercept wheel if comments drawer is open
+      if (isCommentsOpen) return;
+
+      // Don't intercept if user is inside form inputs, textareas or interactive elements
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('textarea, input, select, [data-prevent-swipe]')) return;
+
+      const delta = e.deltaY;
+      if (Math.abs(delta) < 4) return;
+
+      const now = Date.now();
+
+      // If within active scroll momentum lock window, absorb event & extend lock to swallow trailing inertia
+      if (now < wheelLockUntilRef.current || isTransitioningRef.current) {
+        wheelLockUntilRef.current = Math.max(wheelLockUntilRef.current, now + 350);
+        return;
+      }
+
+      // Lock out any new scroll triggers for 800ms
+      wheelLockUntilRef.current = now + 800;
+
+      if (delta > 0) {
+        handleNext();
+      } else if (delta < 0) {
+        handlePrevious();
+      }
+    };
+
+    window.addEventListener('wheel', handleWheel, {passive: true});
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleNext, handlePrevious, isCommentsOpen]);
+
   if (!posts || posts.length === 0) {
     return (
       <div className='flex items-center justify-center h-full w-full text-zinc-500 text-base'>
@@ -146,6 +190,15 @@ export function VideoFeed({
     center: {opacity: 1},
     exit: {opacity: 0},
   };
+
+  const {requireAuth} = useRequireAuth();
+  const handleLikeToggle = useCallback(() => {
+    requireAuth(() => {
+      if (currentPost?.id) {
+        toggleLikeMutation.mutate(currentPost.id);
+      }
+    });
+  }, [requireAuth, currentPost?.id, toggleLikeMutation]);
 
   return (
     <div className='fixed top-14 bottom-16 left-0 right-0 flex items-center justify-center md:static md:top-auto md:bottom-auto md:left-auto md:right-auto md:w-full md:h-[calc(100vh-3rem)] md:gap-4 md:max-h-[850px] overscroll-none'>
@@ -168,6 +221,7 @@ export function VideoFeed({
                 isMuted={isGlobalMuted}
                 onMuteChange={handleMuteChange}
                 showTimestamp={showTimestamp}
+                onLikeToggle={handleLikeToggle}
               />
             </motion.div>
           )}

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {useState, useMemo, useEffect, useRef} from 'react';
 import {useGeolocation} from '@/hooks/useGeolocation';
-import {Settings, Loader2, Camera} from 'lucide-react';
+import {Settings, Loader2, Camera, X} from 'lucide-react';
 import SocialModal from '../social/SocialModal';
 import {IoMdShareAlt} from 'react-icons/io';
 import {ShareDrawer} from '../video/ShareDrawer';
@@ -41,6 +41,7 @@ export function ProfileHeader({
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
   const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const route = usePathname();
   const router = useRouter();
   const {requireAuth} = useRequireAuth();
@@ -261,14 +262,50 @@ export function ProfileHeader({
         shareUrl={`https://www.localbuka.com/other-profile?id=${apiUser?.id}`}
         shareText={`Check out ${displayName}'s profile on LocalBuka!`}
       />
+      {/* Profile Image Preview Lightbox */}
+      {isPreviewOpen && (
+        <div
+          className='fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200 select-none'
+          onClick={() => setIsPreviewOpen(false)}>
+          <div
+            className='relative max-w-sm sm:max-w-md w-full flex flex-col items-center'
+            onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setIsPreviewOpen(false)}
+              className='absolute -top-12 right-0 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-sm transition-colors cursor-pointer'
+              aria-label='Close preview'>
+              <X className='w-6 h-6' />
+            </button>
+            <div className='w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 rounded-full overflow-hidden border-none shadow-2xl relative bg-black shrink-0'>
+              <Image
+                src={displayAvatar}
+                alt={displayName}
+                fill
+                className='object-cover'
+                sizes='(max-width: 768px) 320px, 384px'
+              />
+            </div>
+            {displayName && (
+              <p className='mt-5 text-white font-bold text-xl text-center drop-shadow-md'>
+                {displayName}
+              </p>
+            )}
+            {apiUser?.username && (
+              <p className='text-zinc-400 text-sm text-center mt-0.5'>
+                @{apiUser.username}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
       <div className='flex items-start gap-4 md:gap-6'>
         {/* Avatar */}
         <div className='relative shrink-0'>
           <div
-            onClick={!isOtherProfile ? handleAvatarClick : undefined}
+            onClick={!isOtherProfile ? handleAvatarClick : () => setIsPreviewOpen(true)}
             className={cn(
-              'w-20 h-20 md:w-32 md:h-32 rounded-full border-4 border-[#FBBE15] overflow-hidden bg-[#FBBE15] relative group',
-              isOtherProfile ? 'border-none' : 'cursor-pointer'
+              'w-20 h-20 md:w-32 md:h-32 rounded-full overflow-hidden bg-[#FBBE15] relative group cursor-pointer transition-transform active:scale-95',
+              isOtherProfile ? 'border-none hover:opacity-95' : 'border-4 border-[#FBBE15]'
             )}>
             <Image
               src={displayAvatar}
@@ -330,15 +367,19 @@ export function ProfileHeader({
             </Link>
           </div>
 
-          {/* Location: shown for own profile only (from geolocation); hidden on other-profile until backend provides it */}
+          {/* Location */}
           {!isOtherProfile ? (
-            <p className='text-sm text-zinc-400 mt-0.5'>
-              {apiUser.location ? apiUser.location : displayLocation}
-            </p>
+            (apiUser?.location || displayLocation) && (
+              <p className='text-sm text-zinc-400 mt-0.5'>
+                {apiUser?.location || displayLocation}
+              </p>
+            )
           ) : (
-            <p className='text-sm text-zinc-400 mt-0.5'>
-              {apiUser.location && apiUser.location}
-            </p>
+            apiUser?.location && (
+              <p className='text-sm text-zinc-400 mt-0.5'>
+                {apiUser.location}
+              </p>
+            )
           )}
 
           {/* Follow Button */}

@@ -268,10 +268,7 @@ export default function BukaPage() {
             )}
           </div>
 
-          {/* By Cuisine Section */}
-          <div className='px-4 pb-8 md:px-8 md:pb-16'>
-            <CuisineSection cuisines={cuisines} />
-          </div>
+          {/* By Cuisine Section Hidden For Now */}
 
           {/* Banner Image */}
           <div className='px-4 pb-8 md:px-8 md:pb-16'>

@@ -15,6 +15,14 @@ interface VideoPlayerProps {
   isMuted: boolean;
   onMuteChange: (muted: boolean) => void;
   showTimestamp?: boolean;
+  onLikeToggle?: () => void;
+}
+
+interface HeartParticle {
+  id: number;
+  x: number;
+  y: number;
+  rotation: number;
 }
 
 export function VideoPlayer({
@@ -24,7 +32,8 @@ export function VideoPlayer({
   onSwipeDown,
   isMuted,
   onMuteChange,
-  showTimestamp,
+  showTimestamp = true,
+  onLikeToggle,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,6 +78,17 @@ export function VideoPlayer({
     }
   }, [isActive, post.id, isVideo]);
 
+  // Double-tap heart particles state
+  const [heartParticles, setHeartParticles] = useState<HeartParticle[]>([]);
+  const lastTapTimeRef = useRef<number>(0);
+  const singleTapTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (singleTapTimerRef.current) clearTimeout(singleTapTimerRef.current);
+    };
+  }, []);
+
   const showIcon = useCallback((action: 'play' | 'pause') => {
     setLastAction(action);
     setShowPlayPauseIcon(true);
@@ -87,12 +107,6 @@ export function VideoPlayer({
   const togglePlay = () => {
     if (!isVideo) return; // Images don't play/pause
 
-    // Don't toggle play if we were swiping
-    if (isScrolling.current) {
-      isScrolling.current = false;
-      return;
-    }
-
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
@@ -102,6 +116,56 @@ export function VideoPlayer({
         showIcon('play');
       }
       setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Don't trigger tap if user was swiping/scrolling
+    if (isScrolling.current) {
+      isScrolling.current = false;
+      return;
+    }
+
+    // Ignore clicks on buttons, inputs, links, or elements marked to prevent tap
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, a, [data-prevent-tap]')) {
+      return;
+    }
+
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 280;
+
+    if (now - lastTapTimeRef.current < DOUBLE_TAP_DELAY) {
+      // DOUBLE TAP DETECTED!
+      if (singleTapTimerRef.current) {
+        clearTimeout(singleTapTimerRef.current);
+        singleTapTimerRef.current = null;
+      }
+
+      const rect = containerRef.current?.getBoundingClientRect();
+      const x = rect ? e.clientX - rect.left : 200;
+      const y = rect ? e.clientY - rect.top : 300;
+      const rotation = (Math.random() - 0.5) * 30;
+
+      const particleId = now + Math.random();
+      setHeartParticles((prev) => [...prev, { id: particleId, x, y, rotation }]);
+
+      setTimeout(() => {
+        setHeartParticles((prev) => prev.filter((p) => p.id !== particleId));
+      }, 1000);
+
+      onLikeToggle?.();
+      lastTapTimeRef.current = 0;
+    } else {
+      lastTapTimeRef.current = now;
+
+      if (isVideo) {
+        if (singleTapTimerRef.current) clearTimeout(singleTapTimerRef.current);
+        singleTapTimerRef.current = setTimeout(() => {
+          togglePlay();
+          singleTapTimerRef.current = null;
+        }, DOUBLE_TAP_DELAY);
+      }
     }
   };
 
@@ -210,10 +274,72 @@ export function VideoPlayer({
     <div
       ref={containerRef}
       className={`relative w-[420px] h-full bg-black rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
-      onClick={togglePlay}
+      onClick={handleContainerClick}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}>
+      <style jsx global>{`
+        @keyframes heartPopBounce {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.2);
+          }
+          20% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.35);
+          }
+          35% {
+            transform: translate(-50%, -50%) scale(0.92);
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.1);
+          }
+          75% {
+            opacity: 1;
+            transform: translate(-50%, -85%) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -135%) scale(0.75);
+          }
+        }
+      `}</style>
+
+      {/* Double Tap Heart Particles Overlay */}
+      {heartParticles.map((particle) => (
+        <div
+          key={particle.id}
+          className='absolute z-40 pointer-events-none select-none flex items-center justify-center -translate-x-1/2 -translate-y-1/2'
+          style={{
+            left: `${particle.x}px`,
+            top: `${particle.y}px`,
+            animation: 'heartPopBounce 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+          }}>
+          {/* Radial Aura */}
+          <div className='absolute w-24 h-24 rounded-full bg-red-500/25 blur-lg pointer-events-none' />
+
+          {/* Heart Icon */}
+          <svg
+            width='90'
+            height='90'
+            viewBox='0 0 24 24'
+            style={{ transform: `rotate(${particle.rotation}deg)` }}
+            className='drop-shadow-[0_4px_20px_rgba(239,68,68,0.95)] filter transition-transform'>
+            <defs>
+              <linearGradient id={`heartGrad-${particle.id}`} x1='0%' y1='0%' x2='100%' y2='100%'>
+                <stop offset='0%' stopColor='#ff2b56' />
+                <stop offset='50%' stopColor='#ef4444' />
+                <stop offset='100%' stopColor='#fbbe15' />
+              </linearGradient>
+            </defs>
+            <path
+              fill={`url(#heartGrad-${particle.id})`}
+              strokeLinejoin='round'
+              d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'
+            />
+          </svg>
+        </div>
+      ))}
       {isVideo ? (
         <video
           ref={videoRef}

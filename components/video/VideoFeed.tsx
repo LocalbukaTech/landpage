@@ -10,6 +10,7 @@ import {ActionBar} from '@/components/video/ActionBar';
 import {VideoNavigation} from '@/components/video/VideoNavigation';
 import Comments from '@/components/video/comments';
 import {useToggleLike, useToggleSave} from '@/lib/api/services/posts.hooks';
+import {useRequireAuth} from '@/hooks/useRequireAuth';
 
 const FEED_MUTED_SESSION_KEY = 'localbuka:feed-muted';
 
@@ -31,7 +32,7 @@ export function VideoFeed({
   initialIndex = 0,
   initialMuted = true,
   hideFollowButton,
-  showTimestamp,
+  showTimestamp = true,
   initialCommentsOpen = false,
   feedType = 'foryou',
   onLoadMore,
@@ -190,6 +191,15 @@ export function VideoFeed({
     exit: {opacity: 0},
   };
 
+  const {requireAuth} = useRequireAuth();
+  const handleLikeToggle = useCallback(() => {
+    requireAuth(() => {
+      if (currentPost?.id) {
+        toggleLikeMutation.mutate(currentPost.id);
+      }
+    });
+  }, [requireAuth, currentPost?.id, toggleLikeMutation]);
+
   return (
     <div className='fixed top-14 bottom-16 left-0 right-0 flex items-center justify-center md:static md:top-auto md:bottom-auto md:left-auto md:right-auto md:w-full md:h-[calc(100vh-3rem)] md:gap-4 md:max-h-[850px] overscroll-none'>
       <div className='flex gap-3 items-end h-full w-full md:w-auto relative'>
@@ -211,6 +221,7 @@ export function VideoFeed({
                 isMuted={isGlobalMuted}
                 onMuteChange={handleMuteChange}
                 showTimestamp={showTimestamp}
+                onLikeToggle={handleLikeToggle}
               />
             </motion.div>
           )}

@@ -19,7 +19,7 @@ interface VideoOverlayProps {
 
 export function VideoOverlay({
   post,
-  showTimestamp,
+  showTimestamp = true,
   activeCaptionOverride,
   activeImageIndex,
   setActiveImageIndex,

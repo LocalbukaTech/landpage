@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import {cn} from '@/lib/utils';
 import {useRestaurants} from '@/lib/api/services/restaurants.hooks';
+import {useGeolocation} from '@/hooks/useGeolocation';
+import {useAuth} from '@/context/AuthContext';
 import {
   Drawer,
   DrawerContent,
@@ -55,6 +57,35 @@ export function UploadDetails({
   const [activeIndex, setActiveIndex] = useState(0);
   const [captions, setCaptions] = useState<string[]>(() => Array(files.length).fill(''));
   const [generalCaption, setGeneralCaption] = useState('');
+
+  const {user: authUser} = useAuth();
+  const {lat, lng} = useGeolocation();
+  const [currentLocation, setCurrentLocation] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!lat || !lng) return;
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const area =
+          data.address?.suburb ||
+          data.address?.neighbourhood ||
+          data.address?.quarter ||
+          '';
+        const city =
+          data.address?.city ||
+          data.address?.town ||
+          data.address?.village ||
+          data.address?.state ||
+          '';
+        const country = data.address?.country || '';
+        const mainLoc = [area || city, country].filter(Boolean).join(', ');
+        if (mainLoc) {
+          setCurrentLocation(mainLoc);
+        }
+      })
+      .catch(() => {});
+  }, [lat, lng]);
 
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -171,27 +202,42 @@ export function UploadDetails({
   //   { name: "Alfredo Saris", handle: "@localbuka", image: "/images/mock/user2.jpg" },
   //   { name: "Matthias Meal", handle: "@matthias", image: "/images/mock/user3.jpg" },
 
-  const defaultLocations = [
-    {name: 'Ikeja, Lagos', address: 'Mainland, Lagos'},
-    {name: 'Lekki, Lagos', address: 'Island, Lagos'},
-    {name: 'Victoria Island, Lagos', address: 'Island, Lagos'},
-    {name: 'Yaba, Lagos', address: 'Mainland, Lagos'},
-    {name: 'Surulere, Lagos', address: 'Mainland, Lagos'},
-    {name: 'Abuja', address: 'Federal Capital Territory'},
-    {name: 'Port Harcourt', address: 'Rivers State'},
-    {name: 'Benin City, Edo', address: 'Ekehuan road, Benin'},
-    {name: 'Ibadan', address: 'Oyo State'},
-    {name: 'Enugu', address: 'Enugu State'},
-    {name: 'Kano', address: 'Kano State'},
-  ];
+  const locations = useMemo(() => {
+    const baseLocations = [
+      {name: 'Ikeja, Lagos', address: 'Mainland, Lagos'},
+      {name: 'Lekki, Lagos', address: 'Island, Lagos'},
+      {name: 'Victoria Island, Lagos', address: 'Island, Lagos'},
+      {name: 'Yaba, Lagos', address: 'Mainland, Lagos'},
+      {name: 'Surulere, Lagos', address: 'Mainland, Lagos'},
+      {name: 'Abuja', address: 'Federal Capital Territory'},
+      {name: 'Port Harcourt', address: 'Rivers State'},
+      {name: 'Benin City, Edo', address: 'Ekehuan road, Benin'},
+      {name: 'Ibadan', address: 'Oyo State'},
+      {name: 'Enugu', address: 'Enugu State'},
+      {name: 'Kano', address: 'Kano State'},
+    ];
+
+    const detectedLoc = currentLocation || authUser?.location;
+    if (detectedLoc) {
+      const filteredBase = baseLocations.filter(
+        (loc) => loc.name.toLowerCase() !== detectedLoc.toLowerCase()
+      );
+      return [
+        {name: detectedLoc, address: 'Current Location', isCurrent: true},
+        ...filteredBase,
+      ];
+    }
+
+    return baseLocations;
+  }, [currentLocation, authUser?.location]);
 
   const [locationSearchTerm, setLocationSearchTerm] = useState('');
-  const [filteredLocations, setFilteredLocations] = useState<{name: string; address?: string}[]>(defaultLocations);
+  const [filteredLocations, setFilteredLocations] = useState<{name: string; address?: string; isCurrent?: boolean}[]>(locations);
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
 
   useEffect(() => {
     if (!locationSearchTerm.trim()) {
-      setFilteredLocations(defaultLocations);
+      setFilteredLocations(locations);
       return;
     }
 
@@ -219,7 +265,7 @@ export function UploadDetails({
     }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [locationSearchTerm]);
+  }, [locationSearchTerm, locations]);
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
@@ -569,16 +615,30 @@ export function UploadDetails({
                   {isLoadingLocations ? (
                     <div className='p-2 text-center text-xs text-zinc-500'>Searching locations...</div>
                   ) : filteredLocations.length > 0 ? (
-                    filteredLocations.map((loc, i) => (
+                    filteredLocations.map((loc: any, i: number) => (
                       <button
                         key={i}
-                        onClick={() => handleAddLocation(loc.address ? `${loc.name}, ${loc.address}` : loc.name)}
-                        className='w-full text-left flex flex-col p-2 rounded hover:bg-zinc-50 transition-colors'
-                      >
-                        <span className='text-xs font-bold text-[#1a1a1a]'>
-                          {loc.name}
-                        </span>
-                        {loc.address && (
+                        onClick={() => handleAddLocation(loc.isCurrent ? loc.name : (loc.address ? `${loc.name}, ${loc.address}` : loc.name))}
+                        className={cn(
+                          'w-full text-left flex flex-col p-2 rounded transition-colors cursor-pointer',
+                          loc.isCurrent
+                            ? 'bg-[#fbbe15]/10 hover:bg-[#fbbe15]/20 border border-[#fbbe15]/30 mb-1'
+                            : 'hover:bg-zinc-50'
+                        )}>
+                        <div className='flex items-center justify-between w-full'>
+                          <span className='text-xs font-bold text-[#1a1a1a] flex items-center gap-1.5'>
+                            {loc.isCurrent && (
+                              <MapPin className='w-3.5 h-3.5 text-[#fbbe15] fill-[#fbbe15] shrink-0' />
+                            )}
+                            {loc.name}
+                          </span>
+                          {loc.isCurrent && (
+                            <span className='text-[9px] font-extrabold uppercase text-[#b88300] bg-[#fbbe15]/25 px-1.5 py-0.5 rounded-full shrink-0'>
+                              Current Location
+                            </span>
+                          )}
+                        </div>
+                        {loc.address && !loc.isCurrent && (
                           <span className='text-[10px] text-zinc-500'>
                             {loc.address}
                           </span>

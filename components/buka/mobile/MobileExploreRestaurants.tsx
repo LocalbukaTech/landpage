@@ -234,22 +234,7 @@ export function MobileExploreRestaurants({
           {/* Divider */}
           <div className='w-px h-5 bg-white/10 shrink-0' />
 
-          {/* Cuisine chips */}
-          {CUISINE_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              onClick={() => setActiveCuisine(chip)}
-              className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
-                activeCuisine === chip
-                  ? 'bg-[#fbbe15] text-[#1a1a1a]'
-                  : 'bg-[#1e1e1e] text-zinc-400 border border-white/8'
-              }`}>
-              {chip}
-            </button>
-          ))}
-
-          {/* Divider */}
-          <div className='w-px h-5 bg-white/10 shrink-0' />
+          {/* Cuisine chips hidden for now */}
 
           {/* Rating chips */}
           {RATING_CHIPS.map((chip) => (

@@ -110,15 +110,14 @@ export function ActionBar({
     });
   };
 
-  const handleAvatarClick = () => {
+  const handleAvatarClick = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     if (!post?.user?.id) return;
-    requireAuth(() => {
-      if (post.user.id === user?.id) {
-        router.push('/profile');
-      } else {
-        router.push(`/other-profile?id=${post.user.id}`);
-      }
-    });
+    if (user?.id && post.user.id === user.id) {
+      router.push('/profile');
+    } else {
+      router.push(`/other-profile?id=${post.user.id}`);
+    }
   };
 
   const handleLike = () => {

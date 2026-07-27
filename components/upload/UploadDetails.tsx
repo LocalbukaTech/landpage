@@ -170,9 +170,8 @@ export function UploadDetails({
   //   { name: "Cody Buka", handle: "@codybuka", image: "/images/mock/user1.jpg" },
   //   { name: "Alfredo Saris", handle: "@localbuka", image: "/images/mock/user2.jpg" },
   //   { name: "Matthias Meal", handle: "@matthias", image: "/images/mock/user3.jpg" },
-  // ];
 
-  const locations = [
+  const defaultLocations = [
     {name: 'Ikeja, Lagos', address: 'Mainland, Lagos'},
     {name: 'Lekki, Lagos', address: 'Island, Lagos'},
     {name: 'Victoria Island, Lagos', address: 'Island, Lagos'},
@@ -185,15 +184,43 @@ export function UploadDetails({
     {name: 'Enugu', address: 'Enugu State'},
     {name: 'Kano', address: 'Kano State'},
   ];
-  const [locationSearchTerm, setLocationSearchTerm] = useState('');
-  const filteredLocations = locations.filter(
-    (loc) =>
-      loc.name.toLowerCase().includes(locationSearchTerm.toLowerCase()) ||
-      (loc.address &&
-        loc.address.toLowerCase().includes(locationSearchTerm.toLowerCase())),
-  );
 
-  // Video Event Handlers
+  const [locationSearchTerm, setLocationSearchTerm] = useState('');
+  const [filteredLocations, setFilteredLocations] = useState<{name: string; address?: string}[]>(defaultLocations);
+  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
+
+  useEffect(() => {
+    if (!locationSearchTerm.trim()) {
+      setFilteredLocations(defaultLocations);
+      return;
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setIsLoadingLocations(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationSearchTerm)}&limit=5&countrycodes=ng`
+        );
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const parsed = data.map((item: any) => {
+            const parts = item.display_name.split(',');
+            const name = parts[0]?.trim() || '';
+            const address = parts.slice(1, 4).map((p: string) => p.trim()).join(', ');
+            return { name, address };
+          });
+          setFilteredLocations(parsed);
+        }
+      } catch (error) {
+        console.error('Error fetching location suggestions:', error);
+      } finally {
+        setIsLoadingLocations(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [locationSearchTerm]);
+
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       const current = videoRef.current.currentTime;
@@ -539,29 +566,34 @@ export function UploadDetails({
                   />
                 </div>
                 <div className='space-y-1 max-h-48 overflow-y-auto'>
-                  {filteredLocations.map((loc, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleAddLocation(loc.name)}
-                      className='w-full text-left flex flex-col p-2 rounded hover:bg-zinc-50 transition-colors'>
-                      <span className='text-xs font-bold text-[#1a1a1a]'>
-                        {loc.name}
-                      </span>
-                      {loc.address && (
-                        <span className='text-[10px] text-zinc-500'>
-                          {loc.address}
+                  {isLoadingLocations ? (
+                    <div className='p-2 text-center text-xs text-zinc-500'>Searching locations...</div>
+                  ) : filteredLocations.length > 0 ? (
+                    filteredLocations.map((loc, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleAddLocation(loc.address ? `${loc.name}, ${loc.address}` : loc.name)}
+                        className='w-full text-left flex flex-col p-2 rounded hover:bg-zinc-50 transition-colors'
+                      >
+                        <span className='text-xs font-bold text-[#1a1a1a]'>
+                          {loc.name}
                         </span>
-                      )}
-                    </button>
-                  ))}
-                  {filteredLocations.length === 0 &&
+                        {loc.address && (
+                          <span className='text-[10px] text-zinc-500'>
+                            {loc.address}
+                          </span>
+                        )}
+                      </button>
+                    ))
+                  ) : (
                     locationSearchTerm.trim() && (
                       <div className='p-2 text-center'>
                         <span className='text-xs text-zinc-500'>
                           Press Enter to add &quot;{locationSearchTerm}&quot;
                         </span>
                       </div>
-                    )}
+                    )
+                  )}
                 </div>
               </div>
             )}

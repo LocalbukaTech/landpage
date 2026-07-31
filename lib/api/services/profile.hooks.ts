@@ -21,6 +21,11 @@ export const useUserPosts = (id: string, params?: PostsQueryParams) => {
     queryKey: ['users', id, 'posts', params],
     queryFn: () => profileService.getUserPosts(id, params),
     enabled: !!id,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status || error?.status;
+      if (status === 403 || status === 401) return false;
+      return failureCount < 2;
+    },
   });
 };
 
@@ -29,6 +34,11 @@ export const useUserProfile = (id: string) => {
     queryKey: ['users', id, 'profile'],
     queryFn: () => profileService.getUserProfile(id),
     enabled: !!id,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status || error?.status;
+      if (status === 403 || status === 401) return false;
+      return failureCount < 2;
+    },
   });
 };
 
@@ -37,6 +47,11 @@ export const useUserStats = (id: string) => {
     queryKey: ['users', id, 'stats'],
     queryFn: () => profileService.getUserStats(id),
     enabled: !!id,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status || error?.status;
+      if (status === 403 || status === 401) return false;
+      return failureCount < 2;
+    },
   });
 };
 
@@ -45,6 +60,11 @@ export const useUserReposts = (id: string, params?: PostsQueryParams) => {
     queryKey: ['users', id, 'reposts', params],
     queryFn: () => profileService.getUserReposts(id, params),
     enabled: !!id,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status || error?.status;
+      if (status === 403 || status === 401) return false;
+      return failureCount < 2;
+    },
   });
 };
 

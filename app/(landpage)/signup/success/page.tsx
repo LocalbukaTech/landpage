@@ -10,7 +10,7 @@ const SuccessContent = () => {
   const redirect = searchParams.get('redirect') || '/feeds';
 
   const handleProceed = () => {
-    router.push(`/signup/preferences?redirect=${encodeURIComponent(redirect)}`);
+    router.push(`/signup/music-policy?redirect=${encodeURIComponent(redirect)}`);
   };
 
   return (

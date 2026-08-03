@@ -29,6 +29,10 @@ const sections = [
     id: 'data-protection',
     title: 'How we protect your personal information',
   },
+  {
+    id: 'music-usage-policy',
+    title: 'Music Usage Policy',
+  },
 ];
 
 const PrivacyPage = () => {
@@ -941,6 +945,218 @@ const PrivacyPage = () => {
                     transactions. You will always be able to distinguish organic
                     content from promotional content.
                   </p>
+                </div>
+              </section>
+
+              {/* Section: Music Usage Policy */}
+              <section id='music-usage-policy' className='mb-12 scroll-mt-8'>
+                <h2 className='text-3xl font-bold mb-6 text-foreground border-b pb-4 border-gray-200 dark:border-gray-800'>
+                  Music Usage Policy
+                </h2>
+
+                <div className='space-y-6 text-foreground/80 leading-relaxed'>
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      1. Purpose of This Policy
+                    </h3>
+                    <p>
+                      This Music Usage Policy outlines how music may be used on the Local Buka platform, including user-generated content (UGC), restaurant uploads, advertisements, and promotional media. The goal is to protect intellectual property rights while ensuring creators, restaurants, and users can express themselves safely and creatively.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      2. Scope of the Policy
+                    </h3>
+                    <p className='mb-2'>This policy applies to:</p>
+                    <ul className='list-disc pl-6 space-y-1 mb-3'>
+                      <li>All users of the Local Buka app</li>
+                      <li>Restaurants and food vendors creating content</li>
+                      <li>Creators and influencers on Local Buka Social</li>
+                      <li>Local Buka internal teams</li>
+                    </ul>
+                    <p className='mb-2'>It governs:</p>
+                    <ul className='list-disc pl-6 space-y-1'>
+                      <li>Music included in videos, reels, stories, and other UGC</li>
+                      <li>Background music recorded in restaurants</li>
+                      <li>Music used in official Local Buka marketing campaigns</li>
+                      <li>Music embedded in livestreams or events</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      3. Types of Music Allowed on the Platform
+                    </h3>
+                    <p className='mb-3'>Local Buka allows the following categories of music:</p>
+
+                    <div className='space-y-4 pl-2'>
+                      <div>
+                        <h4 className='text-lg font-semibold text-foreground mb-1'>
+                          3.1 Copyright-Free / Royalty-Free Music
+                        </h4>
+                        <p className='mb-1'>Users may freely use music from:</p>
+                        <ul className='list-disc pl-6 space-y-1'>
+                          <li>Local Buka’s approved licensed music library</li>
+                          <li>Royalty-free music platforms (e.g., Epidemic Sound, Artlist, Soundstripe) if they have personal rights</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h4 className='text-lg font-semibold text-foreground mb-1'>
+                          3.2 Original Music by Users
+                        </h4>
+                        <p className='mb-1'>Creators may upload videos containing:</p>
+                        <ul className='list-disc pl-6 space-y-1'>
+                          <li>Beats, songs, or instrumentals that they produced</li>
+                          <li>Music they have full rights to</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h4 className='text-lg font-semibold text-foreground mb-1'>
+                          3.3 Licensed Beats from the Local Buka Creator Hub
+                        </h4>
+                        <p>
+                          Local Buka may partner with producers to provide beats for free creator use. These may be used without restriction inside the platform.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      4. Prohibited Music Usage
+                    </h3>
+                    <p className='mb-2'>Users must NOT upload content containing:</p>
+                    <ul className='list-disc pl-6 space-y-1 mb-3'>
+                      <li>Commercial music (e.g., Burna Boy, Davido, Ayra Starr) unless they own rights</li>
+                      <li>Music protected by copyright laws without explicit permission</li>
+                      <li>Music downloaded illegally</li>
+                    </ul>
+                    <p className='mb-2'>This includes:</p>
+                    <ul className='list-disc pl-6 space-y-1'>
+                      <li>Background music playing in a restaurant</li>
+                      <li>Music added during editing</li>
+                      <li>Music heard during an event livestream</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      5. Responsibilities of Restaurants and Vendors
+                    </h3>
+                    <p className='mb-3'>
+                      Restaurants using Local Buka Social must ensure they have valid public performance licenses if they play commercial music on their premises.
+                    </p>
+                    <p className='mb-2 font-medium text-foreground'>Acceptable licenses include:</p>
+                    <ul className='list-disc pl-6 space-y-1 mb-3'>
+                      <li>COSON Public Performance License</li>
+                      <li>MCSN Public Performance License</li>
+                    </ul>
+                    <p className='mb-2 font-medium text-foreground'>Restaurants are responsible for:</p>
+                    <ul className='list-disc pl-6 space-y-1'>
+                      <li>Ensuring background music in videos is licensed</li>
+                      <li>Muting copyrighted music before uploading</li>
+                      <li>Using royalty-free or platform-approved music when posting content</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      6. Local Buka’s Rights and Obligations
+                    </h3>
+                    <p className='mb-2'>To protect the platform, Local Buka reserves the right to:</p>
+                    <ul className='list-disc pl-6 space-y-1 mb-3'>
+                      <li>Automatically detect copyrighted music</li>
+                      <li>Mute, block, or remove videos containing unauthorized music</li>
+                      <li>Respond to takedown requests from rights holders</li>
+                      <li>Suspend repeat offenders</li>
+                    </ul>
+                    <p className='mb-2'>Local Buka will also provide:</p>
+                    <ul className='list-disc pl-6 space-y-1'>
+                      <li>A pre-cleared music library</li>
+                      <li>Tools for muting or replacing copyrighted audio</li>
+                      <li>A dispute process for wrongly flagged content</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      7. Copyright Takedown Procedure
+                    </h3>
+                    <p className='mb-2'>Rightsholders may request the removal of copyrighted music by submitting:</p>
+                    <ul className='list-disc pl-6 space-y-1 mb-3'>
+                      <li>Name and contact information</li>
+                      <li>Proof of ownership</li>
+                      <li>Link to the infringing content</li>
+                    </ul>
+                    <p className='mb-2'>Local Buka will:</p>
+                    <ul className='list-disc pl-6 space-y-1 mb-2'>
+                      <li>Acknowledge the complaint within 72 hours</li>
+                      <li>Review claim validity</li>
+                      <li>Remove or mute content if confirmed</li>
+                      <li>Notify the uploader with details</li>
+                    </ul>
+                    <p className='text-sm text-amber-600 dark:text-amber-400 font-medium'>
+                      Repeat infringing users may face suspension.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      8. Use of Music in Local Buka Marketing & Advertising
+                    </h3>
+                    <p className='mb-2'>Local Buka will only use:</p>
+                    <ul className='list-disc pl-6 space-y-1 mb-2'>
+                      <li>Royalty-free tracks licensed for commercial use</li>
+                      <li>Custom-composed music from producers</li>
+                      <li>Music for which Local Buka holds sync rights</li>
+                    </ul>
+                    <p>
+                      Commercial songs from artists will NOT be used unless a full licensing agreement is signed.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      9. Penalties for Violations
+                    </h3>
+                    <p className='mb-2'>Users or restaurants who violate this policy may face:</p>
+                    <ul className='list-disc pl-6 space-y-1 mb-2'>
+                      <li>Content removal</li>
+                      <li>Audio muting</li>
+                      <li>Account warnings</li>
+                      <li>Temporary suspension</li>
+                      <li>Permanent ban for repeat offenses</li>
+                    </ul>
+                    <p>
+                      Local Buka may also cooperate with rights holders on legal actions.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      10. Updates to This Policy
+                    </h3>
+                    <p>
+                      Local Buka may update this Music Usage Policy as needed. Users will be notified of major changes.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className='text-xl font-semibold mb-2 text-foreground'>
+                      11. Contact
+                    </h3>
+                    <p>
+                      For questions or takedown notices, contact:{' '}
+                      <a
+                        href='mailto:music-policy@localbuka.com'
+                        className='text-primary hover:underline font-semibold'>
+                        music-policy@localbuka.com
+                      </a>
+                    </p>
+                  </div>
                 </div>
               </section>
 

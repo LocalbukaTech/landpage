@@ -74,7 +74,7 @@ const GoogleSuccessContent = () => {
   }, [searchParams, router, loginUser, googleExchangeMutation]);
 
   const handleProceed = () => {
-    router.push('/signup/preferences');
+    router.push('/signup/music-policy');
   };
 
   if (error) {

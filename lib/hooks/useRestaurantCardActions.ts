@@ -88,7 +88,11 @@ export function useRestaurantCardActions(restaurant: BukaRestaurant) {
           const res = await importRestaurant(
             restaurant.rawRestaurant.googlePlaceId,
           );
-          dbId = (res as any)?.data?.data?.id || (res as any)?.data?.id || null;
+          dbId =
+            (res as any)?.data?.data?.id ||
+            (res as any)?.data?.id ||
+            (res as any)?.id ||
+            null;
         }
         if (dbId) await saveToWishlist(dbId);
       } finally {
@@ -97,11 +101,22 @@ export function useRestaurantCardActions(restaurant: BukaRestaurant) {
     });
   };
 
+  const isApproved =
+    !!restaurant.rawRestaurant?.id &&
+    (!restaurant.rawRestaurant.status ||
+      restaurant.rawRestaurant.status === 'approved');
+
+  const href = isApproved
+    ? `/buka/restaurant/${restaurant.rawRestaurant!.id}`
+    : null;
+
   return {
     navigate,
     toggleWishlist,
     isWishlisted,
     isNavigating,
     isWishlistLoading,
+    isApproved,
+    href,
   };
 }

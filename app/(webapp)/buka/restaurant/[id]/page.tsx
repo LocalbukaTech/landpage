@@ -1,6 +1,6 @@
 'use client';
 
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useParams, useRouter} from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -27,6 +27,7 @@ import dynamic from 'next/dynamic';
 import {
   useAddReview,
   useGoogleReviews,
+  useImportGoogleRestaurant,
   useRemoveSavedRestaurant,
   useRestaurant,
   useReviews,
@@ -523,12 +524,48 @@ export default function RestaurantDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
+  const isUuid = useMemo(
+    () =>
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+        id || '',
+      ),
+    [id],
+  );
+
+  const {mutateAsync: importRestaurant} = useImportGoogleRestaurant();
+  const [isAutoImporting, setIsAutoImporting] = useState(!isUuid);
+
+  useEffect(() => {
+    if (!isUuid && id) {
+      let active = true;
+      setIsAutoImporting(true);
+      importRestaurant(id)
+        .then((res: any) => {
+          if (!active) return;
+          const newId =
+            res?.data?.data?.id || res?.data?.id || res?.id || null;
+          if (newId) {
+            router.replace(`/buka/restaurant/${newId}`);
+          } else {
+            setIsAutoImporting(false);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to auto-import Google Place restaurant:', err);
+          if (active) setIsAutoImporting(false);
+        });
+      return () => {
+        active = false;
+      };
+    }
+  }, [id, isUuid, importRestaurant, router]);
+
   const {data: rawRestaurant, isLoading: isLoadingRestaurant} =
-    useRestaurant(id);
+    useRestaurant(id, isUuid);
   const {data: localReviewsData, isLoading: isLoadingLocalReviews} =
-    useReviews(id);
+    useReviews(id, isUuid);
   const {data: googleReviewsData, isLoading: isLoadingGoogleReviews} =
-    useGoogleReviews(id);
+    useGoogleReviews(id, isUuid);
 
   const [fallbackRestaurant] = useState<any>(() => {
     if (typeof window === 'undefined') return null;
@@ -689,7 +726,7 @@ export default function RestaurantDetailPage() {
     };
   }, [showDirectionsModal]);
 
-  if (isLoadingRestaurant) {
+  if (isLoadingRestaurant || isAutoImporting) {
     return (
       <div className='w-full min-h-screen bg-[#1a1a1a] flex items-center justify-center'>
         <CgSpinner className='animate-spin text-[#fbbe15] text-4xl' />
@@ -697,7 +734,7 @@ export default function RestaurantDetailPage() {
     );
   }
 
-  if (!isLoadingRestaurant && !restaurant) {
+  if (!isLoadingRestaurant && !isAutoImporting && !restaurant) {
     return (
       <div className='w-full min-h-screen bg-[#1a1a1a] flex flex-col items-center justify-center'>
         <h2 className='text-white text-xl mb-4'>Restaurant not found</h2>

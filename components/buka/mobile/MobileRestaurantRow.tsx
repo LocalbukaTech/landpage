@@ -2,6 +2,7 @@
 
 import {Bookmark, MapPin, Star, UtensilsCrossed} from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import {CgSpinner} from 'react-icons/cg';
 import type {BukaRestaurant} from '@/components/buka/BukaCard';
 import {useRestaurantCardActions} from '@/lib/hooks/useRestaurantCardActions';
@@ -17,16 +18,14 @@ export function MobileRestaurantRow({
 }: {
   restaurant: BukaRestaurant;
 }) {
-  const {navigate, toggleWishlist, isWishlisted, isNavigating} =
+  const {navigate, toggleWishlist, isWishlisted, isNavigating, isApproved, href} =
     useRestaurantCardActions(restaurant);
   const isOpen = isRestaurantOpen(
     restaurant.rawRestaurant?.openingHours ?? null,
   );
 
-  return (
-    <div
-      className='flex items-center gap-3 p-3 bg-[#1e1e1e] rounded-2xl border border-white/5 cursor-pointer active:bg-[#252525] transition-colors'
-      onClick={navigate}>
+  const cardContent = (
+    <>
       {/* Thumbnail */}
       <div className='relative w-20 h-20 rounded-xl overflow-hidden bg-zinc-800 shrink-0'>
         {isNavigating && (
@@ -84,7 +83,10 @@ export function MobileRestaurantRow({
 
       {/* Bookmark */}
       <button
-        onClick={toggleWishlist}
+        onClick={(e) => {
+          e.preventDefault();
+          toggleWishlist(e);
+        }}
         className={`w-8 h-8 flex items-center justify-center rounded-full shrink-0 transition-all border ${
           isWishlisted
             ? 'bg-[#fbbe15]/15 border-[#fbbe15]/40'
@@ -97,6 +99,23 @@ export function MobileRestaurantRow({
           }
         />
       </button>
+    </>
+  );
+
+  const cardClassName =
+    'flex items-center gap-3 p-3 bg-[#1e1e1e] rounded-2xl border border-white/5 cursor-pointer active:bg-[#252525] transition-colors block';
+
+  if (isApproved && href) {
+    return (
+      <Link href={href} className={cardClassName}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return (
+    <div onClick={navigate} className={cardClassName}>
+      {cardContent}
     </div>
   );
 }

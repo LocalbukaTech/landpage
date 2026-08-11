@@ -83,8 +83,9 @@ export default function BukaPage() {
       {
         lat: lat || 6.5244,
         lng: lng || 3.3792,
+        radius: 50000,
         page: 1,
-        pageSize: 30,
+        pageSize: 20,
       },
       !loadingGeo,
     );
@@ -109,7 +110,11 @@ export default function BukaPage() {
     const mapped = Array.isArray(arrayData)
       ? arrayData.map(mapToBukaRestaurant)
       : [];
-    return helper.sortDbFirstThenByDate(mapped);
+    // Sort by rating descending (highest rated first), then review count
+    return [...mapped].sort((a, b) => {
+      if (b.rating !== a.rating) return b.rating - a.rating;
+      return b.reviewCount - a.reviewCount;
+    });
   }, [trendingData]);
 
   // Combine into a unified list
@@ -134,32 +139,55 @@ export default function BukaPage() {
     return rawList.map(mapToBukaRestaurant);
   }, [searchResponse]);
 
-  // 1. Determine topRestaurants (prefer trending, fallback to location-based combinedAll)
+  // Deduplicated unified pool of all fetched restaurants
+  const allPool = useMemo(() => {
+    const map = new Map<string, BukaRestaurant>();
+    [...trendingUiRestaurants, ...combinedAll].forEach((r) => {
+      if (!map.has(r.id)) map.set(r.id, r);
+    });
+    return Array.from(map.values());
+  }, [trendingUiRestaurants, combinedAll]);
+
+  // 1. Trending: Highest rated restaurants
   const topRestaurants = useMemo(() => {
     if (trendingUiRestaurants.length > 0) {
       return trendingUiRestaurants.slice(0, 5);
     }
-    return combinedAll.slice(0, 5);
+    return [...combinedAll].sort((a, b) => b.rating - a.rating).slice(0, 5);
   }, [trendingUiRestaurants, combinedAll]);
 
-  // To prevent duplicates across sections, determine which items in combinedAll (location-based) are not already used in topRestaurants.
-  const remainingLocal = useMemo(() => {
-    const usedIds = new Set(topRestaurants.map((r) => r.id));
-    return combinedAll.filter((r) => !usedIds.has(r.id));
-  }, [combinedAll, topRestaurants]);
-
-  // 2. Allocate the remaining local restaurants to avoid overlap
+  // 2. Top Bukas: Top rated local bukas / restaurants
   const topBukas = useMemo(() => {
-    return remainingLocal.slice(0, 5);
-  }, [remainingLocal]);
+    const localBukas = allPool.filter(
+      (r) => r.rawRestaurant?.source === 'local',
+    );
+    const pool = localBukas.length >= 3 ? localBukas : allPool;
+    return [...pool].sort((a, b) => b.rating - a.rating).slice(0, 5);
+  }, [allPool]);
 
+  // 3. Hidden Gems: Highly rated spots not in top 3 of trending
   const hiddenGems = useMemo(() => {
-    return remainingLocal.slice(5, 11);
-  }, [remainingLocal]);
+    const topIds = new Set(topRestaurants.slice(0, 3).map((r) => r.id));
+    const pool = allPool.filter((r) => !topIds.has(r.id));
+    const highRated = pool.filter((r) => r.rating >= 4.0);
+    const source = highRated.length >= 3 ? highRated : pool;
+    return [...source].sort((a, b) => b.rating - a.rating).slice(0, 6);
+  }, [allPool, topRestaurants]);
 
+  // 4. Street Favorites: Popular local street joints and top affordable spots
   const streetFavorites = useMemo(() => {
-    return remainingLocal.slice(11, 17);
-  }, [remainingLocal]);
+    const topIds = new Set([...topRestaurants, ...topBukas].map((r) => r.id));
+    let pool = allPool.filter((r) => !topIds.has(r.id));
+    if (pool.length < 3) {
+      pool = allPool;
+    }
+    return [...pool]
+      .sort(
+        (a, b) =>
+          (b.affordability || b.rating) - (a.affordability || a.rating),
+      )
+      .slice(0, 6);
+  }, [allPool, topRestaurants, topBukas]);
 
   const isLoading = isLoadingTrending || isLoadingSearch;
 

@@ -13,7 +13,7 @@ import {useGeolocation} from '@/hooks/useGeolocation';
 import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
 import {getPriceRangeForLevel} from '@/lib/utils';
 
-const ITEMS_PER_PAGE = 30;
+const ITEMS_PER_PAGE = 20;
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
 
@@ -103,6 +103,7 @@ export default function ExploreRestaurantsPage() {
     const params: any = {
       page: currentPage,
       pageSize: ITEMS_PER_PAGE,
+      radius: 50000,
       q: searchQuery || undefined,
     };
 

@@ -33,6 +33,16 @@ export const postsService = {
     });
   },
 
+  /** PATCH /posts/:id — update a post (multipart/form-data or application/json) */
+  updatePost: (id: string, data: FormData | Record<string, any>) => {
+    if (data instanceof FormData) {
+      return api.patch<ApiResponse<Post>>(`/posts/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    }
+    return api.patch<ApiResponse<Post>>(`/posts/${id}`, data);
+  },
+
   /** DELETE /posts/:id — delete own post */
   deletePost: (id: string) => {
     return api.delete<void>(`/posts/${id}`);

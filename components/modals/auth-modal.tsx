@@ -1,6 +1,7 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
+import Image from 'next/image';
 import {useRouter} from 'next/navigation';
 import {X, Eye, EyeOff, Loader2} from 'lucide-react';
 import {useAuth} from '@/context/AuthContext';
@@ -10,6 +11,7 @@ import {
   useForgotPasswordMutation,
   useResetPasswordMutation,
 } from '@/lib/api/services/auth.hooks';
+import {useValidateReferralCode} from '@/lib/api/services/referral.hooks';
 import {useToast} from '@/hooks/use-toast';
 import {userAuthService} from '@/lib/api';
 import {API_BASE_URL} from '@/lib/api/client';
@@ -33,10 +35,52 @@ export function AuthModal() {
   const [signinData, setSigninData] = useState({email: '', password: ''});
   const [signupData, setSignupData] = useState({
     fullName: '',
-    referrerName: '',
+    referralCode: '',
     email: '',
     password: '',
   });
+
+  const validateMutation = useValidateReferralCode();
+  const [referrerStatus, setReferrerStatus] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
+  const [referrerName, setReferrerName] = useState('');
+  const [referrerMessage, setReferrerMessage] = useState('');
+
+  useEffect(() => {
+    const code = signupData.referralCode.trim();
+    if (!code) {
+      setReferrerStatus('idle');
+      setReferrerName('');
+      setReferrerMessage('');
+      return;
+    }
+
+    setReferrerStatus('loading');
+    const timeoutId = setTimeout(() => {
+      validateMutation.mutate(
+        { referralCode: code },
+        {
+          onSuccess: (res) => {
+            if (res?.data?.valid !== false) {
+              setReferrerStatus('valid');
+              setReferrerName(res?.data?.referrerName || '');
+              setReferrerMessage(res?.data?.message || 'Referral code is valid!');
+            } else {
+              setReferrerStatus('invalid');
+              setReferrerName('');
+              setReferrerMessage(res?.data?.message || 'This code is not valid. Check it and try again.');
+            }
+          },
+          onError: (err: any) => {
+            setReferrerStatus('invalid');
+            setReferrerName('');
+            setReferrerMessage(err?.response?.data?.message || 'This code is not valid. Check it and try again.');
+          },
+        }
+      );
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [signupData.referralCode]);
 
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
@@ -95,7 +139,7 @@ export function AuthModal() {
       {
         email: signupData.email,
         fullName: signupData.fullName,
-        referrerName: signupData.referrerName || undefined,
+        referralCode: signupData.referralCode || undefined,
         password: signupData.password,
       },
       {
@@ -108,7 +152,7 @@ export function AuthModal() {
           );
           setSignupData({
             fullName: '',
-            referrerName: '',
+            referralCode: '',
             email: '',
             password: '',
           });
@@ -376,27 +420,60 @@ export function AuthModal() {
 
           {/* Sign Up Form */}
           {tab === 'signup' && (
-            <form onSubmit={handleSignup} className='space-y-3'>
-              <input
-                type='text'
-                placeholder='Full Name'
-                value={signupData.fullName}
-                onChange={(e) => {
-                  setSignupData({...signupData, fullName: e.target.value});
-                  setError('');
-                }}
-                required
-                className='w-full px-4 py-3 border border-white/10 rounded-xl bg-white/5 text-white placeholder-zinc-500 focus:outline-none focus:border-[#fbbe15] transition-colors text-sm'
-              />
-              <input
-                type='text'
-                placeholder='Referrer Name (optional)'
-                value={signupData.referrerName}
-                onChange={(e) =>
-                  setSignupData({...signupData, referrerName: e.target.value})
-                }
-                className='w-full px-4 py-3 border border-white/10 rounded-xl bg-white/5 text-white placeholder-zinc-500 focus:outline-none focus:border-[#fbbe15] transition-colors text-sm'
-              />
+            <div className='flex flex-col gap-3'>
+              {/* Referrer Banner */}
+              {referrerStatus === 'valid' && (
+                <div className='flex items-center justify-between bg-[#f6fcf8] border border-green-200 dark:bg-green-900/20 dark:border-green-800 rounded-xl px-4 py-2 mb-1 animate-in fade-in slide-in-from-top-2 duration-300'>
+                  <div className='flex items-center gap-3'>
+                    <span className='text-xs text-emerald-900 dark:text-emerald-50'>
+                      <span className='font-semibold text-gray-900 dark:text-white capitalize'>{referrerName || 'A friend'}</span> invited you to join localbuka.<br />
+                      <span className='text-gray-500 dark:text-gray-400'>Sign up to claim your first reward.</span>
+                    </span>
+                  </div>
+                  <Image
+                    src='/images/verified-badge.png'
+                    alt='Verified'
+                    width={24}
+                    height={24}
+                    className='w-6 h-6 flex-shrink-0 ml-2'
+                  />
+                </div>
+              )}
+
+              <form onSubmit={handleSignup} className='space-y-3'>
+                <input
+                  type='text'
+                  placeholder='Full Name'
+                  value={signupData.fullName}
+                  onChange={(e) => {
+                    setSignupData({...signupData, fullName: e.target.value});
+                    setError('');
+                  }}
+                  required
+                  className='w-full px-4 py-3 border border-white/10 rounded-xl bg-white/5 text-white placeholder-zinc-500 focus:outline-none focus:border-[#fbbe15] transition-colors text-sm'
+                />
+                <div>
+                  <input
+                    type='text'
+                    placeholder='Referral Code (optional) e.g. REF-CYM67C'
+                    value={signupData.referralCode}
+                    onChange={(e) =>
+                      setSignupData({...signupData, referralCode: e.target.value})
+                    }
+                    className='w-full px-4 py-3 border border-white/10 rounded-xl bg-white/5 text-white placeholder-zinc-500 focus:outline-none focus:border-[#fbbe15] transition-colors text-sm'
+                  />
+                  {referrerStatus === 'loading' && (
+                    <div className='flex items-center gap-1.5 mt-1 px-1 text-xs text-zinc-400'>
+                      <Loader2 className='w-3.5 h-3.5 animate-spin text-[#fbbe15]' />
+                      <span>Verifying referral code...</span>
+                    </div>
+                  )}
+                  {referrerStatus === 'invalid' && (
+                    <div className='flex items-center gap-1.5 mt-1 px-1 text-xs text-red-400'>
+                      <span>{referrerMessage}</span>
+                    </div>
+                  )}
+                </div>
               <input
                 type='email'
                 placeholder='Email'
@@ -456,6 +533,7 @@ export function AuthModal() {
                 )}
               </button>
             </form>
+          </div>
           )}
 
           {/* Forgot Password Form */}

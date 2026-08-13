@@ -1,6 +1,6 @@
 'use client';
 
-import {BadgeCheck, Store, ChevronRight} from 'lucide-react';
+import {BadgeCheck, Store, ChevronRight, Music, Music2, Music3} from 'lucide-react';
 import {useState} from 'react';
 import type {Post} from '@/types/post';
 import {cn, formatRelativeShort} from '@/lib/utils';
@@ -8,6 +8,7 @@ import {useRouter} from 'next/navigation';
 import {useAuth} from '@/context/AuthContext';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
 import Link from 'next/link';
+import { BsMusicNote } from 'react-icons/bs';
 
 interface VideoOverlayProps {
   post: Post;
@@ -67,7 +68,9 @@ export function VideoOverlay({
         </div>
       )}
 
-      <div className='flex flex-col gap-2.5 max-w-[85%] pointer-events-auto'>
+      <div className='flex flex-col gap-2 max-w-[88%] pointer-events-auto'>
+       
+
         {/* Restaurant Link pill */}
         {post.restaurantId && (
           <Link
@@ -128,6 +131,17 @@ export function VideoOverlay({
             </span>
           ))}
         </div>
+         {/* Music Consent Notice Badge (for videos) */}
+        {(post.mediaType === 'video' || post.mediaUrl?.match(/\.(mp4|mov|webm)$/i)) && (
+          <div className='flex items-center gap-1.5 bg-gray-500/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/15 shadow-md select-none w-fit mb-0.5'>
+            <div className='w-3.5 h-3.5 rounded-full border border-gray-500 flex items-center justify-center text-gray-500 shrink-0 text-[9px] font-extrabold leading-none'>
+              <BsMusicNote/>
+            </div>
+            <span className='text-[10px] sm:text-[11px] font-medium text-white/90 truncate leading-tight tracking-tight'>
+              Original content — any music featured belongs to its rightful owner.
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

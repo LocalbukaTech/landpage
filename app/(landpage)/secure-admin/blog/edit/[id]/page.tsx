@@ -80,6 +80,8 @@ const EditBlogPage = () => {
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [category, setCategory] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
 
   // TipTap Editor
   const editor = useEditor({
@@ -125,6 +127,8 @@ const EditBlogPage = () => {
     setTitle(blog.title || '');
     setCoverImage(blog.image_url || null);
     setCategory(blog.category || '');
+    setMetaTitle(blog.meta_title || '');
+    setMetaDescription(blog.meta_description || '');
     editor.commands.setContent(blog.content || '');
   }, [blog, editor]);
 
@@ -235,6 +239,16 @@ const EditBlogPage = () => {
       // Check category
       if (category !== blog?.category) {
         changedData.category = category;
+      }
+
+      // Check meta_title
+      if (metaTitle !== (blog?.meta_title || '')) {
+        changedData.meta_title = metaTitle;
+      }
+
+      // Check meta_description
+      if (metaDescription !== (blog?.meta_description || '')) {
+        changedData.meta_description = metaDescription;
       }
       
       // Check image - if new file uploaded or if cover changed from original
@@ -681,6 +695,37 @@ const EditBlogPage = () => {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+
+          {/* SEO & Meta Settings */}
+          <div className='mb-6'>
+            <h3 className='font-semibold text-foreground mb-3'>SEO & Meta Settings</h3>
+            <div className='space-y-3'>
+              <div>
+                <label className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1'>
+                  Meta Title
+                </label>
+                <input
+                  type='text'
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                  placeholder='Custom Meta Title'
+                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50'
+                />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1'>
+                  Meta Description
+                </label>
+                <textarea
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  placeholder='Custom Meta Description'
+                  rows={3}
+                  className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none'
+                />
+              </div>
             </div>
           </div>
         </div>

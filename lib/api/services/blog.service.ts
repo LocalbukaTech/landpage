@@ -14,6 +14,8 @@ export interface Blog {
   category?: string;
   image_url: string;
   read_time: number;
+  meta_title?: string;
+  meta_description?: string;
   created_at: string;
   updated_at: string;
   like_counts: string;  // API returns as string
@@ -48,6 +50,8 @@ export interface CreateBlogPayload {
   title: string;
   content: string;
   category: string;
+  meta_title?: string;
+  meta_description?: string;
 }
 
 export interface UpdateBlogPayload {
@@ -55,6 +59,8 @@ export interface UpdateBlogPayload {
   title?: string;
   content?: string;
   category?: string;
+  meta_title?: string;
+  meta_description?: string;
 }
 
 // ============================================
@@ -135,6 +141,12 @@ export const blogService = {
     formData.append('title', data.title);
     formData.append('content', data.content);
     formData.append('category', data.category);
+    if (data.meta_title) {
+      formData.append('meta_title', data.meta_title);
+    }
+    if (data.meta_description) {
+      formData.append('meta_description', data.meta_description);
+    }
 
     return api.post<ApiResponse<Blog>>('/blogs', formData, {
       headers: {
@@ -162,6 +174,12 @@ export const blogService = {
     }
     if (data.category !== undefined) {
       formData.append('category', data.category);
+    }
+    if (data.meta_title !== undefined) {
+      formData.append('meta_title', data.meta_title);
+    }
+    if (data.meta_description !== undefined) {
+      formData.append('meta_description', data.meta_description);
     }
 
     return api.put<ApiResponse<Blog>>(`/blogs/${id}`, formData, {

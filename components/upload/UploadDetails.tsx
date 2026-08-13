@@ -31,7 +31,14 @@ import {
 import { RiRestaurant2Fill } from 'react-icons/ri';
 
 interface UploadDetailsProps {
-  files: File[];
+  files?: File[];
+  existingMediaUrls?: string[];
+  initialCaption?: string;
+  initialImageCaptions?: string[];
+  initialLocation?: string;
+  initialRestaurant?: { id: string; name: string } | null;
+  isEditing?: boolean;
+  submitText?: string;
   onPost: (data: {
     description: string;
     imageCaptions?: string[];
@@ -46,17 +53,28 @@ interface UploadDetailsProps {
 }
 
 export function UploadDetails({
-  files,
+  files = [],
+  existingMediaUrls = [],
+  initialCaption = '',
+  initialImageCaptions = [],
+  initialLocation = '',
+  initialRestaurant = null,
+  isEditing = false,
+  submitText = 'Post',
   onPost,
   onDiscard,
   isUploading = false,
   onAddFiles,
   onRemoveFile,
 }: UploadDetailsProps) {
-  const isImage = files[0].type.startsWith('image/');
+  const isImage = files.length > 0 ? files[0].type.startsWith('image/') : true;
+  const totalSlides = files.length > 0 ? files.length : existingMediaUrls.length;
   const [activeIndex, setActiveIndex] = useState(0);
-  const [captions, setCaptions] = useState<string[]>(() => Array(files.length).fill(''));
-  const [generalCaption, setGeneralCaption] = useState('');
+  const [captions, setCaptions] = useState<string[]>(() => {
+    if (initialImageCaptions.length > 0) return initialImageCaptions;
+    return Array(totalSlides).fill('');
+  });
+  const [generalCaption, setGeneralCaption] = useState(initialCaption);
 
   const {user: authUser} = useAuth();
   const {lat, lng} = useGeolocation();
@@ -128,12 +146,16 @@ export function UploadDetails({
   };
 
   useEffect(() => {
-    const urls = files.map((file) => URL.createObjectURL(file));
-    setMediaUrls(urls);
-    return () => {
-      urls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [files]);
+    if (files.length > 0) {
+      const urls = files.map((file) => URL.createObjectURL(file));
+      setMediaUrls(urls);
+      return () => {
+        urls.forEach((url) => URL.revokeObjectURL(url));
+      };
+    } else if (existingMediaUrls.length > 0) {
+      setMediaUrls(existingMediaUrls);
+    }
+  }, [files, existingMediaUrls]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStart.current = e.touches[0].clientX;
@@ -166,11 +188,13 @@ export function UploadDetails({
   const [inputFocus, setInputFocus] = useState(false);
 
   // Tagging States
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>(() =>
+    initialLocation ? [initialLocation] : []
+  );
   const [selectedRestaurant, setSelectedRestaurant] = useState<{
     id: string;
     name: string;
-  } | null>(null);
+  } | null>(initialRestaurant);
 
   // Video States
   const [isMuted, setIsMuted] = useState(false); // Unmuted by default as requested
@@ -296,13 +320,13 @@ export function UploadDetails({
     <div className='flex flex-col w-full max-w-6xl mx-auto'>
       <div className='flex flex-col lg:flex-row gap-6'>
         {/* Main Content Card */}
-        <div className='flex-1 bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm flex flex-col lg:flex-row gap-6 md:gap-8'>
+        <div className='flex-1 bg-[#141414] border border-white/10 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-2xl flex flex-col lg:flex-row gap-6 md:gap-8 text-white'>
           {/* Left Column: Form */}
           <div className='flex-1 flex flex-col relative'>
             {/* General Caption Section */}
             <div className='relative mb-5 flex flex-col'>
               <div className='flex justify-between items-center mb-2'>
-                <h3 className='text-sm font-bold text-zinc-800 uppercase tracking-wide'>
+                <h3 className='text-sm font-bold text-zinc-300 uppercase tracking-wide'>
                   Post Description
                 </h3>
                 <button
@@ -319,10 +343,10 @@ export function UploadDetails({
                   onChange={(e) => setGeneralCaption(e.target.value)}
                   placeholder="Tell your followers about this post... Add details, tags, and reviews!"
                   maxLength={4000}
-                  className='w-full h-24 bg-[#f4f4f5] rounded-xl p-4 resize-none border border-zinc-200/50 focus:ring-2 focus:ring-[#fbbe15] focus:outline-none placeholder:text-zinc-400 text-zinc-800 text-sm'
+                  className='w-full h-24 bg-[#1e1e1e] rounded-xl p-4 resize-none border border-white/10 focus:ring-2 focus:ring-[#fbbe15] focus:outline-none placeholder:text-zinc-500 text-white text-sm'
                   disabled={isUploading}
                 />
-                <span className='absolute bottom-3 right-3 text-[10px] text-zinc-400'>
+                <span className='absolute bottom-3 right-3 text-[10px] text-zinc-500'>
                   {generalCaption.length}/4000
                 </span>
               </div>
@@ -331,10 +355,10 @@ export function UploadDetails({
             {/* Slide-Specific Text Overlay Caption */}
             {isImage && (
               <div className='relative mb-5 flex flex-col'>
-                <h3 className='text-sm font-bold text-zinc-800 uppercase tracking-wide mb-2 flex items-center justify-between'>
+                <h3 className='text-sm font-bold text-zinc-300 uppercase tracking-wide mb-2 flex items-center justify-between'>
                   <span>Image Slide Text Overlay {files.length > 1 && `(Slide ${activeIndex + 1} of ${files.length})`}</span>
                   {files.length > 1 && (
-                    <span className='text-[10px] font-bold text-zinc-500 bg-zinc-100 px-2 py-0.5 rounded-full border border-zinc-200/60'>
+                    <span className='text-[10px] font-bold text-zinc-300 bg-white/10 px-2 py-0.5 rounded-full border border-white/10'>
                       Slide {activeIndex + 1} of {files.length}
                     </span>
                   )}
@@ -346,10 +370,10 @@ export function UploadDetails({
                     onChange={(e) => handleDescriptionChange(e.target.value)}
                     placeholder="e.g. Buzz cut, Juicy burger, Fries (overlays in center of image)..."
                     maxLength={80}
-                    className='w-full bg-[#f4f4f5] rounded-xl p-3.5 border border-zinc-200/50 focus:ring-2 focus:ring-[#fbbe15] focus:outline-none placeholder:text-zinc-400 text-zinc-800 text-sm pr-16'
+                    className='w-full bg-[#1e1e1e] rounded-xl p-3.5 border border-white/10 focus:ring-2 focus:ring-[#fbbe15] focus:outline-none placeholder:text-zinc-500 text-white text-sm pr-16'
                     disabled={isUploading}
                   />
-                  <span className='absolute right-4 top-3.5 text-[10px] text-zinc-400'>
+                  <span className='absolute right-4 top-3.5 text-[10px] text-zinc-500'>
                     {description.length}/80
                   </span>
                 </div>
@@ -358,24 +382,24 @@ export function UploadDetails({
 
             {isImage && files.length > 1 && (
               <div className='bg-[#fbbe15]/10 border border-[#fbbe15]/20 rounded-xl p-4 mb-4 flex flex-col gap-3'>
-                <p className='text-zinc-700 text-xs font-semibold leading-relaxed'>
+                <p className='text-zinc-300 text-xs font-semibold leading-relaxed'>
                 <strong>Multi-Image Tip:</strong> You can add a different text overlay caption centered on each image slide! Switch slides using the controls below or by swiping the preview image.
                 </p>
                 <div className='flex items-center justify-between border-t border-[#fbbe15]/15 pt-2.5'>
                   <button
                     onClick={() => setActiveIndex((prev) => Math.max(0, prev - 1))}
                     disabled={activeIndex === 0}
-                    className='px-3.5 py-2 text-xs font-bold text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs'
+                    className='px-3.5 py-2 text-xs font-bold text-white bg-white/10 border border-white/10 rounded-lg hover:bg-white/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs'
                   >
                     ← Prev Slide
                   </button>
-                  <span className='text-xs font-bold text-zinc-800 bg-zinc-100 px-3 py-1.5 rounded-full border border-zinc-200/60'>
+                  <span className='text-xs font-bold text-white bg-white/10 px-3 py-1.5 rounded-full border border-white/10'>
                     Slide {activeIndex + 1} of {files.length}
                   </span>
                   <button
                     onClick={() => setActiveIndex((prev) => Math.min(files.length - 1, prev + 1))}
                     disabled={activeIndex === files.length - 1}
-                    className='px-3.5 py-2 text-xs font-bold text-zinc-700 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs'
+                    className='px-3.5 py-2 text-xs font-bold text-white bg-white/10 border border-white/10 rounded-lg hover:bg-white/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs'
                   >
                     Next Slide →
                   </button>
@@ -413,9 +437,9 @@ export function UploadDetails({
                     Tag Buka
                   </button>
                 </DrawerTrigger>
-                <DrawerContent className='bg-white border-none h-[70vh] w-full md:w-[40%] mx-auto'>
-                  <DrawerHeader className='border-b border-gray-100'>
-                    <DrawerTitle className='text-center font-bold text-lg'>
+                <DrawerContent className='bg-[#18181b] border-white/10 text-white h-[70vh] w-full md:w-[40%] mx-auto'>
+                  <DrawerHeader className='border-b border-white/10'>
+                    <DrawerTitle className='text-center font-bold text-lg text-white'>
                       Buka Restaurants
                     </DrawerTitle>
                   </DrawerHeader>
@@ -431,7 +455,7 @@ export function UploadDetails({
                         placeholder='Search restaurants...'
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className='w-full bg-zinc-100 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#fbbe15]'
+                        className='w-full bg-[#242428] rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#fbbe15] border border-white/10'
                       />
                     </div>
 
@@ -448,8 +472,8 @@ export function UploadDetails({
                             onClick={() => {
                               handleSelectRestaurant({id: r.id, name: r.name});
                             }}
-                            className='w-full flex items-center gap-4 p-3 rounded-xl hover:bg-zinc-50 transition-colors text-left'>
-                            <div className='w-12 h-12 rounded-lg overflow-hidden bg-zinc-100 shrink-0 relative'>
+                            className='w-full flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors text-left border border-transparent hover:border-white/10'>
+                            <div className='w-12 h-12 rounded-lg overflow-hidden bg-zinc-800 shrink-0 relative'>
                               <Image
                                 src={
                                   r.photos?.[0] ||
@@ -461,7 +485,7 @@ export function UploadDetails({
                               />
                             </div>
                             <div className='flex flex-col'>
-                              <span className='font-bold text-[#1a1a1a]'>
+                              <span className='font-bold text-white'>
                                 {r.name}
                               </span>
                               <span className='text-xs text-zinc-400 line-clamp-1'>
@@ -544,34 +568,34 @@ export function UploadDetails({
                 {isUploading ? (
                   <Loader2 className='w-5 h-5 animate-spin' />
                 ) : (
-                  'Post'
+                  submitText
                 )}
               </button>
               <button
                 onClick={onDiscard}
                 disabled={isUploading}
-                className='w-full py-3 bg-[#e4e4e7] text-[#1a1a1a] font-bold rounded-xl hover:bg-zinc-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'>
+                className='w-full py-3 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 border border-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'>
                 Discard
               </button>
             </div>
 
             {/* Dropdowns positioned absolutely within the column */}
             {showLocations && (
-              <div className='absolute top-[280px] left-0 z-20 w-64 bg-white border border-[#fbbe15] rounded-xl p-4 shadow-lg animate-in fade-in zoom-in-95 duration-200'>
+              <div className='absolute top-[280px] left-0 z-20 w-64 bg-[#18181b] border border-[#fbbe15]/40 text-white rounded-xl p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200'>
                 <div className='flex justify-between items-center mb-3'>
-                  <h3 className='font-bold text-[#1a1a1a] text-sm'>
+                  <h3 className='font-bold text-white text-sm'>
                     Locations
                   </h3>
                   <button
                     onClick={() => setShowLocations(false)}
-                    className='text-zinc-400 hover:text-zinc-600'>
+                    className='text-zinc-400 hover:text-white'>
                     <X size={14} />
                   </button>
                 </div>
                 <div className='mb-2'>
                   <input
                     type='text'
-                    placeholder='Search or add custom location... (Press Enter)'
+                    placeholder='Search or add custom location...'
                     value={locationSearchTerm}
                     onChange={(e) => setLocationSearchTerm(e.target.value)}
                     onKeyDown={(e) => {
@@ -581,7 +605,7 @@ export function UploadDetails({
                         setLocationSearchTerm('');
                       }
                     }}
-                    className='w-full text-xs p-2 bg-zinc-100 rounded-md border-none focus:ring-1 focus:ring-[#fbbe15] outline-none placeholder:text-zinc-400'
+                    className='w-full text-xs p-2 bg-[#242428] text-white rounded-md border border-white/10 focus:ring-1 focus:ring-[#fbbe15] outline-none placeholder:text-zinc-500'
                   />
                 </div>
                 <div className='space-y-1 max-h-48 overflow-y-auto'>
@@ -593,10 +617,10 @@ export function UploadDetails({
                         'w-full text-left flex flex-col p-2 rounded transition-colors cursor-pointer',
                         loc.isCurrent
                           ? 'bg-[#fbbe15]/10 hover:bg-[#fbbe15]/20 border border-[#fbbe15]/30 mb-1'
-                          : 'hover:bg-zinc-50'
+                          : 'hover:bg-white/5'
                       )}>
                       <div className='flex items-center justify-between w-full'>
-                        <span className='text-xs font-bold text-[#1a1a1a] flex items-center gap-1.5'>
+                        <span className='text-xs font-bold text-white flex items-center gap-1.5'>
                           {loc.isCurrent && (
                             <MapPin className='w-3.5 h-3.5 text-[#fbbe15] fill-[#fbbe15] shrink-0' />
                           )}

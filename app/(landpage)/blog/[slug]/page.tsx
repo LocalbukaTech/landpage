@@ -14,12 +14,15 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const {data} = await blogService.getBlogBySlug(params.slug);
     const blog = data.data;
 
+    const metaTitle = blog.meta_title?.trim() || `${blog.title} | Localbuka`;
+    const metaDescription = blog.meta_description?.trim() || blog.content.substring(0, 160).replace(/<[^>]*>/g, '');
+
     return {
-      title: `${blog.title} | Localbuka`,
-      description: blog.content.substring(0, 160).replace(/<[^>]*>/g, ''),
+      title: metaTitle,
+      description: metaDescription,
       openGraph: {
-        title: blog.title,
-        description: blog.content.substring(0, 160).replace(/<[^>]*>/g, ''),
+        title: blog.meta_title?.trim() || blog.title,
+        description: metaDescription,
         images: [blog.image_url],
       },
     };

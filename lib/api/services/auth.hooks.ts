@@ -135,6 +135,16 @@ export const useAcceptContentPolicy = () => {
   });
 };
 
+export const useAcceptMusicPolicy = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => userAuthService.acceptMusicPolicy(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    },
+  });
+};
+
 export const useSavePreferencesMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({

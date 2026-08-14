@@ -9,7 +9,7 @@ import Link from 'next/link';
 import {ChevronLeft, ChevronRight, Loader2, Calendar, FileText} from 'lucide-react';
 import {useBlogsQuery} from '@/lib/api/services/blog.hooks';
 import {format} from 'date-fns';
-import {slugify} from '@/lib/utils';
+import {slugify, stripHtmlContent} from '@/lib/utils';
 
 const POSTS_PER_PAGE = 9;
 
@@ -136,13 +136,9 @@ const BlogPage = () => {
                             <h2 className='text-lg md:text-xl font-bold text-[#0A1F44] dark:text-white leading-tight group-hover:text-primary transition-colors line-clamp-2'>
                               {post.title}
                             </h2>
-                            {/* We don't have description in API, using stripped content excerpt could be expensive or messy, better just show title/meta or truncate content if plain text available. 
-                                The API returns `content` which is HTML. Let's skip description for now or strip tags if needed.
-                            */}
-                            <div 
-                              className='text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3'
-                              dangerouslySetInnerHTML={{__html: post.content}} 
-                            />
+                            <p className='text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3'>
+                              {stripHtmlContent(post.content)}
+                            </p>
                           </div>
                         </article>
                       </Link>

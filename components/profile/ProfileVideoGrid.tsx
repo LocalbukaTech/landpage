@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Play, Trash2 } from "lucide-react";
+import { Play, Trash2, Pencil } from "lucide-react";
 import type { Post } from "@/types/post";
 import { formatCount } from "@/constants/mockVideos";
 import { useDeletePost, useToggleSave } from "@/lib/api/services/posts.hooks";
@@ -68,7 +68,7 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onTog
       return;
     }
 
-    router.push(`/posts/${videoId}`)
+    router.push(`/posts/single/${videoId}`);
   }
   const handleAction = () => {
     if (!postToDelete) return;
@@ -186,16 +186,28 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onTog
             </div>
           </button>
 
-          {/* Delete Icon Overlay */}
+          {/* Edit & Delete Action Overlays */}
           {isEditing && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setPostToDelete(post);
-              }}
-              className='absolute top-2 right-2 p-1.5 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-700 transition-colors z-10 border-none cursor-pointer'>
-              <Trash2 size={16} />
-            </button>
+            <div className='absolute top-2 right-2 flex items-center gap-1.5 z-10'>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/studio?edit=${post.id}`);
+                }}
+                title='Edit Post in Localbuka Studio'
+                className='p-1.5 bg-[#fbbe15] text-[#141414] rounded-full shadow-lg hover:bg-amber-400 transition-colors border-none cursor-pointer'>
+                <Pencil size={15} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPostToDelete(post);
+                }}
+                title='Delete Post'
+                className='p-1.5 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-700 transition-colors border-none cursor-pointer'>
+                <Trash2 size={15} />
+              </button>
+            </div>
           )}
         </div>
       ))}

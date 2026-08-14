@@ -1,6 +1,7 @@
 import {Metadata} from 'next';
 import BlogDetailClient from '../components/BlogDetailClient';
 import {blogService} from '@/lib/api/services/blog.service';
+import {stripHtmlContent} from '@/lib/utils';
 
 interface Props {
   params: Promise<{
@@ -15,7 +16,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const blog = data.data;
 
     const metaTitle = blog.meta_title?.trim() || `${blog.title} | Localbuka`;
-    const metaDescription = blog.meta_description?.trim() || blog.content.substring(0, 160).replace(/<[^>]*>/g, '');
+    const metaDescription = blog.meta_description?.trim() || stripHtmlContent(blog.content).substring(0, 160);
 
     return {
       title: metaTitle,

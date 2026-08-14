@@ -21,7 +21,10 @@ import Underline from '@tiptap/extension-underline';
 import {Button} from '@/components/ui/button';
 import {useToast} from '@/hooks/use-toast';
 import {useBlogQuery, useUpdateBlogMutation} from '@/lib/api';
+import {blogService} from '@/lib/api/services/blog.service';
 import {dataUrlToFile} from '@/lib/blog-drafts';
+import {ImageCaptionModal, ImageUploadingOverlay} from '@/components/modals';
+import {formatExternalUrl} from '@/lib/utils';
 
 const categories = [
   'Food Culture',
@@ -82,6 +85,13 @@ const EditBlogPage = () => {
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
+  const [imageCredit, setImageCredit] = useState('');
+  const [imageCreditUrl, setImageCreditUrl] = useState('');
+
+  // Content image caption & uploading overlay state
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [isCaptionModalOpen, setIsCaptionModalOpen] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // TipTap Editor
   const editor = useEditor({
@@ -129,6 +139,8 @@ const EditBlogPage = () => {
     setCategory(blog.category || '');
     setMetaTitle(blog.meta_title || '');
     setMetaDescription(blog.meta_description || '');
+    setImageCredit(blog.image_credit || '');
+    setImageCreditUrl(blog.image_credit_url || '');
     editor.commands.setContent(blog.content || '');
   }, [blog, editor]);
 
@@ -145,27 +157,66 @@ const EditBlogPage = () => {
     }
   };
 
-  // Handle content image upload
+  // Handle content image upload with Cloudinary and optional caption/credit
   const addImage = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          editor
-            ?.chain()
-            .focus()
-            .setImage({src: reader.result as string})
-            .run();
-        };
-        reader.readAsDataURL(file);
+      if (!file) return;
+
+      setIsUploadingImage(true);
+
+      try {
+        const imageUrl = await blogService.uploadImage(file);
+        setUploadedImageUrl(imageUrl);
+        setIsCaptionModalOpen(true);
+      } catch (err: any) {
+        toast({
+          title: 'Image upload failed',
+          description: err?.response?.data?.message || 'Failed to upload image. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsUploadingImage(false);
       }
     };
     input.click();
-  }, [editor]);
+  }, [toast]);
+
+  const handleCaptionSubmit = (credit: string) => {
+    if (uploadedImageUrl) {
+      if (credit && credit.trim()) {
+        const rawCredit = credit.trim();
+        const formattedCredit = rawCredit.replace(
+          /(https?:\/\/[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s]*)/g,
+          (url) => `<a href="${url.startsWith('http') ? url : 'https://' + url}" target="_blank" rel="noopener noreferrer" class="text-amber-600 dark:text-amber-400 underline font-medium">${url}</a>`
+        );
+
+        editor
+          ?.chain()
+          .focus()
+          .insertContent(
+            `<figure class="blog-image-container my-4"><img src="${uploadedImageUrl}" alt="${rawCredit}" class="rounded-lg max-w-full h-auto mx-auto mb-1" /><figcaption class="blog-image-caption text-left text-xs text-gray-700 dark:text-gray-300 mt-1 p-2.5 rounded-r-md border-l-4 border-primary bg-[#FFF9E8] dark:bg-primary/15 italic font-normal">Photo Credit: ${formattedCredit}</figcaption></figure><p></p>`
+          )
+          .run();
+      } else {
+        editor
+          ?.chain()
+          .focus()
+          .setImage({src: uploadedImageUrl})
+          .run();
+      }
+
+      toast({
+        title: 'Image inserted',
+        description: 'Image successfully inserted into blog content.',
+      });
+    }
+    setIsCaptionModalOpen(false);
+    setUploadedImageUrl(null);
+  };
 
   // Add link
   const addLink = useCallback(() => {
@@ -249,6 +300,16 @@ const EditBlogPage = () => {
       // Check meta_description
       if (metaDescription !== (blog?.meta_description || '')) {
         changedData.meta_description = metaDescription;
+      }
+
+      // Check image_credit
+      if (imageCredit !== (blog?.image_credit || '')) {
+        changedData.image_credit = imageCredit;
+      }
+
+      // Check image_credit_url
+      if (imageCreditUrl !== (blog?.image_credit_url || '')) {
+        changedData.image_credit_url = imageCreditUrl ? formatExternalUrl(imageCreditUrl) : '';
       }
       
       // Check image - if new file uploaded or if cover changed from original
@@ -370,8 +431,8 @@ const EditBlogPage = () => {
               className='text-2xl font-bold bg-transparent border-none focus:outline-none text-foreground placeholder:text-gray-400 w-full mb-4'
             />
 
-            {/* Toolbar */}
-            <div className='flex flex-wrap items-center gap-1 border-b border-gray-200 dark:border-gray-700 pb-3 mb-4'>
+            {/* Sticky Toolbar */}
+            <div className='sticky top-[73px] z-30 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md flex flex-wrap items-center gap-1 border-b border-gray-200 dark:border-gray-700 py-3 mb-4 -mx-6 px-6'>
               {/* Text Color */}
               <ToolbarButton onClick={() => {}} title='Text Color'>
                 <span className='font-serif text-lg'>A</span>
@@ -657,6 +718,39 @@ const EditBlogPage = () => {
             <button className='text-sm text-primary hover:underline mt-2'>
               Edit Cover Image
             </button>
+
+            {/* Cover Image Credit & Credit URL */}
+            <div className='mt-3 space-y-2'>
+              <div>
+                <label className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1'>
+                  Cover Image Credit
+                </label>
+                <input
+                  type='text'
+                  value={imageCredit}
+                  onChange={(e) => setImageCredit(e.target.value)}
+                  placeholder='e.g. Photo by John Doe on Unsplash'
+                  className='w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50'
+                />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1'>
+                  Credit Link (URL)
+                </label>
+                <input
+                  type='text'
+                  value={imageCreditUrl}
+                  onChange={(e) => setImageCreditUrl(e.target.value)}
+                  onBlur={(e) => {
+                    if (e.target.value) {
+                      setImageCreditUrl(formatExternalUrl(e.target.value));
+                    }
+                  }}
+                  placeholder='e.g. https://unsplash.com/@johndoe'
+                  className='w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50'
+                />
+              </div>
+            </div>
           </div>
 
           {/* Category */}
@@ -803,7 +897,59 @@ const EditBlogPage = () => {
         .dark .ProseMirror code {
           background: #374151;
         }
+        .ProseMirror img {
+          margin-top: 0 !important;
+          margin-bottom: 0.25rem !important;
+        }
+        .ProseMirror figure {
+          margin-top: 1.5rem !important;
+          margin-bottom: 1.5rem !important;
+        }
+        .ProseMirror figure img {
+          margin-bottom: 0.25rem !important;
+        }
+        .ProseMirror figcaption,
+        .blog-image-caption {
+          display: block !important;
+          color: #374151 !important;
+          font-style: italic !important;
+          text-align: left !important;
+          font-size: 0.75rem !important;
+          margin-top: 0.25rem !important;
+          margin-bottom: 1rem !important;
+          padding: 0.4rem 0.75rem !important;
+          background-color: #fff9e8 !important;
+          border-left: 4px solid #fbbe15 !important;
+          border-radius: 0 0.375rem 0.375rem 0 !important;
+        }
+        .ProseMirror figcaption a,
+        .blog-image-caption a {
+          color: #d97706 !important;
+          text-decoration: underline !important;
+          font-weight: 500 !important;
+        }
+        .dark .ProseMirror figcaption,
+        .dark .blog-image-caption {
+          color: #e5e7eb !important;
+          background-color: rgba(251, 190, 21, 0.15) !important;
+        }
+        .dark .ProseMirror figcaption a,
+        .dark .blog-image-caption a {
+          color: #fbbe15 !important;
+        }
       `}</style>
+      {/* Caption Modal */}
+      <ImageCaptionModal
+        isOpen={isCaptionModalOpen}
+        onClose={() => {
+          setIsCaptionModalOpen(false);
+          setUploadedImageUrl(null);
+        }}
+        imageUrl={uploadedImageUrl}
+        onSubmit={handleCaptionSubmit}
+      />
+      {/* Full Screen Image Uploading Overlay */}
+      <ImageUploadingOverlay isUploading={isUploadingImage} />
     </div>
   );
 };

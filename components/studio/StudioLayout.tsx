@@ -17,6 +17,7 @@ import {
   Plus,
 } from 'lucide-react';
 import {useMe} from '@/lib/api/services/auth.hooks';
+import { ensureHttps } from '@/lib/utils';
 
 interface StudioLayoutProps {
   children: React.ReactNode;
@@ -165,8 +166,7 @@ export function StudioLayout({
             <div className='relative w-8 h-8 rounded-full overflow-hidden border border-white/15 bg-zinc-800 shrink-0'>
               <Image
                 src={
-                  user?.avatar ||
-                  user?.profilePicture ||
+                  ensureHttps(user?.avatar || user?.profilePicture) ||
                   '/images/default-avatar.png'
                 }
                 alt={displayName || 'User Avatar'}
@@ -267,8 +267,7 @@ export function StudioLayout({
                 <div className='relative w-8 h-8 rounded-full overflow-hidden border border-white/15 bg-zinc-800'>
                   <Image
                     src={
-                      user?.avatar ||
-                      user?.profilePicture ||
+                      ensureHttps(user?.avatar || user?.profilePicture) ||
                       '/images/default-avatar.png'
                     }
                     alt={displayName || 'User Avatar'}

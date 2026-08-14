@@ -17,7 +17,7 @@ import {
   PlusCircle,
   Trash2,
 } from 'lucide-react';
-import {cn} from '@/lib/utils';
+import {cn, ensureHttps} from '@/lib/utils';
 import {useRestaurants} from '@/lib/api/services/restaurants.hooks';
 import {useGeolocation} from '@/hooks/useGeolocation';
 import {useAuth} from '@/context/AuthContext';
@@ -67,7 +67,21 @@ export function UploadDetails({
   onAddFiles,
   onRemoveFile,
 }: UploadDetailsProps) {
-  const isImage = files.length > 0 ? files[0].type.startsWith('image/') : true;
+  const isImage = useMemo(() => {
+    if (files.length > 0) {
+      return files[0].type.startsWith('image/');
+    }
+    if (existingMediaUrls.length > 0) {
+      const url = existingMediaUrls[0];
+      const isVideoUrl = Boolean(
+        url.match(/\.(mp4|mov|webm|avi|mkv)(\?.*)?$/i) ||
+        url.includes('/video/upload/') ||
+        url.includes('resource_type=video')
+      );
+      return !isVideoUrl;
+    }
+    return true;
+  }, [files, existingMediaUrls]);
   const totalSlides = files.length > 0 ? files.length : existingMediaUrls.length;
   const [activeIndex, setActiveIndex] = useState(0);
   const [captions, setCaptions] = useState<string[]>(() => {
@@ -195,6 +209,31 @@ export function UploadDetails({
     id: string;
     name: string;
   } | null>(initialRestaurant);
+
+  // Sync initial props asynchronously when fetched on edit post
+  useEffect(() => {
+    if (initialCaption) {
+      setGeneralCaption(initialCaption);
+    }
+  }, [initialCaption]);
+
+  useEffect(() => {
+    if (initialImageCaptions && initialImageCaptions.length > 0) {
+      setCaptions(initialImageCaptions);
+    }
+  }, [initialImageCaptions]);
+
+  useEffect(() => {
+    if (initialLocation) {
+      setSelectedLocations([initialLocation]);
+    }
+  }, [initialLocation]);
+
+  useEffect(() => {
+    if (initialRestaurant) {
+      setSelectedRestaurant(initialRestaurant);
+    }
+  }, [initialRestaurant]);
 
   // Video States
   const [isMuted, setIsMuted] = useState(false); // Unmuted by default as requested
@@ -674,7 +713,7 @@ export function UploadDetails({
                   {mediaUrls.map((url, idx) => (
                     <div key={idx} className='w-full h-full flex-shrink-0 relative flex items-center justify-center bg-black'>
                       <img
-                        src={url}
+                        src={ensureHttps(url)}
                         alt={`Preview ${idx + 1}`}
                         className='w-full h-full object-contain'
                         draggable={false}
@@ -784,7 +823,7 @@ export function UploadDetails({
               mediaUrls[0] ? (
                 <video
                   ref={videoRef}
-                  src={mediaUrls[0]}
+                  src={ensureHttps(mediaUrls[0])}
                   className='w-full h-full object-cover'
                   loop
                   autoPlay

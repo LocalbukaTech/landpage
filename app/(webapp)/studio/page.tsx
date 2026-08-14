@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useMemo, Suspense} from 'react';
+import {useState, useMemo, Suspense, useEffect} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {StudioLayout} from '@/components/studio/StudioLayout';
 import {StudioOverviewTab} from '@/components/studio/StudioOverviewTab';
@@ -59,10 +59,27 @@ function LocalbukaStudioDashboardContent() {
   }, [rawPostsData]);
 
   // Edit Post data
-  const {data: existingPostResponse} = usePost(editPostId || '', {
+  const {data: existingPostResponse, isLoading: isLoadingExistingPost} = usePost(editPostId || '', {
     enabled: Boolean(editPostId),
   });
   const existingPost = (existingPostResponse as any)?.data || existingPostResponse || null;
+
+  const handleTabChange = (tab: StudioTab) => {
+    setActiveTab(tab);
+    if (tab === 'overview') {
+      router.replace('/studio', {scroll: false});
+    } else if (tab !== 'edit') {
+      router.replace(`/studio?tab=${tab}`, {scroll: false});
+    }
+  };
+
+  useEffect(() => {
+    if (editPostId) {
+      setActiveTab('edit');
+    } else if (initialTabParam && ['overview', 'videos', 'images', 'create'].includes(initialTabParam)) {
+      setActiveTab(initialTabParam);
+    }
+  }, [editPostId, initialTabParam]);
 
   // Post Mutations
   const createPostMutation = useCreatePost();
@@ -356,9 +373,9 @@ function LocalbukaStudioDashboardContent() {
       activeTab={activeTab}
       onTabChange={(tab) => {
         if (editPostId && tab !== 'edit') {
-          router.push('/studio');
+          router.replace('/studio', {scroll: false});
         }
-        setActiveTab(tab);
+        handleTabChange(tab);
       }}
       onOpenCreate={handleOpenCreate}>
       {activeTab === 'overview' && (
@@ -367,7 +384,7 @@ function LocalbukaStudioDashboardContent() {
           postsList={postsList}
           isLoadingPosts={isLoadingPosts}
           onOpenCreate={handleOpenCreate}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           onEditClick={handleEditClick}
           onDeleteClick={(p) => setPostToDelete(p)}
         />
@@ -392,27 +409,34 @@ function LocalbukaStudioDashboardContent() {
       )}
 
       {(activeTab === 'create' || activeTab === 'edit') && (
-        <StudioEditorTab
-          step={step}
-          editPostId={editPostId}
-          existingPost={existingPost}
-          selectedFiles={selectedFiles}
-          cropIndices={cropIndices}
-          currentCropPointer={currentCropPointer}
-          isUploading={createPostMutation.isPending || updatePostMutation.isPending}
-          onAcceptTerms={handleAcceptTerms}
-          onRefuseTerms={handleRefuseTerms}
-          onFileSelect={handleFileSelect}
-          onCropSuccess={handleCropSuccess}
-          onPost={handlePost}
-          onAddFiles={handleAddFiles}
-          onRemoveFile={handleRemoveFile}
-          onDiscard={handleDiscard}
-          onSuccessDone={() => {
-            setActiveTab('overview');
-            refetchPosts();
-          }}
-        />
+        Boolean(editPostId) && (isLoadingExistingPost || !existingPost) ? (
+          <div className='flex flex-col items-center justify-center min-h-[400px] gap-3 bg-[#121217] border border-white/10 rounded-2xl p-12 my-6'>
+            <Loader2 className='w-8 h-8 animate-spin text-[#FBBE15]' />
+            <span className='text-xs font-semibold text-zinc-400'>Fetching post details...</span>
+          </div>
+        ) : (
+          <StudioEditorTab
+            step={step}
+            editPostId={editPostId}
+            existingPost={existingPost}
+            selectedFiles={selectedFiles}
+            cropIndices={cropIndices}
+            currentCropPointer={currentCropPointer}
+            isUploading={createPostMutation.isPending || updatePostMutation.isPending}
+            onAcceptTerms={handleAcceptTerms}
+            onRefuseTerms={handleRefuseTerms}
+            onFileSelect={handleFileSelect}
+            onCropSuccess={handleCropSuccess}
+            onPost={handlePost}
+            onAddFiles={handleAddFiles}
+            onRemoveFile={handleRemoveFile}
+            onDiscard={handleDiscard}
+            onSuccessDone={() => {
+              handleTabChange('overview');
+              refetchPosts();
+            }}
+          />
+        )
       )}
 
       {/* Delete Confirmation Alert Dialog */}

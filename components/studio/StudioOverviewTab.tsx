@@ -17,6 +17,8 @@ import {
   Eye,
 } from 'lucide-react';
 
+import {ensureHttps} from '@/lib/utils';
+
 interface StudioOverviewTabProps {
   metrics: StudioMetrics;
   postsList: Post[];
@@ -199,14 +201,14 @@ export function StudioOverviewTab({
                     title='Click to view post'>
                     {isVideo ? (
                       <video
-                        src={post.mediaUrl}
+                        src={ensureHttps(post.mediaUrl)}
                         className='w-full h-full object-cover'
                         muted
                         playsInline
                       />
                     ) : (
                       <img
-                        src={post.mediaUrl}
+                        src={ensureHttps(post.mediaUrl)}
                         alt={post.caption || 'Thumbnail'}
                         className='w-full h-full object-cover'
                       />

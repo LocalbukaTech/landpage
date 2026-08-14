@@ -4,6 +4,7 @@ import React from 'react';
 import {useRouter} from 'next/navigation';
 import type {Post} from '@/types/post';
 import {Image as ImageIcon, Pencil, Trash2, Eye} from 'lucide-react';
+import {ensureHttps} from '@/lib/utils';
 
 interface StudioImagesTabProps {
   imagePosts: Post[];
@@ -57,7 +58,7 @@ export function StudioImagesTab({
                 className='relative aspect-square bg-black overflow-hidden group/thumb cursor-pointer'
                 title='Click to view photo post'>
                 <img
-                  src={post.mediaUrl}
+                  src={ensureHttps(post.mediaUrl)}
                   alt={post.caption || 'Photo'}
                   className='w-full h-full object-cover'
                 />

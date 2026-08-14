@@ -30,7 +30,7 @@ import {useRequireAuth} from '@/hooks/useRequireAuth';
 const baseNavItems = [
   {icon: Home, label: 'Home', href: '/feeds'},
   {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
-  {icon: PlusCircle, label: 'Upload', href: '/upload'},
+  {icon: PlusCircle, label: 'Upload', href: '/studio'},
   {icon: Bell, label: 'Notification', href: '/notifications'},
   {icon: Bookmark, label: 'Saved', href: '/profile?tab=saved'},
   {icon: Users, label: 'Community', href: '#'},
@@ -47,7 +47,7 @@ const myRestaurantItem = {
 const mobileNavItems = [
   {icon: Home, label: 'Home', href: '/feeds'},
   {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
-  {icon: PlusCircle, label: 'Upload', href: '/upload'},
+  {icon: PlusCircle, label: 'Upload', href: '/studio'},
   {icon: Bell, label: 'Inbox', href: '/notifications'},
   {icon: User, label: 'Profile', href: '/profile'},
 ];
@@ -81,7 +81,7 @@ export function Sidebar() {
   // Inject My Restaurant nav item when authenticated
   const filteredBaseNavItems = isAuthenticated
     ? baseNavItems
-    : baseNavItems.filter((item) => item.label !== 'Upload');
+    : baseNavItems.filter((item) => item.label !== 'Studio' && item.label !== 'Upload');
 
   const navItems = isAuthenticated
     ? [...filteredBaseNavItems.slice(0, 2), myRestaurantItem, ...filteredBaseNavItems.slice(2)]
@@ -89,7 +89,7 @@ export function Sidebar() {
 
   const displayMobileNavItems = isAuthenticated
     ? mobileNavItems
-    : mobileNavItems.filter((item) => item.label !== 'Upload');
+    : mobileNavItems.filter((item) => item.label !== 'Studio' && item.label !== 'Upload');
 
   // Fetch unread notification count
   const {data: unreadCountResponse} = useUnreadCount();
@@ -371,7 +371,7 @@ export function Sidebar() {
           const isNotificationItem = item.label === 'Inbox';
           const activeState = isActive;
 
-          if (item.label === 'Upload') {
+          if (item.label === 'Studio' || item.label === 'Upload') {
             return (
               <Link
                 key={item.label}

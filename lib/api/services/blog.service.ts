@@ -13,7 +13,11 @@ export interface Blog {
   content: string;
   category?: string;
   image_url: string;
+  image_credit?: string;
+  image_credit_url?: string;
   read_time: number;
+  meta_title?: string;
+  meta_description?: string;
   created_at: string;
   updated_at: string;
   like_counts: string;  // API returns as string
@@ -48,6 +52,10 @@ export interface CreateBlogPayload {
   title: string;
   content: string;
   category: string;
+  meta_title?: string;
+  meta_description?: string;
+  image_credit?: string;
+  image_credit_url?: string;
 }
 
 export interface UpdateBlogPayload {
@@ -55,6 +63,10 @@ export interface UpdateBlogPayload {
   title?: string;
   content?: string;
   category?: string;
+  meta_title?: string;
+  meta_description?: string;
+  image_credit?: string;
+  image_credit_url?: string;
 }
 
 // ============================================
@@ -126,6 +138,27 @@ export interface CommentsListResponse {
 
 export const blogService = {
   /**
+   * Upload an image to Cloudinary via backend endpoint
+   * POST /images/upload (multipart/form-data)
+   */
+  uploadImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await api.post<{url: string; data?: any; message?: string}>(
+      "/images/upload",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return response.data?.url || (response as any).url;
+  },
+
+  /**
    * Create a new blog post
    * POST /blogs (multipart/form-data)
    */
@@ -135,6 +168,19 @@ export const blogService = {
     formData.append('title', data.title);
     formData.append('content', data.content);
     formData.append('category', data.category);
+    if (data.meta_title) {
+      formData.append('meta_title', data.meta_title);
+    }
+    if (data.meta_description) {
+      formData.append('meta_description', data.meta_description);
+    }
+    if (data.image_credit) {
+      formData.append("image_credit", data.image_credit);
+    }
+    if (data.image_credit_url) {
+      formData.append("image_credit_url", data.image_credit_url);
+    }
+
 
     return api.post<ApiResponse<Blog>>('/blogs', formData, {
       headers: {
@@ -163,6 +209,19 @@ export const blogService = {
     if (data.category !== undefined) {
       formData.append('category', data.category);
     }
+    if (data.meta_title !== undefined) {
+      formData.append('meta_title', data.meta_title);
+    }
+    if (data.meta_description !== undefined) {
+      formData.append('meta_description', data.meta_description);
+    }
+    if (data.image_credit !== undefined) {
+      formData.append("image_credit", data.image_credit);
+    }
+    if (data.image_credit_url !== undefined) {
+      formData.append("image_credit_url", data.image_credit_url);
+    }
+
 
     return api.put<ApiResponse<Blog>>(`/blogs/${id}`, formData, {
       headers: {

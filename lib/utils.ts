@@ -140,3 +140,30 @@ export function getPriceRangeForLevel(level: number | null | undefined): { min: 
       return { min: 0, max: 5000 };
   }
 }
+
+/**
+ * Strips HTML elements (including <img>, <figure>, <figcaption>, and other tags)
+ * to extract pure plain text content for card descriptions and excerpts.
+ */
+export function stripHtmlContent(html: string | null | undefined): string {
+  if (!html) return '';
+  return html
+    .replace(/<figure[^>]*>[\s\S]*?<\/figure>/gi, '')
+    .replace(/<img[^>]*>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Formats an external URL by prepending https:// if neither http:// nor https:// is present.
+ */
+export function formatExternalUrl(url: string | null | undefined): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}

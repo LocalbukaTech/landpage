@@ -7,6 +7,8 @@ import Link from 'next/link';
 import {motion} from 'framer-motion';
 import {ArrowRight, Check, ShieldAlert, Disc3} from 'lucide-react';
 
+import {useAcceptMusicPolicy} from '@/lib/api/services/auth.hooks';
+
 function MusicPolicyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -14,14 +16,20 @@ function MusicPolicyContent() {
   const flow = searchParams.get('flow');
 
   const [agreed, setAgreed] = useState(false);
+  const acceptMusicPolicyMutation = useAcceptMusicPolicy();
 
   const handleContinue = () => {
     if (!agreed) return;
-    const params = new URLSearchParams();
-    if (redirect) params.set('redirect', redirect);
-    if (flow) params.set('flow', flow);
-    const queryString = params.toString() ? `?${params.toString()}` : '';
-    router.push(`/signup/preferences${queryString}`);
+
+    acceptMusicPolicyMutation.mutate(undefined, {
+      onSettled: () => {
+        const params = new URLSearchParams();
+        if (redirect) params.set('redirect', redirect);
+        if (flow) params.set('flow', flow);
+        const queryString = params.toString() ? `?${params.toString()}` : '';
+        router.push(`/signup/preferences${queryString}`);
+      },
+    });
   };
 
   return (

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, ChevronRight, Loader2 } from 'lucide-react';
 import { useSignupMutation } from '@/lib/api/services/auth.hooks';
+import { useValidateReferralCode } from '@/lib/api/services/referral.hooks';
 import { useToast } from '@/hooks/use-toast';
 import { API_BASE_URL } from '@/lib/api/client';
 import { trackEvent } from '@/lib/analytics';
@@ -37,55 +38,59 @@ const SignUpContent = () => {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     fullName: '',
-    referrerName: '',
+    referralCode: '',
     email: '',
     password: '',
   });
 
-  // const [referrerStatus, setReferrerStatus] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
-  // const [referrerMessage, setReferrerMessage] = useState('');
-  // const [referrerData, setReferrerData] = useState({ name: '', avatar: '' });
-  // const lastValidReferrer = useRef<string>('');
+  // Auto-fill referral code from ?ref= URL query param (for shared referral links)
+  useEffect(() => {
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setFormData(prev => ({...prev, referralCode: refCode}));
+    }
+  }, [searchParams]);
 
-  // useEffect(() => {
-  //   const checkReferrer = async () => {
-  //     if (!formData.referrerName) {
-  //       setReferrerStatus('idle');
-  //       setReferrerMessage('');
-  //       lastValidReferrer.current = '';
-  //       return;
-  //     }
+  const validateMutation = useValidateReferralCode();
+  const [referrerStatus, setReferrerStatus] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
+  const [referrerName, setReferrerName] = useState('');
+  const [referrerMessage, setReferrerMessage] = useState('');
 
-  //     setReferrerStatus('loading');
+  useEffect(() => {
+    const code = formData.referralCode.trim();
+    if (!code) {
+      setReferrerStatus('idle');
+      setReferrerMessage('');
+      return;
+    }
 
-  //     // Simulate API call or validation
-  //     if (/\d/.test(formData.referrerName)) {
-  //       setReferrerStatus('invalid');
-  //       setReferrerMessage('This code is not valid. Check it and try again.');
-  //       setReferrerData({ name: '', avatar: '' });
-  //       lastValidReferrer.current = '';
-  //     } else if (formData.referrerName.length >= 10) {
-  //       setReferrerStatus('valid');
-  //       setReferrerMessage('This code is valid.');
-  //       const name = formData.referrerName;
-  //       const avatarSrc = '/images/referrer-avatar.jpg';
-  //       setReferrerData({ name, avatar: avatarSrc });
+    setReferrerStatus('loading');
+    const timeoutId = setTimeout(() => {
+      validateMutation.mutate(
+        { referralCode: code },
+        {
+          onSuccess: (res) => {
+            if (res?.data?.valid !== false) {
+              setReferrerStatus('valid');
+              setReferrerName(res?.data?.referrerName || '');
+              setReferrerMessage(res?.data?.message || 'Referral code is valid!');
+            } else {
+              setReferrerStatus('invalid');
+              setReferrerName('');
+              setReferrerMessage(res?.data?.message || 'This code is not valid. Check it and try again.');
+            }
+          },
+          onError: (err: any) => {
+            setReferrerStatus('invalid');
+            setReferrerName('');
+            setReferrerMessage(err?.response?.data?.message || 'This code is not valid. Check it and try again.');
+          },
+        }
+      );
+    }, 500);
 
-
-  //     } else {
-  //       setReferrerStatus('invalid');
-  //       setReferrerMessage('This code is not valid. Check it and try again.');
-  //       setReferrerData({ name: '', avatar: '' });
-  //       lastValidReferrer.current = '';
-  //     }
-  //   };
-
-  //   const timeoutId = setTimeout(() => {
-  //     checkReferrer();
-  //   }, 500); // 500ms debounce
-
-  //   return () => clearTimeout(timeoutId);
-  // }, [formData.referrerName, toast]);
+    return () => clearTimeout(timeoutId);
+  }, [formData.referralCode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -100,7 +105,7 @@ const SignUpContent = () => {
       {
         email: formData.email,
         fullName: formData.fullName,
-        referrerName: formData.referrerName || undefined,
+        referralCode: formData.referralCode || undefined,
         password: formData.password,
       },
       {
@@ -188,18 +193,11 @@ const SignUpContent = () => {
         <div className='w-full max-w-md'>
 
           {/* Referrer Banner */}
-          {/* {referrerStatus === 'valid' && (
-            <div className='flex items-center justify-between bg-[#f6fcf8] border border-green-200 dark:bg-green-900/20 dark:border-green-800 rounded-full px-4 py-2 mb-8'>
+          {referrerStatus === 'valid' && (
+            <div className='flex items-center justify-between bg-[#f6fcf8] border border-green-200 dark:bg-green-900/20 dark:border-green-800 rounded-xl px-4 py-2 mb-8 animate-in fade-in slide-in-from-top-2 duration-300'>
               <div className='flex items-center gap-3'>
-                <Image
-                  src={referrerData.avatar || '/images/referrer-avatar.jpg'}
-                  alt='Referrer'
-                  width={36}
-                  height={36}
-                  className='rounded-full object-cover w-9 h-9'
-                />
                 <span className='text-xs sm:text-sm text-emerald-900 dark:text-emerald-50'>
-                  <span className='font-semibold text-gray-900 dark:text-white'>{referrerData.name}</span> invited you to join localbuka.<br />
+                  <span className='font-semibold text-gray-900 dark:text-white capitalize'>{referrerName || 'A friend'}</span> invited you to join localbuka.<br />
                   <span className='text-gray-500 dark:text-gray-400'>Sign up to claim your first reward.</span>
                 </span>
               </div>
@@ -211,7 +209,7 @@ const SignUpContent = () => {
                 className='w-6 h-6 flex-shrink-0 ml-2'
               />
             </div>
-          )} */}
+          )}
 
           <h1 className='text-2xl sm:text-3xl font-bold text-[#0A1F44] dark:text-white mb-2'>
             Create an account
@@ -286,32 +284,16 @@ const SignUpContent = () => {
             <div className='relative'>
               <input
                 type='text'
-                name='referrerName'
-                placeholder='Referrer Name'
-                value={formData.referrerName}
+                name='referralCode'
+                placeholder='Referral Code (optional) e.g. REF-CYM67C'
+                value={formData.referralCode}
                 onChange={handleInputChange}
                 className={`w-full px-4 py-3 border rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors peer`}
               />
-              {/* {formData.referrerName && (
-                <label className={`absolute -top-2 left-3 px-1 text-xs transition-colors ${referrerStatus === 'valid' ? 'text-green-600 bg-[#f6fcf8] dark:bg-[#072412]' :
-                  referrerStatus === 'invalid' ? 'text-red-500 bg-[#fef5f5] dark:bg-[#2A0808]' :
-                    'text-primary bg-white dark:bg-gray-900'
-                  }`}>
-                  Referrer name
-                </label>
-              )}
               {referrerStatus === 'loading' && (
                 <div className='flex items-center gap-1.5 mt-1.5 px-1'>
                   <Loader2 className='w-4 h-4 animate-spin text-gray-500' />
-                  <span className='text-sm text-gray-500'>Verifying code...</span>
-                </div>
-              )}
-              {referrerStatus === 'valid' && (
-                <div className='flex items-center gap-1.5 mt-1.5 px-1'>
-                  <svg className='w-4 h-4 text-green-600 dark:text-green-500' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M5 13l4 4L19 7' />
-                  </svg>
-                  <span className='text-sm text-green-600 dark:text-green-500'>{referrerMessage}</span>
+                  <span className='text-sm text-gray-500'>Verifying referral code...</span>
                 </div>
               )}
               {referrerStatus === 'invalid' && (
@@ -321,7 +303,7 @@ const SignUpContent = () => {
                   </svg>
                   <span className='text-sm text-red-500'>{referrerMessage}</span>
                 </div>
-              )} */}
+              )}
             </div>
 
             <div className='relative'>

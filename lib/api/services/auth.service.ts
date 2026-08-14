@@ -40,6 +40,7 @@ export interface User {
   referrerName?: string;
   isVerified: boolean;
   hasAcceptedContentPolicy?: boolean;
+  hasAcceptedMusicPolicy?: boolean;
   created_at: string;
   updated_at: string;
   // Optional fields that might come from API or for compatibility
@@ -74,7 +75,7 @@ export interface SigninResponse {
 export interface SignupPayload {
   email: string;
   fullName: string;
-  referrerName?: string;
+  referralCode?: string;
   password: string;
 }
 
@@ -190,6 +191,12 @@ export const userAuthService = {
   acceptContentPolicy: () =>
     api.patch<ApiResponse<{hasAcceptedContentPolicy: boolean}>>(
       '/users/me/content-policy',
+    ),
+
+  /** PATCH /users/me/music-policy — Accept music policy */
+  acceptMusicPolicy: () =>
+    api.patch<ApiResponse<{hasAcceptedMusicPolicy: boolean}>>(
+      '/users/me/music-policy',
     ),
 
   /** PUT /onboarding/preferences — Save user onboarding preferences */

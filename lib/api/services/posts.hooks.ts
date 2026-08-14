@@ -143,6 +143,20 @@ export const useCreatePost = () => {
   });
 };
 
+/** Update a post */
+export const useUpdatePost = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({id, data}: {id: string; data: FormData | Record<string, any>}) =>
+      postsService.updatePost(id, data),
+    onSuccess: (_, {id}) => {
+      queryClient.invalidateQueries({queryKey: queryKeys.posts.detail(id)});
+      queryClient.invalidateQueries({queryKey: queryKeys.posts.all});
+      queryClient.invalidateQueries({queryKey: queryKeys.users.all});
+    },
+  });
+};
+
 /** Delete a post */
 export const useDeletePost = () => {
   const queryClient = useQueryClient();

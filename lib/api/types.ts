@@ -110,6 +110,13 @@ export const queryKeys = {
       [...queryKeys.posts.all, 'comments', postId, filters] as const,
   },
 
+  // Referrals
+  referrals: {
+    all: ['referrals'] as const,
+    code: () => [...queryKeys.referrals.all, 'code'] as const,
+    dashboard: () => [...queryKeys.referrals.all, 'dashboard'] as const,
+  },
+
   // Add more entity types as needed
 } as const;
 

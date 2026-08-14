@@ -4,6 +4,7 @@ import React from 'react';
 import {useRouter} from 'next/navigation';
 import type {Post} from '@/types/post';
 import {Video, Play, Pencil, Trash2, Eye} from 'lucide-react';
+import {ensureHttps} from '@/lib/utils';
 
 interface StudioVideosTabProps {
   videoPosts: Post[];
@@ -57,7 +58,7 @@ export function StudioVideosTab({
                 className='relative aspect-square bg-black overflow-hidden group/thumb cursor-pointer'
                 title='Click to view video'>
                 <video
-                  src={post.mediaUrl}
+                  src={ensureHttps(post.mediaUrl)}
                   className='w-full h-full object-cover'
                   muted
                   playsInline

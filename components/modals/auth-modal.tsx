@@ -48,14 +48,16 @@ export function AuthModal() {
   useEffect(() => {
     const code = signupData.referralCode.trim();
     if (!code) {
-      setReferrerStatus('idle');
-      setReferrerName('');
-      setReferrerMessage('');
-      return;
+      const timer = setTimeout(() => {
+        setReferrerStatus('idle');
+        setReferrerName('');
+        setReferrerMessage('');
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
-    setReferrerStatus('loading');
     const timeoutId = setTimeout(() => {
+      setReferrerStatus('loading');
       validateMutation.mutate(
         { referralCode: code },
         {
@@ -80,7 +82,7 @@ export function AuthModal() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [signupData.referralCode]);
+  }, [signupData.referralCode, validateMutation]);
 
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetCode, setResetCode] = useState('');

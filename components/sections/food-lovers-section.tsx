@@ -1,6 +1,4 @@
-import { Images } from '@/public/images';
 import Image from 'next/image';
-import SectionHeader from '../SectionHeader';
 import { Reveal } from '@/components/anim/Reveal';
 import { motion } from 'framer-motion';
 

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 
 interface ImageCaptionModalProps {
   isOpen: boolean;
@@ -32,7 +31,10 @@ export const ImageCaptionModal: React.FC<ImageCaptionModalProps> = ({
   // Reset caption when modal opens with new image
   useEffect(() => {
     if (isOpen) {
-      setCaption('');
+      const timer = setTimeout(() => {
+        setCaption('');
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -64,6 +66,7 @@ export const ImageCaptionModal: React.FC<ImageCaptionModalProps> = ({
 
         {/* Image Preview Box */}
         <div className="relative my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 max-h-60 flex items-center justify-center p-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt="Uploaded preview"

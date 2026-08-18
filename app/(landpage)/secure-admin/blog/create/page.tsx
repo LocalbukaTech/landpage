@@ -98,7 +98,7 @@ const CreateBlogContent = () => {
   
   // Debug modal state
   const [showPayloadModal, setShowPayloadModal] = useState(false);
-  const [payloadJson, setPayloadJson] = useState('');
+  const [payloadJson, _setPayloadJson] = useState('');
   const [copied, setCopied] = useState(false);
 
   // Content image caption & uploading overlay state
@@ -946,6 +946,7 @@ const CreateBlogContent = () => {
                 {/* Cover Image */}
                 {coverImage && (
                   <div className='mb-6 rounded-xl overflow-hidden'>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={coverImage} 
                       alt='Cover' 

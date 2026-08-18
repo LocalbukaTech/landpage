@@ -151,6 +151,7 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onTog
             {/* Video Thumbnail */}
             {/* Media Rendering (Image or Video) */}
             {post.mediaType === 'image' || !post.mediaUrl.match(/\.(mp4|mov|webm)$/i) ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={post.mediaUrl}
                 className="w-full h-full object-cover"

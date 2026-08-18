@@ -538,7 +538,6 @@ export default function RestaurantDetailPage() {
   useEffect(() => {
     if (!isUuid && id) {
       let active = true;
-      setIsAutoImporting(true);
       importRestaurant(id)
         .then((res: any) => {
           if (!active) return;

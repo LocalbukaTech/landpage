@@ -1,0 +1,16 @@
+name: Production Safety Guardrail
+on:
+  push:
+    branches: [ main ] # Triggers if anyone tries to push directly to main
+
+jobs:
+  block-direct-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail Build on Direct Main Push
+        # If the commit came from anyone other than you, intentionally break the build
+        if: github.actor != 'codydematth'
+        run: |
+          echo "ERR: Direct pushes to main are strictly prohibited for interns!"
+          echo "Please create a branch and open a Pull Request."
+          exit 1

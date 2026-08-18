@@ -14,7 +14,6 @@ import {
   ChevronRight,
   Menu,
   X,
-  Plus,
 } from 'lucide-react';
 import {useMe} from '@/lib/api/services/auth.hooks';
 import { ensureHttps } from '@/lib/utils';

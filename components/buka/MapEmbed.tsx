@@ -13,20 +13,6 @@ interface RouteStep {
   location: [number, number]; // [lng, lat] from OSRM
 }
 
-// ---- Helper: distance between two [lat,lng] points in meters ----
-function haversineDistance(a: [number, number], b: [number, number]): number {
-  const R = 6371000;
-  const toRad = (x: number) => (x * Math.PI) / 180;
-  const dLat = toRad(b[0] - a[0]);
-  const dLon = toRad(b[1] - a[1]);
-  const lat1 = toRad(a[0]);
-  const lat2 = toRad(b[0]);
-  const sinHalf =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  return R * 2 * Math.atan2(Math.sqrt(sinHalf), Math.sqrt(1 - sinHalf));
-}
-
 // ---- Hook: fit map once when route loads ----
 function AdjustMapBounds({
   origin,
@@ -86,7 +72,7 @@ export function MapEmbed({
   ]);
 
   const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
-  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
+  const [_isLoadingRoute, setIsLoadingRoute] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [routeInfo, setRouteInfo] = useState<{
     duration: number;
@@ -154,9 +140,9 @@ export function MapEmbed({
           setLocationError(
             'Unable to retrieve your location. Please check browser permissions.',
           );
-        } else if (!userLocation) {
+        } else {
           // If the browser times out, give them a mock location in Lagos so the route can still draw
-          setUserLocation([6.5244, 3.3792]);
+          setUserLocation((prev) => prev || [6.5244, 3.3792]);
         }
       },
       {enableHighAccuracy: false, maximumAge: 10000, timeout: 5000},
@@ -233,7 +219,7 @@ export function MapEmbed({
         }
       })();
     }
-  }, [destinationLat, destinationLng, destinationAddress, showRoute]);
+  }, [activeDestination, destinationAddress, showRoute]);
 
   // ---- Fetch OSRM route with step instructions ----
   useEffect(() => {
@@ -522,7 +508,6 @@ export function MapEmbed({
       <div className='absolute bottom-6 right-3 z-1000'>
         <button
           onClick={() => {
-            const destinationLat: [number, number] = activeDestination;
             setRecenterTrigger((prev) => prev + 1);
           }}
           className='w-12 h-12 rounded-full bg-white text-zinc-700 shadow-lg flex items-center justify-center hover:bg-zinc-50 transition-all border-none cursor-pointer'

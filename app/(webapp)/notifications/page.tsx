@@ -1,6 +1,6 @@
 'use client';
 
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 import {Loader2, X} from 'lucide-react';
 import Image from 'next/image';
 import {useRouter} from 'next/navigation';
@@ -11,7 +11,6 @@ import {
   useMarkAsRead,
 } from '@/lib/api/services/notifications.hooks';
 import {useFollowUser, useUserProfile} from '@/lib/api/services/profile.hooks';
-import {useAuth} from '@/context/AuthContext';
 import {formatDistanceToNow} from 'date-fns';
 import {MainLayout} from '@/components/layout/MainLayout';
 import type {Notification} from '@/types/notification';
@@ -243,8 +242,6 @@ function NotificationItem({
 
 // ─── Page ───────────────────────────────────────────────────────────────────────
 export default function NotificationsPage() {
-  const {user} = useAuth();
-
   const {data: notificationsEntry, isLoading} = useNotifications({
     page: 1,
     pageSize: 50,

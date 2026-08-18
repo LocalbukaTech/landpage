@@ -74,11 +74,14 @@ function LocalbukaStudioDashboardContent() {
   };
 
   useEffect(() => {
-    if (editPostId) {
-      setActiveTab('edit');
-    } else if (initialTabParam && ['overview', 'videos', 'images', 'create'].includes(initialTabParam)) {
-      setActiveTab(initialTabParam);
-    }
+    const timer = setTimeout(() => {
+      if (editPostId) {
+        setActiveTab('edit');
+      } else if (initialTabParam && ['overview', 'videos', 'images', 'create'].includes(initialTabParam)) {
+        setActiveTab(initialTabParam);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [editPostId, initialTabParam]);
 
   // Post Mutations

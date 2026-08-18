@@ -6,10 +6,10 @@ import {Navbar} from '@/components/layout/navbar';
 import SectionHeader from '@/components/SectionHeader';
 import Image from 'next/image';
 import Link from 'next/link';
-import {ChevronLeft, ChevronRight, Loader2, Calendar, FileText} from 'lucide-react';
+import {ChevronLeft, ChevronRight, Loader2, FileText} from 'lucide-react';
 import {useBlogsQuery} from '@/lib/api/services/blog.hooks';
 import {format} from 'date-fns';
-import {slugify, stripHtmlContent} from '@/lib/utils';
+import {stripHtmlContent} from '@/lib/utils';
 
 const POSTS_PER_PAGE = 9;
 

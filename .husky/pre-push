@@ -1,8 +1,8 @@
 
 echo "Checking code quality before pushing..."
 
-# 1. Run linter and formatting on changed files
-npx lint-staged
+# 1. Run eslint manually on the whole project (or src directory)
+yarn lint
 
 # 2. Run the Next.js production build to catch strict TypeScript/build errors
 yarn build

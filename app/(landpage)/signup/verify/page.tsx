@@ -38,18 +38,12 @@ const VerifyPageContent = () => {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [error, setError] = useState('');
   const [showCodeModal, setShowCodeModal] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationCode, _setVerificationCode] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
-
-  // Extract code from message (e.g., "Your verification code is 1234")
-  const extractCodeFromMessage = (message: string): string => {
-    const codeMatch = message.match(/\b\d{4,6}\b/);
-    return codeMatch ? codeMatch[0] : '';
-  };
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) {
@@ -133,22 +127,12 @@ const VerifyPageContent = () => {
       {email},
       {
         onSuccess: (response) => {
-          // Extract code from data.message (API returns: { message: "...", data: { message: "...OTP is: \"1234\"" } })
-          const dataMessage = response?.data?.message || '';
-          const code = extractCodeFromMessage(dataMessage);
-          
-          // if (code) {
-          //   setVerificationCode(code);
-          //   // setShowCodeModal(true);
-          //   setOtp(['', '', '', '']);
-          // } else {
-            toast({
-              title: 'Code sent! 📧',
-              description: response?.message || 'A new verification code has been sent to your email.',
-            });
-            setOtp(['', '', '', '']);
-            inputRefs.current[0]?.focus();
-          // }
+          toast({
+            title: 'Code sent! 📧',
+            description: response?.message || 'A new verification code has been sent to your email.',
+          });
+          setOtp(['', '', '', '']);
+          inputRefs.current[0]?.focus();
         },
         onError: (err: any) => {
           const message =

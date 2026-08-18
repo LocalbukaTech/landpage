@@ -86,7 +86,7 @@ const BlogListPage = () => {
         description: 'The blog post has been deleted successfully.',
       });
       refetch();
-    } catch (error) {
+    } catch {
       toast({
         title: 'Delete failed',
         description: 'Failed to delete the blog post. Please try again.',

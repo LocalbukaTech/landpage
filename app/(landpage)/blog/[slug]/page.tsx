@@ -27,8 +27,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
         images: [blog.image_url],
       },
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_error) {
+  } catch {
     return {
       title: 'Blog Not Found | Localbuka',
     };

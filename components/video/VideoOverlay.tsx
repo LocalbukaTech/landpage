@@ -1,12 +1,11 @@
 'use client';
 
-import {BadgeCheck, Store, ChevronRight, Music, Music2, Music3} from 'lucide-react';
+import {BadgeCheck, Store, ChevronRight} from 'lucide-react';
 import {useState} from 'react';
 import type {Post} from '@/types/post';
 import {cn, formatRelativeShort} from '@/lib/utils';
 import {useRouter} from 'next/navigation';
 import {useAuth} from '@/context/AuthContext';
-import {useRequireAuth} from '@/hooks/useRequireAuth';
 import Link from 'next/link';
 import { BsMusicNote } from 'react-icons/bs';
 
@@ -27,7 +26,6 @@ export function VideoOverlay({
 }: VideoOverlayProps) {
   const router = useRouter();
   const {user} = useAuth();
-  const {requireAuth} = useRequireAuth();
   const [isExpanded, setIsExpanded] = useState(false);
   if (!post) return null;
 

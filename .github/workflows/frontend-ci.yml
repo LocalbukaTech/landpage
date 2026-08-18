@@ -1,0 +1,27 @@
+name: Frontend Guardrails
+on:
+  push:
+    branches: [ intern-dev ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  verify-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+          
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+        
+      - name: Run Linter
+        run: yarn lint
+        
+      - name: Verify TypeScript & Build
+        run: yarn build

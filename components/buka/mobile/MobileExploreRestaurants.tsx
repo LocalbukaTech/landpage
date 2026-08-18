@@ -14,17 +14,6 @@ import {CgSpinner} from 'react-icons/cg';
 import type {BukaRestaurant} from '@/components/buka/BukaCard';
 import {MobileRestaurantRow} from './MobileRestaurantRow';
 
-const CUISINE_CHIPS = [
-  'All',
-  'Nigerian',
-  'Yoruba',
-  'Igbo',
-  'Hausa',
-  'Calabar',
-  'Edo',
-  'Continental',
-];
-
 const RATING_CHIPS = [
   'All Ratings',
   '⭐ 5',

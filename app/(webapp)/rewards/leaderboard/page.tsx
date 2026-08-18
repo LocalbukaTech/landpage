@@ -72,6 +72,7 @@ export default function LeaderboardPage() {
               {/* Crown zone: always 26px tall; crown only shows for rank 1 */}
               <div style={{ height: 26, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: 4 }}>
                 {earner.rank === 1 && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img src='/images/crown.png' alt='crown' width={30} height={22} />
                 )}
               </div>
@@ -79,6 +80,7 @@ export default function LeaderboardPage() {
               {/* Photo circle + rank badge */}
               <div className='relative' style={{ width: 74, height: 74 }}>
                 <div className='absolute inset-0 rounded-full overflow-hidden border-2 border-[#FBBE15] bg-zinc-700'>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={earner.avatar}
                     alt={earner.name}
@@ -134,6 +136,7 @@ export default function LeaderboardPage() {
                   {/* Avatar with rank badge */}
                   <div className='relative shrink-0'>
                     <div className='w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-zinc-700'>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={row.avatar}
                         alt={row.name}

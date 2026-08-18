@@ -40,7 +40,6 @@ export function VideoFeed({
   isLoadingMore,
 }: VideoFeedProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isGlobalMuted, setIsGlobalMuted] = useState(() => {
     if (typeof window === 'undefined') return initialMuted;
 
@@ -67,13 +66,11 @@ export function VideoFeed({
   const handlePrevious = useCallback(() => {
     if (currentIndex > 0 && !isTransitioningRef.current) {
       isTransitioningRef.current = true;
-      setIsTransitioning(true);
       setCurrentIndex((prev) => prev - 1);
       if (transitionTimeoutRef.current)
         clearTimeout(transitionTimeoutRef.current);
       transitionTimeoutRef.current = setTimeout(() => {
         isTransitioningRef.current = false;
-        setIsTransitioning(false);
       }, 600);
     }
   }, [currentIndex]);
@@ -81,13 +78,11 @@ export function VideoFeed({
   const handleNext = useCallback(() => {
     if (currentIndex < posts.length - 1 && !isTransitioningRef.current) {
       isTransitioningRef.current = true;
-      setIsTransitioning(true);
       setCurrentIndex((prev) => prev + 1);
       if (transitionTimeoutRef.current)
         clearTimeout(transitionTimeoutRef.current);
       transitionTimeoutRef.current = setTimeout(() => {
         isTransitioningRef.current = false;
-        setIsTransitioning(false);
       }, 600);
     }
   }, [currentIndex, posts.length]);
@@ -175,6 +170,18 @@ export function VideoFeed({
     };
   }, [handleNext, handlePrevious, isCommentsOpen]);
 
+  const {requireAuth} = useRequireAuth();
+
+  const currentPost = posts && posts.length > 0 ? posts[Math.min(currentIndex, posts.length - 1)] : null;
+
+  const handleLikeToggle = useCallback(() => {
+    requireAuth(() => {
+      if (currentPost?.id) {
+        toggleLikeMutation.mutate(currentPost.id);
+      }
+    });
+  }, [requireAuth, currentPost, toggleLikeMutation]);
+
   if (!posts || posts.length === 0) {
     return (
       <div className='flex items-center justify-center h-full w-full text-zinc-500 text-base'>
@@ -183,22 +190,11 @@ export function VideoFeed({
     );
   }
 
-  const currentPost = posts[Math.min(currentIndex, posts.length - 1)];
-
   const fadeVariants = {
     enter: {opacity: 0},
     center: {opacity: 1},
     exit: {opacity: 0},
   };
-
-  const {requireAuth} = useRequireAuth();
-  const handleLikeToggle = useCallback(() => {
-    requireAuth(() => {
-      if (currentPost?.id) {
-        toggleLikeMutation.mutate(currentPost.id);
-      }
-    });
-  }, [requireAuth, currentPost?.id, toggleLikeMutation]);
 
   return (
     <div className='fixed top-14 bottom-16 left-0 right-0 flex items-center justify-center md:static md:top-auto md:bottom-auto md:left-auto md:right-auto md:w-full md:h-[calc(100vh-3rem)] md:gap-4 md:max-h-[850px] overscroll-none'>

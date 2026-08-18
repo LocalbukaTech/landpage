@@ -207,6 +207,7 @@ export function StudioOverviewTab({
                         playsInline
                       />
                     ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={ensureHttps(post.mediaUrl)}
                         alt={post.caption || 'Thumbnail'}

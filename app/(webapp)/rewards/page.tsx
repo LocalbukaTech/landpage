@@ -1,7 +1,9 @@
 'use client';
 
 import { MainLayout } from '@/components/layout/MainLayout';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { RewardsSupport } from '@/components/settings/RewardsSupport';
+import { Gift } from 'lucide-react';
 
 export default function RewardsPage() {
   return (
@@ -29,8 +31,20 @@ export default function RewardsPage() {
         </div>
 
         {/* Body — RewardsSupport fills in the structured sections */}
-        <div className='pb-20' id='rewards-content-container'>
+        {/* <div className='pb-20' id='rewards-content-container'>
           <RewardsSupport mode='refer' />
+        </div> */}
+
+        <div className='flex flex-col items-center justify-center py-20 px-4 text-center'>
+          <div className='w-16 h-16 rounded-2xl bg-[#FBBE15]/10 text-[#FBBE15] flex items-center justify-center mb-4'>
+            <Gift size={32} />
+          </div>
+          <h2 className='text-xl md:text-2xl font-bold text-white mb-2'>
+            Coming Soon
+          </h2>
+          <p className='text-sm text-zinc-400 max-w-md leading-relaxed'>
+            We&apos;re putting the finishing touches on our Refer &amp; Earn reward program. You will soon be able to earn points, unlock badges, and redeem exciting rewards!
+          </p>
         </div>
       </div>
     </MainLayout>

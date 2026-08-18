@@ -7,7 +7,6 @@ import {SettingsSidebar} from '@/components/settings/SettingsSidebar';
 import {AccountInformation} from '@/components/settings/AccountInformation';
 import {NotificationsPrivacy} from '@/components/settings/NotificationsPrivacy';
 import {HelpSupport} from '@/components/settings/HelpSupport';
-
 export default function SettingsPage() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState('account');

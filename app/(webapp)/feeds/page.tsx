@@ -52,22 +52,34 @@ function HomeContent() {
   useEffect(() => {
     if (typeParam === 'following') {
       if (!isAuthenticated) {
-        setFeedType('foryou');
-        requireAuth(() => {
-          setFeedType('following');
-        });
+        const timer = setTimeout(() => {
+          setFeedType('foryou');
+          requireAuth(() => {
+            setFeedType('following');
+          });
+        }, 0);
+        return () => clearTimeout(timer);
       } else {
-        setFeedType('following');
+        const timer = setTimeout(() => {
+          setFeedType('following');
+        }, 0);
+        return () => clearTimeout(timer);
       }
     } else if (typeParam === 'foryou') {
-      setFeedType('foryou');
+      const timer = setTimeout(() => {
+        setFeedType('foryou');
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [typeParam, isAuthenticated]);
+  }, [typeParam, isAuthenticated, requireAuth]);
 
   // Handle runtime logout/auth change state sync
   useEffect(() => {
     if (feedType === 'following' && !isAuthenticated) {
-      setFeedType('foryou');
+      const timer = setTimeout(() => {
+        setFeedType('foryou');
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [feedType, isAuthenticated]);
 

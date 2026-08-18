@@ -32,7 +32,7 @@ export function Navbar() {
   const handleNavClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
     href: string,
-    label: string
+    _label: string
   ) => {
 
     if (href.startsWith('#')) {

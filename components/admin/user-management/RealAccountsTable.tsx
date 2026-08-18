@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronUp, ChevronDown, ArrowUpDown, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";

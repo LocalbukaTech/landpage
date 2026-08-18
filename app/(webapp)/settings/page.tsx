@@ -6,7 +6,7 @@ import {ArrowLeft, Search} from 'lucide-react';
 import {SettingsSidebar} from '@/components/settings/SettingsSidebar';
 import {AccountInformation} from '@/components/settings/AccountInformation';
 import {NotificationsPrivacy} from '@/components/settings/NotificationsPrivacy';
-import {RewardsSupport} from '@/components/settings/RewardsSupport';
+import {HelpSupport} from '@/components/settings/HelpSupport';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -86,7 +86,7 @@ export default function SettingsPage() {
             />
           )}
           {activeSection === 'notifications' && <NotificationsPrivacy />}
-          {activeSection === 'support' && <RewardsSupport mode='support' />}
+          {activeSection === 'support' && <HelpSupport />}
         </div>
       </div>
     </div>

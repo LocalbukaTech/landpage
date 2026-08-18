@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {X, Loader2} from 'lucide-react';
 import Image from 'next/image';
 import {cn} from '@/lib/utils';
@@ -10,7 +10,6 @@ import {
   useMarkAsRead,
 } from '@/lib/api/services/notifications.hooks';
 import {useFollowUser, useUserProfile} from '@/lib/api/services/profile.hooks';
-import {useAuth} from '@/context/AuthContext';
 import {useRouter} from 'next/navigation';
 import {formatDistanceToNow} from 'date-fns';
 import type {Notification} from '@/types/notification';
@@ -83,9 +82,6 @@ export function NotificationOverlay({
     pageSize: 50,
   });
   const markAllAsRead = useMarkAllAsRead();
-  const {user} = useAuth();
-
-
 
   const notifications = (notificationsEntry as any)?.data?.data || [];
 

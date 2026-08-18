@@ -3,7 +3,7 @@ import {Button} from '@/components/ui/button';
 import PlayStore from '@/public/svg/PlayStore';
 import {Images} from '@/public/images';
 import AppleStore from '@/public/svg/AppleStore';
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {Reveal, RevealStagger} from '@/components/anim/Reveal';
 import {motion, AnimatePresence} from 'framer-motion';
 
@@ -50,7 +50,7 @@ export function AppDownloadSection() {
   const [activeScreen, setActiveScreen] = useState<MockScreen>('feed');
   const [reactions, setReactions] = useState<Reaction[]>([]);
 
-  const addReaction = (e: React.MouseEvent) => {
+  const addReaction = (_e?: React.MouseEvent) => {
     // Prevent reaction click on "Coming Soon" card button or footer links if clicked
     const emojis = ['❤️', '🔥', '😋', '😍', '👍'];
     const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];

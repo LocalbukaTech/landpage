@@ -17,17 +17,6 @@ export interface FilterState {
   cuisines: string[];
 }
 
-const CUISINE_OPTIONS = [
-  'Nigerian Cuisine',
-  'Yoruba Cuisine',
-  'Igbo Cuisine',
-  'Hausa Cuisine',
-  'Edo Cuisine',
-  'Efik Cuisine',
-  'Urhobo Cuisine',
-  'Intercontinental Cuisine',
-];
-
 const PRICE_MIN = 0;
 const PRICE_MAX = 350000;
 
@@ -169,13 +158,6 @@ export function CuisineFilters({
     const updated = {...filters, ...updates};
     setFilters(updated);
     onFilterChange?.(updated);
-  };
-
-  const toggleCuisine = (cuisine: string) => {
-    const updated = filters.cuisines.includes(cuisine)
-      ? filters.cuisines.filter((c) => c !== cuisine)
-      : [...filters.cuisines, cuisine];
-    updateFilter({cuisines: updated});
   };
 
   const clearFilters = () => {

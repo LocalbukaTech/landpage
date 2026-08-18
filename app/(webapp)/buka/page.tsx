@@ -4,7 +4,6 @@ import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BukaCategory } from '@/components/buka/BukaCategory';
 import { BukaRestaurant } from '@/components/buka/BukaCard';
-import { CuisineSection } from '@/components/buka/CuisineSection';
 import { Images } from '@/public/images';
 import { MobileBukaHome } from '@/components/buka/mobile/MobileBukaHome';
 
@@ -19,7 +18,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { RESTAURANT_PLACEHOLDER_IMG } from '@/lib/constants';
-import { helper } from '@/utils/helper';
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
 

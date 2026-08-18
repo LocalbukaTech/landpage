@@ -5,7 +5,7 @@ import {useRouter, useSearchParams} from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import {motion} from 'framer-motion';
-import {ArrowRight, Check, ShieldAlert, Disc3} from 'lucide-react';
+import {ArrowRight, Check} from 'lucide-react';
 
 import {useAcceptMusicPolicy} from '@/lib/api/services/auth.hooks';
 

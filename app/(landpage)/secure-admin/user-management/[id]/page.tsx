@@ -7,7 +7,7 @@ import { ArrowLeft, ChevronRight, Ban, AlertCircle, Play, User, CheckCircle, Loa
 import { AdminTabs } from "@/components/admin/ui/AdminTabs";
 import { SuspendAccountModal } from "@/components/admin/ui/SuspendAccountModal";
 import { BanUserModal } from "@/components/admin/ui/BanUserModal";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useUser, useFlagUser } from "@/lib/api/services/users.hooks";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,7 +16,6 @@ export default function UserDetails() {
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [isBanModalOpen, setIsBanModalOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
   const { toast } = useToast();
   
   // Extract ID from path

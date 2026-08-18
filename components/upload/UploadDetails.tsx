@@ -59,7 +59,7 @@ export function UploadDetails({
   initialImageCaptions = [],
   initialLocation = '',
   initialRestaurant = null,
-  isEditing = false,
+  isEditing: _isEditing = false,
   submitText = 'Post',
   onPost,
   onDiscard,
@@ -126,15 +126,18 @@ export function UploadDetails({
 
   // Sync captions state length when files list expands
   useEffect(() => {
-    setCaptions((prev) => {
-      if (prev.length === files.length) return prev;
-      if (prev.length < files.length) {
-        const diff = files.length - prev.length;
-        return [...prev, ...Array(diff).fill('')];
-      } else {
-        return prev.slice(0, files.length);
-      }
-    });
+    const timer = setTimeout(() => {
+      setCaptions((prev) => {
+        if (prev.length === files.length) return prev;
+        if (prev.length < files.length) {
+          const diff = files.length - prev.length;
+          return [...prev, ...Array(diff).fill('')];
+        } else {
+          return prev.slice(0, files.length);
+        }
+      });
+    }, 0);
+    return () => clearTimeout(timer);
   }, [files.length]);
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,12 +165,18 @@ export function UploadDetails({
   useEffect(() => {
     if (files.length > 0) {
       const urls = files.map((file) => URL.createObjectURL(file));
-      setMediaUrls(urls);
+      const timer = setTimeout(() => {
+        setMediaUrls(urls);
+      }, 0);
       return () => {
+        clearTimeout(timer);
         urls.forEach((url) => URL.revokeObjectURL(url));
       };
     } else if (existingMediaUrls.length > 0) {
-      setMediaUrls(existingMediaUrls);
+      const timer = setTimeout(() => {
+        setMediaUrls(existingMediaUrls);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [files, existingMediaUrls]);
 
@@ -213,25 +222,29 @@ export function UploadDetails({
   // Sync initial props asynchronously when fetched on edit post
   useEffect(() => {
     if (initialCaption) {
-      setGeneralCaption(initialCaption);
+      const timer = setTimeout(() => setGeneralCaption(initialCaption), 0);
+      return () => clearTimeout(timer);
     }
   }, [initialCaption]);
 
   useEffect(() => {
     if (initialImageCaptions && initialImageCaptions.length > 0) {
-      setCaptions(initialImageCaptions);
+      const timer = setTimeout(() => setCaptions(initialImageCaptions), 0);
+      return () => clearTimeout(timer);
     }
   }, [initialImageCaptions]);
 
   useEffect(() => {
     if (initialLocation) {
-      setSelectedLocations([initialLocation]);
+      const timer = setTimeout(() => setSelectedLocations([initialLocation]), 0);
+      return () => clearTimeout(timer);
     }
   }, [initialLocation]);
 
   useEffect(() => {
     if (initialRestaurant) {
-      setSelectedRestaurant(initialRestaurant);
+      const timer = setTimeout(() => setSelectedRestaurant(initialRestaurant), 0);
+      return () => clearTimeout(timer);
     }
   }, [initialRestaurant]);
 
@@ -712,6 +725,7 @@ export function UploadDetails({
                 >
                   {mediaUrls.map((url, idx) => (
                     <div key={idx} className='w-full h-full flex-shrink-0 relative flex items-center justify-center bg-black'>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={ensureHttps(url)}
                         alt={`Preview ${idx + 1}`}

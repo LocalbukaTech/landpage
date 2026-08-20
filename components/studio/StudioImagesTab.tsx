@@ -57,6 +57,7 @@ export function StudioImagesTab({
                 onClick={() => router.push(`/posts/single/${post.id}`)}
                 className='relative aspect-square bg-black overflow-hidden group/thumb cursor-pointer'
                 title='Click to view photo post'>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={ensureHttps(post.mediaUrl)}
                   alt={post.caption || 'Photo'}

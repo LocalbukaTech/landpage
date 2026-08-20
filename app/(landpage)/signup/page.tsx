@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -36,18 +36,21 @@ const SignUpContent = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     fullName: '',
-    referralCode: '',
+    referralCode: searchParams.get('ref') || '',
     email: '',
     password: '',
-  });
+  }));
 
   // Auto-fill referral code from ?ref= URL query param (for shared referral links)
   useEffect(() => {
     const refCode = searchParams.get('ref');
     if (refCode) {
-      setFormData(prev => ({...prev, referralCode: refCode}));
+      const timer = setTimeout(() => {
+        setFormData(prev => ({...prev, referralCode: refCode}));
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
@@ -59,13 +62,15 @@ const SignUpContent = () => {
   useEffect(() => {
     const code = formData.referralCode.trim();
     if (!code) {
-      setReferrerStatus('idle');
-      setReferrerMessage('');
-      return;
+      const timer = setTimeout(() => {
+        setReferrerStatus('idle');
+        setReferrerMessage('');
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
-    setReferrerStatus('loading');
     const timeoutId = setTimeout(() => {
+      setReferrerStatus('loading');
       validateMutation.mutate(
         { referralCode: code },
         {
@@ -90,7 +95,7 @@ const SignUpContent = () => {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [formData.referralCode]);
+  }, [formData.referralCode, validateMutation]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy } from 'lucide-react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import type { Post } from '@/types/post';
 import { VideoOverlay } from '@/components/video/VideoOverlay';
@@ -53,6 +52,7 @@ export function VideoPlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [prevPostId, setPrevPostId] = useState(post.id);
   const touchStartY = useRef<number | null>(null);
   const touchEndY = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
@@ -60,14 +60,15 @@ export function VideoPlayer({
   const isScrolling = useRef(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useEffect(() => {
+  if (prevPostId !== post.id) {
+    setPrevPostId(post.id);
     setActiveImageIndex(0);
-  }, [post.id]);
+  }
 
   // Scrubber state
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, _setIsDragging] = useState(false);
 
   // Play/pause icon overlay state
   const [showPlayPauseIcon, setShowPlayPauseIcon] = useState(false);
@@ -290,9 +291,6 @@ export function VideoPlayer({
     }
   };
 
-  const handleSeekStart = () => setIsDragging(true);
-  const handleSeekEnd = () => setIsDragging(false);
-
   return (
     <div
       ref={containerRef}
@@ -387,6 +385,7 @@ export function VideoPlayer({
           >
             {(mediaUrls.length > 0 ? mediaUrls : [post.mediaUrl]).map((url, idx) => (
               <div key={idx} className='w-full h-full flex-shrink-0 relative flex items-center justify-center bg-black'>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={ensureHttps(url)}
                   alt={post.caption || `Post Image ${idx + 1}`}

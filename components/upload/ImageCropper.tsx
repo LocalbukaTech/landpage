@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import {useRef, useState, useEffect} from 'react';
@@ -27,14 +28,16 @@ export function ImageCropper({file, onCrop, onCancel}: ImageCropperProps) {
 
   // Load selected file as temporary object URL (faster & memory efficient on mobile)
   useEffect(() => {
-    setLoading(true);
-    setZoom(1);
-    setOffset({x: 0, y: 0});
-
     const url = URL.createObjectURL(file);
-    setImgSrc(url);
+    const timer = setTimeout(() => {
+      setLoading(true);
+      setZoom(1);
+      setOffset({x: 0, y: 0});
+      setImgSrc(url);
+    }, 0);
 
     return () => {
+      clearTimeout(timer);
       URL.revokeObjectURL(url);
     };
   }, [file]);

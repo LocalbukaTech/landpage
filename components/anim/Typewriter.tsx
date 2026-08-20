@@ -15,6 +15,14 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
+const getGraphemes = (text: string): string[] => {
+  if (typeof Intl !== 'undefined' && (Intl as any).Segmenter) {
+    const segmenter = new (Intl as any).Segmenter('en', { granularity: 'grapheme' });
+    return Array.from(segmenter.segment(text), (s: any) => s.segment);
+  }
+  return Array.from(text);
+};
+
 interface TypewriterProps {
   words: string[];
   typingSpeed?: number; // ms per character
@@ -22,28 +30,35 @@ interface TypewriterProps {
   pauseTime?: number; // ms between word complete and delete
   loop?: boolean;
   className?: string;
+  cursorClassName?: string;
 }
 
 export function Typewriter({
   words,
-  typingSpeed = 34,
-  deletingSpeed = 22,
-  pauseTime = 1200,
+  typingSpeed = 50,
+  deletingSpeed = 30,
+  pauseTime = 1800,
   loop = true,
   className,
+  cursorClassName,
 }: TypewriterProps) {
   const prefersReduced = usePrefersReducedMotion();
   const [index, setIndex] = React.useState(0);
   const [subIndex, setSubIndex] = React.useState(0);
   const [deleting, setDeleting] = React.useState(false);
 
+  const graphemesList = React.useMemo(() => {
+    return words.map((w) => getGraphemes(w));
+  }, [words]);
+
   React.useEffect(() => {
     if (!words.length) return;
     if (prefersReduced) return; // degrade to static
 
-    const currentWord = words[index % words.length];
+    const currentGraphemes = graphemesList[index % words.length] || [];
+    const currentLength = currentGraphemes.length;
 
-    if (!deleting && subIndex === currentWord.length) {
+    if (!deleting && subIndex === currentLength) {
       const t = setTimeout(() => setDeleting(true), pauseTime);
       return () => clearTimeout(t);
     }
@@ -69,6 +84,7 @@ export function Typewriter({
     index,
     deleting,
     words,
+    graphemesList,
     typingSpeed,
     deletingSpeed,
     pauseTime,
@@ -76,14 +92,21 @@ export function Typewriter({
     prefersReduced,
   ]);
 
+  const currentGraphemes = graphemesList[index % words.length] || [];
   const display = prefersReduced
     ? words[0] ?? ''
-    : words[index % words.length].slice(0, subIndex);
+    : currentGraphemes.slice(0, subIndex).join('');
 
   return (
     <span className={className}>
       {display}
-      <span className='ml-0.5 inline-block w-px h-[1em] bg-current align-middle animate-pulse' />
+      <span
+        className={`inline-block h-[0.9em] ml-1 align-baseline rounded-sm animate-pulse ${
+          cursorClassName || 'w-0.5 bg-current'
+        }`}
+        aria-hidden='true'
+      />
     </span>
   );
 }
+

@@ -26,7 +26,7 @@ export function TopHeader({onMobileMenuOpen}: TopHeaderProps) {
       description: 'You have been successfully signed out.',
       variant: 'success',
     });
-    router.push('/feeds');
+    router.push('/');
   };
 
   const navItems = [

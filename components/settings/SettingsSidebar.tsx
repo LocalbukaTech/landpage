@@ -15,6 +15,7 @@ const sidebarItems = [
 ];
 
 const footerLinks = [
+  {label: 'Company', href: 'https://localbuka.com/company'},
   {label: 'Blogs', href: 'https://localbuka.com/blog'},
   {label: 'Terms & Policies', href: 'https://localbuka.com/privacy'},
 ];
@@ -47,11 +48,12 @@ export function SettingsSidebar({
           <Link
             key={link.label}
             href={link.href}
+            target='_blank'
             className='text-xs text-zinc-400 hover:text-zinc-300 transition-colors font-semibold'>
             {link.label}
           </Link>
         ))}
-        <span className='text-[11px] text-zinc-600 mt-1'>© 2025 Localbuka</span>
+        <span className='text-[11px] text-zinc-600 mt-1'>&copy; {new Date().getFullYear()} LocalBuka</span>
       </footer>
     </div>
   );

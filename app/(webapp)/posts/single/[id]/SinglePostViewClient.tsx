@@ -48,7 +48,7 @@ export function SinglePostViewClient({id, initialPost}: SinglePostViewClientProp
             Post not found or failed to load.
           </p>
           <button
-            onClick={() => router.push('/feeds')}
+            onClick={() => router.push('/')}
             className='px-6 py-2.5 bg-[#FFC727] text-black font-bold rounded-xl hover:bg-yellow-500 transition-colors shadow-md cursor-pointer'>
             Go Back
           </button>

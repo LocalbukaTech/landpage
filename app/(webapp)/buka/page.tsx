@@ -6,6 +6,7 @@ import { BukaCategory } from '@/components/buka/BukaCategory';
 import { BukaRestaurant } from '@/components/buka/BukaCard';
 import { Images } from '@/public/images';
 import { MobileBukaHome } from '@/components/buka/mobile/MobileBukaHome';
+import { Typewriter } from '@/components/anim/Typewriter';
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -215,7 +216,7 @@ export default function BukaPage() {
             <div className='absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent' />
 
             <button
-              onClick={() => router.push('/feeds')}
+              onClick={() => router.push('/')}
               className='absolute top-4 left-4 md:top-8 md:left-8 z-10 flex items-center justify-center w-10 h-10 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors bg-transparent cursor-pointer'
               aria-label='Go back'>
               <ArrowLeft size={20} />
@@ -228,9 +229,21 @@ export default function BukaPage() {
               className='absolute bottom-0 left-0 z-5 pointer-events-none object-contain object-bottom-left'
             />
 
-            <div className='absolute bottom-6 left-4 right-4 md:bottom-16 md:left-8 md:right-auto md:max-w-md z-10 flex flex-col gap-4 md:gap-5'>
-              <h1 className='text-white text-2xl md:text-[32px] font-bold leading-tight'>
-                Wetin You Wan Chop?!
+            <div className='absolute bottom-6 left-4 right-4 md:bottom-16 md:left-8 md:right-auto md:max-w-lg z-10 flex flex-col gap-4 md:gap-5'>
+              <h1 className='text-white text-2xl md:text-[34px] font-extrabold leading-tight min-h-[40px] md:min-h-[50px] flex items-center'>
+                <Typewriter
+                  words={[
+                    'Wetin you wan sup?',
+                    'Kí ni o fẹ́ jẹ lónìí?',
+                    'Gịnị ka ị chọrọ iri taa?',
+                    'Me kake/kike so ka/ki ciyau?',
+                  ]}
+                  typingSpeed={55}
+                  deletingSpeed={30}
+                  pauseTime={2000}
+                  className='text-white drop-shadow-md'
+                  cursorClassName='bg-[#fbbe15] w-[3px]'
+                />
               </h1>
               <p className='text-white/80 text-sm md:text-base leading-relaxed'>
                 From mama-put joints to city-class bukas,

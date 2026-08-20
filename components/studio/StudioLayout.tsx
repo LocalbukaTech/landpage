@@ -186,7 +186,7 @@ export function StudioLayout({
           </div>
 
           <Link
-            href='/feeds'
+            href='/'
             className='p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors shrink-0'
             title='Exit Studio to Feed'>
             <LogOut size={15} />
@@ -279,7 +279,7 @@ export function StudioLayout({
                 </div>
               </div>
               <Link
-                href='/feeds'
+                href='/'
                 className='text-xs font-bold text-[#FBBE15] hover:underline'>
                 Exit Studio →
               </Link>
@@ -312,7 +312,7 @@ export function StudioLayout({
 
           <div className='flex items-center gap-2 md:gap-3'>
             <Link
-              href='/feeds'
+              href='/'
               className='text-xs font-bold text-zinc-400 hover:text-white transition-colors border border-white/10 px-2.5 py-1.5 rounded-lg bg-white/5 flex items-center gap-1'>
               <ArrowLeft size={13} className='hidden sm:inline' />
               <span>Exit Studio</span>

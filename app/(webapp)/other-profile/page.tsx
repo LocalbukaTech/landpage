@@ -174,7 +174,7 @@ function OtherProfileContent() {
     <MainLayout>
       <div className='w-full max-w-4xl mx-auto px-4 py-6 overflow-y-auto h-[calc(100vh-3.5rem)] md:h-auto'>
         <button
-          onClick={() => goBack('/feeds')}
+          onClick={() => goBack('/')}
           className='mb-4 flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors'
           aria-label='Go back'>
           <svg

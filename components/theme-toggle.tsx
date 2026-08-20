@@ -41,9 +41,11 @@ export function ThemeToggle() {
   }
 
   const isWebapp =
+    pathname === '/' ||
     pathname.startsWith('/feeds') ||
     pathname.startsWith('/buka') ||
     pathname.startsWith('/upload') ||
+    pathname.startsWith('/studio') ||
     pathname.startsWith('/notifications') ||
     pathname.startsWith('/profile') ||
     pathname.startsWith('/other-profile') ||

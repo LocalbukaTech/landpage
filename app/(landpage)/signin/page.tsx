@@ -46,7 +46,7 @@ const SignInContent = () => {
   const forgotPasswordMutation = useForgotPasswordMutation();
   const resetPasswordMutation = useResetPasswordMutation();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/feeds';
+  const redirect = searchParams.get('redirect') || '/';
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);

@@ -51,7 +51,7 @@ export function Navbar() {
     logoutUser();
     setUser(null);
     setIsAuthenticated(false);
-    router.push('/feeds');
+    router.push('/');
   };
 
   // Get first name from fullName

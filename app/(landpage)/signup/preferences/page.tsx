@@ -38,7 +38,7 @@ const preferenceOptions = [
 const PreferencesContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/feeds';
+  const redirect = searchParams.get('redirect') || '/';
   const flow = searchParams.get('flow');
 
   // State machine values

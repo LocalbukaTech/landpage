@@ -28,8 +28,9 @@ import {Drawer, DrawerContent, DrawerTitle} from '@/components/ui/drawer';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
 
 const baseNavItems = [
-  {icon: Home, label: 'Home', href: '/feeds'},
+  {icon: Home, label: 'Home', href: '/'},
   {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
+  {icon: Store, label: 'List Restaurant', href: '/buka/my-restaurant'},
   {icon: PlusCircle, label: 'Upload', href: '/studio'},
   {icon: Bell, label: 'Notification', href: '/notifications'},
   {icon: Bookmark, label: 'Saved', href: '/profile?tab=saved'},
@@ -38,14 +39,10 @@ const baseNavItems = [
   {icon: User, label: 'Profile', href: '/profile'},
 ];
 
-const myRestaurantItem = {
-  icon: Store,
-  label: 'My Restaurant',
-  href: '/buka/my-restaurant',
-};
+
 
 const mobileNavItems = [
-  {icon: Home, label: 'Home', href: '/feeds'},
+  {icon: Home, label: 'Home', href: '/'},
   {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
   {icon: PlusCircle, label: 'Upload', href: '/studio'},
   {icon: Bell, label: 'Inbox', href: '/notifications'},
@@ -53,8 +50,9 @@ const mobileNavItems = [
 ];
 
 const footerLinks = [
-  {label: 'Blogs', href: 'https://localbuka.com/blog'},
-  {label: 'Terms & Policies', href: 'https://localbuka.com/privacy/'},
+  {label: 'Company', href: '/company'},
+  {label: 'Blogs', href: '/blog'},
+  {label: 'Terms & Policies', href: '/privacy'},
 ];
 
 export function Sidebar() {
@@ -62,13 +60,13 @@ export function Sidebar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {requireAuth} = useRequireAuth();
-  const isFeedPage = pathname === '/feeds';
+  const isFeedPage = pathname === '/' || pathname === '/feeds';
 
   const typeParam = searchParams.get('type');
   const feedType: FeedType = typeParam === 'following' ? 'following' : 'foryou';
 
   const setFeedType = (type: FeedType) => {
-    router.push(`/feeds?type=${type}`);
+    router.push(`/?type=${type}`);
   };
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -84,7 +82,7 @@ export function Sidebar() {
     : baseNavItems.filter((item) => item.label !== 'Studio' && item.label !== 'Upload');
 
   const navItems = isAuthenticated
-    ? [...filteredBaseNavItems.slice(0, 2), myRestaurantItem, ...filteredBaseNavItems.slice(2)]
+    ? [...filteredBaseNavItems.slice(0, 3), ...filteredBaseNavItems.slice(3)]
     : filteredBaseNavItems;
 
   const displayMobileNavItems = isAuthenticated
@@ -96,6 +94,57 @@ export function Sidebar() {
   const unreadCount = (unreadCountResponse as any)?.data?.count ?? 0;
 
   const isCollapsed = isSearchOpen || isNotificationOpen;
+
+  const isItemActive = (itemHref: string) => {
+    if (!pathname) return false;
+    if (itemHref === '#') return false;
+
+    // Handle query param match (e.g. /profile?tab=saved)
+    if (itemHref.includes('?')) {
+      const [itemPath, queryString] = itemHref.split('?');
+      if (pathname !== itemPath) return false;
+      const params = new URLSearchParams(queryString);
+      for (const [key, value] of params.entries()) {
+        if (searchParams.get(key) !== value) return false;
+      }
+      return true;
+    }
+
+    // Profile without query params shouldn't be active if tab=saved is active
+    if (itemHref === '/profile') {
+      if (pathname !== '/profile') return false;
+      return searchParams.get('tab') !== 'saved';
+    }
+
+    // Standalone check for Buka vs List Restaurant
+    if (itemHref === '/buka') {
+      if (!pathname.startsWith('/buka')) return false;
+      // Do not highlight Buka if user is on List Restaurant / My Restaurant
+      if (
+        pathname.startsWith('/buka/my-restaurant') ||
+        pathname.startsWith('/buka/list-resturant')
+      ) {
+        return false;
+      }
+      return true;
+    }
+
+    if (
+      itemHref === '/buka/my-restaurant' ||
+      itemHref === '/buka/list-resturant'
+    ) {
+      return (
+        pathname.startsWith('/buka/my-restaurant') ||
+        pathname.startsWith('/buka/list-resturant')
+      );
+    }
+
+    if (itemHref === '/') {
+      return pathname === '/' || pathname === '/feeds';
+    }
+
+    return pathname.startsWith(itemHref);
+  };
 
   const handleNavClick = (label: string) => {
     if (label === 'Home') {
@@ -113,6 +162,7 @@ export function Sidebar() {
       setIsNotificationOpen(false);
     }
   };
+  const year = new Date().getFullYear();
 
   return (
     <>
@@ -188,10 +238,7 @@ export function Sidebar() {
               isCollapsed ? 'w-full' : '',
             )}>
             {navItems.map((item) => {
-              const isActive =
-                item.href === '/'
-                  ? pathname === '/'
-                  : pathname?.startsWith(item.href);
+              const isActive = isItemActive(item.href);
 
               const isNotificationItem = item.label === 'Notification';
               const activeState =
@@ -272,13 +319,14 @@ export function Sidebar() {
                     <Link
                       key={link.label}
                       href={link.href}
+                      target='_blank'
                       className='text-[12px] text-zinc-500 hover:text-zinc-300 transition-colors whitespace-nowrap'>
                       {link.label}
                     </Link>
                   ))}
                 </div>
                 <Link href="/company" className='text-[11px] text-zinc-600 mt-1'>
-                  © 2025 Localbuka
+                 &copy; {year} LocalBuka
                 </Link>
               </footer>
             </>
@@ -363,10 +411,7 @@ export function Sidebar() {
       {/* ── Mobile Bottom Nav ── */}
       <div className='md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#1a1a1a] border-t border-white/5 flex items-center justify-around z-50 pb-safe'>
         {displayMobileNavItems.map((item) => {
-          const isActive =
-            item.href === '/'
-              ? pathname === '/'
-              : pathname?.startsWith(item.href);
+          const isActive = isItemActive(item.href);
 
           const isNotificationItem = item.label === 'Inbox';
           const activeState = isActive;
@@ -496,10 +541,7 @@ export function Sidebar() {
           {/* Nav Items */}
           <nav className='flex flex-col gap-1 px-3 mt-4 flex-1'>
             {navItems.map((item) => {
-              const isActive =
-                item.href === '/'
-                  ? pathname === '/'
-                  : pathname?.startsWith(item.href.split('?')[0]);
+              const isActive = isItemActive(item.href);
               return (
                 <Link
                   key={item.label}
@@ -543,12 +585,13 @@ export function Sidebar() {
               <Link
                 key={link.label}
                 href={link.href}
+                target='_blank'
                 className='text-xs text-zinc-500 hover:text-zinc-300 transition-colors'>
                 {link.label}
               </Link>
             ))}
             <span className='text-[11px] text-zinc-700 mt-1'>
-              &copy; 2025 Localbuka
+              &copy; {year} LocalBuka
             </span>
           </div>
         </DrawerContent>

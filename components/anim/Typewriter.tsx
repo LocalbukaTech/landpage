@@ -31,6 +31,7 @@ interface TypewriterProps {
   loop?: boolean;
   className?: string;
   cursorClassName?: string;
+  onIndexChange?: (index: number) => void;
 }
 
 export function Typewriter({
@@ -41,11 +42,23 @@ export function Typewriter({
   loop = true,
   className,
   cursorClassName,
+  onIndexChange,
 }: TypewriterProps) {
   const prefersReduced = usePrefersReducedMotion();
   const [index, setIndex] = React.useState(0);
   const [subIndex, setSubIndex] = React.useState(0);
   const [deleting, setDeleting] = React.useState(false);
+
+  const onIndexChangeRef = React.useRef(onIndexChange);
+  React.useEffect(() => {
+    onIndexChangeRef.current = onIndexChange;
+  }, [onIndexChange]);
+
+  React.useEffect(() => {
+    if (words.length > 0) {
+      onIndexChangeRef.current?.(index % words.length);
+    }
+  }, [index, words.length]);
 
   const graphemesList = React.useMemo(() => {
     return words.map((w) => getGraphemes(w));

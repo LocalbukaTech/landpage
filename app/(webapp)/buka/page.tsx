@@ -7,6 +7,7 @@ import { BukaRestaurant } from '@/components/buka/BukaCard';
 import { Images } from '@/public/images';
 import { MobileBukaHome } from '@/components/buka/mobile/MobileBukaHome';
 import { Typewriter } from '@/components/anim/Typewriter';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -18,7 +19,7 @@ import { CgSpinner } from 'react-icons/cg';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { RESTAURANT_PLACEHOLDER_IMG } from '@/lib/constants';
+import { RESTAURANT_PLACEHOLDER_IMG, BUKA_HERO_LANGUAGES } from '@/lib/constants';
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
 
@@ -189,6 +190,9 @@ export default function BukaPage() {
   }, [allPool, topRestaurants, topBukas]);
 
   const isLoading = isLoadingTrending || isLoadingSearch;
+  const [activeHeroLangIndex, setActiveHeroLangIndex] = useState(0);
+  const activeHeroContent =
+    BUKA_HERO_LANGUAGES[activeHeroLangIndex] || BUKA_HERO_LANGUAGES[0];
 
   return (
     <>
@@ -229,27 +233,31 @@ export default function BukaPage() {
               className='absolute bottom-0 left-0 z-5 pointer-events-none object-contain object-bottom-left'
             />
 
-            <div className='absolute bottom-6 left-4 right-4 md:bottom-16 md:left-8 md:right-auto md:max-w-lg z-10 flex flex-col gap-4 md:gap-5'>
+            <div className='absolute bottom-6 left-4 right-4 md:bottom-16 md:left-8 md:right-auto md:max-w-xl z-10 flex flex-col gap-4 md:gap-5'>
               <h1 className='text-white text-2xl md:text-[34px] font-extrabold leading-tight min-h-[40px] md:min-h-[50px] flex items-center'>
                 <Typewriter
-                  words={[
-                    'Wetin you wan sup?',
-                    'Kí ni o fẹ́ jẹ lónìí?',
-                    'Gịnị ka ị chọrọ iri taa?',
-                    'Me kake/kike so ka/ki ciyau?',
-                  ]}
-                  typingSpeed={55}
-                  deletingSpeed={30}
-                  pauseTime={2000}
+                  words={BUKA_HERO_LANGUAGES.map((item) => item.headline)}
+                  typingSpeed={50}
+                  deletingSpeed={25}
+                  pauseTime={2500}
+                  onIndexChange={setActiveHeroLangIndex}
                   className='text-white drop-shadow-md'
                   cursorClassName='bg-[#fbbe15] w-[3px]'
                 />
               </h1>
-              <p className='text-white/80 text-sm md:text-base leading-relaxed'>
-                From mama-put joints to city-class bukas,
-                <br />
-                your next plate is right here.
-              </p>
+              <div className='min-h-[44px] flex items-center'>
+                <AnimatePresence mode='wait'>
+                  <motion.p
+                    key={activeHeroLangIndex}
+                    initial={{ opacity: 0, y: 3 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -3 }}
+                    transition={{ duration: 0.25 }}
+                    className='text-white/80 text-sm md:text-base leading-relaxed'>
+                    {activeHeroContent.body}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
               <div className='flex flex-row gap-3 md:gap-4 w-full'>
                 <Link
                   href='/buka/restaurant'

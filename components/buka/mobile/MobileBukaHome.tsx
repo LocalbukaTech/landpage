@@ -31,6 +31,8 @@ import {cn} from '@/lib/utils';
 import {Drawer, DrawerContent, DrawerTitle} from '@/components/ui/drawer';
 import {useGeolocation} from '@/hooks/useGeolocation';
 import {Typewriter} from '@/components/anim/Typewriter';
+import {motion, AnimatePresence} from 'framer-motion';
+import {BUKA_HERO_LANGUAGES} from '@/lib/constants';
 
 function useLocationLabel() {
   const {lat, lng, loading: geoLoading} = useGeolocation();
@@ -158,6 +160,9 @@ export function MobileBukaHome({
   const {data: unreadCountResponse} = useUnreadCount();
   const unreadCount = (unreadCountResponse as any)?.data?.count ?? 0;
   const {label: locationLabel, loading: locationLoading} = useLocationLabel();
+  const [activeHeroLangIndex, setActiveHeroLangIndex] = useState(0);
+  const activeHeroContent =
+    BUKA_HERO_LANGUAGES[activeHeroLangIndex] || BUKA_HERO_LANGUAGES[0];
 
   const isItemActive = (itemHref: string) => {
     if (!pathname) return false;
@@ -267,22 +272,28 @@ export function MobileBukaHome({
             </span>
             <h2 className='text-white text-sm sm:text-base font-bold leading-snug min-h-[22px] flex items-center'>
               <Typewriter
-                words={[
-                  'Wetin you wan sup?',
-                  'Kí ni o fẹ́ jẹ lónìí?',
-                  'Gịnị ka ị chọrọ iri taa?',
-                  'Me kake/kike so ka/ki ciyau?',
-                ]}
-                typingSpeed={55}
-                deletingSpeed={30}
-                pauseTime={2000}
+                words={BUKA_HERO_LANGUAGES.map((item) => item.headline)}
+                typingSpeed={50}
+                deletingSpeed={25}
+                pauseTime={2500}
+                onIndexChange={setActiveHeroLangIndex}
                 className='text-white'
                 cursorClassName='bg-[#fbbe15] w-[2px]'
               />
             </h2>
-            <p className='text-white/60 text-xs mt-0.5'>
-              From mama-put to fine dining
-            </p>
+            <div className='min-h-[28px] flex items-center'>
+              <AnimatePresence mode='wait'>
+                <motion.p
+                  key={activeHeroLangIndex}
+                  initial={{ opacity: 0, y: 2 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -2 }}
+                  transition={{ duration: 0.25 }}
+                  className='text-white/70 text-xs mt-0.5 line-clamp-2 leading-tight'>
+                  {activeHeroContent.body}
+                </motion.p>
+              </AnimatePresence>
+            </div>
           </div>
           <Link
             href='/buka/restaurant'

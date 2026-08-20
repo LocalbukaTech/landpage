@@ -215,3 +215,34 @@ export const SOCIAL_LINKS: ReadonlyArray<SocialLink> = [
   { href: 'https://x.com/LocalBuka_app/', label: 'Twitter/X', Icon: RiTwitterXFill },
   { href: 'https://web.facebook.com/profile.php?id=61567778991994', label: 'Facebook', Icon: RiFacebookFill },
 ];
+
+// Multilingual Hero Content for Buka Discovery Page
+export interface BukaHeroLanguage {
+  language: string;
+  headline: string;
+  body: string;
+}
+
+export const BUKA_HERO_LANGUAGES: BukaHeroLanguage[] = [
+  {
+    language: 'English',
+    headline: 'What Are You Craving?!',
+    body: 'From local favorites to top-rated spots, your next meal is right here.',
+  },
+  {
+    language: 'Yoruba',
+    headline: 'Kín Ni O Fẹ́ Jẹ?!',
+    body: 'Láti ibi oúnjẹ ìbílẹ̀ dé àwọn ilé oúnjẹ tó gbajúmọ̀, oúnjẹ rẹ tó kàn ti wà níhìn-ín.',
+  },
+  {
+    language: 'Igbo',
+    headline: 'Gịnị KỊ Chọrọ Iri?!',
+    body: 'Site na ebe oriri obodo ruo na ụlọ oriri kacha mma, nri gị na-esote dị nso.',
+  },
+  {
+    language: 'Hausa',
+    headline: 'Me kake/kike so ka/ki ci yau?',
+    body: 'Daga wuraren cin abinci na gargajiya zuwa gidajen abinci masu inganci, abincinka na gaba yana nan.',
+  },
+];
+

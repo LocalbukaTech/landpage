@@ -516,7 +516,7 @@ function DeleteTab() {
         logout();
         queryClient.clear();
         setTimeout(() => {
-          router.push('/feeds');
+          router.push('/');
         }, 1500);
       },
       onError: (err: any) => {
@@ -604,7 +604,7 @@ function LogoutTab() {
       variant: 'success',
     });
     setTimeout(() => {
-      router.push('/feeds');
+      router.push('/');
     }, 1000);
   };
 

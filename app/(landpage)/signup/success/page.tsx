@@ -7,7 +7,7 @@ import {Loader2} from 'lucide-react';
 const SuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/feeds';
+  const redirect = searchParams.get('redirect') || '/';
 
   const handleProceed = () => {
     router.push(`/signup/music-policy?redirect=${encodeURIComponent(redirect)}`);

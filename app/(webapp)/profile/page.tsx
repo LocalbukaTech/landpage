@@ -91,7 +91,7 @@ function ProfileContent() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/feeds');
+      router.push('/');
       openAuthModal();
     }
   }, [isAuthenticated, router, openAuthModal]);

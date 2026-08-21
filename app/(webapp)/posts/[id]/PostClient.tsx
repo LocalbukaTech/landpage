@@ -32,7 +32,7 @@ export function PostClient({id, initialPost}: PostClientProps) {
   return (
     <div className='relative w-full h-full bg-black'>
       <button
-        onClick={() => goBack('/feeds')}
+        onClick={() => goBack('/')}
         className='absolute top-6 left-6 z-50 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white transition-all backdrop-blur-sm'>
         <ArrowLeft size={24} />
       </button>
@@ -48,7 +48,7 @@ export function PostClient({id, initialPost}: PostClientProps) {
             Post not found or failed to load.
           </p>
           <Link
-            href='/feeds'
+            href='/'
             className='px-6 py-2 bg-[#FFC727] text-black font-bold rounded-full hover:bg-yellow-500 transition-colors'>
             Back to Feed
           </Link>

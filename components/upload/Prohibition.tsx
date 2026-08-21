@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Ban, MessageSquareX, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { Ban, MessageSquareX, EyeOff, ExternalLink } from "lucide-react";
 
 interface ProhibitionProps {
   onAccept: () => void;
@@ -69,6 +70,30 @@ export function Prohibition({ onAccept, onRefuse }: ProhibitionProps) {
             </p>
           </div>
         </div>
+
+        <p className="text-xs text-zinc-400 text-center mb-6 leading-relaxed">
+          By clicking <strong className="text-white">&ldquo;I Accept&rdquo;</strong>, you agree to comply with our{" "}
+          <Link
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#FBBE15] underline underline-offset-2 hover:text-amber-300 font-semibold inline-flex items-center gap-0.5"
+          >
+            Content Policy
+            <ExternalLink size={11} className="inline ml-0.5" />
+          </Link>{" "}
+          and{" "}
+          <Link
+            href="/privacy#music-usage-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#FBBE15] underline underline-offset-2 hover:text-amber-300 font-semibold inline-flex items-center gap-0.5"
+          >
+            Music Policy
+            <ExternalLink size={11} className="inline ml-0.5" />
+          </Link>
+          .
+        </p>
 
         <div className="flex gap-4">
           <button

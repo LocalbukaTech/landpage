@@ -30,6 +30,9 @@ import {useUnreadCount} from '@/lib/api/services/notifications.hooks';
 import {cn} from '@/lib/utils';
 import {Drawer, DrawerContent, DrawerTitle} from '@/components/ui/drawer';
 import {useGeolocation} from '@/hooks/useGeolocation';
+import {Typewriter} from '@/components/anim/Typewriter';
+import {motion, AnimatePresence} from 'framer-motion';
+import {BUKA_HERO_LANGUAGES} from '@/lib/constants';
 
 function useLocationLabel() {
   const {lat, lng, loading: geoLoading} = useGeolocation();
@@ -124,9 +127,9 @@ function SectionHeader({
 }
 
 const baseNavItems = [
-  {icon: Home, label: 'Home', href: '/feeds'},
+  {icon: Home, label: 'Home', href: '/'},
   {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
-  {icon: PlusCircle, label: 'Upload', href: '/upload'},
+  {icon: PlusCircle, label: 'Upload', href: '/studio'},
   {icon: Bell, label: 'Notification', href: '/notifications'},
   {icon: Bookmark, label: 'Saved', href: '/profile?tab=saved'},
   {icon: Users, label: 'Community', href: '#'},
@@ -135,9 +138,11 @@ const baseNavItems = [
 
 const myRestaurantItem = {
   icon: Store,
-  label: 'My Restaurant',
+  label: 'List Restaurant',
   href: '/buka/my-restaurant',
 };
+
+const year = new Date().getFullYear();
 
 export function MobileBukaHome({
   isLoading,
@@ -155,6 +160,38 @@ export function MobileBukaHome({
   const {data: unreadCountResponse} = useUnreadCount();
   const unreadCount = (unreadCountResponse as any)?.data?.count ?? 0;
   const {label: locationLabel, loading: locationLoading} = useLocationLabel();
+  const [activeHeroLangIndex, setActiveHeroLangIndex] = useState(0);
+  const activeHeroContent =
+    BUKA_HERO_LANGUAGES[activeHeroLangIndex] || BUKA_HERO_LANGUAGES[0];
+
+  const isItemActive = (itemHref: string) => {
+    if (!pathname) return false;
+    if (itemHref === '#') return false;
+
+    if (itemHref === '/buka') {
+      if (!pathname.startsWith('/buka')) return false;
+      if (
+        pathname.startsWith('/buka/my-restaurant') ||
+        pathname.startsWith('/buka/list-resturant')
+      ) {
+        return false;
+      }
+      return true;
+    }
+
+    if (
+      itemHref === '/buka/my-restaurant' ||
+      itemHref === '/buka/list-resturant'
+    ) {
+      return (
+        pathname.startsWith('/buka/my-restaurant') ||
+        pathname.startsWith('/buka/list-resturant')
+      );
+    }
+
+    if (itemHref === '/') return pathname === '/' || pathname === '/feeds';
+    return pathname.startsWith(itemHref.split('?')[0]);
+  };
 
   const navItems = isAuthenticated
     ? [...baseNavItems.slice(0, 2), myRestaurantItem, ...baseNavItems.slice(2)]
@@ -229,16 +266,34 @@ export function MobileBukaHome({
             />
           </div>
           <div className='absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent' />
-          <div className='absolute bottom-0 left-0 p-4'>
+          <div className='absolute bottom-0 left-0 p-4 max-w-[75%]'>
             <span className='inline-block bg-[#fbbe15]/20 text-[#fbbe15] text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5 border border-[#fbbe15]/30'>
               FEATURED
             </span>
-            <h2 className='text-white text-base font-bold leading-snug'>
-              Wetin You Wan Chop?!
+            <h2 className='text-white text-sm sm:text-base font-bold leading-snug min-h-[22px] flex items-center'>
+              <Typewriter
+                words={BUKA_HERO_LANGUAGES.map((item) => item.headline)}
+                typingSpeed={50}
+                deletingSpeed={25}
+                pauseTime={2500}
+                onIndexChange={setActiveHeroLangIndex}
+                className='text-white'
+                cursorClassName='bg-[#fbbe15] w-[2px]'
+              />
             </h2>
-            <p className='text-white/60 text-xs mt-0.5'>
-              From mama-put to fine dining
-            </p>
+            <div className='min-h-[28px] flex items-center'>
+              <AnimatePresence mode='wait'>
+                <motion.p
+                  key={activeHeroLangIndex}
+                  initial={{ opacity: 0, y: 2 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -2 }}
+                  transition={{ duration: 0.25 }}
+                  className='text-white/70 text-xs mt-0.5 line-clamp-2 leading-tight'>
+                  {activeHeroContent.body}
+                </motion.p>
+              </AnimatePresence>
+            </div>
           </div>
           <Link
             href='/buka/restaurant'
@@ -411,10 +466,7 @@ export function MobileBukaHome({
           {/* Nav Items */}
           <nav className='flex flex-col gap-1 px-3 mt-4 flex-1'>
             {navItems.map((item) => {
-              const isActive =
-                item.href === '/'
-                  ? pathname === '/'
-                  : pathname?.startsWith(item.href.split('?')[0]);
+              const isActive = isItemActive(item.href);
               return (
                 <Link
                   key={item.label}
@@ -465,7 +517,7 @@ export function MobileBukaHome({
               Terms &amp; Policies
             </Link>
             <span className='text-[11px] text-zinc-700 mt-1'>
-              &copy; 2025 Localbuka
+              &copy; {year} LocalBuka
             </span>
           </div>
         </DrawerContent>

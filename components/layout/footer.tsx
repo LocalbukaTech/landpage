@@ -83,7 +83,7 @@ export function Footer() {
 
         {/* Bottom */}
         <div className='border-t border-white/20 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-300'>
-          <p>© 2025 LocalBuka. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} LocalBuka. All rights reserved.</p>
           <Link
             href='/privacy'
             className='hover:text-[#FBBE15] transition-colors'>

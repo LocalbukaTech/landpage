@@ -12,7 +12,7 @@ import {useAcceptMusicPolicy} from '@/lib/api/services/auth.hooks';
 function MusicPolicyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/feeds';
+  const redirect = searchParams.get('redirect') || '/';
   const flow = searchParams.get('flow');
 
   const [agreed, setAgreed] = useState(false);

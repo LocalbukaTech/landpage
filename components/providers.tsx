@@ -5,6 +5,7 @@ import {ReactQueryProvider} from '@/components/providers/react-query-provider';
 import {ToastProvider, Toaster} from '@/components/ui/toast';
 import {AuthProvider} from '@/context/AuthContext';
 import {AuthModal} from '@/components/modals';
+import {AutoAuthPrompt} from '@/components/auth/AutoAuthPrompt';
 import type { User } from '@/lib/api/services/auth.service';
 
 export function Providers({
@@ -27,6 +28,7 @@ export function Providers({
           <ToastProvider>
             {children}
             <AuthModal />
+            <AutoAuthPrompt />
             <Toaster />
           </ToastProvider>
         </ThemeProvider>

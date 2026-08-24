@@ -267,6 +267,30 @@ export default function ListRestaurantPage() {
   // ── Step labels ──
   const stepLabels = ['Details', 'Extras', 'Photos & Hours'];
 
+  // Auth gate
+  if (!isAuthenticated) {
+    return (
+      <MainLayout>
+        <div className='w-full max-w-2xl mx-auto px-4 py-20 text-center'>
+          <div className='w-20 h-20 mx-auto mb-6 rounded-2xl bg-white/5 flex items-center justify-center'>
+            <Store size={32} className='text-zinc-600' />
+          </div>
+          <h1 className='text-2xl font-bold text-white mb-3'>
+            Sign in to list your restaurant
+          </h1>
+          <p className='text-zinc-400 mb-8 max-w-md mx-auto'>
+            You need to be logged in to list your restaurant on LocalBuka.
+          </p>
+          <button
+            onClick={() => openAuthModal()}
+            className='px-8 py-3.5 bg-[#fbbe15] text-[#1a1a1a] font-bold rounded-xl hover:bg-[#e5ac10] transition-all cursor-pointer border-none'>
+            Sign In
+          </button>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className='w-full max-w-2xl mx-auto px-4 py-6 overflow-y-auto h-[calc(100vh-3.5rem)] md:h-auto scrollbar-hide'>

@@ -8,6 +8,7 @@ import { Images } from '@/public/images';
 import { MobileBukaHome } from '@/components/buka/mobile/MobileBukaHome';
 import { Typewriter } from '@/components/anim/Typewriter';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -67,6 +68,7 @@ const cuisines = [
 
 export default function BukaPage() {
   const router = useRouter();
+  const { requireAuth } = useRequireAuth();
   const { lat, lng, loading: loadingGeo } = useGeolocation();
   const [heroBgUrl, setHeroBgUrl] = useState("url('/images/buka.gif')");
 
@@ -264,11 +266,15 @@ export default function BukaPage() {
                   className='flex-1 md:flex-none md:w-fit text-center px-6 md:px-10 py-3 md:py-3.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer border-none'>
                   Explore Restaurants
                 </Link>
-                <Link
-                  href='/buka/list-resturant'
+                <button
+                  onClick={() => {
+                    requireAuth(() => {
+                      router.push('/buka/my-restaurant');
+                    });
+                  }}
                   className='flex-1 md:flex-none md:w-fit text-center px-6 md:px-10 py-3 md:py-3.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer border-none'>
-                  List Resturant
-                </Link>
+                  List Restaurant
+                </button>
               </div>
             </div>
             {/* Animated Scroll Down Indicator for Desktop */}

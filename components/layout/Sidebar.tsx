@@ -279,7 +279,14 @@ export function Sidebar() {
                           : 'text-white hover:bg-white/5',
                         isCollapsed ? 'justify-center py-3' : '',
                       )}
-                      onClick={() => handleNavClick(item.label)}>
+                      onClick={(e) => {
+                        if (item.label === 'List Restaurant' && !isAuthenticated) {
+                          e.preventDefault();
+                          requireAuth(() => router.push(item.href));
+                          return;
+                        }
+                        handleNavClick(item.label);
+                      }}>
                       {item.label === 'Profile' && userAvatar ? (
                         <Image
                           src={userAvatar}
@@ -546,7 +553,14 @@ export function Sidebar() {
                 <Link
                   key={item.label}
                   href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={(e) => {
+                    setIsMenuOpen(false);
+                    if (item.label === 'List Restaurant' && !isAuthenticated) {
+                      e.preventDefault();
+                      requireAuth(() => router.push(item.href));
+                      return;
+                    }
+                  }}
                   className={cn(
                     'flex items-center gap-3.5 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors active:opacity-70 relative',
                     isActive

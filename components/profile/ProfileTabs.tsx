@@ -50,6 +50,8 @@ export function ProfileTabs({
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  const canEdit = !!isEditable && !isOtherProfile;
+
   return (
     <div className='w-full mt-6'>
       {/* Tab Headers */}
@@ -76,7 +78,7 @@ export function ProfileTabs({
           })}
         </div>
 
-        {isEditable && !isOtherProfile && (
+        {canEdit && (
           <button
             onClick={() => setIsEditing(!isEditing)}
             className={`p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer mr-2 border-none bg-transparent ${
@@ -93,9 +95,11 @@ export function ProfileTabs({
         <ProfileVideoGrid
           posts={posts}
           isLoading={isLoading}
-          isEditing={isEditing}
+          isEditing={canEdit && isEditing}
           activeTab={activeTab}
-          onToggleEdit = {() => setIsEditing(prev => !prev)}
+          onToggleEdit={canEdit ? () => setIsEditing((prev) => !prev) : undefined}
+          isEditable={canEdit}
+          isOtherProfile={isOtherProfile}
         />
       </div>
     </div>

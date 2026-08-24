@@ -85,8 +85,8 @@ export function UploadDetails({
   const totalSlides = files.length > 0 ? files.length : existingMediaUrls.length;
   const [activeIndex, setActiveIndex] = useState(0);
   const [captions, setCaptions] = useState<string[]>(() => {
-    if (initialImageCaptions.length > 0) return initialImageCaptions;
-    return Array(totalSlides).fill('');
+    if (isImage && initialImageCaptions.length > 0) return initialImageCaptions;
+    return isImage ? Array(totalSlides).fill('') : [];
   });
   const [generalCaption, setGeneralCaption] = useState(initialCaption);
 
@@ -126,6 +126,7 @@ export function UploadDetails({
 
   // Sync captions state length when files list expands
   useEffect(() => {
+    if (!isImage) return;
     const timer = setTimeout(() => {
       setCaptions((prev) => {
         if (prev.length === files.length) return prev;
@@ -138,7 +139,7 @@ export function UploadDetails({
       });
     }, 0);
     return () => clearTimeout(timer);
-  }, [files.length]);
+  }, [files.length, isImage]);
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0 && onAddFiles) {
@@ -228,11 +229,11 @@ export function UploadDetails({
   }, [initialCaption]);
 
   useEffect(() => {
-    if (initialImageCaptions && initialImageCaptions.length > 0) {
+    if (isImage && initialImageCaptions && initialImageCaptions.length > 0) {
       const timer = setTimeout(() => setCaptions(initialImageCaptions), 0);
       return () => clearTimeout(timer);
     }
-  }, [initialImageCaptions]);
+  }, [initialImageCaptions, isImage]);
 
   useEffect(() => {
     if (initialLocation) {
@@ -461,32 +462,36 @@ export function UploadDetails({
 
             <div className='flex gap-4 mb-6'>
               <button
+                type='button'
                 onClick={() => {
                   setShowLocations(!showLocations);
                   setShowUsers(false);
                 }}
                 disabled={isUploading}
+                style={{ color: showLocations ? '#fbbe15' : '#ffffff' }}
                 className={cn(
-                  'flex items-center gap-1.5 text-xs font-bold transition-colors disabled:opacity-50',
-                  showLocations ? 'text-[#fbbe15]' : 'text-[#1a1a1a]',
+                  'flex items-center gap-1.5 text-xs font-bold !text-white hover:!text-[#fbbe15] transition-colors disabled:opacity-50 cursor-pointer',
+                  showLocations && '!text-[#fbbe15]'
                 )}>
-                <MapPin size={16} />
-                Add Location
+                <MapPin size={16} className='shrink-0' />
+                <span>Add Location</span>
               </button>
               <Drawer open={showUsers} onOpenChange={setShowUsers}>
                 <DrawerTrigger asChild>
                   <button
+                    type='button'
                     onClick={() => {
                       setShowUsers(true);
                       setShowLocations(false);
                     }}
                     disabled={isUploading}
+                    style={{ color: showUsers ? '#fbbe15' : '#ffffff' }}
                     className={cn(
-                      'flex items-center gap-1.5 text-xs font-bold transition-colors disabled:opacity-50',
-                      showUsers ? 'text-[#fbbe15]' : 'text-[#1a1a1a]',
+                      'flex items-center gap-1.5 text-xs font-bold !text-white hover:!text-[#fbbe15] transition-colors disabled:opacity-50 cursor-pointer',
+                      showUsers && '!text-[#fbbe15]'
                     )}>
-                    <RiRestaurant2Fill size={16} />
-                    Tag Buka
+                    <RiRestaurant2Fill size={16} className='shrink-0' />
+                    <span>Tag Buka</span>
                   </button>
                 </DrawerTrigger>
                 <DrawerContent className='bg-[#18181b] border-white/10 text-white h-[70vh] w-full md:w-[40%] mx-auto'>
@@ -557,11 +562,13 @@ export function UploadDetails({
               </Drawer>
 
               <button
+                type='button'
                 onClick={handleHashtagClick}
                 disabled={isUploading}
-                className='flex items-center gap-1.5 text-xs font-bold text-[#1a1a1a] disabled:opacity-50 cursor-pointer'>
-                <Hash size={16} />
-                Hashtags
+                style={{ color: '#ffffff' }}
+                className='flex items-center gap-1.5 text-xs font-bold !text-white hover:!text-[#fbbe15] transition-colors disabled:opacity-50 cursor-pointer'>
+                <Hash size={16} className='shrink-0' />
+                <span>Hashtags</span>
               </button>
             </div>
 
@@ -609,7 +616,7 @@ export function UploadDetails({
                 onClick={() =>
                   onPost({
                     description: generalCaption,
-                    imageCaptions: captions,
+                    imageCaptions: isImage ? captions : undefined,
                     tags: extractHashtags(generalCaption),
                     location: selectedLocations[0],
                     restaurantId: selectedRestaurant?.id,

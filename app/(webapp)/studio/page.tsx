@@ -263,13 +263,16 @@ function LocalbukaStudioDashboardContent() {
           }
         );
       } else {
+        const isVideoPost = existingPost?.mediaType === 'video';
         const jsonData: Record<string, any> = {
           caption: data.description,
-          imageCaptions: data.imageCaptions,
           location: data.location,
           tags: data.tags,
           restaurantId: data.restaurantId,
         };
+        if (!isVideoPost && data.imageCaptions && data.imageCaptions.length > 0) {
+          jsonData.imageCaptions = data.imageCaptions;
+        }
 
         updatePostMutation.mutate(
           {id: editPostId, data: jsonData},

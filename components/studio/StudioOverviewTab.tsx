@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useRouter} from 'next/navigation';
 import type {Post} from '@/types/post';
 import type {StudioMetrics, StudioTab} from './types';
@@ -17,7 +17,44 @@ import {
   Eye,
 } from 'lucide-react';
 
-import {ensureHttps} from '@/lib/utils';
+import {ensureHttps, getVideoThumbnailUrl} from '@/lib/utils';
+
+function StudioPostThumb({post, isVideo}: {post: Post; isVideo: boolean}) {
+  const [imgError, setImgError] = useState(false);
+  const thumb = isVideo ? getVideoThumbnailUrl(post) : ensureHttps(post.mediaUrl);
+
+  if (thumb && !imgError) {
+    return (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src={thumb}
+        alt={post.caption || 'Post thumbnail'}
+        className='w-full h-full object-cover'
+        loading='lazy'
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  if (isVideo) {
+    return (
+      <video
+        src={`${ensureHttps(post.mediaUrl)}#t=0.001`}
+        poster={thumb || undefined}
+        className='w-full h-full object-cover'
+        muted
+        playsInline
+        preload='metadata'
+      />
+    );
+  }
+
+  return (
+    <div className='w-full h-full bg-zinc-800 flex items-center justify-center text-zinc-600 text-xs'>
+      No Media
+    </div>
+  );
+}
 
 interface StudioOverviewTabProps {
   metrics: StudioMetrics;
@@ -199,21 +236,7 @@ export function StudioOverviewTab({
                     onClick={() => router.push(`/posts/single/${post.id}`)}
                     className='relative aspect-square bg-black overflow-hidden group/thumb cursor-pointer'
                     title='Click to view post'>
-                    {isVideo ? (
-                      <video
-                        src={ensureHttps(post.mediaUrl)}
-                        className='w-full h-full object-cover'
-                        muted
-                        playsInline
-                      />
-                    ) : (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={ensureHttps(post.mediaUrl)}
-                        alt={post.caption || 'Thumbnail'}
-                        className='w-full h-full object-cover'
-                      />
-                    )}
+                    <StudioPostThumb post={post} isVideo={!!isVideo} />
 
                     {/* Hover Overlay with Eye View Icon */}
                     <div className='absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-1 z-10 backdrop-blur-xs'>

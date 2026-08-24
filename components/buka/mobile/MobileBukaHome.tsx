@@ -33,6 +33,7 @@ import {useGeolocation} from '@/hooks/useGeolocation';
 import {Typewriter} from '@/components/anim/Typewriter';
 import {motion, AnimatePresence} from 'framer-motion';
 import {BUKA_HERO_LANGUAGES} from '@/lib/constants';
+import {useRequireAuth} from '@/hooks/useRequireAuth';
 
 function useLocationLabel() {
   const {lat, lng, loading: geoLoading} = useGeolocation();
@@ -155,6 +156,7 @@ export function MobileBukaHome({
   const router = useRouter();
   const pathname = usePathname();
   const {user, isAuthenticated} = useAuth();
+  const {requireAuth} = useRequireAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const {data: unreadCountResponse} = useUnreadCount();
@@ -396,9 +398,13 @@ export function MobileBukaHome({
 
       {/* ── List Your Restaurant CTA ── */}
       <div className='mx-4 mt-6'>
-        <Link
-          href='/buka/list-resturant'
-          className='w-full flex items-center justify-between bg-linear-to-r from-[#fbbe15]/15 to-transparent border border-[#fbbe15]/25 rounded-2xl p-4 active:opacity-80'>
+        <button
+          onClick={() => {
+            requireAuth(() => {
+              router.push('/buka/my-restaurant');
+            });
+          }}
+          className='w-full flex items-center justify-between bg-linear-to-r from-[#fbbe15]/15 to-transparent border border-[#fbbe15]/25 rounded-2xl p-4 active:opacity-80 text-left cursor-pointer border-none'>
           <div>
             <p className='text-white font-bold text-sm'>List your restaurant</p>
             <p className='text-zinc-400 text-xs mt-0.5'>
@@ -408,7 +414,7 @@ export function MobileBukaHome({
           <div className='w-10 h-10 rounded-full bg-[#fbbe15] flex items-center justify-center shrink-0'>
             <Plus size={20} className='text-[#1a1a1a]' />
           </div>
-        </Link>
+        </button>
       </div>
 
       {/* ── Waitlist Banner (unauthenticated) ── */}

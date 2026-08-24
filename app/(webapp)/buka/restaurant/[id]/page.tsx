@@ -38,6 +38,8 @@ import {
 import {useToast} from '@/hooks/use-toast';
 import {CgSpinner} from 'react-icons/cg';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
+import {useAuth} from '@/context/AuthContext';
+import {ShareDrawer} from '@/components/video/ShareDrawer';
 import {RESTAURANT_PLACEHOLDER_IMG} from '@/lib/constants';
 import {helper} from '@/utils/helper';
 
@@ -657,6 +659,8 @@ export default function RestaurantDetailPage() {
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [showDirectionsModal, setShowDirectionsModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isSavingWishlist, setIsSavingWishlist] = useState(false);
 
   const handleOpenDirections = useCallback(() => {
     if (typeof window === 'undefined' || !navigator.geolocation) {
@@ -694,21 +698,71 @@ export default function RestaurantDetailPage() {
 
   // Mutations for saved state
   const {data: savedRestaurantsRes} = useSavedRestaurants();
-  const savedRestaurants = Array.isArray(savedRestaurantsRes)
-    ? savedRestaurantsRes
-    : (savedRestaurantsRes as any)?.data || [];
-  const isSaved = savedRestaurants.some((r: any) => r.id === id);
-
+  const {isAuthenticated} = useAuth();
+  const {toast} = useToast();
   const saveMutation = useSaveRestaurant();
   const removeSaveMutation = useRemoveSavedRestaurant();
   const {requireAuth} = useRequireAuth();
 
+  const isSaved = useMemo(() => {
+    if (!isAuthenticated || !savedRestaurantsRes) return false;
+    const responseData = (savedRestaurantsRes as any)?.data;
+    const items = Array.isArray(responseData?.data)
+      ? responseData.data
+      : Array.isArray(responseData)
+        ? responseData
+        : Array.isArray(savedRestaurantsRes)
+          ? savedRestaurantsRes
+          : [];
+
+    if (items.length === 0) return false;
+
+    const dbId = restaurant?.id || id;
+    const gId = restaurant?.googlePlaceId;
+
+    return items.some((item: any) => {
+      const r = item.restaurant || item;
+      return (
+        (dbId && r.id === dbId) ||
+        (gId && r.googlePlaceId === gId) ||
+        r.id === id ||
+        r.id === dbId ||
+        item.restaurantId === id ||
+        item.restaurantId === dbId ||
+        (gId && item.googlePlaceId === gId)
+      );
+    });
+  }, [isAuthenticated, savedRestaurantsRes, restaurant, id]);
+
   const handleToggleSave = () => {
-    requireAuth(() => {
-      if (isSaved) {
-        removeSaveMutation.mutate(id);
-      } else {
-        saveMutation.mutate(id);
+    requireAuth(async () => {
+      setIsSavingWishlist(true);
+      const targetId = restaurant?.id || id;
+      try {
+        if (isSaved) {
+          await removeSaveMutation.mutateAsync(targetId);
+          toast({
+            title: 'Removed from Saved',
+            description: `${restaurant?.name || 'Restaurant'} removed from your saved list.`,
+          });
+        } else {
+          await saveMutation.mutateAsync(targetId);
+          toast({
+            title: 'Saved to Wishlist! 🎉',
+            description: `${restaurant?.name || 'Restaurant'} added to your saved list.`,
+            variant: 'success',
+          });
+        }
+      } catch (err: any) {
+        toast({
+          title: 'Action Failed',
+          description:
+            err?.response?.data?.message ||
+            'Unable to update saved status. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsSavingWishlist(false);
       }
     });
   };
@@ -846,23 +900,43 @@ export default function RestaurantDetailPage() {
 
               {/* Action buttons */}
               <div className='flex items-center gap-4 md:gap-6'>
-                <button className='flex flex-col items-center gap-1 cursor-pointer group'>
-                  <div className='w-10 h-10 flex items-center justify-center rounded-lg border border-zinc-600 group-hover:border-zinc-400 transition-colors'>
-                    <Phone size={16} className='text-white' />
-                  </div>
-                  <span className='text-zinc-400 text-[10px]'>Call</span>
-                </button>
+                {restaurant?.phone ? (
+                  <a
+                    href={`tel:${restaurant.phone}`}
+                    className='flex flex-col items-center gap-1 cursor-pointer group'
+                    title={`Call ${restaurant.phone}`}>
+                    <div className='w-10 h-10 flex items-center justify-center rounded-lg border border-zinc-600 group-hover:border-zinc-400 group-hover:bg-white/5 transition-colors'>
+                      <Phone size={16} className='text-white' />
+                    </div>
+                    <span className='text-zinc-400 text-[10px]'>Call</span>
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => {
+                      toast({
+                        title: 'Phone Number Unavailable',
+                        description:
+                          'This restaurant does not have a listed phone number.',
+                      });
+                    }}
+                    className='flex flex-col items-center gap-1 cursor-pointer group'
+                    title='No phone number available'>
+                    <div className='w-10 h-10 flex items-center justify-center rounded-lg border border-zinc-600 group-hover:border-zinc-400 group-hover:bg-white/5 transition-colors'>
+                      <Phone size={16} className='text-white' />
+                    </div>
+                    <span className='text-zinc-400 text-[10px]'>Call</span>
+                  </button>
+                )}
                 <button
                   onClick={handleToggleSave}
-                  disabled={
-                    saveMutation.isPending || removeSaveMutation.isPending
-                  }
-                  className='flex flex-col items-center gap-1 cursor-pointer group'>
+                  disabled={isSavingWishlist}
+                  className='flex flex-col items-center gap-1 cursor-pointer group'
+                  title={isSaved ? 'Remove from Saved' : 'Save Restaurant'}>
                   <div
-                    className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-colors ${
+                    className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${
                       isSaved
-                        ? 'border-[#fbbe15] bg-[#fbbe15]/10'
-                        : 'border-zinc-600 group-hover:border-zinc-400'
+                        ? 'border-[#fbbe15] bg-[#fbbe15]/20 shadow-[0_0_12px_rgba(251,190,21,0.25)]'
+                        : 'border-zinc-600 group-hover:border-zinc-400 group-hover:bg-white/5'
                     }`}>
                     <Bookmark
                       size={16}
@@ -875,8 +949,11 @@ export default function RestaurantDetailPage() {
                     {isSaved ? 'Saved' : 'Save'}
                   </span>
                 </button>
-                <button className='flex flex-col items-center gap-1 cursor-pointer group'>
-                  <div className='w-10 h-10 flex items-center justify-center rounded-lg border border-zinc-600 group-hover:border-zinc-400 transition-colors'>
+                <button
+                  onClick={() => setIsShareOpen(true)}
+                  className='flex flex-col items-center gap-1 cursor-pointer group'
+                  title='Share Restaurant'>
+                  <div className='w-10 h-10 flex items-center justify-center rounded-lg border border-zinc-600 group-hover:border-zinc-400 group-hover:bg-white/5 transition-colors'>
                     <Share2 size={16} className='text-white' />
                   </div>
                   <span className='text-zinc-400 text-[10px]'>Share</span>
@@ -1159,6 +1236,28 @@ export default function RestaurantDetailPage() {
           restaurantName={restaurant.name}
           onClose={() => setShowReviewModal(false)}
         />
+      )}
+
+      {/* Share Drawer / Modal */}
+      <ShareDrawer
+        open={isShareOpen}
+        onOpenChange={setIsShareOpen}
+        shareUrl={
+          typeof window !== 'undefined'
+            ? `${window.location.origin}/buka/restaurant/${id}`
+            : `https://www.localbuka.com/buka/restaurant/${id}`
+        }
+        shareText={`Check out ${restaurant.name} on LocalBuka!`}
+      />
+
+      {/* Fullscreen Loading Overlay for Save/Wishlist */}
+      {isSavingWishlist && (
+        <div className='fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex flex-col items-center justify-center gap-3'>
+          <CgSpinner className='animate-spin text-[#fbbe15] text-5xl' />
+          <span className='text-white text-sm font-semibold tracking-wide'>
+            {isSaved ? 'Removing from saved...' : 'Saving restaurant...'}
+          </span>
+        </div>
       )}
     </div>
   );

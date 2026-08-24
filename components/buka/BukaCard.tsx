@@ -49,7 +49,13 @@ function getGooglePlaceId(raw: Restaurant): string | null {
  */
 function extractNewId(response: any): string | null {
   const resData = response?.data as any;
-  return resData?.data?.id || resData?.id || null;
+  return (
+    resData?.data?.id ||
+    resData?.id ||
+    response?.data?.id ||
+    response?.id ||
+    null
+  );
 }
 
 /**
@@ -119,7 +125,7 @@ export function BukaCard({restaurant}: BukaCardProps) {
     : null;
 
   // ── Navigate for non-approved/unimported items ──
-  const handleClick = async (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setErrorMessage(null);
@@ -127,19 +133,23 @@ export function BukaCard({restaurant}: BukaCardProps) {
     const placeId = restaurant.rawRestaurant
       ? getGooglePlaceId(restaurant.rawRestaurant)
       : null;
+
     if (placeId) {
-      setIsSaving(true);
-      try {
-        const response = await importRestaurant(placeId);
-        const newId = extractNewId(response);
-        if (newId) {
-          router.push(`/buka/restaurant/${newId}`);
+      requireAuth(async () => {
+        setIsSaving(true);
+        setErrorMessage(null);
+        try {
+          const response = await importRestaurant(placeId);
+          const newId = extractNewId(response);
+          if (newId) {
+            router.push(`/buka/restaurant/${newId}`);
+          }
+        } catch (err: any) {
+          setErrorMessage(getErrorMessage(err, 'save'));
+        } finally {
+          setIsSaving(false);
         }
-      } catch (err: any) {
-        setErrorMessage(getErrorMessage(err, 'save'));
-      } finally {
-        setIsSaving(false);
-      }
+      });
     } else {
       router.push(`/buka/restaurant/${restaurant.id}`);
     }
@@ -207,7 +217,9 @@ export function BukaCard({restaurant}: BukaCardProps) {
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    requireAuth(() => doWishlistSave());
+    requireAuth(() => {
+      doWishlistSave();
+    });
   };
 
   const isOpen = isRestaurantOpen(
@@ -262,7 +274,13 @@ export function BukaCard({restaurant}: BukaCardProps) {
         )}
         {/* Wishlist Bookmark */}
         <button
-          onClick={handleWishlist}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            requireAuth(() => {
+              doWishlistSave();
+            });
+          }}
           disabled={isSavingWishlist}
           className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-md transition-all ${
             isWishlisted

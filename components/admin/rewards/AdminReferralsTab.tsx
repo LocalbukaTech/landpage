@@ -9,10 +9,8 @@ import {
   Clock, 
   XCircle, 
   Loader2, 
-  Filter,
   ChevronLeft,
   ChevronRight,
-  ShieldAlert
 } from 'lucide-react';
 import { useAdminReferrals } from '@/lib/api/services/admin-rewards.hooks';
 import { adminRewardsService } from '@/lib/api/services/admin-rewards.service';
@@ -60,7 +58,7 @@ export function AdminReferralsTab({ onViewDetail }: AdminReferralsTabProps) {
     }
   }, [page, search, status, dateFrom, dateTo]);
 
-  const { data, isLoading, isFetching, refetch } = useAdminReferrals({
+  const { data, isLoading } = useAdminReferrals({
     page,
     pageSize,
     status: status === 'ALL' ? undefined : status,

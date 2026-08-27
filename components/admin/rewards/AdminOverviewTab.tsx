@@ -7,7 +7,6 @@ import {
   ShieldAlert, 
   CheckCircle2, 
   Clock, 
-  XCircle, 
   ArrowUpRight,
   Wallet,
   Loader2,

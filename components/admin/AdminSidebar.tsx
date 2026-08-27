@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { 
   LogOut, 
-  ChevronsLeft, 
-  ChevronsRight 
+  ChevronsLeft 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ADMIN_NAV_ITEMS } from "@/components/admin/admin.config";
@@ -28,11 +27,7 @@ export function AdminSidebar({
   className,
 }: AdminSidebarProps) {
   const pathname = usePathname();
-  const [admin, setAdmin] = useState<Admin | null>(null);
-
-  useEffect(() => {
-    setAdmin(getAdminUser());
-  }, []);
+  const [admin] = useState<Admin | null>(() => getAdminUser());
 
   const adminInitials = admin
     ? `${admin.first_name?.[0] || ""}${admin.last_name?.[0] || ""}`.toUpperCase()

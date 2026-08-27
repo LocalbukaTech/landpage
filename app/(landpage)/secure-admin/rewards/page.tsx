@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { 
   Gift, 
   LayoutDashboard, 
@@ -28,27 +28,24 @@ const VALID_TABS: AdminTab[] = ['overview', 'referrals', 'ledger', 'flagged', 'p
 const STORAGE_KEY = 'admin_rewards_active_tab';
 
 function AdminRewardsContent() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Determine initial tab from URL query param or localStorage
+  // Determine active tab from URL query param or state/localStorage
   const tabParam = searchParams.get('tab') as AdminTab | null;
-  const initialTab: AdminTab = tabParam && VALID_TABS.includes(tabParam)
-    ? tabParam
-    : typeof window !== 'undefined' && localStorage.getItem(STORAGE_KEY) && VALID_TABS.includes(localStorage.getItem(STORAGE_KEY) as AdminTab)
-    ? (localStorage.getItem(STORAGE_KEY) as AdminTab)
-    : 'overview';
+  const validTabParam = tabParam && VALID_TABS.includes(tabParam) ? tabParam : null;
 
-  const [activeTab, setActiveTabState] = useState<AdminTab>(initialTab);
-
-  // Sync tab state when URL search param changes
-  useEffect(() => {
-    if (tabParam && VALID_TABS.includes(tabParam) && tabParam !== activeTab) {
-      setActiveTabState(tabParam);
-      localStorage.setItem(STORAGE_KEY, tabParam);
+  const [activeTabState, setActiveTabState] = useState<AdminTab>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEY) as AdminTab | null;
+      if (stored && VALID_TABS.includes(stored)) {
+        return stored;
+      }
     }
-  }, [tabParam, activeTab]);
+    return 'overview';
+  });
+
+  const activeTab: AdminTab = validTabParam || activeTabState;
 
   const handleTabChange = (tab: AdminTab) => {
     setActiveTabState(tab);

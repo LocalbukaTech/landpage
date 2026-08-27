@@ -13,14 +13,13 @@ import {
   CheckCircle2,
   Clock,
   HelpCircle,
-  RefreshCw,
   Award,
   LogIn,
   TrendingUp,
   ArrowDownToLine,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useRewardsDashboard, useGenerateReferralCode } from '@/lib/api/services/referral.hooks';
+import { useRewardsDashboard } from '@/lib/api/services/referral.hooks';
 import { RedeemModal } from '@/components/rewards/RedeemModal';
 import { VanityCodeModal } from '@/components/rewards/VanityCodeModal';
 import { TopEarnersCarousel } from '@/components/rewards/TopEarnersCarousel';
@@ -33,7 +32,6 @@ import { ShareDrawer } from '@/components/video/ShareDrawer';
 export default function RewardsPage() {
   const { isAuthenticated, openAuthModal } = useAuth();
   const { data: dashboard, isLoading } = useRewardsDashboard();
-  const generateCodeMutation = useGenerateReferralCode();
 
   const [copiedType, setCopiedType] = useState<'code' | 'link' | null>(null);
   const [isRedeemOpen, setIsRedeemOpen] = useState(false);

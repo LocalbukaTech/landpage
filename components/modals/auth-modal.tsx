@@ -50,28 +50,36 @@ export function AuthModal() {
   // Auto-detect referral code from URL or storage when modal opens
   useEffect(() => {
     if (typeof window !== 'undefined' && isAuthModalOpen) {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const refCode = params.get('ref') || params.get('referral') || localStorage.getItem('localbuka_ref_code');
-        if (refCode) {
-          setSignupData((prev) => (prev.referralCode ? prev : {...prev, referralCode: refCode}));
-          if (params.get('ref') || params.get('referral')) {
-            setTab('signup');
+      const timer = setTimeout(() => {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const refCode = params.get('ref') || params.get('referral') || localStorage.getItem('localbuka_ref_code');
+          if (refCode) {
+            setSignupData((prev) => (prev.referralCode ? prev : {...prev, referralCode: refCode}));
+            if (params.get('ref') || params.get('referral')) {
+              setTab('signup');
+            }
           }
+        } catch {
+          // Ignore URL parsing errors
         }
-      } catch {
-        // Ignore URL parsing errors
-      }
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isAuthModalOpen]);
 
   useEffect(() => {
     const code = signupData.referralCode.trim();
     if (!code) {
-      lastValidatedCodeRef.current = '';
-      setReferrerStatus('idle');
-      setReferrerName('');
-      setReferrerMessage('');
+      if (lastValidatedCodeRef.current) {
+        lastValidatedCodeRef.current = '';
+        const timer = setTimeout(() => {
+          setReferrerStatus('idle');
+          setReferrerName('');
+          setReferrerMessage('');
+        }, 0);
+        return () => clearTimeout(timer);
+      }
       return;
     }
 

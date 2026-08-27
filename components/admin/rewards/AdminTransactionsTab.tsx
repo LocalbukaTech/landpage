@@ -10,7 +10,6 @@ import {
   Plus,
   Minus,
   Wallet,
-  Coins
 } from 'lucide-react';
 import { useAdminTransactions } from '@/lib/api/services/admin-rewards.hooks';
 import { adminRewardsService } from '@/lib/api/services/admin-rewards.service';

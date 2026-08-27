@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -25,17 +25,13 @@ const SIDEBAR_COLLAPSE_STORAGE_KEY = "admin_sidebar_collapsed";
 export function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Restore sidebar collapse state from localStorage
-  useEffect(() => {
+  const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(SIDEBAR_COLLAPSE_STORAGE_KEY);
-      if (saved === "true") {
-        setIsCollapsed(true);
-      }
+      return saved === "true";
     }
-  }, []);
+    return false;
+  });
 
   const handleToggleCollapse = () => {
     setIsCollapsed((prev) => {
@@ -71,7 +67,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         />
 
         {/* Content Area with independent scroll */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 text-xs">
           {children}
         </main>
       </div>

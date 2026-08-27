@@ -2,8 +2,16 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, startTransition } from 'react';
+import { Poppins } from 'next/font/google';
 import { isAuthenticated } from '@/lib/auth';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+
+const poppins = Poppins({
+  variable: '--font-poppins',
+  subsets: ['latin'],
+  weight: ['200','300', '400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+});
 
 export default function SecureAdminLayout({
   children,
@@ -34,12 +42,16 @@ export default function SecureAdminLayout({
   }, [isLoginPage, router]);
 
   if (isLoginPage) {
-    return <>{children}</>;
+    return (
+      <div className={`${poppins.variable} ${poppins.className} font-poppins [--font-sans:var(--font-poppins)] [--font-nunito-sans:var(--font-poppins)]`}>
+        {children}
+      </div>
+    );
   }
 
   if (isLoading || !isAuth) {
     return (
-      <div className='min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center'>
+      <div className={`${poppins.variable} ${poppins.className} font-poppins [--font-sans:var(--font-poppins)] [--font-nunito-sans:var(--font-poppins)] min-h-screen bg-gray-50 dark:bg-black flex items-center justify-center`}>
         <div className='text-center'>
           <div className='w-10 h-10 border-3 border-[#fbbe15] border-t-transparent rounded-full animate-spin mx-auto mb-4' />
           <p className='text-xs text-muted-foreground'>Loading...</p>
@@ -48,5 +60,9 @@ export default function SecureAdminLayout({
     );
   }
 
-  return <AdminLayout>{children}</AdminLayout>;
+  return (
+    <div className={`${poppins.variable} ${poppins.className} font-poppins [--font-sans:var(--font-poppins)] [--font-nunito-sans:var(--font-poppins)] text-xs`}>
+      <AdminLayout>{children}</AdminLayout>
+    </div>
+  );
 }

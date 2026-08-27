@@ -1,8 +1,4 @@
 import {
-  LayoutGrid,
-  Newspaper,
-  Users2,
-  Clock3,
   UserCog,
   Gift,
   UtensilsCrossed,

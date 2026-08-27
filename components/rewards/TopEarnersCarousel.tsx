@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, Award, Trophy } from 'lucide-react';
+import { ChevronRight, Trophy } from 'lucide-react';
 import { useRewardsLeaderboard } from '@/lib/api/services/referral.hooks';
 
 export function TopEarnersCarousel() {

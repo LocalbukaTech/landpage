@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Settings, Bell, LogOut, PanelLeftClose, PanelLeftOpen, ChevronsRight } from "lucide-react";
+import { Settings, Bell, LogOut, ChevronsRight } from "lucide-react";
 
 interface AdminHeaderProps {
   isCollapsed?: boolean;

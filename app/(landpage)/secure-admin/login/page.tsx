@@ -46,7 +46,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className='min-h-screen bg-linear-to-br from-primary/10 via-white to-primary/5 dark:from-black dark:via-gray-950 dark:to-black flex items-center justify-center px-4'>
+    <div className='min-h-screen bg-linear-to-br from-primary/10 via-white to-primary/5 dark:from-black dark:via-gray-950 dark:to-black flex items-center justify-center px-4 text-xs'>
       <div className='max-w-md w-full'>
         {/* Header */}
         <div className='text-center mb-8'>

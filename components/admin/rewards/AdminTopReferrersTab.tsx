@@ -5,11 +5,7 @@ import {
   Trophy, 
   Tag, 
   Plus, 
-  Loader2, 
-  CheckCircle2, 
-  Clock, 
-  Coins, 
-  ArrowUpRight 
+  Loader2 
 } from 'lucide-react';
 import { useAdminTopReferrers } from '@/lib/api/services/admin-rewards.hooks';
 

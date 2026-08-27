@@ -9,18 +9,17 @@ import {
   ChevronRight,
   Monitor,
   Globe,
-  AlertTriangle
 } from 'lucide-react';
 import { useAdminFlagged } from '@/lib/api/services/admin-rewards.hooks';
 
 interface AdminFlaggedTabProps {
   onViewDetail: (id: string) => void;
-  onOpenAdjustModal: (userId?: string, userName?: string) => void;
+  onOpenAdjustModal?: (userId?: string, userName?: string) => void;
 }
 
 const STORAGE_KEY = 'admin_flagged_filters_v1';
 
-export function AdminFlaggedTab({ onViewDetail, onOpenAdjustModal }: AdminFlaggedTabProps) {
+export function AdminFlaggedTab({ onViewDetail, onOpenAdjustModal: _onOpenAdjustModal }: AdminFlaggedTabProps) {
   const getSavedPage = () => {
     if (typeof window === 'undefined') return 1;
     try {

@@ -64,10 +64,15 @@ const SignUpContent = () => {
   useEffect(() => {
     const code = formData.referralCode.trim();
     if (!code) {
-      lastValidatedCodeRef.current = '';
-      setReferrerStatus('idle');
-      setReferrerName('');
-      setReferrerMessage('');
+      if (lastValidatedCodeRef.current) {
+        lastValidatedCodeRef.current = '';
+        const timer = setTimeout(() => {
+          setReferrerStatus('idle');
+          setReferrerName('');
+          setReferrerMessage('');
+        }, 0);
+        return () => clearTimeout(timer);
+      }
       return;
     }
 

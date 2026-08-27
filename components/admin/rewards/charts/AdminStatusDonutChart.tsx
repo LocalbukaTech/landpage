@@ -18,7 +18,7 @@ export function AdminStatusDonutChart({
   pending = 0,
   rejected = 0,
   total = 0,
-  conversionRate,
+  conversionRate: _conversionRate,
   onViewFlagged,
 }: AdminStatusDonutChartProps) {
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);

@@ -3,19 +3,11 @@
 import {useState, useEffect} from 'react';
 import {
   ArrowRight,
-  Bell,
-  Bookmark,
-  Home,
   Loader2,
   MapPin,
   Menu,
   Plus,
-  PlusCircle,
   Search,
-  Store,
-  User,
-  Users,
-  UtensilsCrossed,
   X,
 } from 'lucide-react';
 import Image from 'next/image';

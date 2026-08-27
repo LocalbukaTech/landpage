@@ -109,33 +109,33 @@ export default function BukaDetails() {
   return (
     <div className='max-w-6xl mx-auto flex flex-col gap-6 font-sans'>
       {/* Breadcrumbs */}
-      <div className='flex items-center gap-2 text-sm text-gray-500 mt-2'>
+      <div className='flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mt-2'>
         <Link
           href='/secure-admin/buka-management'
-          className='flex items-center gap-1 hover:text-gray-900 transition-colors'>
+          className='flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors'>
           <ArrowLeft size={16} />
           Buka Management
         </Link>
-        <span className='text-gray-400'>/</span>
-        <span className='font-semibold text-[#1e293b]'>{restaurant.name}</span>
+        <span className='text-gray-400 dark:text-gray-600'>/</span>
+        <span className='font-semibold text-[#1e293b] dark:text-white'>{restaurant.name}</span>
       </div>
 
       <div className='flex justify-between items-end mb-2'>
-        <h1 className='text-[24px] font-bold text-[#1e293b]'>
+        <h1 className='text-[24px] font-bold text-[#1e293b] dark:text-white'>
           {restaurant.name}
         </h1>
         <div className='flex flex-col items-end gap-1'>
-          <span className='text-[10px] text-gray-400 uppercase tracking-widest font-semibold'>
+          <span className='text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-semibold'>
             User ID: {restaurant.owner?.id || 'N/A'}
           </span>
-          <span className='text-[10px] text-gray-400 lowercase tracking-wide font-medium'>
+          <span className='text-[10px] text-gray-400 dark:text-gray-500 lowercase tracking-wide font-medium'>
             {restaurant.owner?.email || 'N/A'}
           </span>
         </div>
       </div>
 
       {/* Main Card */}
-      <div className='bg-white border border-gray-100 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-8'>
+      <div className='bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] dark:shadow-none p-8'>
         <div className='flex flex-col lg:flex-row gap-8'>
           {/* Left: Image Carousel */}
           {(() => {
@@ -148,7 +148,7 @@ export default function BukaDetails() {
             const next = () => setActivePhoto((p) => (p + 1) % total);
             return (
               <div className='w-full lg:w-[45%]'>
-                <div className='relative aspect-4/3 rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-gray-50 select-none'>
+                <div className='relative aspect-4/3 rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 shadow-sm border border-gray-50 dark:border-gray-800 select-none'>
                   <Image
                     key={activePhoto}
                     src={photos[activePhoto]}
@@ -232,37 +232,37 @@ export default function BukaDetails() {
               <div className='flex items-center gap-2'>
                 <Utensils
                   size={24}
-                  className='text-[#1e293b]'
+                  className='text-[#1e293b] dark:text-white'
                   strokeWidth={2.5}
                 />
-                <h2 className='text-[26px] font-bold text-[#1e293b] leading-tight truncate'>
+                <h2 className='text-[26px] font-bold text-[#1e293b] dark:text-white leading-tight truncate'>
                   {restaurant.name}
                 </h2>
               </div>
               <div className='flex items-center gap-2 shrink-0'>
                 <span
                   className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1 
-                  ${badgeStatus === 'Active' ? 'text-white bg-green-500' : 'text-[#D39B0A] bg-[#FCF7E8]'}
+                  ${badgeStatus === 'Active' ? 'text-white bg-green-500' : 'text-[#D39B0A] dark:text-[#fbbe15] bg-[#FCF7E8] dark:bg-yellow-950/40'}
                   `}>
                   <span className='w-2 h-2 border border-current rounded-full' />
                   {badgeStatus}
                 </span>
               </div>
             </div>
-            <span className='px-3 py-1 text-[#D39B0A] text-xs font-semibold rounded-full capitalize'>
+            <span className='px-3 py-1 text-[#D39B0A] dark:text-[#fbbe15] text-xs font-semibold rounded-full capitalize w-fit'>
               {restaurant.cuisine.split(',').join(', ') || 'Cuisine'}
             </span>
 
             {/* Address */}
-            <div className='flex items-start gap-2 text-[#4b5563] mb-6'>
+            <div className='flex items-start gap-2 text-[#4b5563] dark:text-gray-300 mb-6 mt-3'>
               <MapPin size={20} className='text-[#fbbe15] mt-1 shrink-0' />
-              <span className='text-[17px] leading-snug'>
+              <span className='text-[16px] leading-snug'>
                 {restaurant.address}
               </span>
             </div>
 
             {/* Ratings Badge */}
-            <div className='bg-[#0f172a] rounded-xl p-4 flex items-center gap-6 mb-8 w-fit text-sm'>
+            <div className='bg-[#0f172a] dark:bg-gray-800 rounded-xl p-4 flex items-center gap-6 mb-8 w-fit text-sm'>
               <div className='flex items-center gap-1.5 text-white'>
                 <span className='text-[#fbbe15] font-bold'>
                   {restaurant.googleRating?.toFixed(1) || '0.0'}
@@ -284,13 +284,13 @@ export default function BukaDetails() {
             </div>
 
             {/* Additional Info Grid */}
-            <div className='grid grid-cols-2 gap-y-4 gap-x-8 text-sm border-b border-gray-50 pb-6 mb-6'>
-              <div className='flex items-center gap-3 text-gray-600'>
-                <Phone size={16} className='text-gray-400' />
+            <div className='grid grid-cols-2 gap-y-4 gap-x-8 text-sm border-b border-gray-50 dark:border-gray-800 pb-6 mb-6'>
+              <div className='flex items-center gap-3 text-gray-600 dark:text-gray-300'>
+                <Phone size={16} className='text-gray-400 dark:text-gray-500' />
                 <span>{restaurant.phone || 'No phone listed'}</span>
               </div>
-              <div className='flex items-center gap-3 text-gray-600'>
-                <Globe size={16} className='text-gray-400' />
+              <div className='flex items-center gap-3 text-gray-600 dark:text-gray-300'>
+                <Globe size={16} className='text-gray-400 dark:text-gray-500' />
                 <a
                   className='truncate text-primary'
                   target='_blank'
@@ -298,8 +298,8 @@ export default function BukaDetails() {
                   {restaurant.website}
                 </a>
               </div>
-              <div className='flex items-center gap-3 text-gray-600'>
-                <Clock size={16} className='text-gray-400' />
+              <div className='flex items-center gap-3 text-gray-600 dark:text-gray-300'>
+                <Clock size={16} className='text-gray-400 dark:text-gray-500' />
                 <span className='capitalize'>
                   {restaurant.status || 'Pending'}
                 </span>
@@ -308,7 +308,7 @@ export default function BukaDetails() {
 
             {/* Opening Hours */}
             <div className='flex justify-start'>
-              <div className='text-[15px] font-semibold text-[#1e293b] mr-8 mt-1 shrink-0'>
+              <div className='text-[15px] font-semibold text-[#1e293b] dark:text-white mr-8 mt-1 shrink-0'>
                 Hours:
               </div>
               <div className='flex flex-col gap-3 text-[15px]'>
@@ -329,15 +329,15 @@ export default function BukaDetails() {
                   )?.[day];
                   return (
                     <div key={day} className='flex gap-16'>
-                      <span className='text-gray-400 w-24 capitalize'>
+                      <span className='text-gray-400 dark:text-gray-500 w-24 capitalize'>
                         {day}
                       </span>
                       {hours ? (
-                        <span className='text-[#1e293b] font-medium'>
+                        <span className='text-[#1e293b] dark:text-gray-200 font-medium'>
                           {hours}
                         </span>
                       ) : (
-                        <span className='text-gray-300 font-medium italic'>
+                        <span className='text-gray-300 dark:text-gray-600 font-medium italic'>
                           Closed
                         </span>
                       )}
@@ -350,21 +350,21 @@ export default function BukaDetails() {
         </div>
 
         {/* Bottom Actions */}
-        <div className='flex justify-end mt-12 gap-4 border-t border-gray-100 pt-8'>
+        <div className='flex justify-end mt-12 gap-4 border-t border-gray-100 dark:border-gray-800 pt-8'>
           {restaurant.status === 'pending' ||
           restaurant.status === 'suspended' ? (
             <>
               <button
                 onClick={() => setIsRejectModalOpen(true)}
                 disabled={updateStatusMutation.isPending}
-                className='flex items-center gap-2 px-6 py-2.5 bg-[#FEF2F2] text-[#EF4444] hover:bg-[#fee2e2] transition-colors rounded-xl text-sm font-semibold disabled:opacity-50'>
+                className='flex items-center gap-2 px-6 py-2.5 bg-[#FEF2F2] dark:bg-red-950/40 text-[#EF4444] dark:text-red-400 hover:bg-[#fee2e2] dark:hover:bg-red-900/40 transition-colors rounded-xl text-sm font-semibold disabled:opacity-50 cursor-pointer border-none'>
                 <XCircle size={16} strokeWidth={3} />
                 Reject
               </button>
               <button
                 onClick={() => handleUpdateStatus('approved')}
                 disabled={updateStatusMutation.isPending}
-                className='flex items-center gap-2 px-6 py-2.5 bg-[#F0FDF4] text-[#22C55E] hover:bg-[#dcfce7] transition-colors rounded-xl text-sm font-semibold disabled:opacity-50'>
+                className='flex items-center gap-2 px-6 py-2.5 bg-[#F0FDF4] dark:bg-emerald-950/40 text-[#22C55E] dark:text-emerald-400 hover:bg-[#dcfce7] dark:hover:bg-emerald-900/40 transition-colors rounded-xl text-sm font-semibold disabled:opacity-50 cursor-pointer border-none'>
                 {updateStatusMutation.isPending ? (
                   <Loader2 size={16} className='animate-spin' />
                 ) : (
@@ -376,7 +376,7 @@ export default function BukaDetails() {
           ) : (
             <div className='flex items-center gap-4'>
               <div
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border ${restaurant.status === 'approved' ? 'bg-[#F0FDF4] text-[#22C55E] border-green-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold border ${restaurant.status === 'approved' ? 'bg-[#F0FDF4] dark:bg-emerald-950/30 text-[#22C55E] dark:text-emerald-400 border-green-100 dark:border-green-900/40' : 'bg-gray-50 dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-gray-700'}`}>
                 {restaurant.status === 'approved' ? (
                   <CheckCircle size={16} />
                 ) : (
@@ -389,7 +389,7 @@ export default function BukaDetails() {
               {restaurant.status === 'approved' && (
                 <button
                   onClick={() => setIsSuspendModalOpen(true)}
-                  className='px-6 py-2.5 text-xs text-gray-400 hover:text-red-500 font-medium transition-colors'>
+                  className='px-6 py-2.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 font-medium transition-colors cursor-pointer border-none bg-transparent'>
                   Suspend Restaurant
                 </button>
               )}

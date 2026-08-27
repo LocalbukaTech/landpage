@@ -26,6 +26,30 @@ export function AutoAuthPrompt() {
   const hasTriggeredRef = useRef(false);
   const startTimeRef = useRef<number | null>(null);
 
+  // Capture ?ref= or ?referral= from URL and store in storage (do not open modal on excluded pages like /signup)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const refCode = params.get('ref') || params.get('referral');
+        if (refCode) {
+          localStorage.setItem('localbuka_ref_code', refCode);
+
+          const isExcluded = EXCLUDED_PREFIXES.some(
+            (prefix) => pathname === prefix || pathname?.startsWith(`${prefix}/`),
+          );
+
+          if (!isExcluded && !isAuthenticated && !isAuthModalOpen && !hasTriggeredRef.current) {
+            hasTriggeredRef.current = true;
+            openAuthModal();
+          }
+        }
+      } catch {
+        // Ignore
+      }
+    }
+  }, [isAuthenticated, isAuthModalOpen, openAuthModal, pathname]);
+
   useEffect(() => {
     // If user is logged in or prompt has already shown, do nothing
     if (isAuthenticated) {

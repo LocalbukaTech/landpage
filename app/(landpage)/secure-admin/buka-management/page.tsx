@@ -57,25 +57,25 @@ export default function BukaManagement() {
   return (
     <div className='flex flex-col gap-6'>
       <div className='w-full max-w-6xl mx-auto flex flex-col gap-4 mt-8'>
-        <div className='bg-white border border-gray-100 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] flex flex-col min-h-[600px]'>
+        <div className='bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none flex flex-col min-h-[600px]'>
           {/* Toolbar */}
-          <div className='flex items-center justify-between px-5 py-3.5 border-b border-gray-100 rounded-t-xl'>
-            <div className='relative w-[300px]'>
+          <div className='flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 rounded-t-xl overflow-x-auto scrollbar-thin gap-4'>
+            <div className='relative w-[300px] shrink-0'>
               <Search
-                className='absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300'
+                className='absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 dark:text-gray-600'
                 size={16}
               />
               <input
                 type='text'
                 placeholder='Search disabled...'
                 disabled
-                className='w-full bg-gray-50 border border-gray-100 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-400 cursor-not-allowed opacity-60 focus:outline-none'
+                className='w-full bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60 focus:outline-none'
               />
             </div>
 
             <div className='flex items-center gap-5 pr-1'>
               <div className='flex items-center gap-2'>
-                <span className='text-[11px] text-gray-400 uppercase font-bold tracking-wider'>
+                <span className='text-[11px] text-gray-400 dark:text-gray-500 uppercase font-bold tracking-wider'>
                   Status:
                 </span>
                 <select
@@ -84,11 +84,11 @@ export default function BukaManagement() {
                     setStatusFilter(e.target.value);
                     setPage(1);
                   }}
-                  className='text-sm bg-transparent border-none focus:ring-0 text-gray-600 font-semibold cursor-pointer outline-none'>
-                  <option value='approved'>Approved</option>
-                  <option value='pending'>Pending</option>
-                  <option value='rejected'>Rejected</option>
-                  <option value='suspended'>Suspended</option>
+                  className='text-sm bg-transparent border-none focus:ring-0 text-gray-600 dark:text-gray-300 font-semibold cursor-pointer outline-none dark:bg-gray-900'>
+                  <option value='approved' className='dark:bg-gray-900 dark:text-gray-200'>Approved</option>
+                  <option value='pending' className='dark:bg-gray-900 dark:text-gray-200'>Pending</option>
+                  <option value='rejected' className='dark:bg-gray-900 dark:text-gray-200'>Rejected</option>
+                  <option value='suspended' className='dark:bg-gray-900 dark:text-gray-200'>Suspended</option>
                 </select>
               </div>
 
@@ -106,13 +106,13 @@ export default function BukaManagement() {
                     }
                   }}
                 />
-                <button className='flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors pointer-events-none'>
+                <button className='flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors pointer-events-none'>
                   <Calendar size={15} />
                   Date
                 </button>
               </div>
 
-              <button className='flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors'>
+              <button className='flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors cursor-pointer border-none bg-transparent'>
                 <SlidersHorizontal size={15} />
                 Filters
               </button>
@@ -122,10 +122,10 @@ export default function BukaManagement() {
           {/* Table */}
           <div className='flex flex-col grow relative'>
             {(isLoading || isFetching) && (
-              <div className='absolute inset-0 bg-white/50 flex items-center justify-center z-10 backdrop-blur-[1px] rounded-b-xl'>
+              <div className='absolute inset-0 bg-white/50 dark:bg-gray-900/60 flex items-center justify-center z-10 backdrop-blur-[1px] rounded-b-xl'>
                 <div className='flex flex-col items-center gap-2'>
                   <Loader2 className='animate-spin text-[#fbbe15] w-7 h-7' />
-                  <span className='text-[11px] font-semibold text-gray-400 uppercase tracking-widest'>
+                  <span className='text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest'>
                     Loading...
                   </span>
                 </div>
@@ -133,9 +133,9 @@ export default function BukaManagement() {
             )}
 
             {!isLoading && restaurants.length === 0 && (
-              <div className='flex flex-col justify-center items-center grow text-gray-300 gap-3 py-24'>
+              <div className='flex flex-col justify-center items-center grow text-gray-300 dark:text-gray-600 gap-3 py-24'>
                 <Search size={44} strokeWidth={1} />
-                <p className='text-sm font-medium uppercase tracking-widest'>
+                <p className='text-sm font-medium uppercase tracking-widest text-gray-400 dark:text-gray-500'>
                   No restaurants found
                 </p>
               </div>
@@ -144,34 +144,34 @@ export default function BukaManagement() {
             {restaurants.length > 0 && (
               <Table>
                 <TableHeader>
-                  <TableRow className='bg-[#F8F9FA] hover:bg-[#F8F9FA] border-b border-gray-100'>
+                  <TableRow className='bg-[#F8F9FA] dark:bg-gray-900/90 hover:bg-[#F8F9FA] dark:hover:bg-gray-900/90 border-b border-gray-100 dark:border-gray-800'>
                     <TableHead className='w-10 pl-5'>
                       <input
                         type='checkbox'
                         checked={isAllSelected}
                         onChange={(e) => handleSelectAll(e.target.checked)}
-                        className='w-4 h-4 rounded border-gray-300 accent-[#fbbe15] cursor-pointer'
+                        className='w-4 h-4 rounded border-gray-300 dark:border-gray-700 dark:bg-gray-800 accent-[#fbbe15] cursor-pointer'
                       />
                     </TableHead>
-                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 w-24'>
+                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 w-24'>
                       ID
                     </TableHead>
-                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400'>
+                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500'>
                       Restaurant Name
                     </TableHead>
-                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 max-w-[200px]'>
+                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 max-w-[200px]'>
                       Address
                     </TableHead>
-                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 w-28'>
+                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 w-28'>
                       Date Added
                     </TableHead>
-                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400'>
+                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500'>
                       Owner
                     </TableHead>
-                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 w-24'>
+                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 w-24'>
                       Source
                     </TableHead>
-                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 w-28'>
+                    <TableHead className='text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 w-28'>
                       Status
                     </TableHead>
                     <TableHead className='w-12' />
@@ -189,15 +189,15 @@ export default function BukaManagement() {
 
                     const ownerBlock = buka.owner ? (
                       <div className='flex flex-col leading-tight'>
-                        <span className='font-semibold text-gray-800 truncate max-w-[140px]'>
+                        <span className='font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[140px]'>
                           {buka.owner.firstName} {buka.owner.lastName}
                         </span>
-                        <span className='text-[11px] text-gray-400 truncate max-w-[140px] mt-0.5'>
+                        <span className='text-[11px] text-gray-400 dark:text-gray-500 truncate max-w-[140px] mt-0.5'>
                           {buka.owner.email}
                         </span>
                       </div>
                     ) : (
-                      <span className='text-xs italic text-gray-400'>
+                      <span className='text-xs italic text-gray-400 dark:text-gray-500'>
                         {buka?.ownerId
                           ? buka.ownerId.slice(0, 16) + '…'
                           : 'Imported from Google'}
@@ -208,10 +208,10 @@ export default function BukaManagement() {
                       <TableRow
                         key={buka.id || i}
                         data-state={isSelected ? 'selected' : undefined}
-                        className={`border-b border-gray-50 text-[13px] text-gray-600 transition-colors ${
+                        className={`border-b border-gray-50 dark:border-gray-800/60 text-[13px] text-gray-600 dark:text-gray-300 transition-colors ${
                           isSelected
-                            ? 'bg-[#FCF7E8]/50 hover:bg-[#FCF7E8]/70'
-                            : 'hover:bg-[#F8F9FA]'
+                            ? 'bg-[#FCF7E8]/50 dark:bg-[#fbbe15]/10 hover:bg-[#FCF7E8]/70 dark:hover:bg-[#fbbe15]/15'
+                            : 'hover:bg-[#F8F9FA] dark:hover:bg-gray-800/50'
                         }`}>
                         <TableCell className='pl-5'>
                           <input
@@ -221,12 +221,12 @@ export default function BukaManagement() {
                               buka.id &&
                               handleSelectRestaurant(buka.id, e.target.checked)
                             }
-                            className='w-4 h-4 rounded border-gray-300 accent-[#fbbe15] cursor-pointer'
+                            className='w-4 h-4 rounded border-gray-300 dark:border-gray-700 dark:bg-gray-800 accent-[#fbbe15] cursor-pointer'
                           />
                         </TableCell>
 
                         <TableCell
-                          className='font-mono text-[11px] text-gray-400 uppercase'
+                          className='font-mono text-[11px] text-gray-400 dark:text-gray-500 uppercase'
                           title={buka.id || ''}>
                           {buka.id?.slice(0, 8)}
                         </TableCell>
@@ -235,7 +235,7 @@ export default function BukaManagement() {
                           <div
                             className='flex items-center gap-1.5 truncate'
                             title={buka.name}>
-                            <span className='text-gray-800 font-bold truncate'>
+                            <span className='text-gray-800 dark:text-white font-bold truncate'>
                               {buka.name}
                             </span>
                             {buka.source === 'google' && (
@@ -249,18 +249,18 @@ export default function BukaManagement() {
                         </TableCell>
 
                         <TableCell
-                          className='text-gray-500 text-[12px] max-w-[200px] truncate'
+                          className='text-gray-500 dark:text-gray-400 text-[12px] max-w-[200px] truncate'
                           title={buka.address}>
                           {buka.address}
                         </TableCell>
 
-                        <TableCell className='text-gray-500 font-medium tabular-nums'>
+                        <TableCell className='text-gray-500 dark:text-gray-400 font-medium tabular-nums'>
                           {displayDate}
                         </TableCell>
 
                         <TableCell>{ownerBlock}</TableCell>
 
-                        <TableCell className='text-gray-500 capitalize'>
+                        <TableCell className='text-gray-500 dark:text-gray-400 capitalize'>
                           {buka.source}
                         </TableCell>
 
@@ -272,7 +272,7 @@ export default function BukaManagement() {
                           {buka.id && (
                             <Link
                               href={`/secure-admin/buka-management/${buka.id}`}
-                              className='w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:bg-white hover:text-[#fbbe15] hover:shadow-sm transition-all'>
+                              className='w-8 h-8 flex items-center justify-center rounded-full text-gray-400 dark:text-gray-500 hover:bg-white dark:hover:bg-gray-800 hover:text-[#fbbe15] dark:hover:text-[#fbbe15] hover:shadow-sm transition-all'>
                               <Eye size={16} />
                             </Link>
                           )}

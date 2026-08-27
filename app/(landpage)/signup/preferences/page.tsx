@@ -96,14 +96,20 @@ const PreferencesContent = () => {
     });
   };
 
-  // Skip direct to feed/redirect and persist empty preferences
-  const handleSkipAll = () => {
-    savePreferencesMutation.mutate([], {
+  // Skip directly to Step 5 (Welcome screen)
+  const handleSkipToWelcome = () => {
+    savePreferencesMutation.mutate(selectedPrefs.length > 0 ? selectedPrefs : []);
+    goToStep('welcome');
+  };
+
+  // Complete onboarding from welcome screen and redirect to feed
+  const handleCompleteOnboarding = () => {
+    savePreferencesMutation.mutate(selectedPrefs.length > 0 ? selectedPrefs : [], {
       onSuccess: () => {
         router.push(redirect);
       },
       onError: (err) => {
-        console.error('Error skipping onboarding preferences:', err);
+        console.error('Error completing onboarding:', err);
         router.push(redirect);
       },
     });
@@ -140,17 +146,10 @@ const PreferencesContent = () => {
       <div className="w-full flex justify-end px-6 py-6 sm:px-12 sm:py-8 z-20">
         {step !== 'welcome' && (
           <button
-            onClick={handleSkipAll}
-            disabled={savePreferencesMutation.isPending}
-            className="text-sm sm:text-base font-semibold text-[#0A1F44] dark:text-white hover:opacity-75 transition-opacity cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+            onClick={handleSkipToWelcome}
+            className="text-sm sm:text-base font-semibold text-[#0A1F44] dark:text-white hover:opacity-75 transition-opacity cursor-pointer flex items-center gap-1.5"
           >
-            {savePreferencesMutation.isPending ? (
-              <>
-                <Loader2 className="animate-spin w-4 h-4" /> Skipping...
-              </>
-            ) : (
-              'Skip'
-            )}
+            Skip
           </button>
         )}
       </div>
@@ -353,11 +352,10 @@ const PreferencesContent = () => {
                   </button>
 
                   <button
-                    onClick={handleSkipAll}
-                    disabled={savePreferencesMutation.isPending}
-                    className="mt-4 text-sm font-semibold text-[#0A1F44] dark:text-white hover:opacity-75 transition-all cursor-pointer disabled:opacity-50"
+                    onClick={handleSkipToWelcome}
+                    className="mt-4 text-sm font-semibold text-[#0A1F44] dark:text-white hover:opacity-75 transition-all cursor-pointer"
                   >
-                    {savePreferencesMutation.isPending ? 'Skipping...' : 'Skip'}
+                    Skip
                   </button>
                 </div>
 
@@ -431,9 +429,13 @@ const PreferencesContent = () => {
                 {/* Explore button */}
                 <div className="z-10 w-full max-w-md px-4">
                   <button
-                    onClick={flow === 'login' ? () => goToStep('preferences') : handleSkipAll}
-                    className="w-full py-4 bg-[#fbbe15] hover:opacity-90 active:scale-[0.99] text-[#0A1F44] font-bold rounded-xl transition-all text-sm sm:text-base shadow-sm cursor-pointer"
+                    onClick={flow === 'login' ? () => goToStep('preferences') : handleCompleteOnboarding}
+                    disabled={savePreferencesMutation.isPending}
+                    className="w-full py-4 bg-[#fbbe15] hover:opacity-90 active:scale-[0.99] text-[#0A1F44] font-bold rounded-xl transition-all text-sm sm:text-base shadow-sm cursor-pointer disabled:opacity-70 flex items-center justify-center gap-2"
                   >
+                    {savePreferencesMutation.isPending && (
+                      <Loader2 className="animate-spin w-5 h-5 mr-2" />
+                    )}
                     {flow === 'login' ? 'Get Started' : 'Explore'}
                   </button>
                 </div>

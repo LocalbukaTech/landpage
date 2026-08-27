@@ -1,8 +1,8 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import Image from 'next/image';
-import {useRouter} from 'next/navigation';
+import {useRouter, usePathname} from 'next/navigation';
 import {X, Eye, EyeOff, Loader2} from 'lucide-react';
 import {useAuth} from '@/context/AuthContext';
 import {
@@ -12,6 +12,7 @@ import {
   useResetPasswordMutation,
 } from '@/lib/api/services/auth.hooks';
 import {useValidateReferralCode} from '@/lib/api/services/referral.hooks';
+import {getDeviceId} from '@/lib/deviceId';
 import {useToast} from '@/hooks/use-toast';
 import {userAuthService} from '@/lib/api';
 import {API_BASE_URL} from '@/lib/api/client';
@@ -23,6 +24,7 @@ export function AuthModal() {
   const {isAuthModalOpen, closeAuthModal, loginUser} = useAuth();
   const {toast} = useToast();
   const router = useRouter();
+  const pathname = usePathname();
   const signinMutation = useSigninMutation();
   const signupMutation = useSignupMutation();
   const forgotPasswordMutation = useForgotPasswordMutation();
@@ -31,7 +33,6 @@ export function AuthModal() {
   const [tab, setTab] = useState<AuthTab>('signin');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-
   const [signinData, setSigninData] = useState({email: '', password: ''});
   const [signupData, setSignupData] = useState({
     fullName: '',
@@ -40,36 +41,58 @@ export function AuthModal() {
     password: '',
   });
 
-  const validateMutation = useValidateReferralCode();
+  const {mutate: validateCode} = useValidateReferralCode();
   const [referrerStatus, setReferrerStatus] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
   const [referrerName, setReferrerName] = useState('');
   const [referrerMessage, setReferrerMessage] = useState('');
+  const lastValidatedCodeRef = useRef<string>('');
+
+  // Auto-detect referral code from URL or storage when modal opens
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isAuthModalOpen) {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const refCode = params.get('ref') || params.get('referral') || localStorage.getItem('localbuka_ref_code');
+        if (refCode) {
+          setSignupData((prev) => (prev.referralCode ? prev : {...prev, referralCode: refCode}));
+          if (params.get('ref') || params.get('referral')) {
+            setTab('signup');
+          }
+        }
+      } catch {
+        // Ignore URL parsing errors
+      }
+    }
+  }, [isAuthModalOpen]);
 
   useEffect(() => {
     const code = signupData.referralCode.trim();
     if (!code) {
-      const timer = setTimeout(() => {
-        setReferrerStatus('idle');
-        setReferrerName('');
-        setReferrerMessage('');
-      }, 0);
-      return () => clearTimeout(timer);
+      lastValidatedCodeRef.current = '';
+      setReferrerStatus('idle');
+      setReferrerName('');
+      setReferrerMessage('');
+      return;
     }
 
+    if (code === lastValidatedCodeRef.current) return;
+
     const timeoutId = setTimeout(() => {
+      lastValidatedCodeRef.current = code;
       setReferrerStatus('loading');
-      validateMutation.mutate(
+      validateCode(
         { referralCode: code },
         {
-          onSuccess: (res) => {
-            if (res?.data?.valid !== false) {
+          onSuccess: (res: any) => {
+            const data = res?.data !== undefined ? res.data : res;
+            if (data?.valid !== false && data?.valid === true) {
               setReferrerStatus('valid');
-              setReferrerName(res?.data?.referrerName || '');
-              setReferrerMessage(res?.data?.message || 'Referral code is valid!');
+              setReferrerName(data?.referrerName || '');
+              setReferrerMessage(data?.message || 'Referral code is valid!');
             } else {
               setReferrerStatus('invalid');
               setReferrerName('');
-              setReferrerMessage(res?.data?.message || 'This code is not valid. Check it and try again.');
+              setReferrerMessage(data?.message || 'This code is not valid. Check it and try again.');
             }
           },
           onError: (err: any) => {
@@ -79,10 +102,10 @@ export function AuthModal() {
           },
         }
       );
-    }, 500);
+    }, 400);
 
     return () => clearTimeout(timeoutId);
-  }, [signupData.referralCode, validateMutation]);
+  }, [signupData.referralCode, validateCode]);
 
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
@@ -92,6 +115,7 @@ export function AuthModal() {
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   if (!isAuthModalOpen) return null;
+  if (pathname?.startsWith('/signup') || pathname?.startsWith('/signin') || pathname?.startsWith('/secure-admin')) return null;
 
   const handleSignin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,16 +161,27 @@ export function AuthModal() {
     e.preventDefault();
     setError('');
 
+    const trimmedCode = signupData.referralCode.trim();
+    const deviceId = trimmedCode ? getDeviceId() : undefined;
+
     signupMutation.mutate(
       {
         email: signupData.email,
         fullName: signupData.fullName,
-        referralCode: signupData.referralCode || undefined,
+        referralCode: trimmedCode || undefined,
+        deviceId,
         password: signupData.password,
       },
       {
-        onSuccess: () => {
+        onSuccess: (response: any) => {
           trackEvent('sign_up', {method: 'email'});
+          toast({
+            title: 'Account created! 🎉',
+            description:
+              response?.message ||
+              'Please check your email for the verification code.',
+          });
+
           // After signup, redirect to verification page
           closeAuthModal();
           router.push(
@@ -158,7 +193,6 @@ export function AuthModal() {
             email: '',
             password: '',
           });
-          setError('');
         },
         onError: (err: any) => {
           setError(

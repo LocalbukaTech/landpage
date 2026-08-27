@@ -34,6 +34,11 @@ import {Typewriter} from '@/components/anim/Typewriter';
 import {motion, AnimatePresence} from 'framer-motion';
 import {BUKA_HERO_LANGUAGES} from '@/lib/constants';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
+import {
+  getMobileDrawerNavItems,
+  FOOTER_LINKS,
+  type NavItemConfig,
+} from '@/components/layout/sidebar.config';
 
 function useLocationLabel() {
   const {lat, lng, loading: geoLoading} = useGeolocation();
@@ -127,22 +132,6 @@ function SectionHeader({
   );
 }
 
-const baseNavItems = [
-  {icon: Home, label: 'Home', href: '/'},
-  {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
-  {icon: PlusCircle, label: 'Upload', href: '/studio'},
-  {icon: Bell, label: 'Notification', href: '/notifications'},
-  {icon: Bookmark, label: 'Saved', href: '/profile?tab=saved'},
-  {icon: Users, label: 'Community', href: '#'},
-  {icon: User, label: 'Profile', href: '/profile'},
-];
-
-const myRestaurantItem = {
-  icon: Store,
-  label: 'List Restaurant',
-  href: '/buka/my-restaurant',
-};
-
 const year = new Date().getFullYear();
 
 export function MobileBukaHome({
@@ -195,9 +184,17 @@ export function MobileBukaHome({
     return pathname.startsWith(itemHref.split('?')[0]);
   };
 
-  const navItems = isAuthenticated
-    ? [...baseNavItems.slice(0, 2), myRestaurantItem, ...baseNavItems.slice(2)]
-    : baseNavItems;
+  const navItems = getMobileDrawerNavItems(isAuthenticated);
+
+  const handleNavItemClick = (e: React.MouseEvent, item: NavItemConfig) => {
+    setIsMenuOpen(false);
+
+    if (item.authRequirement === 'auth-prompt' && !isAuthenticated) {
+      e.preventDefault();
+      requireAuth(() => router.push(item.href));
+      return;
+    }
+  };
 
   const userAvatar = isAuthenticated
     ? user?.avatar || '/images/profile.png'
@@ -475,16 +472,16 @@ export function MobileBukaHome({
               const isActive = isItemActive(item.href);
               return (
                 <Link
-                  key={item.label}
+                  key={item.id}
                   href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={(e) => handleNavItemClick(e, item)}
                   className={cn(
                     'flex items-center gap-3.5 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors active:opacity-70 relative',
                     isActive
                       ? 'bg-[#fbbe15]/10 text-[#fbbe15]'
                       : 'text-zinc-300 hover:bg-white/5',
                   )}>
-                  {item.label === 'Profile' && userAvatar ? (
+                  {item.id === 'profile' && userAvatar ? (
                     <Image
                       src={userAvatar}
                       alt='Profile'
@@ -500,7 +497,7 @@ export function MobileBukaHome({
                     <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                   )}
                   <span>{item.label}</span>
-                  {item.label === 'Notification' && unreadCount > 0 && (
+                  {item.id === 'notifications' && unreadCount > 0 && (
                     <span className='ml-auto min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1'>
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
@@ -512,16 +509,15 @@ export function MobileBukaHome({
 
           {/* Footer */}
           <div className='px-5 pb-8 pt-4 border-t border-white/8 mt-auto flex flex-col gap-1.5'>
-            <Link
-              href='https://localbuka.com/blog'
-              className='text-xs text-zinc-500 hover:text-zinc-300 transition-colors'>
-              Blogs
-            </Link>
-            <Link
-              href='https://localbuka.com/privacy/'
-              className='text-xs text-zinc-500 hover:text-zinc-300 transition-colors'>
-              Terms &amp; Policies
-            </Link>
+            {FOOTER_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                target='_blank'
+                className='text-xs text-zinc-500 hover:text-zinc-300 transition-colors'>
+                {link.label}
+              </Link>
+            ))}
             <span className='text-[11px] text-zinc-700 mt-1'>
               &copy; {year} LocalBuka
             </span>

@@ -38,7 +38,7 @@ export function UserPagination({ currentPage, totalPages, onPageChange }: UserPa
             <button
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="flex items-center gap-2 text-zinc-500 text-sm font-medium hover:text-zinc-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-200 rounded-full px-4 py-2 bg-white hover:bg-zinc-50"
+                className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 text-sm font-medium hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-200 dark:border-gray-700 rounded-full px-4 py-2 bg-white dark:bg-gray-800 hover:bg-zinc-50 dark:hover:bg-gray-700/60 cursor-pointer"
             >
                 <ArrowLeft size={14} strokeWidth={2} />
                 Previous
@@ -50,7 +50,7 @@ export function UserPagination({ currentPage, totalPages, onPageChange }: UserPa
                     page === "..." ? (
                         <span
                             key={`dots-${i}`}
-                            className="w-10 h-10 flex items-center justify-center text-zinc-400 text-sm select-none"
+                            className="w-10 h-10 flex items-center justify-center text-zinc-400 dark:text-zinc-500 text-sm select-none"
                         >
                             …
                         </span>
@@ -59,10 +59,10 @@ export function UserPagination({ currentPage, totalPages, onPageChange }: UserPa
                             key={page}
                             onClick={() => onPageChange(page)}
                             className={cn(
-                                "w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-colors",
+                                "w-10 h-10 rounded-lg flex items-center justify-center text-sm font-medium transition-colors cursor-pointer border-none bg-transparent",
                                 currentPage === page
-                                    ? "bg-[#fbbe15]/15 text-[#b8860b] border border-[#fbbe15]/30"
-                                    : "text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100"
+                                    ? "bg-[#fbbe15]/15 text-[#b8860b] dark:text-[#fbbe15] border border-[#fbbe15]/30 font-bold"
+                                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-gray-800"
                             )}
                         >
                             {page}
@@ -75,7 +75,7 @@ export function UserPagination({ currentPage, totalPages, onPageChange }: UserPa
             <button
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-2 text-zinc-500 text-sm font-medium hover:text-zinc-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-200 rounded-full px-4 py-2 bg-white hover:bg-zinc-50"
+                className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 text-sm font-medium hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-200 dark:border-gray-700 rounded-full px-4 py-2 bg-white dark:bg-gray-800 hover:bg-zinc-50 dark:hover:bg-gray-700/60 cursor-pointer"
             >
                 Next
                 <ArrowRight size={14} strokeWidth={2} />

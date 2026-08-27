@@ -174,14 +174,14 @@ function DateDropdown({
     const canApply = from && to;
 
     return (
-        <div className="absolute right-0 top-full mt-2 w-[340px] bg-white rounded-xl border border-zinc-200 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-[340px] bg-white dark:bg-gray-800 rounded-xl border border-zinc-200 dark:border-gray-700 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
             {/* Header */}
-            <div className="px-5 pt-4 pb-3 border-b border-zinc-100">
+            <div className="px-5 pt-4 pb-3 border-b border-zinc-100 dark:border-gray-700">
                 <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-zinc-800">Select Date Range</h3>
+                    <h3 className="text-sm font-semibold text-zinc-800 dark:text-white">Select Date Range</h3>
                     <button
                         onClick={onClose}
-                        className="w-6 h-6 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
+                        className="w-6 h-6 flex items-center justify-center rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-gray-700 transition-colors"
                     >
                         <X size={14} />
                     </button>
@@ -192,22 +192,22 @@ function DateDropdown({
                     <button
                         onClick={() => setSelectingFrom(true)}
                         className={cn(
-                            "flex-1 py-2 px-3 rounded-lg text-xs font-medium text-center transition-all border",
+                            "flex-1 py-2 px-3 rounded-lg text-xs font-medium text-center transition-all border cursor-pointer",
                             selectingFrom
-                                ? "border-[#fbbe15] bg-[#fbbe15]/10 text-[#1a1a1a] shadow-sm"
-                                : "border-zinc-200 bg-zinc-50 text-zinc-500 hover:border-zinc-300"
+                                ? "border-[#fbbe15] bg-[#fbbe15]/10 text-[#1a1a1a] dark:text-[#fbbe15] shadow-sm"
+                                : "border-zinc-200 dark:border-gray-700 bg-zinc-50 dark:bg-gray-900 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-gray-600"
                         )}
                     >
                         {from ? formatDisplayDate(from) : "Start date"}
                     </button>
-                    <div className="flex-shrink-0 w-6 h-px bg-zinc-300" />
+                    <div className="flex-shrink-0 w-6 h-px bg-zinc-300 dark:bg-gray-600" />
                     <button
                         onClick={() => { if (from) setSelectingFrom(false); }}
                         className={cn(
-                            "flex-1 py-2 px-3 rounded-lg text-xs font-medium text-center transition-all border",
+                            "flex-1 py-2 px-3 rounded-lg text-xs font-medium text-center transition-all border cursor-pointer",
                             !selectingFrom
-                                ? "border-[#fbbe15] bg-[#fbbe15]/10 text-[#1a1a1a] shadow-sm"
-                                : "border-zinc-200 bg-zinc-50 text-zinc-500 hover:border-zinc-300"
+                                ? "border-[#fbbe15] bg-[#fbbe15]/10 text-[#1a1a1a] dark:text-[#fbbe15] shadow-sm"
+                                : "border-zinc-200 dark:border-gray-700 bg-zinc-50 dark:bg-gray-900 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-gray-600"
                         )}
                     >
                         {to ? formatDisplayDate(to) : "End date"}
@@ -216,7 +216,7 @@ function DateDropdown({
             </div>
 
             {/* Quick presets */}
-            <div className="px-5 py-2.5 border-b border-zinc-100 flex items-center gap-1.5 overflow-x-auto">
+            <div className="px-5 py-2.5 border-b border-zinc-100 dark:border-gray-700 flex items-center gap-1.5 overflow-x-auto">
                 {[
                     { label: "7 days", days: 7 },
                     { label: "14 days", days: 14 },
@@ -226,7 +226,7 @@ function DateDropdown({
                     <button
                         key={preset.days}
                         onClick={() => applyPreset(preset.days)}
-                        className="flex-shrink-0 px-2.5 py-1 text-[11px] font-medium rounded-md border border-zinc-200 text-zinc-500 hover:border-[#fbbe15] hover:text-[#1a1a1a] hover:bg-[#fbbe15]/5 transition-all"
+                        className="flex-shrink-0 px-2.5 py-1 text-[11px] font-medium rounded-md border border-zinc-200 dark:border-gray-700 text-zinc-500 dark:text-zinc-400 hover:border-[#fbbe15] hover:text-[#1a1a1a] dark:hover:text-[#fbbe15] hover:bg-[#fbbe15]/5 dark:hover:bg-[#fbbe15]/10 transition-all cursor-pointer"
                     >
                         {preset.label}
                     </button>
@@ -239,16 +239,16 @@ function DateDropdown({
                 <div className="flex items-center justify-between mb-3">
                     <button
                         onClick={prevMonth}
-                        className="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                     >
                         <ChevronLeft size={16} />
                     </button>
-                    <span className="text-sm font-semibold text-zinc-700">
+                    <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
                         {MONTHS[viewMonth]} {viewYear}
                     </span>
                     <button
                         onClick={nextMonth}
-                        className="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                        className="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                     >
                         <ChevronRight size={16} />
                     </button>
@@ -257,7 +257,7 @@ function DateDropdown({
                 {/* Weekday headers */}
                 <div className="grid grid-cols-7 mb-1">
                     {WEEKDAYS.map((d) => (
-                        <div key={d} className="text-center text-[10px] font-semibold text-zinc-400 py-1 uppercase tracking-wider">
+                        <div key={d} className="text-center text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 py-1 uppercase tracking-wider">
                             {d}
                         </div>
                     ))}
@@ -283,9 +283,9 @@ function DateDropdown({
                                 className={cn(
                                     "relative flex items-center justify-center",
                                     // Range background band (spans full cell width)
-                                    inRange && !isEdge && "bg-[#fbbe15]/10",
-                                    isStart && to && "bg-gradient-to-r from-transparent to-[#fbbe15]/10 rounded-l-full",
-                                    isEnd && from && "bg-gradient-to-l from-transparent to-[#fbbe15]/10 rounded-r-full",
+                                    inRange && !isEdge && "bg-[#fbbe15]/10 dark:bg-[#fbbe15]/20",
+                                    isStart && to && "bg-gradient-to-r from-transparent to-[#fbbe15]/10 dark:to-[#fbbe15]/20 rounded-l-full",
+                                    isEnd && from && "bg-gradient-to-l from-transparent to-[#fbbe15]/10 dark:to-[#fbbe15]/20 rounded-r-full",
                                 )}
                             >
                                 <button
@@ -293,12 +293,12 @@ function DateDropdown({
                                     onMouseEnter={() => setHoveredDay(dayStr)}
                                     onMouseLeave={() => setHoveredDay("")}
                                     className={cn(
-                                        "w-8 h-8 flex items-center justify-center rounded-full text-xs font-medium transition-all relative",
+                                        "w-8 h-8 flex items-center justify-center rounded-full text-xs font-medium transition-all relative cursor-pointer border-none",
                                         isEdge
                                             ? "bg-[#fbbe15] text-[#1a1a1a] font-bold shadow-sm"
                                             : isToday
                                                 ? "text-[#fbbe15] font-bold"
-                                                : "text-zinc-600 hover:bg-zinc-100"
+                                                : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-gray-700"
                                     )}
                                 >
                                     {dayNum}
@@ -313,11 +313,11 @@ function DateDropdown({
             </div>
 
             {/* Footer */}
-            <div className="px-5 py-3 border-t border-zinc-100 bg-zinc-50/50 flex items-center gap-2">
+            <div className="px-5 py-3 border-t border-zinc-100 dark:border-gray-700 bg-zinc-50/50 dark:bg-gray-900/50 flex items-center gap-2">
                 {initial && (
                     <button
                         onClick={() => { onClear(); onClose(); }}
-                        className="flex-1 py-2 text-xs font-medium rounded-lg border border-zinc-200 text-zinc-600 hover:bg-white hover:border-zinc-300 transition-all"
+                        className="flex-1 py-2 text-xs font-medium rounded-lg border border-zinc-200 dark:border-gray-700 text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-gray-800 hover:border-zinc-300 dark:hover:border-gray-600 transition-all cursor-pointer"
                     >
                         Clear
                     </button>
@@ -331,10 +331,10 @@ function DateDropdown({
                     }}
                     disabled={!canApply}
                     className={cn(
-                        "py-2 text-xs font-semibold rounded-lg transition-all",
+                        "py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer border-none",
                         canApply
-                            ? "bg-[#fbbe15] text-[#1a1a1a] hover:bg-[#e5ab0e] shadow-sm"
-                            : "bg-zinc-100 text-zinc-400 cursor-not-allowed",
+                            ? "bg-[#fbbe15] text-[#1a1a1a] hover:bg-[#e5ab0e] shadow-sm font-bold"
+                            : "bg-zinc-100 dark:bg-gray-700 text-zinc-400 dark:text-zinc-500 cursor-not-allowed",
                         initial ? "flex-1" : "w-full"
                     )}
                 >
@@ -368,10 +368,10 @@ function FiltersDropdown({
     };
 
     return (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-lg border border-zinc-200 shadow-lg p-4 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg border border-zinc-200 dark:border-gray-700 shadow-lg p-4 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
             <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-zinc-700">Filters</span>
-                <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600 transition-colors">
+                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">Filters</span>
+                <button onClick={onClose} className="text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer border-none bg-transparent">
                     <X size={14} />
                 </button>
             </div>
@@ -379,13 +379,13 @@ function FiltersDropdown({
             <div className="space-y-3">
                 {/* Location */}
                 <label className="block">
-                    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 mb-1">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mb-1">
                         <MapPin size={12} /> Location
                     </span>
                     <select
                         value={local.location ?? "All"}
                         onChange={(e) => update("location", e.target.value)}
-                        className="w-full text-sm border border-zinc-200 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#fbbe15]/40 focus:border-[#fbbe15] text-zinc-700 bg-white"
+                        className="w-full text-sm border border-zinc-200 dark:border-gray-700 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#fbbe15]/40 focus:border-[#fbbe15] text-zinc-700 dark:text-zinc-200 bg-white dark:bg-gray-900"
                     >
                         {locationOptions.map((o) => (
                             <option key={o} value={o}>{o}</option>
@@ -395,13 +395,13 @@ function FiltersDropdown({
 
                 {/* Status */}
                 <label className="block">
-                    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 mb-1">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mb-1">
                         <ShieldAlert size={12} /> Status
                     </span>
                     <select
                         value={local.status ?? "All"}
                         onChange={(e) => update("status", e.target.value)}
-                        className="w-full text-sm border border-zinc-200 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#fbbe15]/40 focus:border-[#fbbe15] text-zinc-700 bg-white"
+                        className="w-full text-sm border border-zinc-200 dark:border-gray-700 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#fbbe15]/40 focus:border-[#fbbe15] text-zinc-700 dark:text-zinc-200 bg-white dark:bg-gray-900"
                     >
                         {statusOptions.map((o) => (
                             <option key={o} value={o}>{o}</option>
@@ -412,13 +412,13 @@ function FiltersDropdown({
                 {/* Flag Reason */}
                 {showFlagReason && (
                 <label className="block">
-                    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 mb-1">
+                    <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 mb-1">
                         <Flag size={12} /> System Flag Reason
                     </span>
                     <select
                         value={local.flagReason ?? "All"}
                         onChange={(e) => update("flagReason", e.target.value)}
-                        className="w-full text-sm border border-zinc-200 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#fbbe15]/40 focus:border-[#fbbe15] text-zinc-700 bg-white"
+                        className="w-full text-sm border border-zinc-200 dark:border-gray-700 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#fbbe15]/40 focus:border-[#fbbe15] text-zinc-700 dark:text-zinc-200 bg-white dark:bg-gray-900"
                     >
                         {flagReasonOptions.map((o) => (
                             <option key={o} value={o}>{o}</option>
@@ -435,7 +435,7 @@ function FiltersDropdown({
                             setLocal(reset);
                             onChange(reset);
                         }}
-                        className="flex-1 py-1.5 text-sm rounded-md border border-zinc-200 text-zinc-600 hover:bg-zinc-50 transition-colors"
+                        className="flex-1 py-1.5 text-sm rounded-md border border-zinc-200 dark:border-gray-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-gray-700/60 transition-colors cursor-pointer bg-transparent"
                     >
                         Reset
                     </button>
@@ -444,7 +444,7 @@ function FiltersDropdown({
                             onChange(local);
                             onClose();
                         }}
-                        className="flex-1 py-1.5 text-sm font-medium rounded-md bg-[#fbbe15] text-[#1a1a1a] hover:bg-[#fbbe15]/90 transition-colors"
+                        className="flex-1 py-1.5 text-sm font-semibold rounded-md bg-[#fbbe15] text-[#1a1a1a] hover:bg-[#fbbe15]/90 transition-colors cursor-pointer border-none"
                     >
                         Apply
                     </button>
@@ -457,16 +457,16 @@ function FiltersDropdown({
 /* ─── Export Dropdown ─── */
 function ExportDropdown({ onExport, onClose }: { onExport: (format: "csv" | "excel") => void; onClose: () => void }) {
     return (
-        <div className="absolute right-0 top-full mt-2 w-40 bg-white rounded-lg border border-zinc-200 shadow-lg py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg border border-zinc-200 dark:border-gray-700 shadow-lg py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
             <button
                 onClick={() => { onExport("csv"); onClose(); }}
-                className="w-full text-left px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                className="w-full text-left px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-gray-700/60 transition-colors cursor-pointer border-none bg-transparent"
             >
                 Export as CSV
             </button>
             <button
                 onClick={() => { onExport("excel"); onClose(); }}
-                className="w-full text-left px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                className="w-full text-left px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-gray-700/60 transition-colors cursor-pointer border-none bg-transparent"
             >
                 Export as Excel
             </button>
@@ -507,31 +507,31 @@ export function UserFilters({
     const hasAnyFilter = activeFilterCount > 0 || !!dateRange || searchQuery.trim().length > 0;
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-2 max-w-full">
+            <div className="flex items-center justify-between gap-4 overflow-x-auto scrollbar-thin pb-1 sm:pb-0">
                 {/* Search Input */}
-                <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                <div className="relative w-full max-w-sm shrink-0 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500" size={18} />
                     <input
                         type="text"
                         placeholder={searchPlaceholder}
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="w-full py-2.5 pl-10 pr-4 text-sm text-zinc-700 bg-gray-50 border-none rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-200 placeholder:text-zinc-400 transition-all"
+                        className="w-full py-2.5 pl-10 pr-4 text-sm text-zinc-700 dark:text-zinc-200 bg-gray-50 dark:bg-gray-800/80 border border-transparent dark:border-gray-700/60 rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-200 dark:focus:ring-gray-600 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 transition-all"
                     />
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 shrink-0">
                     {/* Date */}
                     <div ref={dateRef} className="relative">
                         <button
                             onClick={() => setOpenMenu(openMenu === "date" ? null : "date")}
                             className={cn(
-                                "flex items-center gap-1.5 text-sm transition-colors",
+                                "flex items-center gap-1.5 text-sm transition-colors cursor-pointer border-none bg-transparent",
                                 openMenu === "date" || dateRange
-                                    ? "text-zinc-800"
-                                    : "text-zinc-500 hover:text-zinc-700"
+                                    ? "text-zinc-800 dark:text-white font-semibold"
+                                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                             )}
                         >
                             <CalendarDays size={16} />
@@ -555,10 +555,10 @@ export function UserFilters({
                         <button
                             onClick={() => setOpenMenu(openMenu === "filters" ? null : "filters")}
                             className={cn(
-                                "flex items-center gap-1.5 text-sm transition-colors",
+                                "flex items-center gap-1.5 text-sm transition-colors cursor-pointer border-none bg-transparent",
                                 openMenu === "filters" || activeFilterCount > 0
-                                    ? "text-zinc-800"
-                                    : "text-zinc-500 hover:text-zinc-700"
+                                    ? "text-zinc-800 dark:text-white font-semibold"
+                                    : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                             )}
                         >
                             <SlidersHorizontal size={16} />
@@ -584,8 +584,8 @@ export function UserFilters({
                         <button
                             onClick={() => setOpenMenu(openMenu === "export" ? null : "export")}
                             className={cn(
-                                "flex items-center gap-1.5 text-sm transition-colors",
-                                openMenu === "export" ? "text-zinc-800" : "text-zinc-500 hover:text-zinc-700"
+                                "flex items-center gap-1.5 text-sm transition-colors cursor-pointer border-none bg-transparent",
+                                openMenu === "export" ? "text-zinc-800 dark:text-white font-semibold" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                             )}
                         >
                             <Upload size={16} />
@@ -603,14 +603,14 @@ export function UserFilters({
 
             {/* Active filter info bar */}
             {hasAnyFilter && (
-                <div className="flex items-center justify-between text-xs text-zinc-500">
+                <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
                     <span>
-                        Showing <span className="font-semibold text-zinc-700">{filteredResultCount}</span> of{" "}
-                        <span className="font-semibold text-zinc-700">{totalResultCount}</span> users
+                        Showing <span className="font-semibold text-zinc-700 dark:text-zinc-200">{filteredResultCount}</span> of{" "}
+                        <span className="font-semibold text-zinc-700 dark:text-zinc-200">{totalResultCount}</span> users
                     </span>
                     <button
                         onClick={onClearFilters}
-                        className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-700 transition-colors"
+                        className="flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer border-none bg-transparent"
                     >
                         <X size={12} />
                         Clear all filters

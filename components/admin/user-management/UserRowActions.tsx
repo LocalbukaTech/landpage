@@ -43,19 +43,19 @@ export function UserRowActions({ userId, onMarkSafe, onBanUser }: UserRowActions
         <div ref={menuRef} className="relative">
             <button
                 onClick={() => setIsOpen((prev) => !prev)}
-                className="w-7 h-7 flex items-center justify-center rounded hover:bg-zinc-100 transition-colors text-zinc-400 hover:text-zinc-600"
+                className="w-7 h-7 flex items-center justify-center rounded hover:bg-zinc-100 dark:hover:bg-gray-800 transition-colors text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer"
             >
                 <MoreVertical size={16} />
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-lg border border-zinc-200 shadow-lg py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-lg border border-zinc-200 dark:border-gray-700 shadow-lg py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
                     <button
                         onClick={() => {
                             onMarkSafe?.(userId);
                             setIsOpen(false);
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-gray-700/60 transition-colors cursor-pointer border-none bg-transparent"
                     >
                         <Check size={16} className="text-green-500" />
                         Mark as Safe
@@ -65,7 +65,7 @@ export function UserRowActions({ userId, onMarkSafe, onBanUser }: UserRowActions
                             onBanUser?.(userId);
                             setIsOpen(false);
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-gray-700/60 transition-colors cursor-pointer border-none bg-transparent"
                     >
                         <Ban size={16} className="text-red-500" />
                         Ban User

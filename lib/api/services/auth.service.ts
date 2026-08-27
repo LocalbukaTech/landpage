@@ -76,6 +76,7 @@ export interface SignupPayload {
   email: string;
   fullName: string;
   referralCode?: string;
+  deviceId?: string;
   password: string;
 }
 

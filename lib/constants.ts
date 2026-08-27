@@ -225,6 +225,11 @@ export interface BukaHeroLanguage {
 
 export const BUKA_HERO_LANGUAGES: BukaHeroLanguage[] = [
   {
+    language: 'Pidgin',
+    headline: 'Wetin You Wan Chop?!',
+    body: 'From correct local food wey people love to places wey people dey hype, your next chow dey here.',
+  },
+  {
     language: 'English',
     headline: 'What Are You Craving?!',
     body: 'From local favorites to top-rated spots, your next meal is right here.',

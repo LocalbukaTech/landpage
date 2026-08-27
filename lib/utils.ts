@@ -85,23 +85,27 @@ export function formatRelativeShort(dateString: string): string {
  *   3. undefined — caller must show a placeholder
  */
 export function getVideoThumbnailUrl(post: {
-  thumbnailUrl: string | null;
-  mediaUrl: string;
-  mediaType: string;
+  thumbnailUrl?: string | null;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
 }): string | undefined {
   if (post.thumbnailUrl) return ensureHttps(post.thumbnailUrl);
-  if (post.mediaType !== 'video') return undefined;
+  if (!post.mediaUrl) return undefined;
+  if (post.mediaType && post.mediaType === 'image') return ensureHttps(post.mediaUrl);
 
   // Cloudinary video URLs can be transformed into a static thumbnail image
   // by injecting transformation parameters and swapping the extension.
   // e.g. …/video/upload/v1/my-clip.mp4
-  //   → …/video/upload/so_1,w_400,c_fill/v1/my-clip.jpg
-  if (post.mediaUrl?.includes('res.cloudinary.com')) {
-    return ensureHttps(
-      post.mediaUrl
-        .replace('/video/upload/', '/video/upload/so_1,w_400,c_fill/')
-        .replace(/\.(mp4|mov|webm|avi|mkv)(\?.*)?$/i, '.jpg')
-    );
+  //   → …/video/upload/so_0,w_400,c_fill,q_auto,f_auto/v1/my-clip.jpg
+  if (post.mediaUrl.includes('res.cloudinary.com')) {
+    let url = post.mediaUrl;
+    if (url.includes('/video/upload/') && !url.includes('/video/upload/so_')) {
+      url = url.replace('/video/upload/', '/video/upload/so_0,w_400,c_fill,q_auto,f_auto/');
+    } else if (url.includes('/upload/') && !url.includes('/upload/so_')) {
+      url = url.replace('/upload/', '/upload/so_0,w_400,c_fill,q_auto,f_auto/');
+    }
+    url = url.replace(/\.(mp4|mov|webm|avi|mkv|3gp|flv|m4v)(\?.*)?$/i, '.jpg');
+    return ensureHttps(url);
   }
 
   return undefined;

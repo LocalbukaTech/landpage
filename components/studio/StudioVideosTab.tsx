@@ -1,10 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useRouter} from 'next/navigation';
 import type {Post} from '@/types/post';
 import {Video, Play, Pencil, Trash2, Eye} from 'lucide-react';
-import {ensureHttps} from '@/lib/utils';
+import {ensureHttps, getVideoThumbnailUrl} from '@/lib/utils';
+
+function StudioVideoThumb({post}: {post: Post}) {
+  const [imgError, setImgError] = useState(false);
+  const thumb = getVideoThumbnailUrl(post);
+
+  if (thumb && !imgError) {
+    return (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src={thumb}
+        alt={post.caption || 'Video thumbnail'}
+        className='w-full h-full object-cover'
+        loading='lazy'
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <video
+      src={`${ensureHttps(post.mediaUrl)}#t=0.001`}
+      poster={thumb || undefined}
+      className='w-full h-full object-cover'
+      muted
+      playsInline
+      preload='metadata'
+    />
+  );
+}
 
 interface StudioVideosTabProps {
   videoPosts: Post[];
@@ -57,12 +86,7 @@ export function StudioVideosTab({
                 onClick={() => router.push(`/posts/single/${post.id}`)}
                 className='relative aspect-square bg-black overflow-hidden group/thumb cursor-pointer'
                 title='Click to view video'>
-                <video
-                  src={ensureHttps(post.mediaUrl)}
-                  className='w-full h-full object-cover'
-                  muted
-                  playsInline
-                />
+                <StudioVideoThumb post={post} />
 
                 {/* Hover Overlay with Eye View Icon */}
                 <div className='absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-1 z-10 backdrop-blur-xs'>

@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { ensureHttps, getVideoThumbnailUrl } from "@/lib/utils";
 
 interface ProfileVideoGridProps {
   posts: Post[];
@@ -24,43 +25,81 @@ interface ProfileVideoGridProps {
   isEditing?: boolean;
   activeTab?: string;
   onToggleEdit?: () => void;
+  isEditable?: boolean;
+  isOtherProfile?: boolean;
 }
 
-function ensureHttps(url: string) {
-  return url.replace(/^http:\/\//, 'https://');
+function PostMediaThumbnail({ post }: { post: Post }) {
+  const [imgError, setImgError] = useState(false);
+  const isImage =
+    post.mediaType === 'image' ||
+    (typeof post.mediaUrl === 'string' &&
+      !post.mediaUrl.match(/\.(mp4|mov|webm|m4v|3gp|avi)(\?.*)?$/i));
+
+  const thumbnail = isImage ? ensureHttps(post.mediaUrl) : getVideoThumbnailUrl(post);
+
+  if (thumbnail && !imgError) {
+    return (
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src={thumbnail}
+        className="w-full h-full object-cover"
+        alt={post.caption || "Post thumbnail"}
+        loading="lazy"
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+
+  return (
+    <video
+      src={`${ensureHttps(post.mediaUrl)}#t=0.001`}
+      poster={thumbnail || undefined}
+      className='w-full h-full object-cover'
+      muted
+      playsInline
+      preload='metadata'
+    />
+  );
 }
 
-function getVideoThumbnailUrl(post: Post) {
-  return post.thumbnailUrl ?? undefined;
-}
-
-export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onToggleEdit }: ProfileVideoGridProps) {
+export function ProfileVideoGrid({
+  posts,
+  isLoading,
+  isEditing = false,
+  activeTab,
+  onToggleEdit,
+  isEditable = false,
+  isOtherProfile = false,
+}: ProfileVideoGridProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
   const deletePostMutation = useDeletePost();
   const toggleSaveMutation = useToggleSave();
-  const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
-  const [didLongPress, setDidLongPress] = useState(false)
+  const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [didLongPress, setDidLongPress] = useState(false);
+
+  const canEdit = isEditable && !isOtherProfile;
 
   const handlePressStart = () => {
-    setDidLongPress(false)
-
+    setDidLongPress(false);
+    if (!canEdit || !onToggleEdit) return;
 
     const timer = setTimeout(() => {
-      setDidLongPress(true)
-      onToggleEdit?.()
+      setDidLongPress(true);
+      onToggleEdit();
     }, 600);
 
-    setPressTimer(timer)
-  }
+    setPressTimer(timer);
+  };
 
   const handlePressEnd = () => {
     if (pressTimer) {
-      clearTimeout(pressTimer)
-      setPressTimer(null)
+      clearTimeout(pressTimer);
+      setPressTimer(null);
     }
-  }
+  };
 
   const handleVideoClick = (videoId: string) => {
     if (didLongPress) {
@@ -69,7 +108,8 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onTog
     }
 
     router.push(`/posts/single/${videoId}`);
-  }
+  };
+
   const handleAction = () => {
     if (!postToDelete) return;
 
@@ -112,8 +152,6 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onTog
     }
   };
 
-
-
   if (isLoading) {
     return (
       <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3'>
@@ -140,55 +178,35 @@ export function ProfileVideoGrid({ posts, isLoading, isEditing, activeTab, onTog
       {posts.map((post) => (
         <div key={post.id} className='relative group'>
           <button
-            onClick={() => !isEditing && handleVideoClick(post.id)}
+            onClick={() => !(canEdit && isEditing) && handleVideoClick(post.id)}
             onMouseDown={handlePressStart}
             onMouseUp={handlePressEnd}
             onMouseLeave={handlePressEnd}
             onTouchStart={handlePressStart}
             onTouchEnd={handlePressEnd}
-            className={`relative w-full aspect-3/4 rounded-lg overflow-hidden group cursor-pointer bg-[#2a2a2a] border-0 ${isEditing ? "cursor-default" : ""}`}
+            className={`relative w-full aspect-3/4 rounded-lg overflow-hidden group cursor-pointer bg-[#2a2a2a] border-0 ${
+              canEdit && isEditing ? "cursor-default" : ""
+            }`}
           >
-            {/* Video Thumbnail */}
-            {/* Media Rendering (Image or Video) */}
-            {post.mediaType === 'image' || !post.mediaUrl.match(/\.(mp4|mov|webm)$/i) ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
-                src={post.mediaUrl}
-                className="w-full h-full object-cover"
-                alt={post.caption || "Post"}
-              />
-            ) : (
-              <video
-                src={ensureHttps(post.mediaUrl)}
-                poster={getVideoThumbnailUrl(post)}
-                className='w-full h-full object-cover'
-                muted
-                playsInline
-                preload='metadata'
-                onLoadedData={(e) => {
-                  // Fallback: seek to 1 second when no poster is available
-                  if (!post.thumbnailUrl) {
-                    const videoEl = e.currentTarget;
-                    videoEl.currentTime = 1;
-                  }
-                }}
-              />
-            )}
+            {/* Media Thumbnail */}
+            <PostMediaThumbnail post={post} />
 
             {/* Hover overlay */}
             <div
-              className={`absolute inset-0 bg-black/0 transition-all duration-200 ${!isEditing ? 'group-hover:bg-black/30' : ''}`}
+              className={`absolute inset-0 bg-black/0 transition-all duration-200 ${
+                !(canEdit && isEditing) ? 'group-hover:bg-black/30' : ''
+              }`}
             />
 
             {/* Play count overlay */}
-            <div className='absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs font-semibold'>
+            <div className='absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs font-semibold z-10'>
               <Play size={14} fill='white' />
               <span>{formatCount(post.likeCount || post.likesCount || 0)}</span>
             </div>
           </button>
 
-          {/* Edit & Delete Action Overlays */}
-          {isEditing && (
+          {/* Edit & Delete Action Overlays (Only on own editable profile) */}
+          {canEdit && isEditing && (
             <div className='absolute top-2 right-2 flex items-center gap-1.5 z-10'>
               <button
                 onClick={(e) => {

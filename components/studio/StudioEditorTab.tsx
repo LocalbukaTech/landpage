@@ -91,7 +91,11 @@ export function StudioEditorTab({
               : []
           }
           initialCaption={existingPost?.caption || ''}
-          initialImageCaptions={existingPost?.imageCaptions || []}
+          initialImageCaptions={
+            existingPost?.mediaType === 'image'
+              ? existingPost?.imageCaptions || []
+              : []
+          }
           initialLocation={existingPost?.location || ''}
           initialRestaurant={
             existingPost?.restaurant

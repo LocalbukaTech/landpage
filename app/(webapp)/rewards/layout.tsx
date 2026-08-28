@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Rewards & Support",
+  title: "Rewards",
   description: "View your rewards, refer friends, and access support on LocalBuka.",
 };
 

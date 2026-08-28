@@ -274,13 +274,7 @@ export function BukaCard({restaurant}: BukaCardProps) {
         )}
         {/* Wishlist Bookmark */}
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            requireAuth(() => {
-              doWishlistSave();
-            });
-          }}
+          onClick={handleWishlist}
           disabled={isSavingWishlist}
           className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-md transition-all ${
             isWishlisted

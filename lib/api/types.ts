@@ -110,11 +110,42 @@ export const queryKeys = {
       [...queryKeys.posts.all, 'comments', postId, filters] as const,
   },
 
-  // Referrals
+  // Rewards & Referrals
   referrals: {
     all: ['referrals'] as const,
     code: () => [...queryKeys.referrals.all, 'code'] as const,
     dashboard: () => [...queryKeys.referrals.all, 'dashboard'] as const,
+    wallet: () => [...queryKeys.referrals.all, 'wallet'] as const,
+    transactions: (params?: Record<string, any>) =>
+      [...queryKeys.referrals.all, 'transactions', params] as const,
+    leaderboard: (params?: Record<string, any>) =>
+      [...queryKeys.referrals.all, 'leaderboard', params] as const,
+  },
+  rewards: {
+    all: ['rewards'] as const,
+    dashboard: () => [...queryKeys.rewards.all, 'dashboard'] as const,
+    wallet: () => [...queryKeys.rewards.all, 'wallet'] as const,
+    code: () => [...queryKeys.rewards.all, 'code'] as const,
+    transactions: (params?: Record<string, any>) =>
+      [...queryKeys.rewards.all, 'transactions', params] as const,
+    leaderboard: (params?: Record<string, any>) =>
+      [...queryKeys.rewards.all, 'leaderboard', params] as const,
+  },
+
+  // Admin Rewards & Referrals
+  adminRewards: {
+    all: ['admin-rewards'] as const,
+    overview: () => [...queryKeys.adminRewards.all, 'overview'] as const,
+    referrals: (params?: Record<string, any>) =>
+      [...queryKeys.adminRewards.all, 'referrals', params] as const,
+    referralDetail: (id: string) =>
+      [...queryKeys.adminRewards.all, 'referrals', id] as const,
+    transactions: (params?: Record<string, any>) =>
+      [...queryKeys.adminRewards.all, 'transactions', params] as const,
+    flagged: (params?: Record<string, any>) =>
+      [...queryKeys.adminRewards.all, 'flagged', params] as const,
+    topReferrers: (limit?: number) =>
+      [...queryKeys.adminRewards.all, 'top-referrers', limit] as const,
   },
 
   // Add more entity types as needed

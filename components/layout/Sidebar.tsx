@@ -1,100 +1,63 @@
 'use client';
 
-import {useState} from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import {usePathname, useRouter, useSearchParams} from 'next/navigation';
-import {
-  Home,
-  UtensilsCrossed,
-  PlusCircle,
-  Bell,
-  Bookmark,
-  Users,
-  User,
-  Search,
-  Store,
-  Gift,
-  Menu,
-  X,
-} from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Search, Menu, X, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
-import {SearchOverlay} from '@/components/layout/SearchOverlay';
-import {NotificationOverlay} from '@/components/layout/NotificationOverlay';
-import {cn} from '@/lib/utils';
-import {useAuth} from '@/context/AuthContext';
-import {useUnreadCount} from '@/lib/api/services/notifications.hooks';
-import {feedStore, type FeedType} from '@/lib/feed-state';
-import {Drawer, DrawerContent, DrawerTitle} from '@/components/ui/drawer';
-import {useRequireAuth} from '@/hooks/useRequireAuth';
-
-const baseNavItems = [
-  {icon: Home, label: 'Home', href: '/'},
-  {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
-  {icon: Store, label: 'List Restaurant', href: '/buka/my-restaurant'},
-  {icon: PlusCircle, label: 'Upload', href: '/studio'},
-  {icon: Bell, label: 'Notification', href: '/notifications'},
-  {icon: Bookmark, label: 'Saved', href: '/profile?tab=saved'},
-  {icon: Users, label: 'Community', href: '#'},
-  {icon: Gift, label: 'Refer & Earn', href: '/rewards'},
-  {icon: User, label: 'Profile', href: '/profile'},
-];
-
-
-
-const mobileNavItems = [
-  {icon: Home, label: 'Home', href: '/'},
-  {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
-  {icon: PlusCircle, label: 'Upload', href: '/studio'},
-  {icon: Bell, label: 'Inbox', href: '/notifications'},
-  {icon: User, label: 'Profile', href: '/profile'},
-];
-
-const footerLinks = [
-  {label: 'Company', href: '/company'},
-  {label: 'Blogs', href: '/blog'},
-  {label: 'Terms & Policies', href: '/privacy'},
-];
+import { SearchOverlay } from '@/components/layout/SearchOverlay';
+import { NotificationOverlay } from '@/components/layout/NotificationOverlay';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import { useUnreadCount } from '@/lib/api/services/notifications.hooks';
+import { feedStore, type FeedType } from '@/lib/feed-state';
+import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
+import {
+  getDesktopNavItems,
+  getMobileBottomNavItems,
+  getMobileDrawerNavItems,
+  FOOTER_LINKS,
+  type NavItemConfig,
+} from './sidebar.config';
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const {requireAuth} = useRequireAuth();
-  const isFeedPage = pathname === '/' || pathname === '/feeds';
+  const { requireAuth } = useRequireAuth();
+  const { user, isAuthenticated } = useAuth();
 
+  const isFeedPage = pathname === '/' || pathname === '/feeds';
   const typeParam = searchParams.get('type');
   const feedType: FeedType = typeParam === 'following' ? 'following' : 'foryou';
 
   const setFeedType = (type: FeedType) => {
     router.push(`/?type=${type}`);
   };
+
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const {user, isAuthenticated} = useAuth();
+
   const userAvatar = isAuthenticated
     ? user?.avatar || '/images/profile.png'
     : null;
 
-  // Inject My Restaurant nav item when authenticated
-  const filteredBaseNavItems = isAuthenticated
-    ? baseNavItems
-    : baseNavItems.filter((item) => item.label !== 'Studio' && item.label !== 'Upload');
-
-  const navItems = isAuthenticated
-    ? [...filteredBaseNavItems.slice(0, 3), ...filteredBaseNavItems.slice(3)]
-    : filteredBaseNavItems;
-
-  const displayMobileNavItems = isAuthenticated
-    ? mobileNavItems
-    : mobileNavItems.filter((item) => item.label !== 'Studio' && item.label !== 'Upload');
+  // Modular nav item lists based on auth state
+  const desktopNavItems = getDesktopNavItems(isAuthenticated);
+  const mobileBottomNavItems = getMobileBottomNavItems(isAuthenticated);
+  const mobileDrawerNavItems = getMobileDrawerNavItems(isAuthenticated);
 
   // Fetch unread notification count
-  const {data: unreadCountResponse} = useUnreadCount();
+  const { data: unreadCountResponse } = useUnreadCount();
   const unreadCount = (unreadCountResponse as any)?.data?.count ?? 0;
 
   const isCollapsed = isSearchOpen || isNotificationOpen;
 
+  /**
+   * Determine if a navigation link is currently active
+   */
   const isItemActive = (itemHref: string) => {
     if (!pathname) return false;
     if (itemHref === '#') return false;
@@ -119,7 +82,6 @@ export function Sidebar() {
     // Standalone check for Buka vs List Restaurant
     if (itemHref === '/buka') {
       if (!pathname.startsWith('/buka')) return false;
-      // Do not highlight Buka if user is on List Restaurant / My Restaurant
       if (
         pathname.startsWith('/buka/my-restaurant') ||
         pathname.startsWith('/buka/list-resturant')
@@ -146,22 +108,44 @@ export function Sidebar() {
     return pathname.startsWith(itemHref);
   };
 
-  const handleNavClick = (label: string) => {
-    if (label === 'Home') {
-      // Explicit Home tap → reset the feed to the top (TikTok behaviour).
+  /**
+   * Centralized click handler for any nav item.
+   * Handles auth prompting, overlays, and feed resetting.
+   */
+  const handleNavItemClick = (
+    e: React.MouseEvent,
+    item: NavItemConfig,
+    options?: { isDrawer?: boolean }
+  ) => {
+    if (options?.isDrawer) {
+      setIsMenuOpen(false);
+    }
+
+    // 1. Auth-prompt check
+    if (item.authRequirement === 'auth-prompt' && !isAuthenticated) {
+      e.preventDefault();
+      requireAuth(() => router.push(item.href));
+      return;
+    }
+
+    // 2. Action Type checks
+    if (item.id === 'home') {
+      // Explicit Home tap resets feed to top
       feedStore.reset();
     }
-    if (label === 'Search') {
-      setIsSearchOpen(true);
-      setIsNotificationOpen(false);
-    } else if (label === 'Notification' || label === 'Inbox') {
+
+    if (item.actionType === 'notification-overlay') {
+      e.preventDefault();
       setIsNotificationOpen(true);
       setIsSearchOpen(false);
-    } else {
-      setIsSearchOpen(false);
-      setIsNotificationOpen(false);
+      return;
     }
+
+    // Close overlays if navigating to a normal link
+    setIsSearchOpen(false);
+    setIsNotificationOpen(false);
   };
+
   const year = new Date().getFullYear();
 
   return (
@@ -170,19 +154,19 @@ export function Sidebar() {
       <aside
         className={cn(
           'hidden md:flex flex-col justify-between p-6 min-h-screen border-r border-white/5 bg-[#1a1a1a] transition-[width] duration-300 z-50 sticky top-0 h-screen overflow-y-auto scrollbar-hide',
-          isCollapsed ? 'w-20 px-3 items-center' : 'w-60',
+          isCollapsed ? 'w-20 px-3 items-center' : 'w-60'
         )}>
         <div
           className={cn(
             'flex flex-col gap-6',
-            isCollapsed ? 'w-full items-center' : '',
+            isCollapsed ? 'w-full items-center' : ''
           )}>
           {/* Logo */}
           <Link
             href='/'
             className={cn(
               'flex items-center gap-1 py-2 text-2xl font-bold italic',
-              isCollapsed ? 'justify-center' : '',
+              isCollapsed ? 'justify-center' : ''
             )}>
             {!isCollapsed && (
               <span className='text-xl md:text-2xl text-white font-normal font-display'>
@@ -199,18 +183,22 @@ export function Sidebar() {
             />
           </Link>
 
-          {/* Search */}
+          {/* Search Bar / Icon */}
           <div
             className={cn(
               'relative flex items-center cursor-pointer bg-[#2a2a2a] rounded-lg transition-all',
-              isCollapsed ? 'w-10 h-10 justify-center mx-auto' : 'w-full',
+              isCollapsed ? 'w-10 h-10 justify-center mx-auto' : 'w-full'
             )}
-            onClick={() => handleNavClick('Search')}
+            onClick={() => {
+              setIsSearchOpen(true);
+              setIsNotificationOpen(false);
+            }}
             role='button'
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
-                handleNavClick('Search');
+                setIsSearchOpen(true);
+                setIsNotificationOpen(false);
               }
             }}>
             {isCollapsed ? (
@@ -231,32 +219,31 @@ export function Sidebar() {
             )}
           </div>
 
-          {/* Navigation */}
+          {/* Desktop Navigation Items */}
           <nav
             className={cn(
               'flex flex-col gap-1 mt-4',
-              isCollapsed ? 'w-full' : '',
+              isCollapsed ? 'w-full' : ''
             )}>
-            {navItems.map((item) => {
+            {desktopNavItems.map((item) => {
               const isActive = isItemActive(item.href);
-
-              const isNotificationItem = item.label === 'Notification';
+              const isNotificationItem = item.actionType === 'notification-overlay';
               const activeState =
                 isNotificationItem && isNotificationOpen
                   ? true
                   : isActive && !isNotificationOpen;
 
-              return (
-                <div key={item.label}>
-                  {isNotificationItem ? (
+              if (isNotificationItem && isAuthenticated) {
+                return (
+                  <div key={item.id}>
                     <button
-                      onClick={() => handleNavClick('Notification')}
+                      onClick={(e) => handleNavItemClick(e, item)}
                       className={cn(
                         'w-full flex items-center gap-3.5 p-3 rounded-lg text-[15px] font-medium transition-colors cursor-pointer border-none bg-transparent relative',
                         activeState
                           ? 'text-[#fbbe15]'
                           : 'text-white hover:bg-white/5',
-                        isCollapsed ? 'justify-center py-3' : '',
+                        isCollapsed ? 'justify-center py-3' : ''
                       )}>
                       <div className='relative'>
                         <item.icon
@@ -269,85 +256,79 @@ export function Sidebar() {
                       </div>
                       {!isCollapsed && <span>{item.label}</span>}
                     </button>
-                  ) : (
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        'flex items-center gap-3.5 p-3 rounded-lg text-[15px] font-medium transition-colors',
-                        activeState
-                          ? 'text-[#fbbe15]'
-                          : 'text-white hover:bg-white/5',
-                        isCollapsed ? 'justify-center py-3' : '',
-                      )}
-                      onClick={(e) => {
-                        if (item.label === 'List Restaurant' && !isAuthenticated) {
-                          e.preventDefault();
-                          requireAuth(() => router.push(item.href));
-                          return;
-                        }
-                        handleNavClick(item.label);
-                      }}>
-                      {item.label === 'Profile' && userAvatar ? (
-                        <Image
-                          src={userAvatar}
-                          alt='Profile'
-                          width={22}
-                          height={22}
-                          className={cn(
-                            'rounded-full object-cover',
-                            activeState ? 'ring-2 ring-[#fbbe15]' : '',
-                          )}
-                          style={{width: 22, height: 22}}
-                        />
-                      ) : (
-                        <item.icon
-                          size={22}
-                          strokeWidth={activeState ? 2.5 : 2}
-                        />
-                      )}
-                      {!isCollapsed && <span>{item.label}</span>}
-                    </Link>
-                  )}
+                  </div>
+                );
+              }
+
+              return (
+                <div key={item.id}>
+                  <Link
+                    href={item.href}
+                    onClick={(e) => handleNavItemClick(e, item)}
+                    className={cn(
+                      'flex items-center gap-3.5 p-3 rounded-lg text-[15px] font-medium transition-colors',
+                      activeState
+                        ? 'text-[#fbbe15]'
+                        : 'text-white hover:bg-white/5',
+                      isCollapsed ? 'justify-center py-3' : ''
+                    )}>
+                    {item.id === 'profile' && userAvatar ? (
+                      <Image
+                        src={userAvatar}
+                        alt='Profile'
+                        width={22}
+                        height={22}
+                        className={cn(
+                          'rounded-full object-cover',
+                          activeState ? 'ring-2 ring-[#fbbe15]' : ''
+                        )}
+                        style={{ width: 22, height: 22 }}
+                      />
+                    ) : (
+                      <item.icon
+                        size={22}
+                        strokeWidth={activeState ? 2.5 : 2}
+                      />
+                    )}
+                    {!isCollapsed && <span>{item.label}</span>}
+                  </Link>
                 </div>
               );
             })}
           </nav>
         </div>
 
-        {/* Ad Unit and Login/Footer */}
+        {/* Footer */}
         <div className='flex flex-col gap-6 pt-4 mt-auto'>
-          {!isCollapsed && <div className='px-2'>{/*<AdSenseUnit /> */}</div>}
-
           {!isCollapsed && (
-            <>
-              <footer className='flex flex-col gap-2'>
-                <div className='flex flex-col gap-x-3 gap-y-1'>
-                  {footerLinks.map((link) => (
-                    <Link
-                      key={link.label}
-                      href={link.href}
-                      target='_blank'
-                      className='text-[12px] text-zinc-500 hover:text-zinc-300 transition-colors whitespace-nowrap'>
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
-                <Link href="/company" className='text-[11px] text-zinc-600 mt-1'>
-                 &copy; {year} LocalBuka
-                </Link>
-              </footer>
-            </>
+            <footer className='flex flex-col gap-2'>
+              <div className='flex flex-col gap-x-3 gap-y-1'>
+                {FOOTER_LINKS.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    target='_blank'
+                    className='text-[12px] text-zinc-500 hover:text-zinc-300 transition-colors whitespace-nowrap'>
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+              <Link href='/company' className='text-[11px] text-zinc-600 mt-1'>
+                &copy; {year} LocalBuka
+              </Link>
+            </footer>
           )}
         </div>
       </aside>
 
       {/* ── Mobile Top Header ── */}
-      <div className={cn(
-        'md:hidden fixed top-0 left-0 right-0 h-14 z-50 flex items-center justify-between px-4 transition-all duration-300',
-        isFeedPage 
-          ? 'bg-transparent border-none' 
-          : 'bg-[#1a1a1a] border-b border-white/5'
-      )}>
+      <div
+        className={cn(
+          'md:hidden fixed top-0 left-0 right-0 h-14 z-50 flex items-center justify-between px-4 transition-all duration-300',
+          isFeedPage
+            ? 'bg-transparent border-none'
+            : 'bg-[#1a1a1a] border-b border-white/5'
+        )}>
         <button
           onClick={() => setIsMenuOpen(true)}
           className='w-8 flex items-center justify-start text-white hover:opacity-80 active:opacity-75 transition-opacity cursor-pointer border-none bg-transparent'>
@@ -356,13 +337,12 @@ export function Sidebar() {
 
         {isFeedPage ? (
           <div className='flex items-center gap-5 select-none'>
-            <button 
-              onClick={() => alert("Community feed coming soon!")}
-              className='text-[15px] font-bold text-white/50 hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none relative py-1'
-            >
+            <button
+              onClick={() => alert('Community feed coming soon!')}
+              className='text-[15px] font-bold text-white/50 hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none relative py-1'>
               Community
             </button>
-            <button 
+            <button
               onClick={() => {
                 requireAuth(() => {
                   setFeedType('following');
@@ -370,21 +350,23 @@ export function Sidebar() {
               }}
               className={cn(
                 'text-[15px] font-bold transition-all bg-transparent border-none outline-none relative py-1 cursor-pointer',
-                feedType === 'following' ? 'text-white' : 'text-white/50 hover:text-white'
-              )}
-            >
+                feedType === 'following'
+                  ? 'text-white'
+                  : 'text-white/50 hover:text-white'
+              )}>
               Following
               {feedType === 'following' && (
                 <div className='absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-xs' />
               )}
             </button>
-            <button 
+            <button
               onClick={() => setFeedType('foryou')}
               className={cn(
                 'text-[15px] font-bold transition-all bg-transparent border-none outline-none relative py-1 cursor-pointer',
-                feedType === 'foryou' ? 'text-white' : 'text-white/50 hover:text-white'
-              )}
-            >
+                feedType === 'foryou'
+                  ? 'text-white'
+                  : 'text-white/50 hover:text-white'
+              )}>
               For You
               {feedType === 'foryou' && (
                 <div className='absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-xs' />
@@ -395,7 +377,7 @@ export function Sidebar() {
           <div className='flex items-center gap-2'>
             <span
               className='text-xl text-white font-normal'
-              style={{fontFamily: 'var(--font-hakuna), sans-serif'}}>
+              style={{ fontFamily: 'var(--font-hakuna), sans-serif' }}>
               LocalBuka
             </span>
             <Image
@@ -409,25 +391,28 @@ export function Sidebar() {
         )}
 
         <button
-          onClick={() => handleNavClick('Search')}
+          onClick={() => {
+            setIsSearchOpen(true);
+            setIsNotificationOpen(false);
+          }}
           className='w-8 flex justify-end text-white hover:opacity-80 active:opacity-75 transition-opacity cursor-pointer border-none bg-transparent outline-none'>
           <Search size={22} />
         </button>
       </div>
 
-      {/* ── Mobile Bottom Nav ── */}
+      {/* ── Mobile Bottom Navigation Bar ── */}
       <div className='md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#1a1a1a] border-t border-white/5 flex items-center justify-around z-50 pb-safe'>
-        {displayMobileNavItems.map((item) => {
+        {mobileBottomNavItems.map((item) => {
           const isActive = isItemActive(item.href);
+          const label = item.mobileBottomLabel || item.label;
 
-          const isNotificationItem = item.label === 'Inbox';
-          const activeState = isActive;
-
-          if (item.label === 'Studio' || item.label === 'Upload') {
+          // Special central upload button
+          if (item.actionType === 'upload-button') {
             return (
               <Link
-                key={item.label}
+                key={item.id}
                 href={item.href}
+                onClick={(e) => handleNavItemClick(e, item)}
                 className='flex flex-col items-center gap-1'>
                 <PlusCircle
                   size={32}
@@ -437,31 +422,16 @@ export function Sidebar() {
             );
           }
 
-          if (isNotificationItem) {
-            return (
-              <Link
-                key={item.label}
-                href='/notifications'
-                className={cn(
-                  'flex flex-col items-center gap-1 w-12',
-                  activeState ? 'text-white' : 'text-zinc-500',
-                )}>
-                <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
-                <span className='text-[10px] font-medium'>{item.label}</span>
-              </Link>
-            );
-          }
-
           return (
             <Link
-              key={item.label}
+              key={item.id}
               href={item.href}
               className={cn(
                 'flex flex-col items-center gap-1 w-12',
-                activeState ? 'text-white' : 'text-zinc-500',
+                isActive ? 'text-white' : 'text-zinc-500'
               )}
-              onClick={() => handleNavClick(item.label)}>
-              {item.label === 'Profile' && userAvatar ? (
+              onClick={(e) => handleNavItemClick(e, item)}>
+              {item.id === 'profile' && userAvatar ? (
                 <Image
                   src={userAvatar}
                   alt='Profile'
@@ -469,14 +439,19 @@ export function Sidebar() {
                   height={22}
                   className={cn(
                     'rounded-full object-cover',
-                    activeState ? 'ring-2 ring-white' : '',
+                    isActive ? 'ring-2 ring-white' : ''
                   )}
-                  style={{width: 22, height: 22}}
+                  style={{ width: 22, height: 22 }}
                 />
               ) : (
-                <item.icon size={22} strokeWidth={activeState ? 2.5 : 2} />
+                <div className='relative'>
+                  <item.icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                  {item.id === 'notifications' && unreadCount > 0 && (
+                    <div className='absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full' />
+                  )}
+                </div>
               )}
-              <span className='text-[10px] font-medium'>{item.label}</span>
+              <span className='text-[10px] font-medium'>{label}</span>
             </Link>
           );
         })}
@@ -531,7 +506,7 @@ export function Sidebar() {
                   width={36}
                   height={36}
                   className='rounded-full object-cover ring-2 ring-[#fbbe15]/40'
-                  style={{width: 36, height: 36}}
+                  style={{ width: 36, height: 36 }}
                 />
               )}
               <div className='flex flex-col min-w-0'>
@@ -545,29 +520,25 @@ export function Sidebar() {
             </Link>
           )}
 
-          {/* Nav Items */}
+          {/* Drawer Navigation Items */}
           <nav className='flex flex-col gap-1 px-3 mt-4 flex-1'>
-            {navItems.map((item) => {
+            {mobileDrawerNavItems.map((item) => {
               const isActive = isItemActive(item.href);
+
               return (
                 <Link
-                  key={item.label}
+                  key={item.id}
                   href={item.href}
-                  onClick={(e) => {
-                    setIsMenuOpen(false);
-                    if (item.label === 'List Restaurant' && !isAuthenticated) {
-                      e.preventDefault();
-                      requireAuth(() => router.push(item.href));
-                      return;
-                    }
-                  }}
+                  onClick={(e) =>
+                    handleNavItemClick(e, item, { isDrawer: true })
+                  }
                   className={cn(
                     'flex items-center gap-3.5 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors active:opacity-70 relative',
                     isActive
                       ? 'bg-[#fbbe15]/10 text-[#fbbe15]'
-                      : 'text-zinc-300 hover:bg-white/5',
+                      : 'text-zinc-300 hover:bg-white/5'
                   )}>
-                  {item.label === 'Profile' && userAvatar ? (
+                  {item.id === 'profile' && userAvatar ? (
                     <Image
                       src={userAvatar}
                       alt='Profile'
@@ -575,15 +546,15 @@ export function Sidebar() {
                       height={22}
                       className={cn(
                         'rounded-full object-cover',
-                        isActive ? 'ring-2 ring-[#fbbe15]' : '',
+                        isActive ? 'ring-2 ring-[#fbbe15]' : ''
                       )}
-                      style={{width: 22, height: 22}}
+                      style={{ width: 22, height: 22 }}
                     />
                   ) : (
                     <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                   )}
                   <span>{item.label}</span>
-                  {item.label === 'Notification' && unreadCount > 0 && (
+                  {item.id === 'notifications' && unreadCount > 0 && (
                     <span className='ml-auto min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1'>
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
@@ -595,7 +566,7 @@ export function Sidebar() {
 
           {/* Footer */}
           <div className='px-5 pb-8 pt-4 border-t border-white/8 mt-auto flex flex-col gap-1.5'>
-            {footerLinks.map((link) => (
+            {FOOTER_LINKS.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}

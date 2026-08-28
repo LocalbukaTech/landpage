@@ -7,9 +7,23 @@ export type NotificationType =
   | 'unfollow'
   | 'repost'
   | 'comment'
-  | 'mention';
+  | 'mention'
+  | 'referral_earned'
+  | 'referral_welcome'
+  | 'admin_points_credit'
+  | 'admin_points_debit';
 
-export type EntityType = 'post' | 'user' | 'comment' | 'restaurant';
+export type EntityType =
+  | 'post'
+  | 'user'
+  | 'comment'
+  | 'restaurant'
+  | 'referral'
+  | 'referral_earned'
+  | 'referral_welcome'
+  | 'admin_points_credit'
+  | 'admin_points_debit'
+  | 'rewards';
 
 export interface Notification {
   id: string;

@@ -83,10 +83,27 @@ function NotificationItem({
   const alreadyFollowing = actorProfileData?.isFollowing ?? false;
 
   const isRestaurant = notification.entityType === 'restaurant';
+  const isRewardsNotification =
+    notification.entityType === 'referral' ||
+    notification.entityType === 'referral_earned' ||
+    notification.entityType === 'referral_welcome' ||
+    notification.entityType === 'admin_points_credit' ||
+    notification.entityType === 'admin_points_debit' ||
+    notification.entityType === 'rewards' ||
+    notification.type === 'referral_earned' ||
+    notification.type === 'referral_welcome' ||
+    (notification.type as any) === 'admin_points_credit' ||
+    (notification.type as any) === 'admin_points_debit';
+
+  const isLocalBukaActor = isRestaurant || isRewardsNotification;
 
   const handleItemClick = () => {
     if (!notification.isRead) markAsRead.mutate(notification.id);
 
+    if (isRewardsNotification) {
+      router.push('/rewards');
+      return;
+    }
     if (isRestaurant) {
       setShowRestaurantDrawer(true);
       return;
@@ -121,6 +138,13 @@ function NotificationItem({
 
   const handleActorClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isLocalBukaActor) {
+      if (isRewardsNotification) {
+        if (!notification.isRead) markAsRead.mutate(notification.id);
+        router.push('/rewards');
+      }
+      return;
+    }
     if (!notification.isRead) markAsRead.mutate(notification.id);
     router.push(`/other-profile?id=${notification.actorId}`);
   };
@@ -136,7 +160,7 @@ function NotificationItem({
   const showFollowedState =
     notification.type === 'follow' && (alreadyFollowing || isFollowingBack);
   const showThumbnail =
-    !isRestaurant &&
+    !isLocalBukaActor &&
     (notification.type === 'like_post' ||
       notification.type === 'repost' ||
       notification.type === 'comment');
@@ -157,10 +181,10 @@ function NotificationItem({
           <div
             className={cn(
               'w-11 h-11 rounded-full overflow-hidden bg-zinc-700 shrink-0 relative border border-white/10',
-              !isRestaurant && 'cursor-pointer',
+              !isLocalBukaActor && 'cursor-pointer',
             )}
-            onClick={isRestaurant ? undefined : handleActorClick}>
-            {isRestaurant ? (
+            onClick={isLocalBukaActor ? undefined : handleActorClick}>
+            {isLocalBukaActor ? (
               <Image
                 src='/images/localBuka_logo.png'
                 alt='LocalBuka'
@@ -179,7 +203,7 @@ function NotificationItem({
 
           <div className='flex flex-col flex-1 min-w-0'>
             <p className='text-white text-sm leading-tight'>
-              {!isRestaurant ? (
+              {!isLocalBukaActor ? (
                 <span
                   className='font-bold cursor-pointer hover:underline'
                   onClick={handleActorClick}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,6 +10,7 @@ import { useValidateReferralCode } from '@/lib/api/services/referral.hooks';
 import { useToast } from '@/hooks/use-toast';
 import { API_BASE_URL } from '@/lib/api/client';
 import { trackEvent } from '@/lib/analytics';
+import { getDeviceId } from '@/lib/deviceId';
 
 const onboardingSlides = [
   {
@@ -54,35 +55,45 @@ const SignUpContent = () => {
     }
   }, [searchParams]);
 
-  const validateMutation = useValidateReferralCode();
+  const { mutate: validateCode } = useValidateReferralCode();
   const [referrerStatus, setReferrerStatus] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle');
   const [referrerName, setReferrerName] = useState('');
   const [referrerMessage, setReferrerMessage] = useState('');
+  const lastValidatedCodeRef = useRef<string>('');
 
   useEffect(() => {
     const code = formData.referralCode.trim();
     if (!code) {
-      const timer = setTimeout(() => {
-        setReferrerStatus('idle');
-        setReferrerMessage('');
-      }, 0);
-      return () => clearTimeout(timer);
+      if (lastValidatedCodeRef.current) {
+        lastValidatedCodeRef.current = '';
+        const timer = setTimeout(() => {
+          setReferrerStatus('idle');
+          setReferrerName('');
+          setReferrerMessage('');
+        }, 0);
+        return () => clearTimeout(timer);
+      }
+      return;
     }
 
+    if (code === lastValidatedCodeRef.current) return;
+
     const timeoutId = setTimeout(() => {
+      lastValidatedCodeRef.current = code;
       setReferrerStatus('loading');
-      validateMutation.mutate(
+      validateCode(
         { referralCode: code },
         {
-          onSuccess: (res) => {
-            if (res?.data?.valid !== false) {
+          onSuccess: (res: any) => {
+            const data = res?.data !== undefined ? res.data : res;
+            if (data?.valid !== false && data?.valid === true) {
               setReferrerStatus('valid');
-              setReferrerName(res?.data?.referrerName || '');
-              setReferrerMessage(res?.data?.message || 'Referral code is valid!');
+              setReferrerName(data?.referrerName || '');
+              setReferrerMessage(data?.message || 'Referral code is valid!');
             } else {
               setReferrerStatus('invalid');
               setReferrerName('');
-              setReferrerMessage(res?.data?.message || 'This code is not valid. Check it and try again.');
+              setReferrerMessage(data?.message || 'This code is not valid. Check it and try again.');
             }
           },
           onError: (err: any) => {
@@ -92,10 +103,10 @@ const SignUpContent = () => {
           },
         }
       );
-    }, 500);
+    }, 400);
 
     return () => clearTimeout(timeoutId);
-  }, [formData.referralCode, validateMutation]);
+  }, [formData.referralCode, validateCode]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -105,21 +116,21 @@ const SignUpContent = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const trimmedCode = formData.referralCode.trim();
+    const deviceId = trimmedCode ? getDeviceId() : undefined;
 
     signupMutation.mutate(
       {
         email: formData.email,
         fullName: formData.fullName,
-        referralCode: formData.referralCode || undefined,
+        referralCode: trimmedCode || undefined,
+        deviceId,
         password: formData.password,
       },
       {
-        onSuccess: (response) => {
+        onSuccess: (response: any) => {
           trackEvent('sign_up', { method: 'email' });
-          // if (code) {
-          //   setVerificationCode(code);
-          //   // setShowCodeModal(true);
-          // } else {
+
           toast({
             title: 'Account created! 🎉',
             description:

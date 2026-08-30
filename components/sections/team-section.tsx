@@ -20,6 +20,7 @@ import {Reveal} from '@/components/anim/Reveal';
 import {RiLinkedinFill} from 'react-icons/ri';
 import {useTeamsQuery} from '@/lib/api/services/teams.hooks';
 import type {Team} from '@/lib/api/services/teams.service';
+import {formatExternalUrl} from '@/lib/utils';
 
 function TeamMemberCard({member}: {member: Team}) {
   return (
@@ -97,7 +98,7 @@ function TeamMemberCard({member}: {member: Team}) {
             {member.linkedin_url && (
               <Button asChild>
                 <a
-                  href={member.linkedin_url}
+                  href={formatExternalUrl(member.linkedin_url)}
                   target='_blank'
                   rel='noopener noreferrer'>
                   View LinkedIn

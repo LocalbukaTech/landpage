@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSavePreferencesMutation } from '@/lib/api/services/auth.hooks';
 import confetti from 'canvas-confetti';
+import { getSafeRedirectUrl } from '@/lib/utils';
 
 // Steps list
 type OnboardingStep = 'preferences' | 'slide1' | 'slide2' | 'slide3' | 'welcome';
@@ -38,7 +39,7 @@ const preferenceOptions = [
 const PreferencesContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const redirect = getSafeRedirectUrl(searchParams.get('redirect'), '/');
   const flow = searchParams.get('flow');
 
   // State machine values

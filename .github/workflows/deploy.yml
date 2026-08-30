@@ -1,0 +1,62 @@
+name: Vercel Deployments
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  # New pre-check job to validate who is pushing to the main branch
+  validate-actor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check user permissions for main branch
+        if: github.ref_name == 'main'
+        run: |
+          ALLOWED_USERS="codydematth TobiAkinkuotu LocalbukaTech"
+          ACTOR="${{ github.actor }}"
+
+          if [[ ! " $ALLOWED_USERS " =~ " $ACTOR " ]]; then
+            echo "❌ Error: User '$ACTOR' is not permitted to push directly to the main branch."
+            exit 1
+          fi
+          echo "✅ Authorization successful for user '$ACTOR'."
+
+  deploy:
+    needs: validate-actor # Ensures deployment only runs if the user passes validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel
+
+      - name: Set Environment Variables
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "ENV_FLAG=production" >> $GITHUB_ENV
+            echo "PROD_FLAG=--prod" >> $GITHUB_ENV
+          else
+            echo "ENV_FLAG=preview" >> $GITHUB_ENV
+            echo "PROD_FLAG=" >> $GITHUB_ENV
+          fi
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=${{ env.ENV_FLAG }} --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build Project Artifacts
+        run: vercel build ${{ env.PROD_FLAG }} --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt ${{ env.PROD_FLAG }} --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

@@ -161,13 +161,44 @@ export function stripHtmlContent(html: string | null | undefined): string {
 
 /**
  * Formats an external URL by prepending https:// if neither http:// nor https:// is present.
+ * Prevents javascript: or data: URI injection attacks.
  */
 export function formatExternalUrl(url: string | null | undefined): string {
   if (!url) return '';
   const trimmed = url.trim();
   if (!trimmed) return '';
+
+  // Block dangerous pseudo-protocols
+  if (/^(javascript|data|vbscript|file):/i.test(trimmed)) {
+    return '#';
+  }
+
   if (/^https?:\/\//i.test(trimmed)) {
     return trimmed;
   }
   return `https://${trimmed}`;
 }
+
+/**
+ * Validates and sanitizes a redirect URL to prevent Open Redirect vulnerabilities.
+ * Ensures the target is strictly an internal relative path and not an external or protocol-relative URL.
+ */
+export function getSafeRedirectUrl(
+  url: string | null | undefined,
+  fallback: string = '/',
+): string {
+  if (!url) return fallback;
+  const trimmed = url.trim();
+
+  // Must start with '/' but NOT '//' or '/\' (which browsers resolve as external protocol-relative URLs)
+  if (
+    trimmed.startsWith('/') &&
+    !trimmed.startsWith('//') &&
+    !trimmed.startsWith('/\\')
+  ) {
+    return trimmed;
+  }
+
+  return fallback;
+}
+

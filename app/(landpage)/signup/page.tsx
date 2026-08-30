@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { API_BASE_URL } from '@/lib/api/client';
 import { trackEvent } from '@/lib/analytics';
 import { getDeviceId } from '@/lib/deviceId';
+import { getSafeRedirectUrl } from '@/lib/utils';
 
 const onboardingSlides = [
   {
@@ -32,7 +33,7 @@ const SignUpContent = () => {
   const { toast } = useToast();
   const signupMutation = useSignupMutation();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const redirect = getSafeRedirectUrl(searchParams.get('redirect'), '/');
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);

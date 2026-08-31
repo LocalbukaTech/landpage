@@ -8,11 +8,12 @@ import {motion} from 'framer-motion';
 import {ArrowRight, Check} from 'lucide-react';
 
 import {useAcceptMusicPolicy} from '@/lib/api/services/auth.hooks';
+import {getSafeRedirectUrl} from '@/lib/utils';
 
 function MusicPolicyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const redirect = getSafeRedirectUrl(searchParams.get('redirect'), '/');
   const flow = searchParams.get('flow');
 
   const [agreed, setAgreed] = useState(false);

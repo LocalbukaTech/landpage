@@ -36,7 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {capitalize} from '@/lib/utils';
+import {capitalize, formatExternalUrl} from '@/lib/utils';
 
 const PAGE_SIZE = 10;
 
@@ -528,7 +528,7 @@ const TeamsPage = () => {
                       <div className='flex items-center gap-2 text-sm'>
                         <RiLinkedinFill className='w-4 h-4 text-blue-500' />
                         <a
-                          href={member.linkedin_url}
+                          href={formatExternalUrl(member.linkedin_url)}
                           target='_blank'
                           rel='noopener noreferrer'
                           className='text-blue-600 hover:underline truncate'>
@@ -680,7 +680,7 @@ const TeamsPage = () => {
                   <div className='flex items-center gap-3'>
                     <RiLinkedinFill className='w-4 h-4 text-blue-500' />
                     <a
-                      href={viewTeam.linkedin_url}
+                      href={formatExternalUrl(viewTeam.linkedin_url)}
                       target='_blank'
                       rel='noopener noreferrer'
                       className='text-blue-600 hover:underline'>

@@ -17,6 +17,7 @@ import CommentSection from './CommentSection';
 import {isUserAuthenticated} from '@/lib/auth';
 import {format} from 'date-fns';
 import {formatExternalUrl} from '@/lib/utils';
+import DOMPurify from 'dompurify';
 
 const BlogDetailClient = ({slug}: {slug: string}) => {
   const router = useRouter();
@@ -172,7 +173,9 @@ const BlogDetailClient = ({slug}: {slug: string}) => {
             {/* Content */}
             <div 
               className='prose prose-lg max-w-none dark:prose-invert'
-              dangerouslySetInnerHTML={{__html: blog.content}}
+              dangerouslySetInnerHTML={{
+                __html: typeof window !== 'undefined' ? DOMPurify.sanitize(blog.content) : blog.content,
+              }}
             />
 
             <style jsx global>{`

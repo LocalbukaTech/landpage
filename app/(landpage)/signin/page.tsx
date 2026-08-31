@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {getSafeRedirectUrl} from '@/lib/utils';
 
 const onboardingSlides = [
   {
@@ -46,7 +47,7 @@ const SignInContent = () => {
   const forgotPasswordMutation = useForgotPasswordMutation();
   const resetPasswordMutation = useResetPasswordMutation();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const redirect = getSafeRedirectUrl(searchParams.get('redirect'), '/');
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPassword, setShowPassword] = useState(false);

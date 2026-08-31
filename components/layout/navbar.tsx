@@ -32,7 +32,7 @@ export function Navbar() {
   const handleNavClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
     href: string,
-    label: string
+    _label: string
   ) => {
 
     if (href.startsWith('#')) {
@@ -51,7 +51,7 @@ export function Navbar() {
     logoutUser();
     setUser(null);
     setIsAuthenticated(false);
-    router.push('/feeds');
+    router.push('/');
   };
 
   // Get first name from fullName

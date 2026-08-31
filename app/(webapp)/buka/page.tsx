@@ -4,9 +4,11 @@ import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BukaCategory } from '@/components/buka/BukaCategory';
 import { BukaRestaurant } from '@/components/buka/BukaCard';
-import { CuisineSection } from '@/components/buka/CuisineSection';
 import { Images } from '@/public/images';
 import { MobileBukaHome } from '@/components/buka/mobile/MobileBukaHome';
+import { Typewriter } from '@/components/anim/Typewriter';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -18,8 +20,7 @@ import { CgSpinner } from 'react-icons/cg';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useGeolocation } from '@/hooks/useGeolocation';
-import { RESTAURANT_PLACEHOLDER_IMG } from '@/lib/constants';
-import { helper } from '@/utils/helper';
+import { RESTAURANT_PLACEHOLDER_IMG, BUKA_HERO_LANGUAGES } from '@/lib/constants';
 
 // Sort BukaRestaurant arrays: DB items first, then Google, each group by latest updatedAt
 
@@ -67,6 +68,7 @@ const cuisines = [
 
 export default function BukaPage() {
   const router = useRouter();
+  const { requireAuth } = useRequireAuth();
   const { lat, lng, loading: loadingGeo } = useGeolocation();
   const [heroBgUrl, setHeroBgUrl] = useState("url('/images/buka.gif')");
 
@@ -83,8 +85,9 @@ export default function BukaPage() {
       {
         lat: lat || 6.5244,
         lng: lng || 3.3792,
+        radius: 50000,
         page: 1,
-        pageSize: 30,
+        pageSize: 20,
       },
       !loadingGeo,
     );
@@ -109,7 +112,11 @@ export default function BukaPage() {
     const mapped = Array.isArray(arrayData)
       ? arrayData.map(mapToBukaRestaurant)
       : [];
-    return helper.sortDbFirstThenByDate(mapped);
+    // Sort by rating descending (highest rated first), then review count
+    return [...mapped].sort((a, b) => {
+      if (b.rating !== a.rating) return b.rating - a.rating;
+      return b.reviewCount - a.reviewCount;
+    });
   }, [trendingData]);
 
   // Combine into a unified list
@@ -134,34 +141,60 @@ export default function BukaPage() {
     return rawList.map(mapToBukaRestaurant);
   }, [searchResponse]);
 
-  // 1. Determine topRestaurants (prefer trending, fallback to location-based combinedAll)
+  // Deduplicated unified pool of all fetched restaurants
+  const allPool = useMemo(() => {
+    const map = new Map<string, BukaRestaurant>();
+    [...trendingUiRestaurants, ...combinedAll].forEach((r) => {
+      if (!map.has(r.id)) map.set(r.id, r);
+    });
+    return Array.from(map.values());
+  }, [trendingUiRestaurants, combinedAll]);
+
+  // 1. Trending: Highest rated restaurants
   const topRestaurants = useMemo(() => {
     if (trendingUiRestaurants.length > 0) {
       return trendingUiRestaurants.slice(0, 5);
     }
-    return combinedAll.slice(0, 5);
+    return [...combinedAll].sort((a, b) => b.rating - a.rating).slice(0, 5);
   }, [trendingUiRestaurants, combinedAll]);
 
-  // To prevent duplicates across sections, determine which items in combinedAll (location-based) are not already used in topRestaurants.
-  const remainingLocal = useMemo(() => {
-    const usedIds = new Set(topRestaurants.map((r) => r.id));
-    return combinedAll.filter((r) => !usedIds.has(r.id));
-  }, [combinedAll, topRestaurants]);
-
-  // 2. Allocate the remaining local restaurants to avoid overlap
+  // 2. Top Bukas: Top rated local bukas / restaurants
   const topBukas = useMemo(() => {
-    return remainingLocal.slice(0, 5);
-  }, [remainingLocal]);
+    const localBukas = allPool.filter(
+      (r) => r.rawRestaurant?.source === 'local',
+    );
+    const pool = localBukas.length >= 3 ? localBukas : allPool;
+    return [...pool].sort((a, b) => b.rating - a.rating).slice(0, 5);
+  }, [allPool]);
 
+  // 3. Hidden Gems: Highly rated spots not in top 3 of trending
   const hiddenGems = useMemo(() => {
-    return remainingLocal.slice(5, 11);
-  }, [remainingLocal]);
+    const topIds = new Set(topRestaurants.slice(0, 3).map((r) => r.id));
+    const pool = allPool.filter((r) => !topIds.has(r.id));
+    const highRated = pool.filter((r) => r.rating >= 4.0);
+    const source = highRated.length >= 3 ? highRated : pool;
+    return [...source].sort((a, b) => b.rating - a.rating).slice(0, 6);
+  }, [allPool, topRestaurants]);
 
+  // 4. Street Favorites: Popular local street joints and top affordable spots
   const streetFavorites = useMemo(() => {
-    return remainingLocal.slice(11, 17);
-  }, [remainingLocal]);
+    const topIds = new Set([...topRestaurants, ...topBukas].map((r) => r.id));
+    let pool = allPool.filter((r) => !topIds.has(r.id));
+    if (pool.length < 3) {
+      pool = allPool;
+    }
+    return [...pool]
+      .sort(
+        (a, b) =>
+          (b.affordability || b.rating) - (a.affordability || a.rating),
+      )
+      .slice(0, 6);
+  }, [allPool, topRestaurants, topBukas]);
 
   const isLoading = isLoadingTrending || isLoadingSearch;
+  const [activeHeroLangIndex, setActiveHeroLangIndex] = useState(0);
+  const activeHeroContent =
+    BUKA_HERO_LANGUAGES[activeHeroLangIndex] || BUKA_HERO_LANGUAGES[0];
 
   return (
     <>
@@ -189,7 +222,7 @@ export default function BukaPage() {
             <div className='absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent' />
 
             <button
-              onClick={() => router.push('/feeds')}
+              onClick={() => router.push('/')}
               className='absolute top-4 left-4 md:top-8 md:left-8 z-10 flex items-center justify-center w-10 h-10 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors bg-transparent cursor-pointer'
               aria-label='Go back'>
               <ArrowLeft size={20} />
@@ -202,26 +235,46 @@ export default function BukaPage() {
               className='absolute bottom-0 left-0 z-5 pointer-events-none object-contain object-bottom-left'
             />
 
-            <div className='absolute bottom-6 left-4 right-4 md:bottom-16 md:left-8 md:right-auto md:max-w-md z-10 flex flex-col gap-4 md:gap-5'>
-              <h1 className='text-white text-2xl md:text-[32px] font-bold leading-tight'>
-                Wetin You Wan Chop?!
+            <div className='absolute bottom-6 left-4 right-4 md:bottom-16 md:left-8 md:right-auto md:max-w-xl z-10 flex flex-col gap-4 md:gap-5'>
+              <h1 className='text-white text-2xl md:text-[34px] font-extrabold leading-tight min-h-[40px] md:min-h-[50px] flex items-center'>
+                <Typewriter
+                  words={BUKA_HERO_LANGUAGES.map((item) => item.headline)}
+                  typingSpeed={50}
+                  deletingSpeed={25}
+                  pauseTime={2500}
+                  onIndexChange={setActiveHeroLangIndex}
+                  className='text-white drop-shadow-md'
+                  cursorClassName='bg-[#fbbe15] w-[3px]'
+                />
               </h1>
-              <p className='text-white/80 text-sm md:text-base leading-relaxed'>
-                From mama-put joints to city-class bukas,
-                <br />
-                your next plate is right here.
-              </p>
+              <div className='min-h-[44px] flex items-center'>
+                <AnimatePresence mode='wait'>
+                  <motion.p
+                    key={activeHeroLangIndex}
+                    initial={{ opacity: 0, y: 3 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -3 }}
+                    transition={{ duration: 0.25 }}
+                    className='text-white/80 text-sm md:text-base leading-relaxed'>
+                    {activeHeroContent.body}
+                  </motion.p>
+                </AnimatePresence>
+              </div>
               <div className='flex flex-row gap-3 md:gap-4 w-full'>
                 <Link
                   href='/buka/restaurant'
                   className='flex-1 md:flex-none md:w-fit text-center px-6 md:px-10 py-3 md:py-3.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer border-none'>
                   Explore Restaurants
                 </Link>
-                <Link
-                  href='/buka/list-resturant'
+                <button
+                  onClick={() => {
+                    requireAuth(() => {
+                      router.push('/buka/my-restaurant');
+                    });
+                  }}
                   className='flex-1 md:flex-none md:w-fit text-center px-6 md:px-10 py-3 md:py-3.5 bg-[#fbbe15] text-[#1a1a1a] text-sm font-semibold rounded-lg hover:bg-[#e5ac10] transition-colors cursor-pointer border-none'>
-                  List Resturant
-                </Link>
+                  List Restaurant
+                </button>
               </div>
             </div>
             {/* Animated Scroll Down Indicator for Desktop */}

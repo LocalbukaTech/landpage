@@ -42,6 +42,7 @@ export interface Post {
   } | null;
   mediaUrls?: string[];
   imageCaptions?: string[];
+  location?: string;
 }
 
 /** Comment on a post */

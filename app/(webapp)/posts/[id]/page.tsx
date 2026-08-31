@@ -51,8 +51,7 @@ export async function generateMetadata({params}: PageProps): Promise<Metadata> {
         creator: '@localbuka',
       },
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_error) {
+  } catch {
     return {
       title: 'Post | LocalBuka',
       description: 'Discover authentic culinary experiences on LocalBuka.',

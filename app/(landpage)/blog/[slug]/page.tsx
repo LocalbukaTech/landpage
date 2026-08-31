@@ -1,6 +1,7 @@
 import {Metadata} from 'next';
 import BlogDetailClient from '../components/BlogDetailClient';
 import {blogService} from '@/lib/api/services/blog.service';
+import {stripHtmlContent} from '@/lib/utils';
 
 interface Props {
   params: Promise<{
@@ -14,17 +15,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const {data} = await blogService.getBlogBySlug(params.slug);
     const blog = data.data;
 
+    const metaTitle = blog.meta_title?.trim() || `${blog.title} | Localbuka`;
+    const metaDescription = blog.meta_description?.trim() || stripHtmlContent(blog.content).substring(0, 160);
+
     return {
-      title: `${blog.title} | Localbuka`,
-      description: blog.content.substring(0, 160).replace(/<[^>]*>/g, ''),
+      title: metaTitle,
+      description: metaDescription,
       openGraph: {
-        title: blog.title,
-        description: blog.content.substring(0, 160).replace(/<[^>]*>/g, ''),
+        title: blog.meta_title?.trim() || blog.title,
+        description: metaDescription,
         images: [blog.image_url],
       },
     };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (_error) {
+  } catch {
     return {
       title: 'Blog Not Found | Localbuka',
     };

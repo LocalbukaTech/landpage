@@ -8,6 +8,7 @@ import {useVerifyMutation, useResendCodeMutation} from '@/lib/api/services/auth.
 import {useToast} from '@/hooks/use-toast';
 import {VerificationCodeModal} from '@/components/modals';
 import {useAuth} from '@/context/AuthContext';
+import {getSafeRedirectUrl} from '@/lib/utils';
 
 const onboardingSlides = [
   {
@@ -35,21 +36,15 @@ const VerifyPageContent = () => {
   const resendCodeMutation = useResendCodeMutation();
 
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [otp, setOtp] = useState(['', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [showCodeModal, setShowCodeModal] = useState(false);
-  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationCode, _setVerificationCode] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     inputRefs.current[0]?.focus();
   }, []);
-
-  // Extract code from message (e.g., "Your verification code is 1234")
-  const extractCodeFromMessage = (message: string): string => {
-    const codeMatch = message.match(/\b\d{4,6}\b/);
-    return codeMatch ? codeMatch[0] : '';
-  };
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) {
@@ -64,7 +59,7 @@ const VerifyPageContent = () => {
     setError(''); // Clear error when user types
 
     // Auto-focus next input
-    if (value && index < 3) {
+    if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -77,17 +72,17 @@ const VerifyPageContent = () => {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').slice(0, 4);
+    const pastedData = e.clipboardData.getData('text').slice(0, 6);
     if (!/^\d+$/.test(pastedData)) return;
 
     const newOtp = [...otp];
-    for (let i = 0; i < pastedData.length && i < 4; i++) {
+    for (let i = 0; i < pastedData.length && i < 6; i++) {
       newOtp[i] = pastedData[i];
     }
     setOtp(newOtp);
     setError('');
 
-    const focusIndex = Math.min(pastedData.length, 3);
+    const focusIndex = Math.min(pastedData.length, 5);
     inputRefs.current[focusIndex]?.focus();
   };
 
@@ -109,8 +104,7 @@ const VerifyPageContent = () => {
             title: 'Email verified! 🎉',
             description: 'Your account has been successfully verified.',
           });
-  const redirect = searchParams.get('redirect') || '/';
-  // ...
+          const redirect = getSafeRedirectUrl(searchParams.get('redirect'), '/');
           router.push(`/signup/success?redirect=${encodeURIComponent(redirect)}`);
         },
         onError: (err: any) => {
@@ -133,22 +127,12 @@ const VerifyPageContent = () => {
       {email},
       {
         onSuccess: (response) => {
-          // Extract code from data.message (API returns: { message: "...", data: { message: "...OTP is: \"1234\"" } })
-          const dataMessage = response?.data?.message || '';
-          const code = extractCodeFromMessage(dataMessage);
-          
-          // if (code) {
-          //   setVerificationCode(code);
-          //   // setShowCodeModal(true);
-          //   setOtp(['', '', '', '']);
-          // } else {
-            toast({
-              title: 'Code sent! 📧',
-              description: response?.message || 'A new verification code has been sent to your email.',
-            });
-            setOtp(['', '', '', '']);
-            inputRefs.current[0]?.focus();
-          // }
+          toast({
+            title: 'Code sent! 📧',
+            description: response?.message || 'A new verification code has been sent to your email.',
+          });
+          setOtp(['', '', '', '', '', '']);
+          inputRefs.current[0]?.focus();
         },
         onError: (err: any) => {
           const message =
@@ -223,7 +207,7 @@ const VerifyPageContent = () => {
             Verify your account
           </h1>
           <p className='text-gray-500 dark:text-gray-400 mb-1'>
-            We emailed you a 4 digit code to{' '}
+            We emailed you a 6 digit code to{' '}
             <span className='inline-flex items-center gap-1'>🍻</span>
           </p>
           <div className='flex items-center gap-2 mb-8'>
@@ -243,7 +227,7 @@ const VerifyPageContent = () => {
               </div>
             )}
 
-            <div className='flex gap-4 mb-8 justify-center'>
+            <div className='flex gap-2 sm:gap-3 mb-8 justify-center'>
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -257,7 +241,7 @@ const VerifyPageContent = () => {
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={handlePaste}
-                  className='w-16 h-16 text-center text-2xl font-semibold border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent'
+                  className='w-12 h-14 sm:w-14 sm:h-16 text-center text-xl sm:text-2xl font-semibold border border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent'
                 />
               ))}
             </div>

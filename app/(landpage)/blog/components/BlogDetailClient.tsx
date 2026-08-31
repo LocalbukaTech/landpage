@@ -16,6 +16,8 @@ import {Button} from '@/components/ui/button';
 import CommentSection from './CommentSection';
 import {isUserAuthenticated} from '@/lib/auth';
 import {format} from 'date-fns';
+import {formatExternalUrl} from '@/lib/utils';
+import DOMPurify from 'dompurify';
 
 const BlogDetailClient = ({slug}: {slug: string}) => {
   const router = useRouter();
@@ -136,7 +138,7 @@ const BlogDetailClient = ({slug}: {slug: string}) => {
             </h1>
 
             {/* Hero Image */}
-            <div className='relative w-full aspect-video rounded-2xl overflow-hidden mb-10 bg-gray-100 dark:bg-gray-800'>
+            <div className='relative w-full aspect-video rounded-2xl overflow-hidden mb-1 bg-gray-100 dark:bg-gray-800'>
               {blog.image_url ? (
                 <Image
                   src={blog.image_url}
@@ -151,12 +153,74 @@ const BlogDetailClient = ({slug}: {slug: string}) => {
                 </div>
               )}
             </div>
+            {blog.image_credit && (
+              <div className='mt-1 mb-8 p-2.5 border-l-4 border-primary bg-[#FFF9E8] dark:bg-primary/15 text-xs text-gray-700 dark:text-gray-300 italic rounded-r-md'>
+                Photo Credit:{' '}
+                {blog.image_credit_url ? (
+                  <a
+                    href={formatExternalUrl(blog.image_credit_url)}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='text-amber-600 dark:text-amber-400 underline font-medium hover:text-primary transition-colors'>
+                    {blog.image_credit}
+                  </a>
+                ) : (
+                  <span>{blog.image_credit}</span>
+                )}
+              </div>
+            )}
 
             {/* Content */}
             <div 
               className='prose prose-lg max-w-none dark:prose-invert'
-              dangerouslySetInnerHTML={{__html: blog.content}}
+              dangerouslySetInnerHTML={{
+                __html: typeof window !== 'undefined' ? DOMPurify.sanitize(blog.content) : blog.content,
+              }}
             />
+
+            <style jsx global>{`
+              .prose img {
+                margin-top: 0 !important;
+                margin-bottom: 0.25rem !important;
+                border-radius: 0.5rem !important;
+              }
+              .prose figure {
+                margin-top: 1.5rem !important;
+                margin-bottom: 1.5rem !important;
+              }
+              .prose figure img {
+                margin-bottom: 0.25rem !important;
+              }
+              .prose figcaption,
+              .blog-image-caption {
+                display: block !important;
+                color: #374151 !important;
+                font-style: italic !important;
+                text-align: left !important;
+                font-size: 0.75rem !important;
+                margin-top: 0.25rem !important;
+                margin-bottom: 1rem !important;
+                padding: 0.4rem 0.75rem !important;
+                background-color: #fff9e8 !important;
+                border-left: 4px solid #fbbe15 !important;
+                border-radius: 0 0.375rem 0.375rem 0 !important;
+              }
+              .prose figcaption a,
+              .blog-image-caption a {
+                color: #d97706 !important;
+                text-decoration: underline !important;
+                font-weight: 500 !important;
+              }
+              .dark .prose figcaption,
+              .dark .blog-image-caption {
+                color: #e5e7eb !important;
+                background-color: rgba(251, 190, 21, 0.15) !important;
+              }
+              .dark .prose figcaption a,
+              .dark .blog-image-caption a {
+                color: #fbbe15 !important;
+              }
+            `}</style>
 
             {/* Like Button & Stats */}
             <div className='mt-12 flex items-center justify-between border-t border-b border-gray-100 dark:border-gray-800 py-6'>

@@ -1,11 +1,24 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
-import Image from 'next/image';
+import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import type { Post } from '@/types/post';
 import { VideoOverlay } from '@/components/video/VideoOverlay';
 import { cn, ensureHttps } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import { useDeletePost } from '@/lib/api/services/posts.hooks';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface VideoPlayerProps {
   post: Post;
@@ -39,25 +52,36 @@ export function VideoPlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [prevPostId, setPrevPostId] = useState(post.id);
   const touchStartY = useRef<number | null>(null);
   const touchEndY = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const isScrolling = useRef(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useEffect(() => {
+  if (prevPostId !== post.id) {
+    setPrevPostId(post.id);
     setActiveImageIndex(0);
-  }, [post.id]);
+  }
 
   // Scrubber state
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, _setIsDragging] = useState(false);
 
   // Play/pause icon overlay state
   const [showPlayPauseIcon, setShowPlayPauseIcon] = useState(false);
   const [lastAction, setLastAction] = useState<'play' | 'pause'>('pause');
   const iconTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Top bar options menu & auth state
+  const [showMenu, setShowMenu] = useState(false);
+  const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const deletePostMutation = useDeletePost();
+  const isOwner = Boolean(user?.id && post?.user?.id === user.id);
 
   const isVideo = post.mediaType === 'video';
   const mediaUrls = post.mediaUrls || [];
@@ -267,9 +291,6 @@ export function VideoPlayer({
     }
   };
 
-  const handleSeekStart = () => setIsDragging(true);
-  const handleSeekEnd = () => setIsDragging(false);
-
   return (
     <div
       ref={containerRef}
@@ -364,6 +385,7 @@ export function VideoPlayer({
           >
             {(mediaUrls.length > 0 ? mediaUrls : [post.mediaUrl]).map((url, idx) => (
               <div key={idx} className='w-full h-full flex-shrink-0 relative flex items-center justify-center bg-black'>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={ensureHttps(url)}
                   alt={post.caption || `Post Image ${idx + 1}`}
@@ -375,8 +397,8 @@ export function VideoPlayer({
                 {post.imageCaptions && post.imageCaptions[idx] && (
                   <div className='absolute inset-0 flex items-center justify-center p-4 pointer-events-none z-10 select-none'>
                     <span 
-                      className='text-white font-extrabold text-2xl md:text-3xl text-center break-words drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] font-sans max-w-[90%]'
-                      style={{ textShadow: '0px 0px 4px rgba(0,0,0,1), -1px -1px 0px rgba(0,0,0,1), 1px -1px 0px rgba(0,0,0,1), -1px 1px 0px rgba(0,0,0,1), 1px 1px 0px rgba(0,0,0,1)' }}
+                      className='text-white font-bold text-base md:text-lg text-center break-words bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-xs'
+                      // style={{ textShadow: '0px 0px 4px rgba(0,0,0,1), -1px -1px 0px rgba(0,0,0,1), 1px -1px 0px rgba(0,0,0,1), -1px 1px 0px rgba(0,0,0,1), 1px 1px 0px rgba(0,0,0,1)' }}
                     >
                       {post.imageCaptions[idx]}
                     </span>
@@ -466,18 +488,89 @@ export function VideoPlayer({
         </div>
       )}
 
-      {/* Top Controls */}
-      <div className='absolute top-3 left-3 right-3 flex justify-between items-start z-10'>
+      {/* Top Controls Bar */}
+      <div className='absolute top-3 left-3 right-3 flex items-center justify-between z-30 pointer-events-auto gap-2'>
         {isVideo ? (
           <button
-            className='mt-16 md:mt-0 ml-4 md:ml-0 flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none'
+            className='flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none outline-none shrink-0 backdrop-blur-xs'
             onClick={toggleMute}
             aria-label={isMuted ? 'Unmute' : 'Mute'}>
-            {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
         ) : (
-          <div />
+          <div className='w-8 h-8 shrink-0' />
         )}
+
+        {/* 3-Dots Menu */}
+        <div className='relative shrink-0 ml-auto'>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            className='flex items-center justify-center w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full text-white cursor-pointer transition-colors border-none outline-none backdrop-blur-xs'
+            aria-label='Post options'>
+            <MoreHorizontal size={18} />
+          </button>
+
+          {/* Menu Dropdown */}
+          {showMenu && (
+            <>
+              <div
+                className='fixed inset-0 z-40'
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+              />
+              <div
+                className='absolute right-0 top-10 z-50 w-44 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-150'
+                onClick={(e) => e.stopPropagation()}>
+                {isOwner ? (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        router.push(`/studio?edit=${post.id}`);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <Pencil size={15} className='text-[#fbbe15]' />
+                      <span>Edit Post</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowDeleteConfirm(true);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <Trash2 size={15} />
+                      <span>Delete Post</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMenu(false);
+                      if (navigator.clipboard) {
+                        navigator.clipboard.writeText(`${window.location.origin}/posts/${post.id}`);
+                        toast({
+                          title: 'Link copied',
+                          description: 'Post link copied to clipboard.',
+                        });
+                      }
+                    }}
+                    className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                    <Copy size={15} />
+                    <span>Copy Link</span>
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Video Overlay */}
@@ -501,17 +594,45 @@ export function VideoPlayer({
             type='range'
             min='0'
             max='100'
-            step='0.1'
             value={progress}
             onChange={handleSeek}
-            onMouseDown={handleSeekStart}
-            onMouseUp={handleSeekEnd}
-            onTouchStart={handleSeekStart}
-            onTouchEnd={handleSeekEnd}
-            className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
+            className='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10'
           />
         </div>
       )}
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className='bg-[#121217] border-white/10 text-white rounded-3xl z-50'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='text-lg font-bold text-white'>
+              Delete post permanently?
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-zinc-400 text-sm'>
+              This action cannot be undone. This post will be permanently removed from Localbuka.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className='bg-transparent border-white/10 text-white hover:bg-white/10 rounded-xl font-semibold cursor-pointer'>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deletePostMutation.mutate(post.id, {
+                  onSuccess: () => {
+                    toast({
+                      title: 'Post deleted',
+                      description: 'Your post has been removed.',
+                    });
+                  },
+                });
+              }}
+              className='bg-red-600 text-white hover:bg-red-700 font-bold rounded-xl cursor-pointer'>
+              Delete Post
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

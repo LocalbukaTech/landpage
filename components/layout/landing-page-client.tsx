@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { Navbar } from '@/components/layout/navbar';
 import { HeroSection } from '@/components/sections/hero-section';
 import { FoodLoversSection } from '@/components/sections/food-lovers-section';

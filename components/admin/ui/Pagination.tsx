@@ -60,11 +60,11 @@ export function Pagination({
   const total = Math.max(1, totalPages);
 
   return (
-    <div className='flex items-center justify-between w-full px-6 py-4 border-t border-gray-100 bg-white rounded-b-xl shadow-sm mt-auto'>
+    <div className='flex items-center justify-between w-full px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-b-xl shadow-sm dark:shadow-none mt-auto'>
       <button
         onClick={() => currentPage > 1 && onPageChange?.(currentPage - 1)}
         disabled={currentPage <= 1}
-        className='flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95'>
+        className='flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/60 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 cursor-pointer'>
         <ChevronLeft size={16} />
         Previous
       </button>
@@ -75,12 +75,12 @@ export function Pagination({
             key={i}
             onClick={() => handlePageClick(p)}
             className={cn(
-              'min-w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all duration-200',
+              'min-w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all duration-200 border-none bg-transparent cursor-pointer',
               p === currentPage
-                ? 'bg-[#FCF7E8] text-[#D19909] ring-1 ring-[#fbbe15]/20'
+                ? 'bg-[#FCF7E8] dark:bg-[#fbbe15]/15 text-[#D19909] dark:text-[#fbbe15] ring-1 ring-[#fbbe15]/20'
                 : p === '...'
-                  ? 'text-gray-400 cursor-default'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                  ? 'text-gray-400 dark:text-gray-500 cursor-default'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white',
             )}
             disabled={p === '...'}>
             {p}
@@ -91,7 +91,7 @@ export function Pagination({
       <button
         onClick={() => currentPage < total && onPageChange?.(currentPage + 1)}
         disabled={currentPage >= total}
-        className='flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95'>
+        className='flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/60 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 cursor-pointer'>
         Next
         <ChevronRight size={16} />
       </button>

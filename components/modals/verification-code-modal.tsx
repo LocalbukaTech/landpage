@@ -110,14 +110,14 @@ export function VerificationCodeModal({
 
             {/* Code Display */}
             <div className="relative mb-6">
-              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 dark:from-primary/20 dark:via-primary/10 dark:to-primary/20 rounded-2xl p-6 border-2 border-dashed border-primary/30">
-                <div className="flex items-center justify-center gap-3">
+              <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 dark:from-primary/20 dark:via-primary/10 dark:to-primary/20 rounded-2xl p-4 sm:p-6 border-2 border-dashed border-primary/30">
+                <div className="flex items-center justify-center gap-2 sm:gap-3">
                   {code.split("").map((digit, index) => (
                     <div
                       key={index}
-                      className="w-14 h-16 bg-white dark:bg-gray-800 rounded-xl shadow-lg flex items-center justify-center border border-gray-200 dark:border-gray-700"
+                      className="w-10 h-14 sm:w-12 sm:h-16 bg-white dark:bg-gray-800 rounded-xl shadow-lg flex items-center justify-center border border-gray-200 dark:border-gray-700"
                     >
-                      <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                      <span className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                         {digit}
                       </span>
                     </div>
@@ -150,7 +150,7 @@ export function VerificationCodeModal({
 
             {/* Helper Text */}
             <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
-              🔐 This code will expire in 10 minutes
+              🔐 This code will expire in 15 minutes
             </p>
           </div>
         </div>

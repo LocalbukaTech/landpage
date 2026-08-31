@@ -7,7 +7,7 @@ import { ArrowLeft, ChevronRight, Ban, AlertCircle, Play, User, CheckCircle, Loa
 import { AdminTabs } from "@/components/admin/ui/AdminTabs";
 import { SuspendAccountModal } from "@/components/admin/ui/SuspendAccountModal";
 import { BanUserModal } from "@/components/admin/ui/BanUserModal";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useUser, useFlagUser } from "@/lib/api/services/users.hooks";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,7 +16,6 @@ export default function UserDetails() {
   const [isSuspendModalOpen, setIsSuspendModalOpen] = useState(false);
   const [isBanModalOpen, setIsBanModalOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
   const { toast } = useToast();
   
   // Extract ID from path
@@ -50,7 +49,7 @@ export default function UserDetails() {
   // Tab Content Renderers
   const renderUserDetails = () => {
     if (isLoading) {
-       return <div className="p-8 text-center text-gray-500">Loading user details...</div>;
+       return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading user details...</div>;
     }
     if (!user) {
        return <div className="p-8 text-center text-red-500">User not found</div>;
@@ -59,8 +58,8 @@ export default function UserDetails() {
     return (
     <div className="flex flex-col max-w-5xl mt-8">
       {/* Avatar Container */}
-      <div className="w-24 h-24 bg-[#FCF7E8] rounded-xl flex items-center justify-center mb-10 border border-yellow-100">
-        <User size={40} className="text-[#a18228]" strokeWidth={1.5} />
+      <div className="w-24 h-24 bg-[#FCF7E8] dark:bg-yellow-950/30 rounded-xl flex items-center justify-center mb-10 border border-yellow-100 dark:border-yellow-900/40">
+        <User size={40} className="text-[#a18228] dark:text-[#fbbe15]" strokeWidth={1.5} />
       </div>
 
       {/* Details List */}
@@ -74,8 +73,8 @@ export default function UserDetails() {
           { label: "Joined", value: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-" },
         ].map((item, idx) => (
           <div key={idx} className="flex justify-between items-center text-[15px]">
-            <span className="text-gray-500">{item.label}</span>
-            <span className="font-semibold text-gray-900">{item.value}</span>
+            <span className="text-gray-500 dark:text-gray-400">{item.label}</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{item.value}</span>
           </div>
         ))}
       </div>
@@ -90,7 +89,7 @@ export default function UserDetails() {
         { views: "3k" }, { views: "1.2k" }, { views: "5k" }, { views: "1.2k" }, { views: "40M" },
         { views: "282k" }, { views: "40M" }, { views: "282k" }, { views: "894k" }, { views: "746k" }
       ].map((item, i) => (
-        <div key={i} className="relative aspect-3/4 rounded-xl overflow-hidden bg-gray-200">
+        <div key={i} className="relative aspect-3/4 rounded-xl overflow-hidden bg-gray-200 dark:bg-gray-800">
           <Image 
             src={`https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=600&fit=crop&q=80&auto=format&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D`} 
             alt="Food content" 
@@ -98,7 +97,7 @@ export default function UserDetails() {
             className="object-cover"
           />
           {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           
           {/* View Count */}
           <div className="absolute bottom-3 left-3 flex items-center gap-1 text-white text-sm font-semibold drop-shadow-md">
@@ -111,7 +110,7 @@ export default function UserDetails() {
   );
 
   const renderReportHistory = () => (
-    <div className="flex flex-col mt-8 divide-y divide-gray-100">
+    <div className="flex flex-col mt-8 divide-y divide-gray-100 dark:divide-gray-800">
       {[
         { title: "This account was reported", sub: "Abusive Behavior", date: "4 May, 2025 11:05AM" },
         { title: "This user reported account (ID: B1234)", sub: "Spamming", date: "4 May, 2025 11:05AM" },
@@ -120,17 +119,17 @@ export default function UserDetails() {
       ].map((item, i) => (
         <div key={i} className="flex justify-between py-5 first:pt-0">
           <div className="flex flex-col gap-1">
-            <span className="text-[14px] font-bold text-gray-800">{item.title}</span>
-            <span className="text-[13px] text-gray-500">{item.sub}</span>
+            <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200">{item.title}</span>
+            <span className="text-[13px] text-gray-500 dark:text-gray-400">{item.sub}</span>
           </div>
-          <span className="text-[13px] text-gray-400 font-medium">{item.date}</span>
+          <span className="text-[13px] text-gray-400 dark:text-gray-500 font-medium">{item.date}</span>
         </div>
       ))}
     </div>
   );
 
   const renderLoginLog = () => (
-    <div className="flex flex-col mt-8 divide-y divide-gray-100">
+    <div className="flex flex-col mt-8 divide-y divide-gray-100 dark:divide-gray-800">
       {[
         { event: "Security Login", date: "4 May, 2025 11:05AM" },
         { event: "Security Logout", date: "4 May, 2025 11:05AM" },
@@ -138,8 +137,8 @@ export default function UserDetails() {
         { event: "Password Change", date: "4 May, 2025 11:05AM" },
       ].map((item, i) => (
         <div key={i} className="flex justify-between items-center py-5 first:pt-0">
-          <span className="text-[14px] font-bold text-gray-800">{item.event}</span>
-          <span className="text-[13px] text-gray-400 font-medium">{item.date}</span>
+          <span className="text-[14px] font-bold text-gray-800 dark:text-gray-200">{item.event}</span>
+          <span className="text-[13px] text-gray-400 dark:text-gray-500 font-medium">{item.date}</span>
         </div>
       ))}
     </div>
@@ -149,23 +148,23 @@ export default function UserDetails() {
     <div className="max-w-6xl mx-auto flex flex-col gap-6 font-sans">
       
       {/* Breadcrumbs */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/secure-admin/user-management" className="flex items-center gap-1 hover:text-gray-900 transition-colors">
+      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+        <Link href="/secure-admin/user-management" className="flex items-center gap-1 hover:text-gray-900 dark:hover:text-white transition-colors">
           <ArrowLeft size={16} />
           User Accounts
         </Link>
-        <ChevronRight size={14} className="text-gray-400" />
-        <span className="font-semibold text-gray-900">{isLoading ? "Loading..." : (user?.fullName || displayId)}</span>
+        <ChevronRight size={14} className="text-gray-400 dark:text-gray-500" />
+        <span className="font-semibold text-gray-900 dark:text-white">{isLoading ? "Loading..." : (user?.fullName || displayId)}</span>
       </div>
 
       {/* Main Card */}
-      <div className="bg-white border border-gray-100 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] p-8 min-h-[600px]">
+      <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] dark:shadow-none p-8 min-h-[600px]">
         
         {/* Title */}
-        <h1 className="text-[22px] font-bold text-[#0F172A] mb-8">View User</h1>
+        <h1 className="text-[22px] font-bold text-[#0F172A] dark:text-white mb-8">View User</h1>
 
         {/* Action Header Container */}
-        <div className="flex flex-col lg:flex-row justify-between lg:items-end border-b border-gray-100 gap-4 lg:gap-0">
+        <div className="flex flex-col lg:flex-row justify-between lg:items-end border-b border-gray-100 dark:border-gray-800 gap-4 lg:gap-0">
           
           {/* Custom Tabs */}
           <div className="-mb-px">
@@ -182,7 +181,7 @@ export default function UserDetails() {
               <button 
                 onClick={() => handleFlagAction("Active", "Reactivated by Admin")}
                 disabled={isFlagging}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors rounded-lg text-sm font-semibold disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors rounded-lg text-sm font-semibold disabled:opacity-50 cursor-pointer"
               >
                 {isFlagging ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
                 Reactivate Account
@@ -192,10 +191,10 @@ export default function UserDetails() {
             <button 
               onClick={() => setIsSuspendModalOpen(true)}
               disabled={user?.status === "Suspended" || isFlagging}
-              className={`flex items-center gap-1.5 px-4 py-2 transition-colors rounded-lg text-sm font-semibold ${
+              className={`flex items-center gap-1.5 px-4 py-2 transition-colors rounded-lg text-sm font-semibold cursor-pointer border-none ${
                 user?.status === "Suspended"
-                  ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                  : "bg-[#FCF7E8] text-[#D39B0A] hover:bg-[#f5ebd0]"
+                  ? "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 cursor-not-allowed"
+                  : "bg-[#FCF7E8] dark:bg-yellow-950/40 text-[#D39B0A] dark:text-[#fbbe15] hover:bg-[#f5ebd0] dark:hover:bg-yellow-900/40"
               }`}
             >
               <AlertCircle size={16} />
@@ -205,10 +204,10 @@ export default function UserDetails() {
             <button 
               onClick={() => setIsBanModalOpen(true)}
               disabled={user?.status === "Banned" || isFlagging}
-              className={`flex items-center gap-1.5 px-4 py-2 transition-colors rounded-lg text-sm font-semibold ${
+              className={`flex items-center gap-1.5 px-4 py-2 transition-colors rounded-lg text-sm font-semibold cursor-pointer border-none ${
                 user?.status === "Banned"
-                  ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                  : "bg-[#FEF2F2] text-[#EF4444] hover:bg-[#fee2e2]"
+                  ? "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 cursor-not-allowed"
+                  : "bg-[#FEF2F2] dark:bg-red-950/40 text-[#EF4444] dark:text-red-400 hover:bg-[#fee2e2] dark:hover:bg-red-900/40"
               }`}
             >
               <Ban size={16} />

@@ -2,6 +2,7 @@
 
 import {Bookmark, MapPin, Star, UtensilsCrossed} from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import {CgSpinner} from 'react-icons/cg';
 import type {BukaRestaurant} from '@/components/buka/BukaCard';
 import {useRestaurantCardActions} from '@/lib/hooks/useRestaurantCardActions';
@@ -17,16 +18,14 @@ interface Props {
  * Width: ~168px shrink-0 — sits nicely 2+ visible in a row.
  */
 export function MobileRestaurantCard({restaurant}: Props) {
-  const {navigate, toggleWishlist, isWishlisted, isNavigating} =
+  const {navigate, toggleWishlist, isWishlisted, isNavigating, isApproved, href} =
     useRestaurantCardActions(restaurant);
   const isOpen = isRestaurantOpen(
     restaurant.rawRestaurant?.openingHours ?? null,
   );
 
-  return (
-    <div
-      className='shrink-0 w-44 flex flex-col cursor-pointer active:opacity-80 transition-opacity'
-      onClick={navigate}>
+  const cardContent = (
+    <>
       {/* Thumbnail */}
       <div className='relative w-full aspect-4/3 rounded-2xl overflow-hidden bg-zinc-800'>
         {isNavigating && (
@@ -52,7 +51,10 @@ export function MobileRestaurantCard({restaurant}: Props) {
 
         {/* Bookmark button */}
         <button
-          onClick={toggleWishlist}
+          onClick={(e) => {
+            e.preventDefault();
+            toggleWishlist(e);
+          }}
           className={`absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full transition-all border ${
             isWishlisted
               ? 'bg-[#fbbe15]/20 border-[#fbbe15]/50'
@@ -103,6 +105,23 @@ export function MobileRestaurantCard({restaurant}: Props) {
           </span>
         </div>
       </div>
+    </>
+  );
+
+  const cardClassName =
+    'shrink-0 w-44 flex flex-col cursor-pointer active:opacity-80 transition-opacity block';
+
+  if (isApproved && href) {
+    return (
+      <Link href={href} className={cardClassName}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return (
+    <div onClick={navigate} className={cardClassName}>
+      {cardContent}
     </div>
   );
 }

@@ -8,6 +8,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-nunito-sans);
   --font-display: var(--font-display);
+  --font-poppins: var(--font-poppins);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -290,4 +291,75 @@
   .animate-count-pop {
     animation: count-pop 0.3s ease-out;
   }
+}
+
+/* ==========================================================================
+   Blog Article Image Captions & Photo Credits
+   ========================================================================== */
+
+/* Remove default large bottom margin on article images so caption sits right below */
+.prose img,
+.ProseMirror img,
+.prose figure img,
+.ProseMirror figure img {
+  margin-top: 0 !important;
+  margin-bottom: 0.25rem !important;
+  border-radius: 0.5rem !important;
+}
+
+.prose figure,
+.ProseMirror figure {
+  margin-top: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+/* Style all figure captions, photo credit paragraphs & img + p captions */
+.prose figcaption,
+.ProseMirror figcaption,
+.blog-image-caption,
+.prose p.blog-image-caption,
+.prose img + p,
+.prose figure + p {
+  display: block !important;
+  color: #374151 !important;
+  font-style: italic !important;
+  text-align: left !important;
+  font-size: 0.75rem !important;
+  line-height: 1.4 !important;
+  margin-top: 0.25rem !important;
+  margin-bottom: 1.25rem !important;
+  padding: 0.4rem 0.75rem !important;
+  background-color: #fff9e8 !important; /* Light primary background */
+  border-left: 4px solid #fbbe15 !important; /* Primary color left accent border */
+  border-radius: 0 0.375rem 0.375rem 0 !important;
+}
+
+/* Style links inside photo credits (e.g. matthiasamire.com) */
+.prose figcaption a,
+.ProseMirror figcaption a,
+.blog-image-caption a,
+.prose img + p a,
+.prose figure + p a {
+  color: #d97706 !important; /* Amber / Primary gold */
+  text-decoration: underline !important;
+  font-weight: 500 !important;
+}
+
+/* Dark mode styles */
+.dark .prose figcaption,
+.dark .ProseMirror figcaption,
+.dark .blog-image-caption,
+.dark .prose p.blog-image-caption,
+.dark .prose img + p,
+.dark .prose figure + p {
+  color: #e5e7eb !important;
+  background-color: rgba(251, 190, 21, 0.15) !important;
+}
+
+.dark .prose figcaption a,
+.dark .ProseMirror figcaption a,
+.dark .blog-image-caption a,
+.dark .prose img + p a,
+.dark .prose figure + p a {
+  color: #fbbe15 !important;
 }

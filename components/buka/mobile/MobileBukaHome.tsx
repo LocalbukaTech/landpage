@@ -3,19 +3,11 @@
 import {useState, useEffect} from 'react';
 import {
   ArrowRight,
-  Bell,
-  Bookmark,
-  Home,
   Loader2,
   MapPin,
   Menu,
   Plus,
-  PlusCircle,
   Search,
-  Store,
-  User,
-  Users,
-  UtensilsCrossed,
   X,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -30,6 +22,15 @@ import {useUnreadCount} from '@/lib/api/services/notifications.hooks';
 import {cn} from '@/lib/utils';
 import {Drawer, DrawerContent, DrawerTitle} from '@/components/ui/drawer';
 import {useGeolocation} from '@/hooks/useGeolocation';
+import {Typewriter} from '@/components/anim/Typewriter';
+import {motion, AnimatePresence} from 'framer-motion';
+import {BUKA_HERO_LANGUAGES} from '@/lib/constants';
+import {useRequireAuth} from '@/hooks/useRequireAuth';
+import {
+  getMobileDrawerNavItems,
+  FOOTER_LINKS,
+  type NavItemConfig,
+} from '@/components/layout/sidebar.config';
 
 function useLocationLabel() {
   const {lat, lng, loading: geoLoading} = useGeolocation();
@@ -123,21 +124,7 @@ function SectionHeader({
   );
 }
 
-const baseNavItems = [
-  {icon: Home, label: 'Home', href: '/feeds'},
-  {icon: UtensilsCrossed, label: 'Buka', href: '/buka'},
-  {icon: PlusCircle, label: 'Upload', href: '/upload'},
-  {icon: Bell, label: 'Notification', href: '/notifications'},
-  {icon: Bookmark, label: 'Saved', href: '/profile?tab=saved'},
-  {icon: Users, label: 'Community', href: '#'},
-  {icon: User, label: 'Profile', href: '/profile'},
-];
-
-const myRestaurantItem = {
-  icon: Store,
-  label: 'My Restaurant',
-  href: '/buka/my-restaurant',
-};
+const year = new Date().getFullYear();
 
 export function MobileBukaHome({
   isLoading,
@@ -150,15 +137,56 @@ export function MobileBukaHome({
   const router = useRouter();
   const pathname = usePathname();
   const {user, isAuthenticated} = useAuth();
+  const {requireAuth} = useRequireAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const {data: unreadCountResponse} = useUnreadCount();
   const unreadCount = (unreadCountResponse as any)?.data?.count ?? 0;
   const {label: locationLabel, loading: locationLoading} = useLocationLabel();
+  const [activeHeroLangIndex, setActiveHeroLangIndex] = useState(0);
+  const activeHeroContent =
+    BUKA_HERO_LANGUAGES[activeHeroLangIndex] || BUKA_HERO_LANGUAGES[0];
 
-  const navItems = isAuthenticated
-    ? [...baseNavItems.slice(0, 2), myRestaurantItem, ...baseNavItems.slice(2)]
-    : baseNavItems;
+  const isItemActive = (itemHref: string) => {
+    if (!pathname) return false;
+    if (itemHref === '#') return false;
+
+    if (itemHref === '/buka') {
+      if (!pathname.startsWith('/buka')) return false;
+      if (
+        pathname.startsWith('/buka/my-restaurant') ||
+        pathname.startsWith('/buka/list-resturant')
+      ) {
+        return false;
+      }
+      return true;
+    }
+
+    if (
+      itemHref === '/buka/my-restaurant' ||
+      itemHref === '/buka/list-resturant'
+    ) {
+      return (
+        pathname.startsWith('/buka/my-restaurant') ||
+        pathname.startsWith('/buka/list-resturant')
+      );
+    }
+
+    if (itemHref === '/') return pathname === '/' || pathname === '/feeds';
+    return pathname.startsWith(itemHref.split('?')[0]);
+  };
+
+  const navItems = getMobileDrawerNavItems(isAuthenticated);
+
+  const handleNavItemClick = (e: React.MouseEvent, item: NavItemConfig) => {
+    setIsMenuOpen(false);
+
+    if (item.authRequirement === 'auth-prompt' && !isAuthenticated) {
+      e.preventDefault();
+      requireAuth(() => router.push(item.href));
+      return;
+    }
+  };
 
   const userAvatar = isAuthenticated
     ? user?.avatar || '/images/profile.png'
@@ -229,16 +257,34 @@ export function MobileBukaHome({
             />
           </div>
           <div className='absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent' />
-          <div className='absolute bottom-0 left-0 p-4'>
+          <div className='absolute bottom-0 left-0 p-4 max-w-[75%]'>
             <span className='inline-block bg-[#fbbe15]/20 text-[#fbbe15] text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5 border border-[#fbbe15]/30'>
               FEATURED
             </span>
-            <h2 className='text-white text-base font-bold leading-snug'>
-              Wetin You Wan Chop?!
+            <h2 className='text-white text-sm sm:text-base font-bold leading-snug min-h-[22px] flex items-center'>
+              <Typewriter
+                words={BUKA_HERO_LANGUAGES.map((item) => item.headline)}
+                typingSpeed={50}
+                deletingSpeed={25}
+                pauseTime={2500}
+                onIndexChange={setActiveHeroLangIndex}
+                className='text-white'
+                cursorClassName='bg-[#fbbe15] w-[2px]'
+              />
             </h2>
-            <p className='text-white/60 text-xs mt-0.5'>
-              From mama-put to fine dining
-            </p>
+            <div className='min-h-[28px] flex items-center'>
+              <AnimatePresence mode='wait'>
+                <motion.p
+                  key={activeHeroLangIndex}
+                  initial={{ opacity: 0, y: 2 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -2 }}
+                  transition={{ duration: 0.25 }}
+                  className='text-white/70 text-xs mt-0.5 line-clamp-2 leading-tight'>
+                  {activeHeroContent.body}
+                </motion.p>
+              </AnimatePresence>
+            </div>
           </div>
           <Link
             href='/buka/restaurant'
@@ -341,9 +387,13 @@ export function MobileBukaHome({
 
       {/* ── List Your Restaurant CTA ── */}
       <div className='mx-4 mt-6'>
-        <Link
-          href='/buka/list-resturant'
-          className='w-full flex items-center justify-between bg-linear-to-r from-[#fbbe15]/15 to-transparent border border-[#fbbe15]/25 rounded-2xl p-4 active:opacity-80'>
+        <button
+          onClick={() => {
+            requireAuth(() => {
+              router.push('/buka/my-restaurant');
+            });
+          }}
+          className='w-full flex items-center justify-between bg-linear-to-r from-[#fbbe15]/15 to-transparent border border-[#fbbe15]/25 rounded-2xl p-4 active:opacity-80 text-left cursor-pointer border-none'>
           <div>
             <p className='text-white font-bold text-sm'>List your restaurant</p>
             <p className='text-zinc-400 text-xs mt-0.5'>
@@ -353,7 +403,7 @@ export function MobileBukaHome({
           <div className='w-10 h-10 rounded-full bg-[#fbbe15] flex items-center justify-center shrink-0'>
             <Plus size={20} className='text-[#1a1a1a]' />
           </div>
-        </Link>
+        </button>
       </div>
 
       {/* ── Waitlist Banner (unauthenticated) ── */}
@@ -411,22 +461,19 @@ export function MobileBukaHome({
           {/* Nav Items */}
           <nav className='flex flex-col gap-1 px-3 mt-4 flex-1'>
             {navItems.map((item) => {
-              const isActive =
-                item.href === '/'
-                  ? pathname === '/'
-                  : pathname?.startsWith(item.href.split('?')[0]);
+              const isActive = isItemActive(item.href);
               return (
                 <Link
-                  key={item.label}
+                  key={item.id}
                   href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={(e) => handleNavItemClick(e, item)}
                   className={cn(
                     'flex items-center gap-3.5 px-3 py-3 rounded-xl text-[15px] font-medium transition-colors active:opacity-70 relative',
                     isActive
                       ? 'bg-[#fbbe15]/10 text-[#fbbe15]'
                       : 'text-zinc-300 hover:bg-white/5',
                   )}>
-                  {item.label === 'Profile' && userAvatar ? (
+                  {item.id === 'profile' && userAvatar ? (
                     <Image
                       src={userAvatar}
                       alt='Profile'
@@ -442,7 +489,7 @@ export function MobileBukaHome({
                     <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                   )}
                   <span>{item.label}</span>
-                  {item.label === 'Notification' && unreadCount > 0 && (
+                  {item.id === 'notifications' && unreadCount > 0 && (
                     <span className='ml-auto min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1'>
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
@@ -454,18 +501,17 @@ export function MobileBukaHome({
 
           {/* Footer */}
           <div className='px-5 pb-8 pt-4 border-t border-white/8 mt-auto flex flex-col gap-1.5'>
-            <Link
-              href='https://localbuka.com/blog'
-              className='text-xs text-zinc-500 hover:text-zinc-300 transition-colors'>
-              Blogs
-            </Link>
-            <Link
-              href='https://localbuka.com/privacy/'
-              className='text-xs text-zinc-500 hover:text-zinc-300 transition-colors'>
-              Terms &amp; Policies
-            </Link>
+            {FOOTER_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                target='_blank'
+                className='text-xs text-zinc-500 hover:text-zinc-300 transition-colors'>
+                {link.label}
+              </Link>
+            ))}
             <span className='text-[11px] text-zinc-700 mt-1'>
-              &copy; 2025 Localbuka
+              &copy; {year} LocalBuka
             </span>
           </div>
         </DrawerContent>

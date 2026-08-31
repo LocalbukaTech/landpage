@@ -17,7 +17,7 @@ export function useDynamicBack() {
     }
   }, [pathname]);
 
-  const goBack = (fallbackRoute = '/feeds') => {
+  const goBack = (fallbackRoute = '/') => {
     // If we have visited more than 1 path internally, we can safely go back.
     // Otherwise, we navigate to the fallback (feeds) route.
     if (typeof window !== 'undefined' && visitedPaths.length > 1 && window.history.length > 1) {

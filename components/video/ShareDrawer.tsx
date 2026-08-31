@@ -3,6 +3,7 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Copy, Check, Mail, Info } from "lucide-react";
+import { FaSnapchat } from "react-icons/fa6";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSharePost } from "@/lib/api/services/posts.hooks";

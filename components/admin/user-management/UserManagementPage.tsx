@@ -239,9 +239,9 @@ export function UserManagementPage() {
 
     return (
         <div className="w-full max-w-6xl mx-auto">
-            {/* Outer white container holds everything */}
-            <div className="bg-white border border-gray-100 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
-                {/* Tabs — inside the white container */}
+            {/* Outer container holds everything */}
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] dark:shadow-none">
+                {/* Tabs — inside the container */}
                 <div className="px-6 pt-5">
                     <UserTabs activeTab={activeTab} onTabChange={handleTabChange} />
                 </div>
@@ -268,14 +268,14 @@ export function UserManagementPage() {
                     />
                 </div>
 
-                {/* Table — border-only wrapper (no bg, inherits white from parent) */}
-                <div className="mx-6 border border-gray-200 rounded-lg overflow-hidden relative min-h-[400px]">
+                {/* Table — border-only wrapper */}
+                <div className="mx-6 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden relative min-h-[400px]">
                     {/* Loading Overlay */}
                     {activeTab === "real" && (isLoadingRealUsers || isFetchingRealUsers) && (
-                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10 border-b border-gray-200">
+                        <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/70 backdrop-blur-[1px] flex items-center justify-center z-10 border-b border-gray-200 dark:border-gray-800">
                             <div className="flex flex-col items-center justify-center gap-2">
                                 <Loader2 className="w-8 h-8 animate-spin text-[#fbbe15]" />
-                                <span className="text-sm font-medium text-zinc-600">Loading users...</span>
+                                <span className="text-sm font-medium text-zinc-600 dark:text-zinc-300">Loading users...</span>
                             </div>
                         </div>
                     )}

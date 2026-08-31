@@ -39,3 +39,12 @@ export * from './services/restaurants.hooks';
 // Posts / Feed domain
 export * from './services/posts.service';
 export * from './services/posts.hooks';
+
+// Referrals domain
+export * from './services/referral.service';
+export * from './services/referral.hooks';
+
+// Admin Rewards domain
+export * from './services/admin-rewards.service';
+export * from './services/admin-rewards.hooks';
+

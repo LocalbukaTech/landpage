@@ -10,7 +10,7 @@ interface AdminTabsProps {
 
 export function AdminTabs({ tabs, activeTab, onChange }: AdminTabsProps) {
   return (
-    <div className="flex border-b border-gray-200">
+    <div className="flex border-b border-gray-200 dark:border-gray-800">
       {tabs.map((tab) => {
         const isActive = activeTab === tab;
         return (
@@ -18,10 +18,10 @@ export function AdminTabs({ tabs, activeTab, onChange }: AdminTabsProps) {
             key={tab}
             onClick={() => onChange(tab)}
             className={cn(
-              "px-6 py-3 text-sm font-semibold transition-colors border-b-2 relative -bottom-px",
+              "px-6 py-3 text-sm font-semibold transition-colors border-b-2 relative -bottom-px cursor-pointer bg-transparent",
               isActive 
-                ? "border-blue-900 text-blue-900" // the design uses a dark blue/gray for active tab lines
-                : "border-transparent text-gray-500 hover:text-gray-700"
+                ? "border-[#fbbe15] text-[#fbbe15]" 
+                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             )}
           >
             {tab}

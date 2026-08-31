@@ -51,22 +51,27 @@ export function useRestaurantCardActions(restaurant: BukaRestaurant) {
     });
   }, [isAuthenticated, savedData, restaurant]);
 
-  const navigate = async () => {
+  const navigate = () => {
     if (restaurant.rawRestaurant?.id) {
       router.push(`/buka/restaurant/${restaurant.rawRestaurant.id}`);
       return;
     }
     const placeId = restaurant.rawRestaurant?.googlePlaceId;
     if (placeId) {
-      setIsNavigating(true);
-      try {
-        const res = await importRestaurant(placeId);
-        const newId =
-          (res as any)?.data?.data?.id || (res as any)?.data?.id || null;
-        if (newId) router.push(`/buka/restaurant/${newId}`);
-      } finally {
-        setIsNavigating(false);
-      }
+      requireAuth(async () => {
+        setIsNavigating(true);
+        try {
+          const res = await importRestaurant(placeId);
+          const newId =
+            (res as any)?.data?.data?.id ||
+            (res as any)?.data?.id ||
+            (res as any)?.id ||
+            null;
+          if (newId) router.push(`/buka/restaurant/${newId}`);
+        } finally {
+          setIsNavigating(false);
+        }
+      });
     } else {
       router.push(`/buka/restaurant/${restaurant.id}`);
     }
@@ -88,7 +93,11 @@ export function useRestaurantCardActions(restaurant: BukaRestaurant) {
           const res = await importRestaurant(
             restaurant.rawRestaurant.googlePlaceId,
           );
-          dbId = (res as any)?.data?.data?.id || (res as any)?.data?.id || null;
+          dbId =
+            (res as any)?.data?.data?.id ||
+            (res as any)?.data?.id ||
+            (res as any)?.id ||
+            null;
         }
         if (dbId) await saveToWishlist(dbId);
       } finally {
@@ -97,11 +106,22 @@ export function useRestaurantCardActions(restaurant: BukaRestaurant) {
     });
   };
 
+  const isApproved =
+    !!restaurant.rawRestaurant?.id &&
+    (!restaurant.rawRestaurant.status ||
+      restaurant.rawRestaurant.status === 'approved');
+
+  const href = isApproved
+    ? `/buka/restaurant/${restaurant.rawRestaurant!.id}`
+    : null;
+
   return {
     navigate,
     toggleWishlist,
     isWishlisted,
     isNavigating,
     isWishlistLoading,
+    isApproved,
+    href,
   };
 }

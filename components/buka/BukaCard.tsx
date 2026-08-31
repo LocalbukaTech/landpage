@@ -5,6 +5,7 @@ import {useRouter} from 'next/navigation';
 import {Bookmark, MapPin, UtensilsCrossed, Star, X} from 'lucide-react';
 import {CgSpinner} from 'react-icons/cg';
 import Image from 'next/image';
+import Link from 'next/link';
 import {Restaurant} from '@/lib/api/services/restaurants.service';
 import {
   useImportGoogleRestaurant,
@@ -48,7 +49,13 @@ function getGooglePlaceId(raw: Restaurant): string | null {
  */
 function extractNewId(response: any): string | null {
   const resData = response?.data as any;
-  return resData?.data?.id || resData?.id || null;
+  return (
+    resData?.data?.id ||
+    resData?.id ||
+    response?.data?.id ||
+    response?.id ||
+    null
+  );
 }
 
 /**
@@ -108,35 +115,41 @@ export function BukaCard({restaurant}: BukaCardProps) {
     });
   }, [isAuthenticated, savedData, restaurant.id, restaurant.rawRestaurant]);
 
-  const hasDbId = !!restaurant.rawRestaurant?.id;
+  const isApproved =
+    !!restaurant.rawRestaurant?.id &&
+    (!restaurant.rawRestaurant.status ||
+      restaurant.rawRestaurant.status === 'approved');
 
-  // ── Navigate to restaurant details ──
-  const handleClick = async (e: React.MouseEvent) => {
+  const href = isApproved
+    ? `/buka/restaurant/${restaurant.rawRestaurant!.id}`
+    : null;
+
+  // ── Navigate for non-approved/unimported items ──
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setErrorMessage(null);
 
-    if (hasDbId) {
-      router.push(`/buka/restaurant/${restaurant.rawRestaurant!.id}`);
-      return;
-    }
-
     const placeId = restaurant.rawRestaurant
       ? getGooglePlaceId(restaurant.rawRestaurant)
       : null;
+
     if (placeId) {
-      setIsSaving(true);
-      try {
-        const response = await importRestaurant(placeId);
-        const newId = extractNewId(response);
-        if (newId) {
-          router.push(`/buka/restaurant/${newId}`);
+      requireAuth(async () => {
+        setIsSaving(true);
+        setErrorMessage(null);
+        try {
+          const response = await importRestaurant(placeId);
+          const newId = extractNewId(response);
+          if (newId) {
+            router.push(`/buka/restaurant/${newId}`);
+          }
+        } catch (err: any) {
+          setErrorMessage(getErrorMessage(err, 'save'));
+        } finally {
+          setIsSaving(false);
         }
-      } catch (err: any) {
-        setErrorMessage(getErrorMessage(err, 'save'));
-      } finally {
-        setIsSaving(false);
-      }
+      });
     } else {
       router.push(`/buka/restaurant/${restaurant.id}`);
     }
@@ -204,17 +217,17 @@ export function BukaCard({restaurant}: BukaCardProps) {
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    requireAuth(() => doWishlistSave());
+    requireAuth(() => {
+      doWishlistSave();
+    });
   };
 
   const isOpen = isRestaurantOpen(
     restaurant.rawRestaurant?.openingHours ?? null,
   );
 
-  return (
-    <div
-      className='flex flex-col w-full min-w-0 bg-[#151515] rounded-2xl p-3 pb-4 cursor-pointer relative'
-      onClick={handleClick}>
+  const cardContent = (
+    <>
       {/* Saving Overlay */}
       {isSaving && (
         <div className='absolute inset-0 bg-black/50 backdrop-blur-[2px] rounded-2xl z-10 flex items-center justify-center'>
@@ -232,6 +245,7 @@ export function BukaCard({restaurant}: BukaCardProps) {
             <span className='flex-1 leading-relaxed'>{errorMessage}</span>
             <button
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 setErrorMessage(null);
               }}
@@ -347,6 +361,23 @@ export function BukaCard({restaurant}: BukaCardProps) {
           </div>
         </div>
       </div>
+    </>
+  );
+
+  const cardClassName =
+    'flex flex-col w-full min-w-0 bg-[#151515] rounded-2xl p-3 pb-4 cursor-pointer relative group block';
+
+  if (isApproved && href) {
+    return (
+      <Link href={href} className={cardClassName}>
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return (
+    <div onClick={handleClick} className={cardClassName}>
+      {cardContent}
     </div>
   );
 }

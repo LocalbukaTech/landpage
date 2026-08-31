@@ -55,7 +55,7 @@ const GoogleSuccessContent = () => {
               .then((prefResponse) => {
                 const prefs = prefResponse?.data?.preferences;
                 if (Array.isArray(prefs)) {
-                  router.push('/feeds');
+                  router.push('/');
                 } else {
                   router.push('/signup/preferences?flow=login');
                 }
@@ -74,7 +74,7 @@ const GoogleSuccessContent = () => {
   }, [searchParams, router, loginUser, googleExchangeMutation]);
 
   const handleProceed = () => {
-    router.push('/signup/preferences');
+    router.push('/signup/music-policy');
   };
 
   if (error) {

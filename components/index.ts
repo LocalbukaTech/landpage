@@ -19,6 +19,7 @@ export { SettingsSidebar } from "@/components/settings/SettingsSidebar";
 export { AccountInformation } from "@/components/settings/AccountInformation";
 export { NotificationsPrivacy } from "@/components/settings/NotificationsPrivacy";
 export { RewardsSupport } from "@/components/settings/RewardsSupport";
+export { HelpSupport } from "@/components/settings/HelpSupport";
 
 // Admin Components
 export { AdminLayout } from "@/components/admin/AdminLayout";

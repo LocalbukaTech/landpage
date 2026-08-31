@@ -1,6 +1,6 @@
 'use client';
 
-import {Suspense, useState, useMemo} from 'react';
+import {Suspense, useState, useMemo, useEffect} from 'react';
 import {useSearchParams, useRouter} from 'next/navigation';
 import {MainLayout} from '@/components/layout/MainLayout';
 import {ProfileHeader} from '@/components/profile/ProfileHeader';
@@ -11,9 +11,11 @@ import {
   useUserStats,
   useUserReposts,
 } from '@/lib/api/services/profile.hooks';
-import {Loader2} from 'lucide-react';
+import {Loader2, Lock} from 'lucide-react';
 import type {Post} from '@/types/post';
 import {useDynamicBack} from '@/hooks/useDynamicBack';
+import {useAuth} from '@/context/AuthContext';
+import {useToast} from '@/hooks/use-toast';
 
 function OtherProfileContent() {
   const searchParams = useSearchParams();
@@ -24,6 +26,9 @@ function OtherProfileContent() {
   const normalizedTab = tabParam === 'repost' ? 'repost' : 'videos';
   const [activeTab, setActiveTab] = useState(normalizedTab);
 
+  const {openAuthModal, isAuthenticated} = useAuth();
+  const {toast} = useToast();
+
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
     if (!userId) return;
@@ -32,18 +37,50 @@ function OtherProfileContent() {
     router.replace(`/other-profile?${params.toString()}`, {scroll: false});
   };
 
-  const {data: profileResponse, isLoading: isLoadingProfile} = useUserProfile(
-    userId || '',
-  );
-  const {data: statsResponse} = useUserStats(userId || '');
-  const {data: postsResponse, isLoading: isLoadingPosts} = useUserPosts(
-    userId || '',
-    {page: 1, pageSize: 50},
-  );
-  const {data: repostsResponse, isLoading: isLoadingReposts} = useUserReposts(
-    userId || '',
-    {page: 1, pageSize: 50},
-  );
+  const {
+    data: profileResponse,
+    isLoading: isLoadingProfile,
+    error: profileError,
+  } = useUserProfile(userId || '');
+  const {data: statsResponse, error: statsError} = useUserStats(userId || '');
+  const {
+    data: postsResponse,
+    isLoading: isLoadingPosts,
+    error: postsError,
+  } = useUserPosts(userId || '', {page: 1, pageSize: 50});
+  const {
+    data: repostsResponse,
+    isLoading: isLoadingReposts,
+    error: repostsError,
+  } = useUserReposts(userId || '', {page: 1, pageSize: 50});
+
+  // Detect 403 / 401 unauthenticated errors on profile or stats endpoints
+  const isAuthError = useMemo(() => {
+    const errors = [profileError, statsError, postsError, repostsError];
+    return errors.some((err: any) => {
+      const status = err?.response?.status || err?.status;
+      const msg = (err?.response?.data?.message || err?.message || '').toLowerCase();
+      return (
+        status === 403 ||
+        status === 401 ||
+        msg.includes('authenticated') ||
+        msg.includes('unauthorized') ||
+        msg.includes('forbidden')
+      );
+    });
+  }, [profileError, statsError, postsError, repostsError]);
+
+  // Open AuthModal and show toast when a 403 / 401 error occurs for unauthenticated user
+  useEffect(() => {
+    if (isAuthError && !isAuthenticated) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You need to be authenticated before viewing this profile.',
+        variant: 'destructive',
+      });
+      openAuthModal();
+    }
+  }, [isAuthError, isAuthenticated, openAuthModal, toast]);
 
   const profileData =
     (profileResponse as any)?.data?.data || (profileResponse as any)?.data;
@@ -89,7 +126,29 @@ function OtherProfileContent() {
     return isLoadingPosts;
   }, [activeTab, isLoadingPosts, isLoadingReposts]);
 
-
+  // Fallback UI when 403 / 401 error is received
+  if (isAuthError && !isAuthenticated) {
+    return (
+      <MainLayout>
+        <div className='w-full max-w-4xl mx-auto px-4 py-12 flex flex-col items-center justify-center text-center min-h-[60vh]'>
+          <div className='w-16 h-16 rounded-full bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mb-4 text-[#fbbe15]'>
+            <Lock className='w-8 h-8' />
+          </div>
+          <h2 className='text-xl font-bold text-white mb-2'>
+            Authentication Required
+          </h2>
+          <p className='text-zinc-400 text-sm max-w-md mb-6'>
+            You need to be authenticated before viewing this profile. Please sign in or create an account to continue.
+          </p>
+          <button
+            onClick={() => openAuthModal()}
+            className='px-6 py-2.5 bg-[#fbbe15] text-black font-semibold rounded-full hover:bg-yellow-400 transition-colors shadow-md'>
+            Sign In / Sign Up
+          </button>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (isLoadingProfile) {
     return (
@@ -115,7 +174,7 @@ function OtherProfileContent() {
     <MainLayout>
       <div className='w-full max-w-4xl mx-auto px-4 py-6 overflow-y-auto h-[calc(100vh-3.5rem)] md:h-auto'>
         <button
-          onClick={() => goBack('/feeds')}
+          onClick={() => goBack('/')}
           className='mb-4 flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors'
           aria-label='Go back'>
           <svg

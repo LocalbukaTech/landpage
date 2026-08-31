@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import {useRef, useState, useEffect} from 'react';
@@ -27,14 +28,16 @@ export function ImageCropper({file, onCrop, onCancel}: ImageCropperProps) {
 
   // Load selected file as temporary object URL (faster & memory efficient on mobile)
   useEffect(() => {
-    setLoading(true);
-    setZoom(1);
-    setOffset({x: 0, y: 0});
-
     const url = URL.createObjectURL(file);
-    setImgSrc(url);
+    const timer = setTimeout(() => {
+      setLoading(true);
+      setZoom(1);
+      setOffset({x: 0, y: 0});
+      setImgSrc(url);
+    }, 0);
 
     return () => {
+      clearTimeout(timer);
       URL.revokeObjectURL(url);
     };
   }, [file]);
@@ -205,10 +208,10 @@ export function ImageCropper({file, onCrop, onCancel}: ImageCropperProps) {
   const imgWidthStyle = viewportHeight * aspect;
 
   return (
-    <div className='flex flex-col items-center justify-center w-full max-w-xl mx-auto bg-white rounded-3xl p-6 shadow-xl border border-zinc-100'>
+    <div className='flex flex-col items-center justify-center w-full max-w-xl mx-auto bg-[#141414] border border-white/10 text-white rounded-3xl p-6 shadow-2xl'>
       <div className='text-center mb-6'>
-        <h2 className='text-xl font-bold text-[#1a1a1a]'>Adjust Photo size</h2>
-        <p className='text-zinc-500 text-sm mt-1'>
+        <h2 className='text-xl font-bold text-white tracking-tight'>Crop & Adjust Photo</h2>
+        <p className='text-zinc-400 text-sm mt-1'>
           Drag and zoom the photo to crop it to the standard feed size (9:16).
         </p>
       </div>

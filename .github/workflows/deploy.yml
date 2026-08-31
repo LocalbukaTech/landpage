@@ -7,7 +7,6 @@ on:
       - develop
 
 jobs:
-  # New pre-check job to validate who is pushing to the main branch
   validate-actor:
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +23,7 @@ jobs:
           echo "✅ Authorization successful for user '$ACTOR'."
 
   deploy:
-    needs: validate-actor # Ensures deployment only runs if the user passes validation
+    needs: validate-actor
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -43,20 +42,17 @@ jobs:
             echo "PROD_FLAG=" >> $GITHUB_ENV
           fi
 
+      # 🌟 FIX: Manually inject the configuration directory the CLI needs
+      - name: Scaffolding Vercel Project Association
+        run: |
+          mkdir -p .vercel
+          echo '{"projectId":"${{ secrets.VERCEL_PROJECT_ID }}","orgId":"${{ secrets.VERCEL_ORG_ID }}"}' > .vercel/project.json
+
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=${{ env.ENV_FLAG }} --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Build Project Artifacts
         run: vercel build ${{ env.PROD_FLAG }} --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy Project Artifacts to Vercel
         run: vercel deploy --prebuilt ${{ env.PROD_FLAG }} --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

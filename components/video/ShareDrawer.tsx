@@ -3,7 +3,6 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Copy, Check, Mail, Info } from "lucide-react";
-import { FaSnapchat } from "react-icons/fa6";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSharePost } from "@/lib/api/services/posts.hooks";
@@ -41,18 +40,6 @@ const Icons = {
   Telegram: () => (
     <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
       <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-1.92 9.03c-.144.64-.524.797-1.059.497l-2.92-2.152-1.41 1.356c-.156.156-.288.288-.588.288l.21-2.97 5.404-4.88c.234-.208-.05-.324-.361-.118l-6.677 4.204-2.88-.9c-.626-.196-.639-.626.13-.924l11.258-4.34c.522-.196.98.118.813.829z" />
-    </svg>
-  ),
-  Snapchat: ({ className }: { className?: string }) => (
-    <svg viewBox="0 0 128 128" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
-      <path 
-        d="M64.04 33.5c-11.83 0-18.79 8.35-18.79 17.52 0 1.95.84 4.88.84 4.88s-2.23.56-4.32 2.65c-2.09 2.09-1.95 5.57-.42 7.1 1.53 1.54 4.88 1.12 4.88 1.12s.56 1.8 1.67 3.9c1.12 2.1 3.2 4.46 3.2 4.46s-4.6.84-7.53 4.04c-2.92 3.2-1.95 6.83.28 7.39 2.23.55 7.1-.98 9.47-3.9 0 0 2.23 3.62 7.1 5.01 4.88 1.4 10.17.7 13.65-2.09 3.49 2.79 8.78 3.49 13.66 2.09 4.87-1.39 7.1-5.01 7.1-5.01 2.37 2.92 7.24 4.45 9.47 3.9 2.23-.56 3.2-4.18.28-7.38-2.93-3.2-7.53-4.04-7.53-4.04s2.09-2.37 3.2-4.46c1.12-2.1 1.68-3.9 1.68-3.9s3.34.42 4.87-1.12c1.54-1.53 1.68-5.01-.42-7.1-2.09-2.09-4.32-2.65-4.32-2.65s.84-2.93.84-4.88C82.83 41.85 75.87 33.5 64.04 33.5z" 
-        fill="#FFFFFF" 
-        stroke="#000000" 
-        strokeWidth="6.5" 
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
     </svg>
   ),
   Reddit: () => (
@@ -126,7 +113,6 @@ export function ShareDrawer({
     { name: "Email", icon: Mail, color: "bg-neutral-600", url: `mailto:?subject=${encodeURIComponent(shareText)}&body=${encodeURIComponent(shareUrl)}` },
     { name: "TikTok", icon: Icons.TikTok, color: "bg-black", isCopyOnly: true },
     { name: "Instagram", icon: Icons.Instagram, color: "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]", isCopyOnly: true },
-    { name: "Snapchat", icon: Icons.Snapchat, color: "bg-[#FFFC00] !text-black", isCopyOnly: true },
   ];
 
   return (
@@ -294,7 +280,7 @@ export function ShareDrawer({
               <DialogDescription className="text-neutral-400 text-base leading-relaxed">
                 The link has been copied to your clipboard! 
                 <br />
-                <span className="text-white font-medium">Instagram, TikTok, and Snapchat</span> are best shared directly through their mobile apps.
+                <span className="text-white font-medium">Instagram and TikTok</span> are best shared directly through their mobile apps.
               </DialogDescription>
             </div>
           </DialogHeader>

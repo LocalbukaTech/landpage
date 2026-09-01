@@ -31,13 +31,7 @@ import {
 import { RiRestaurant2Fill } from 'react-icons/ri';
 
 interface UploadDetailsProps {
-  files?: File[];
-  existingMediaUrls?: string[];
-  initialCaption?: string;
-  initialImageCaptions?: string[];
-  initialLocation?: string;
-  initialRestaurant?: { id: string; name: string } | null;
-  isEditing?: boolean;
+  files: File[];
   submitText?: string;
   onPost: (data: {
     description: string;
@@ -54,12 +48,6 @@ interface UploadDetailsProps {
 
 export function UploadDetails({
   files = [],
-  existingMediaUrls = [],
-  initialCaption = '',
-  initialImageCaptions = [],
-  initialLocation = '',
-  initialRestaurant = null,
-  isEditing: _isEditing = false,
   submitText = 'Post',
   onPost,
   onDiscard,
@@ -71,24 +59,14 @@ export function UploadDetails({
     if (files.length > 0) {
       return files[0].type.startsWith('image/');
     }
-    if (existingMediaUrls.length > 0) {
-      const url = existingMediaUrls[0];
-      const isVideoUrl = Boolean(
-        url.match(/\.(mp4|mov|webm|avi|mkv)(\?.*)?$/i) ||
-        url.includes('/video/upload/') ||
-        url.includes('resource_type=video')
-      );
-      return !isVideoUrl;
-    }
     return true;
-  }, [files, existingMediaUrls]);
-  const totalSlides = files.length > 0 ? files.length : existingMediaUrls.length;
+  }, [files]);
+  const totalSlides = files.length;
   const [activeIndex, setActiveIndex] = useState(0);
-  const [captions, setCaptions] = useState<string[]>(() => {
-    if (isImage && initialImageCaptions.length > 0) return initialImageCaptions;
-    return isImage ? Array(totalSlides).fill('') : [];
-  });
-  const [generalCaption, setGeneralCaption] = useState(initialCaption);
+  const [captions, setCaptions] = useState<string[]>(() =>
+    isImage ? Array(totalSlides).fill('') : []
+  );
+  const [generalCaption, setGeneralCaption] = useState('');
 
   const {user: authUser} = useAuth();
   const {lat, lng} = useGeolocation();
@@ -173,13 +151,8 @@ export function UploadDetails({
         clearTimeout(timer);
         urls.forEach((url) => URL.revokeObjectURL(url));
       };
-    } else if (existingMediaUrls.length > 0) {
-      const timer = setTimeout(() => {
-        setMediaUrls(existingMediaUrls);
-      }, 0);
-      return () => clearTimeout(timer);
     }
-  }, [files, existingMediaUrls]);
+  }, [files]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStart.current = e.touches[0].clientX;
@@ -212,42 +185,12 @@ export function UploadDetails({
   const [inputFocus, setInputFocus] = useState(false);
 
   // Tagging States
-  const [selectedLocations, setSelectedLocations] = useState<string[]>(() =>
-    initialLocation ? [initialLocation] : []
-  );
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<{
     id: string;
     name: string;
-  } | null>(initialRestaurant);
+  } | null>(null);
 
-  // Sync initial props asynchronously when fetched on edit post
-  useEffect(() => {
-    if (initialCaption) {
-      const timer = setTimeout(() => setGeneralCaption(initialCaption), 0);
-      return () => clearTimeout(timer);
-    }
-  }, [initialCaption]);
-
-  useEffect(() => {
-    if (isImage && initialImageCaptions && initialImageCaptions.length > 0) {
-      const timer = setTimeout(() => setCaptions(initialImageCaptions), 0);
-      return () => clearTimeout(timer);
-    }
-  }, [initialImageCaptions, isImage]);
-
-  useEffect(() => {
-    if (initialLocation) {
-      const timer = setTimeout(() => setSelectedLocations([initialLocation]), 0);
-      return () => clearTimeout(timer);
-    }
-  }, [initialLocation]);
-
-  useEffect(() => {
-    if (initialRestaurant) {
-      const timer = setTimeout(() => setSelectedRestaurant(initialRestaurant), 0);
-      return () => clearTimeout(timer);
-    }
-  }, [initialRestaurant]);
 
   // Video States
   const [isMuted, setIsMuted] = useState(false); // Unmuted by default as requested

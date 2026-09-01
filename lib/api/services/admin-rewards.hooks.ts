@@ -10,6 +10,8 @@ import {
   type TopReferrerItem,
   type AdminAdjustPointsPayload,
   type AdminApproveVanityPayload,
+  type AdminVanityCodesListResponse,
+  type AdminVanityCodesFilterParams,
 } from './admin-rewards.service';
 import {queryKeys} from '../types';
 
@@ -91,6 +93,17 @@ export const useAdminTopReferrers = (limit: number = 20) => {
       return unwrapData<TopReferrerItem[]>(response);
     },
     staleTime: 1000 * 60, // 1 min
+  });
+};
+
+/** List of All Assigned Vanity Codes with Performance */
+export const useAdminVanityCodes = (params?: AdminVanityCodesFilterParams) => {
+  return useQuery({
+    queryKey: queryKeys.adminRewards.vanityCodes(params),
+    queryFn: async () => {
+      const response = await adminRewardsService.getVanityCodes(params);
+      return unwrapData<AdminVanityCodesListResponse>(response);
+    },
   });
 };
 

@@ -18,13 +18,14 @@ import { AdminReferralsTab } from '@/components/admin/rewards/AdminReferralsTab'
 import { AdminTransactionsTab } from '@/components/admin/rewards/AdminTransactionsTab';
 import { AdminFlaggedTab } from '@/components/admin/rewards/AdminFlaggedTab';
 import { AdminTopReferrersTab } from '@/components/admin/rewards/AdminTopReferrersTab';
+import { AdminVanityCodesTab } from '@/components/admin/rewards/AdminVanityCodesTab';
 import { AdminAdjustPointsModal } from '@/components/admin/rewards/AdminAdjustPointsModal';
 import { AdminApproveVanityModal } from '@/components/admin/rewards/AdminApproveVanityModal';
 import { AdminReferralDetailModal } from '@/components/admin/rewards/AdminReferralDetailModal';
 
-type AdminTab = 'overview' | 'referrals' | 'ledger' | 'flagged' | 'promoters';
+type AdminTab = 'overview' | 'referrals' | 'vanity-codes' | 'ledger' | 'flagged' | 'promoters';
 
-const VALID_TABS: AdminTab[] = ['overview', 'referrals', 'ledger', 'flagged', 'promoters'];
+const VALID_TABS: AdminTab[] = ['overview', 'referrals', 'vanity-codes', 'ledger', 'flagged', 'promoters'];
 const STORAGE_KEY = 'admin_rewards_active_tab';
 
 function AdminRewardsContent() {
@@ -79,6 +80,7 @@ function AdminRewardsContent() {
 
   const navTabs = [
     { id: 'overview' as AdminTab, label: 'Overview', icon: LayoutDashboard },
+    { id: 'vanity-codes' as AdminTab, label: 'Vanity Codes', icon: Tag },
     { id: 'referrals' as AdminTab, label: 'All Referrals', icon: Users },
     { id: 'ledger' as AdminTab, label: 'Platform Ledger', icon: Receipt },
     { id: 'flagged' as AdminTab, label: 'Fraud & Flagged', icon: ShieldAlert },
@@ -154,6 +156,13 @@ function AdminRewardsContent() {
             onViewAllReferrals={() => handleTabChange('referrals')}
             onViewFlagged={() => handleTabChange('flagged')}
             onViewLedger={() => handleTabChange('ledger')}
+          />
+        </div>
+
+        <div className={activeTab === 'vanity-codes' ? 'block' : 'hidden'}>
+          <AdminVanityCodesTab
+            onOpenAdjustModal={handleOpenAdjustModal}
+            onOpenVanityModal={handleOpenVanityModal}
           />
         </div>
 

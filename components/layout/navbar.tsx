@@ -7,6 +7,7 @@ import {Button} from '@/components/ui/button';
 import {NAV_LINKS} from '@/lib/constants';
 import {useRouter} from 'next/navigation';
 import {getUser, isUserAuthenticated, logoutUser} from '@/lib/auth';
+import {setAnalyticsUser} from '@/lib/analytics';
 import {LogOut, User as UserIcon} from 'lucide-react';
 
 export function Navbar() {
@@ -48,6 +49,7 @@ export function Navbar() {
   };
 
   const handleLogout = () => {
+    setAnalyticsUser(null, null, null, null);
     logoutUser();
     setUser(null);
     setIsAuthenticated(false);

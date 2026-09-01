@@ -5,6 +5,7 @@ import './globals.css';
 import {Providers} from '@/components/providers';
 import {ScrollToTop} from '@/components/common';
 import {GoogleAnalytics} from '@/components/google-analytics';
+import {AnalyticsPageView} from '@/components/analytics-page-view';
 
 const nunitoSans = Nunito_Sans({
   variable: '--font-nunito-sans',
@@ -190,6 +191,7 @@ export default async function RootLayout({
           `}
         </Script>
         <GoogleAnalytics gaId='G-7VR656FT47' />
+        <AnalyticsPageView />
         <ScrollToTop />
         <Providers initialUser={initialUser} initialToken={tokenCookie}>
           {children}

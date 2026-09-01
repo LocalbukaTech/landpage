@@ -145,6 +145,45 @@ export interface AdminApproveVanityResponse {
   shareLink: string;
 }
 
+export type VanityCodeSortBy =
+  | 'vanityCodeChangedAt'
+  | 'createdAt'
+  | 'completedReferrals'
+  | 'totalReferrals';
+
+export interface AdminVanityCodesFilterParams {
+  search?: string;
+  sortBy?: VanityCodeSortBy;
+  sortOrder?: 'ASC' | 'DESC';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface AdminVanityCodeItem {
+  userId: string;
+  fullName: string;
+  email: string;
+  avatar?: string | null;
+  referralCode: string;
+  vanityCode: string;
+  vanityCodeChangedAt?: string | null;
+  createdAt: string;
+  currentPoints: number;
+  lifetimeEarned: number;
+  totalReferrals: number;
+  completedReferrals: number;
+  pendingReferrals: number;
+  rejectedReferrals: number;
+}
+
+export interface AdminVanityCodesListResponse {
+  data: AdminVanityCodeItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 // ============================================
 // Admin Rewards Service
 // ============================================
@@ -153,6 +192,21 @@ export const adminRewardsService = {
   /** GET /rewards/admin/overview — High-level system metrics & circulation */
   getOverview: () =>
     api.get<ApiResponse<AdminRewardsOverviewResponse>>('/rewards/admin/overview'),
+
+  /** GET /admin/vanity-codes — List all custom vanity codes with referral stats */
+  getVanityCodes: (params?: AdminVanityCodesFilterParams) => {
+    const cleanParams: Record<string, any> = {};
+    if (params) {
+      if (params.page) cleanParams.page = params.page;
+      if (params.pageSize) cleanParams.pageSize = params.pageSize;
+      if (params.sortBy) cleanParams.sortBy = params.sortBy;
+      if (params.sortOrder) cleanParams.sortOrder = params.sortOrder;
+      if (params.search?.trim()) cleanParams.search = params.search.trim();
+    }
+    return api.get<ApiResponse<AdminVanityCodesListResponse>>('/admin/vanity-codes', {
+      params: cleanParams,
+    });
+  },
 
   /** GET /rewards/admin/referrals — Filterable, paginated referral records */
   getReferrals: (params?: AdminReferralsFilterParams) => {

@@ -146,6 +146,8 @@ export const queryKeys = {
       [...queryKeys.adminRewards.all, 'flagged', params] as const,
     topReferrers: (limit?: number) =>
       [...queryKeys.adminRewards.all, 'top-referrers', limit] as const,
+    vanityCodes: (params?: Record<string, any>) =>
+      [...queryKeys.adminRewards.all, 'vanity-codes', params] as const,
   },
 
   // Add more entity types as needed

@@ -750,20 +750,6 @@ function PortugalFlag() {
   );
 }
 
-function JapanFlag() {
-  return (
-    <svg viewBox='0 0 32 32' className='w-full h-full object-cover rounded-full'>
-      <clipPath id='circle-ja'>
-        <circle cx='16' cy='16' r='16' />
-      </clipPath>
-      <g clipPath='url(#circle-ja)'>
-        <rect x='0' y='0' width='32' height='32' fill='#ffffff' />
-        <circle cx='16' cy='16' r='9.6' fill='#BC002D' />
-      </g>
-    </svg>
-  );
-}
-
 const langToCodeMap: Record<string, string> = {
   english: 'en',
   pidgin: 'pcm',

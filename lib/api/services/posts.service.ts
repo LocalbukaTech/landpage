@@ -105,4 +105,19 @@ export const postsService = {
       `/posts/${postId}/comments/${commentId}/like`
     );
   },
+
+  /** GET /posts/archived — get archived posts */
+  getArchivedPosts: (params?: PostsQueryParams) => {
+    return api.get<ApiResponse<PostsResponse>>('/posts/archived', { params });
+  },
+
+  /** PATCH /posts/:id/archive — archive a post */
+  archivePost: (id: string) => {
+    return api.patch<ApiResponse<Post>>(`/posts/${id}/archive`);
+  },
+
+  /** PATCH /posts/:id/unarchive — unarchive a post */
+  unarchivePost: (id: string) => {
+    return api.patch<ApiResponse<Post>>(`/posts/${id}/unarchive`);
+  },
 };

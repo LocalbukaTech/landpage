@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {useState, useMemo, useEffect, useRef} from 'react';
 import {useGeolocation} from '@/hooks/useGeolocation';
-import {Settings, Loader2, Camera, X} from 'lucide-react';
+import {Settings, Loader2, Camera, X, MoreVertical, Ban, Flag} from 'lucide-react';
 import SocialModal from '../social/SocialModal';
 import {IoMdShareAlt} from 'react-icons/io';
 import {ShareDrawer} from '../video/ShareDrawer';
@@ -19,10 +19,21 @@ import {
   useFollowers,
   useFollowing,
 } from '@/lib/api/services/profile.hooks';
+import {useBlockedUsers} from '@/hooks/useBlockedUsers';
 import type {PostUser} from '@/types/post';
 import type {User} from '@/lib/api/services/auth.service';
 import {AvatarCropModal} from '@/components/ui/AvatarCropModal';
 import {useToast} from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ProfileHeaderProps {
   /** For other-profile pages, pass the other user's data */
@@ -205,6 +216,31 @@ export function ProfileHeader({
   const displayFollowing = followingCount;
 
   const [isFollowing, setIsFollowing] = useState(apiUser?.isFollowing || false);
+  const { isUserBlocked, blockUser, unblockUser } = useBlockedUsers();
+  const isBlocked = isUserBlocked(apiUser?.id);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const handleBlockConfirm = () => {
+    if (!apiUser?.id) return;
+    setShowBlockConfirm(false);
+    blockUser({
+      id: apiUser.id,
+      fullName: displayName,
+      username: apiUser?.username,
+      avatar: displayAvatar,
+    });
+    setToastMessage(`${displayName} has been blocked 🚫`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleUnblock = () => {
+    if (!apiUser?.id) return;
+    unblockUser(apiUser.id);
+    setToastMessage(`${displayName} is unblocked 🚫`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -353,18 +389,67 @@ export function ProfileHeader({
                 <IoMdShareAlt size={18} className='text-white' />
               </button>
             </div>
-            <Link
-              href='/settings'
-              className='flex items-center gap-2 text-white hover:text-[#FBBE15] transition-colors'>
-              {!isOtherProfile && (
-                <>
-                  <Settings size={20} />
-                  <span className='text-sm font-medium hidden sm:inline'>
-                    Settings
-                  </span>
-                </>
-              )}
-            </Link>
+            {!isOtherProfile ? (
+              <Link
+                href='/settings'
+                className='flex items-center gap-2 text-white hover:text-[#FBBE15] transition-colors'>
+                <Settings size={20} />
+                <span className='text-sm font-medium hidden sm:inline'>
+                  Settings
+                </span>
+              </Link>
+            ) : (
+              <div className='relative'>
+                <button
+                  onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+                  className='p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center text-zinc-400 hover:text-white'
+                  title='Profile options'>
+                  <MoreVertical size={18} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showOptionsMenu && (
+                  <>
+                    <div
+                      className='fixed inset-0 z-40'
+                      onClick={() => setShowOptionsMenu(false)}
+                    />
+                    <div
+                      className='absolute right-0 top-7 z-50 w-36 bg-[#18181b] border border-white/15 rounded-xl shadow-2xl py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150'>
+                      <div className='flex items-center justify-between px-3 py-1 border-b border-white/5 mb-1'>
+                        <span className='text-[10px] font-bold uppercase tracking-wider text-zinc-500'>Options</span>
+                        <button
+                          onClick={() => setShowOptionsMenu(false)}
+                          className='text-zinc-400 hover:text-white bg-transparent border-none p-0 cursor-pointer'>
+                          <X size={12} />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowOptionsMenu(false);
+                          setShowBlockConfirm(true);
+                        }}
+                        className='w-full px-3 py-2 text-left text-xs font-semibold text-red-500 hover:bg-red-500/10 flex items-center gap-2 cursor-pointer border-none bg-transparent transition-colors'>
+                        <Ban size={14} />
+                        <span>Block</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowOptionsMenu(false);
+                          toast({
+                            title: 'Report Submitted',
+                            description: 'Thank you for your report. Our safety team will review it.',
+                          });
+                        }}
+                        className='w-full px-3 py-2 text-left text-xs font-semibold text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-none bg-transparent transition-colors'>
+                        <Flag size={14} />
+                        <span>Report</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Location */}
@@ -382,18 +467,26 @@ export function ProfileHeader({
             )
           )}
 
-          {/* Follow Button */}
+          {/* Follow / Unblock Button */}
           {isOtherProfile ? (
-            <button
-              onClick={handleFollowToggle}
-              className={`mt-2 px-4 py-1.5 text-xs font-bold rounded-md transition-colors cursor-pointer border-none ${
-                isFollowing
-                  ? 'bg-transparent border border-[#FBBE15] text-[#FBBE15] hover:bg-[#FBBE15]/10'
-                  : 'bg-[#FBBE15] text-[#1a1a1a] hover:bg-[#e5ab13]'
-              }`}
-              style={isFollowing ? {border: '1px solid #FBBE15'} : {}}>
-              {isFollowing ? 'Following' : 'Follow'}
-            </button>
+            isBlocked ? (
+              <button
+                onClick={handleUnblock}
+                className='mt-2 px-6 py-1.5 text-xs font-bold rounded-md transition-colors cursor-pointer border-none bg-[#FBBE15] text-[#1a1a1a] hover:bg-[#e5ab13] shadow-sm'>
+                Unblock
+              </button>
+            ) : (
+              <button
+                onClick={handleFollowToggle}
+                className={`mt-2 px-4 py-1.5 text-xs font-bold rounded-md transition-colors cursor-pointer border-none ${
+                  isFollowing
+                    ? 'bg-transparent border border-[#FBBE15] text-[#FBBE15] hover:bg-[#FBBE15]/10'
+                    : 'bg-[#FBBE15] text-[#1a1a1a] hover:bg-[#e5ab13]'
+                }`}
+                style={isFollowing ? {border: '1px solid #FBBE15'} : {}}>
+                {isFollowing ? 'Following' : 'Follow'}
+              </button>
+            )
           ) : (
             <button
               onClick={() => {
@@ -448,6 +541,37 @@ export function ProfileHeader({
           onConfirm={handleCropConfirm}
           onCancel={() => setCropSrc(null)}
         />
+      )}
+
+      {/* Block Confirmation Modal */}
+      <AlertDialog open={showBlockConfirm} onOpenChange={setShowBlockConfirm}>
+        <AlertDialogContent className='bg-[#18181b] border border-white/10 text-white rounded-2xl max-w-sm'>
+          <AlertDialogHeader>
+            <AlertDialogTitle className='text-base font-bold text-white'>
+              Block {displayName}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className='text-zinc-400 text-xs leading-relaxed'>
+              You won&apos;t be able to see each other&apos;s posts or interact with each other while this user is blocked.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className='flex-row gap-2 justify-end mt-4'>
+            <AlertDialogCancel className='bg-zinc-800 hover:bg-zinc-700 border-none text-white text-xs font-semibold rounded-lg px-4 py-2 cursor-pointer'>
+              No, Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlockConfirm}
+              className='bg-red-600 hover:bg-red-700 border-none text-white text-xs font-semibold rounded-lg px-4 py-2 cursor-pointer'>
+              Yes, Block
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Floating pill toast */}
+      {toastMessage && (
+        <div className='fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 bg-black/85 backdrop-blur-md text-white text-xs rounded-full border border-white/15 shadow-2xl animate-in fade-in slide-in-from-bottom-3'>
+          <span>{toastMessage}</span>
+        </div>
       )}
     </div>
   );

@@ -1,50 +1,57 @@
 'use client';
 
 import {useState} from 'react';
+import {useTranslation} from '@/context/LanguageContext';
 
 interface NotificationsPrivacyProps {
   activeSubTab?: string;
   onSubTabChange?: (tab: string) => void;
 }
 
-const pushNotificationSettings = [
-  {
-    label: 'Order Updates',
-    description: 'Get notified when your order status changes',
-    defaultOn: true,
-  },
-  {
-    label: 'New Nearby Buka',
-    description: 'Alerts when new local restaurants are available.',
-    defaultOn: true,
-  },
-  {
-    label: 'Special Offers / Discounts',
-    description: 'Receive promotions and deals.',
-    defaultOn: false,
-  },
-  {
-    label: 'Personalized Meal',
-    description: 'Suggestions based on your taste and preferences.',
-    defaultOn: false,
-  },
-];
-
 export function NotificationsPrivacy({
   activeSubTab = 'push',
   onSubTabChange,
 }: NotificationsPrivacyProps) {
+  const {t} = useTranslation();
   const [currentTab, setCurrentTab] = useState(activeSubTab);
+
+  const pushNotificationSettings = [
+    {
+      id: 'orderUpdates',
+      label: t('notifications.orderUpdates', 'Order Updates'),
+      description: t('notifications.orderUpdatesDesc', 'Get notified when your order status changes'),
+      defaultOn: true,
+    },
+    {
+      id: 'nearbyBuka',
+      label: t('notifications.nearbyBuka', 'New Nearby Buka'),
+      description: t('notifications.nearbyBukaDesc', 'Alerts when new local restaurants are available.'),
+      defaultOn: true,
+    },
+    {
+      id: 'offers',
+      label: t('notifications.offers', 'Special Offers / Discounts'),
+      description: t('notifications.offersDesc', 'Receive promotions and deals.'),
+      defaultOn: false,
+    },
+    {
+      id: 'personalized',
+      label: t('notifications.personalized', 'Personalized Meal'),
+      description: t('notifications.personalizedDesc', 'Suggestions based on your taste and preferences.'),
+      defaultOn: false,
+    },
+  ];
+
   const [toggles, setToggles] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
-      pushNotificationSettings.map((s) => [s.label, s.defaultOn]),
+      pushNotificationSettings.map((s) => [s.id, s.defaultOn]),
     ),
   );
 
   const subTabs = [
-    {id: 'push', label: 'Push Notifications'},
-    {id: 'privacy', label: 'Privacy Settings'},
-    {id: 'data', label: 'Data Sharing / Permissions'},
+    {id: 'push', label: t('notifications.push', 'Push Notifications')},
+    {id: 'privacy', label: t('notifications.privacy', 'Privacy Settings')},
+    {id: 'data', label: t('notifications.data', 'Data Sharing / Permissions')},
   ];
 
   const handleTabChange = (tabId: string) => {
@@ -52,8 +59,8 @@ export function NotificationsPrivacy({
     onSubTabChange?.(tabId);
   };
 
-  const handleToggle = (label: string) => {
-    setToggles((prev) => ({...prev, [label]: !prev[label]}));
+  const handleToggle = (id: string) => {
+    setToggles((prev) => ({...prev, [id]: !prev[id]}));
   };
 
   return (
@@ -83,7 +90,7 @@ export function NotificationsPrivacy({
           <div className='flex flex-col gap-6'>
             {pushNotificationSettings.map((setting) => (
               <div
-                key={setting.label}
+                key={setting.id}
                 className='flex items-center justify-between'>
                 <div className='flex flex-col gap-0.5'>
                   <span className='text-sm font-semibold text-white'>
@@ -94,13 +101,13 @@ export function NotificationsPrivacy({
                   </span>
                 </div>
                 <button
-                  onClick={() => handleToggle(setting.label)}
+                  onClick={() => handleToggle(setting.id)}
                   className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer border-none ${
-                    toggles[setting.label] ? 'bg-[#001F3F]' : 'bg-zinc-600'
+                    toggles[setting.id] ? 'bg-[#001F3F]' : 'bg-zinc-600'
                   }`}>
                   <div
                     className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                      toggles[setting.label]
+                      toggles[setting.id]
                         ? 'translate-x-5.5'
                         : 'translate-x-0.5'
                     }`}
@@ -112,7 +119,7 @@ export function NotificationsPrivacy({
             {/* Save Button */}
             <div className='flex justify-end mt-4'>
               <button className='px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-bold rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none'>
-                Save
+                {t('notifications.save', 'Save')}
               </button>
             </div>
           </div>
@@ -121,9 +128,9 @@ export function NotificationsPrivacy({
         {currentTab === 'privacy' && (
           <div className='flex items-center justify-center py-20'>
             <div className='text-center'>
-              <p className='text-2xl font-bold text-white mb-2'>Coming Soon</p>
+              <p className='text-2xl font-bold text-white mb-2'>{t('notifications.comingSoon', 'Coming Soon')}</p>
               <p className='text-sm text-zinc-400'>
-                Privacy settings will be available in a future update.
+                {t('notifications.privacyComingSoon', 'Privacy settings will be available in a future update.')}
               </p>
             </div>
           </div>
@@ -132,10 +139,9 @@ export function NotificationsPrivacy({
         {currentTab === 'data' && (
           <div className='flex items-center justify-center py-20'>
             <div className='text-center'>
-              <p className='text-2xl font-bold text-white mb-2'>Coming Soon</p>
+              <p className='text-2xl font-bold text-white mb-2'>{t('notifications.comingSoon', 'Coming Soon')}</p>
               <p className='text-sm text-zinc-400'>
-                Data sharing and permissions settings will be available in a
-                future update.
+                {t('notifications.dataComingSoon', 'Data sharing and permissions settings will be available in a future update.')}
               </p>
             </div>
           </div>

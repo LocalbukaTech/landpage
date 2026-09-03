@@ -8,6 +8,8 @@ import {AuthModal} from '@/components/modals';
 import {AutoAuthPrompt} from '@/components/auth/AutoAuthPrompt';
 import type { User } from '@/lib/api/services/auth.service';
 
+import { LanguageProvider } from '@/context/LanguageContext';
+
 export function Providers({
   children,
   initialUser,
@@ -20,18 +22,20 @@ export function Providers({
   return (
     <ReactQueryProvider>
       <AuthProvider initialUser={initialUser} initialToken={initialToken}>
-        <ThemeProvider
-          attribute='class'
-          defaultTheme='light'
-          enableSystem
-          disableTransitionOnChange>
-          <ToastProvider>
-            {children}
-            <AuthModal />
-            <AutoAuthPrompt />
-            <Toaster />
-          </ToastProvider>
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider
+            attribute='class'
+            defaultTheme='light'
+            enableSystem
+            disableTransitionOnChange>
+            <ToastProvider>
+              {children}
+              <AuthModal />
+              <AutoAuthPrompt />
+              <Toaster />
+            </ToastProvider>
+          </ThemeProvider>
+        </LanguageProvider>
       </AuthProvider>
     </ReactQueryProvider>
   );

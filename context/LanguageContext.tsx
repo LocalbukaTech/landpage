@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, startTransition } from 'react';
+import React, { createContext, useContext, useState, useEffect, useTransition } from 'react';
 import { useMe } from '@/lib/api/services/auth.hooks';
 
 import en from '@/lib/i18n/translations/en.json';
@@ -46,13 +46,16 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const apiUser = userResponse?.data;
   
   const [language, setLanguageState] = useState<SupportedLanguage>('en');
+  const [, startTransition] = useTransition();
 
   // Sync language with user profile from backend when available
   useEffect(() => {
     if (apiUser?.language) {
       const code = apiUser.language.toLowerCase() as SupportedLanguage;
       if (dictionaries[code]) {
-        setLanguageState(code);
+        startTransition(() => {
+          setLanguageState(code);
+        });
       }
     }
   }, [apiUser?.language]);

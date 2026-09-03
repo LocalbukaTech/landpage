@@ -65,7 +65,7 @@ export function EditPostDetails({post, isSaving, onSave, onCancel}: EditPostDeta
     name: string;
   } | null>(post.restaurant ? {id: post.restaurant.id, name: post.restaurant.name} : null);
 
-  const {user: authUser} = useAuth();
+  const {user: _authUser} = useAuth();
   const {lat, lng} = useGeolocation();
   const [currentLocation, setCurrentLocation] = useState<string | null>(null);
 

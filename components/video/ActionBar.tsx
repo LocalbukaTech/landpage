@@ -1,6 +1,6 @@
 'use client';
 
-import {Heart, MessageCircle, Bookmark, Forward, Repeat, Archive, RotateCcw} from 'lucide-react';
+import {Heart, MessageCircle, Bookmark, Forward, Repeat} from 'lucide-react';
 import Image from 'next/image';
 import {useState, useEffect} from 'react';
 import {cn} from '@/lib/utils';

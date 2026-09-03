@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, startTransition } from 'react';
+import { useState, useEffect, useCallback, useTransition } from 'react';
 import { profileService } from '@/lib/api/services/profile.service';
 
 export interface BlockedUser {
@@ -33,22 +33,24 @@ const DEFAULT_BLOCKED_USERS: BlockedUser[] = [
 export function useBlockedUsers() {
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>(DEFAULT_BLOCKED_USERS);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setBlockedUsers(JSON.parse(stored));
+        startTransition(() => {
+          setBlockedUsers(JSON.parse(stored));
+        });
       } else {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_BLOCKED_USERS));
       }
     } catch {
       // ignore
     }
-  }, []);
-
-  useEffect(() => {
-    setIsLoaded(true);
+    startTransition(() => {
+      setIsLoaded(true);
+    });
   }, []);
 
   useEffect(() => {

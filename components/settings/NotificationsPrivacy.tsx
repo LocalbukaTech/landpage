@@ -2,7 +2,6 @@
 
 import {useState} from 'react';
 import {useToast} from '@/hooks/use-toast';
-import {Download, RotateCcw} from 'lucide-react';
 
 interface NotificationsPrivacyProps {
   activeSubTab?: string;
@@ -60,50 +59,23 @@ const privacySettings = [
 ];
 
 // 3. Data Sharing & Permissions Config
-const devicePermissionsSettings = [
+const dataSharingSettings = [
   {
-    key: 'cameraAccess',
-    label: 'Camera Access',
-    description:
-      'Allow LocalBuka to access your camera to capture food reels and review photos.',
+    key: 'bukaRecommendations',
+    label: 'Allow Buka Recommendations',
+    description: 'Let us suggest dishes and places based on your preferences.',
     defaultOn: true,
   },
   {
-    key: 'mediaLibrary',
-    label: 'Photo & Video Library',
-    description:
-      'Allow access to your device gallery to upload photos and video content.',
-    defaultOn: true,
+    key: 'shareUsage',
+    label: 'Share Usage with Localbuka',
+    description: 'Help us improve your experience by sharing app usage data.',
+    defaultOn: false,
   },
   {
-    key: 'microphoneAccess',
-    label: 'Microphone Access',
-    description:
-      'Allow microphone access for recording audio in food reels and reviews.',
-    defaultOn: true,
-  },
-  {
-    key: 'preciseGeolocation',
-    label: 'Precise Geolocation',
-    description:
-      'Share high-accuracy GPS location for buka discovery and delivery estimations.',
-    defaultOn: true,
-  },
-];
-
-const analyticsSharingSettings = [
-  {
-    key: 'usageData',
-    label: 'Diagnostic & Usage Data',
-    description:
-      'Share anonymous crash reports and performance statistics to help improve LocalBuka.',
-    defaultOn: true,
-  },
-  {
-    key: 'partnerOffers',
-    label: 'Personalized Partner Offers',
-    description:
-      'Allow non-identifying dining preferences to be shared with buka partners for exclusive deals.',
+    key: 'thirdPartySharing',
+    label: 'Third-Party Data Sharing',
+    description: 'Control if your data is shared with partners outside LocalBuka.',
     defaultOn: false,
   },
 ];
@@ -122,7 +94,6 @@ export function NotificationsPrivacy({
     onSubTabChange && activeSubTab && validTabIds.includes(activeSubTab)
       ? activeSubTab
       : internalTab;
-  const [isExporting, setIsExporting] = useState(false);
 
   // Push Notifications State
   const [pushToggles, setPushToggles] = useState<Record<string, boolean>>(() => {
@@ -161,10 +132,7 @@ export function NotificationsPrivacy({
   // Data Sharing / Permissions State
   const [dataToggles, setDataToggles] = useState<Record<string, boolean>>(() => {
     const defaults = Object.fromEntries(
-      [...devicePermissionsSettings, ...analyticsSharingSettings].map((s) => [
-        s.key,
-        s.defaultOn,
-      ]),
+      dataSharingSettings.map((s) => [s.key, s.defaultOn]),
     );
     if (typeof window !== 'undefined') {
       try {
@@ -219,26 +187,6 @@ export function NotificationsPrivacy({
     });
   };
 
-  const handleResetDataPermissions = () => {
-    const defaults = Object.fromEntries(
-      [...devicePermissionsSettings, ...analyticsSharingSettings].map((s) => [
-        s.key,
-        s.defaultOn,
-      ]),
-    );
-    setDataToggles(defaults);
-    try {
-      localStorage.setItem('lb_data_permissions', JSON.stringify(defaults));
-    } catch {
-      // Ignore storage error
-    }
-    toast({
-      title: 'Permissions Reset',
-      description:
-        'Data sharing and permissions have been restored to default values.',
-      variant: 'default',
-    });
-  };
 
   // Save Handlers
   const handleSavePush = () => {
@@ -283,18 +231,6 @@ export function NotificationsPrivacy({
     });
   };
 
-  const handleExportData = () => {
-    setIsExporting(true);
-    setTimeout(() => {
-      setIsExporting(false);
-      toast({
-        title: 'Export Request Submitted',
-        description:
-          'Your account activity archive is being prepared. You will receive an email once ready.',
-        variant: 'default',
-      });
-    }, 900);
-  };
 
   // Reusable Toggle Switch Component
   const renderToggleSwitch = (
@@ -433,116 +369,26 @@ export function NotificationsPrivacy({
 
         {/* TAB 3: DATA SHARING / PERMISSIONS */}
         {currentTab === 'data' && (
-          <div className='flex flex-col gap-7'>
-            {/* Group 1: Device Permissions */}
-            <div className='flex flex-col gap-5'>
-              <div className='border-b border-white/5 pb-2'>
-                <h3 className='text-xs font-semibold uppercase tracking-wider text-zinc-400'>
-                  Device & Hardware Permissions
-                </h3>
-              </div>
-              <div className='flex flex-col gap-5'>
-                {devicePermissionsSettings.map((setting) => (
-                  <div
-                    key={setting.key}
-                    className='flex items-center justify-between gap-4'>
-                    <div className='flex flex-col gap-0.5 min-w-0'>
-                      <span className='text-sm font-semibold text-white'>
-                        {setting.label}
-                      </span>
-                      <span className='text-xs text-zinc-400 leading-relaxed'>
-                        {setting.description}
-                      </span>
-                    </div>
-                    {renderToggleSwitch(
-                      !!dataToggles[setting.key],
-                      () => handleDataToggle(setting.key),
-                      setting.label,
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Group 2: Data Sharing & Analytics */}
-            <div className='flex flex-col gap-5'>
-              <div className='border-b border-white/5 pb-2'>
-                <h3 className='text-xs font-semibold uppercase tracking-wider text-zinc-400'>
-                  Data Sharing & Insights
-                </h3>
-              </div>
-              <div className='flex flex-col gap-5'>
-                {analyticsSharingSettings.map((setting) => (
-                  <div
-                    key={setting.key}
-                    className='flex items-center justify-between gap-4'>
-                    <div className='flex flex-col gap-0.5 min-w-0'>
-                      <span className='text-sm font-semibold text-white'>
-                        {setting.label}
-                      </span>
-                      <span className='text-xs text-zinc-400 leading-relaxed'>
-                        {setting.description}
-                      </span>
-                    </div>
-                    {renderToggleSwitch(
-                      !!dataToggles[setting.key],
-                      () => handleDataToggle(setting.key),
-                      setting.label,
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Group 3: Data Management & Export */}
-            <div className='flex flex-col gap-5'>
-              <div className='border-b border-white/5 pb-2'>
-                <h3 className='text-xs font-semibold uppercase tracking-wider text-zinc-400'>
-                  Data Management
-                </h3>
-              </div>
-              <div className='flex flex-col gap-5'>
-                {/* Download My Data */}
-                <div className='flex items-center justify-between gap-4'>
-                  <div className='flex flex-col gap-0.5 min-w-0'>
-                    <span className='text-sm font-semibold text-white'>
-                      Download My Data
-                    </span>
-                    <span className='text-xs text-zinc-400 leading-relaxed'>
-                      Request an archive containing your profile, reviews, and
-                      activity history.
-                    </span>
-                  </div>
-                  <button
-                    type='button'
-                    disabled={isExporting}
-                    onClick={handleExportData}
-                    className='flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2a2a2a] text-[#FBBE15] hover:bg-[#333333] border border-[#FBBE15]/40 text-xs font-semibold rounded-md transition-all cursor-pointer shrink-0 disabled:opacity-50'>
-                    <Download size={13} />
-                    <span>{isExporting ? 'Preparing...' : 'Export'}</span>
-                  </button>
+          <div className='flex flex-col gap-6'>
+            {dataSharingSettings.map((setting) => (
+              <div
+                key={setting.key}
+                className='flex items-center justify-between gap-4'>
+                <div className='flex flex-col gap-0.5 min-w-0'>
+                  <span className='text-sm font-semibold text-white'>
+                    {setting.label}
+                  </span>
+                  <span className='text-xs text-zinc-400 leading-relaxed'>
+                    {setting.description}
+                  </span>
                 </div>
-
-                {/* Reset Data Permissions */}
-                <div className='flex items-center justify-between gap-4'>
-                  <div className='flex flex-col gap-0.5 min-w-0'>
-                    <span className='text-sm font-semibold text-white'>
-                      Clear Permissions
-                    </span>
-                    <span className='text-xs text-zinc-400'>
-                      Reset all data sharing permissions to defaults
-                    </span>
-                  </div>
-                  <button
-                    type='button'
-                    onClick={handleResetDataPermissions}
-                    className='flex items-center gap-1 px-3.5 py-1 bg-[#FBBE15] text-[#1a1a1a] text-xs font-semibold rounded-md hover:bg-[#e5ab13] active:scale-95 transition-all cursor-pointer border-none shrink-0 shadow-sm'>
-                    <RotateCcw size={12} />
-                    <span>Reset</span>
-                  </button>
-                </div>
+                {renderToggleSwitch(
+                  !!dataToggles[setting.key],
+                  () => handleDataToggle(setting.key),
+                  setting.label,
+                )}
               </div>
-            </div>
+            ))}
 
             {/* Save Button */}
             <div className='flex justify-end mt-4'>

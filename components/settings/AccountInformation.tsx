@@ -9,6 +9,7 @@ import {useToast} from '@/hooks/use-toast';
 import {
   useMe,
   useUpdateMe,
+  useUpdateLanguage,
   useDeleteMe,
   useChangePassword,
   usePasswordStatus,
@@ -16,23 +17,29 @@ import {
 } from '@/lib/api/services/auth.hooks';
 import {useAuth} from '@/context/AuthContext';
 import {useQueryClient} from '@tanstack/react-query';
+import {useBlockedUsers, type BlockedUser} from '@/hooks/useBlockedUsers';
+import {useTranslation, type SupportedLanguage} from '@/context/LanguageContext';
+import {Ban} from 'lucide-react';
 
 interface AccountInformationProps {
   activeSubTab: string;
   onSubTabChange: (tab: string) => void;
 }
 
-const subTabs = [
-  {id: 'account', label: 'Account'},
-  {id: 'password', label: 'Password & Security'},
-  {id: 'delete', label: 'Delete Account'},
-  {id: 'logout', label: 'Logout'},
-];
-
 export function AccountInformation({
   activeSubTab,
   onSubTabChange,
 }: AccountInformationProps) {
+  const {t} = useTranslation();
+
+  const subTabs = [
+    {id: 'account', label: t('settings.tabs.account', 'Account')},
+    {id: 'password', label: t('settings.tabs.password', 'Password & Security')},
+    {id: 'blocked', label: t('settings.tabs.blocked', 'Blocked Users')},
+    {id: 'languages', label: t('settings.tabs.languages', 'Languages')},
+    {id: 'logout', label: t('settings.tabs.logout', 'Logout')},
+  ];
+
   return (
     <div className='flex flex-col h-full'>
       {/* Sub-tabs */}
@@ -45,8 +52,8 @@ export function AccountInformation({
               onClick={() => onSubTabChange(tab.id)}
               className={`px-3 md:px-4 py-3 text-xs md:text-sm font-medium transition-all border-b-2 cursor-pointer bg-transparent whitespace-nowrap shrink-0 ${
                 isActive
-                  ? 'border-[#FBBE15] text-white'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                  ? 'border-[#FBBE15] text-[#FBBE15]'
+                  : 'border-transparent text-zinc-400 hover:text-white'
               }`}>
               {tab.label}
             </button>
@@ -58,7 +65,9 @@ export function AccountInformation({
       <div className='flex-1 pt-6'>
         {activeSubTab === 'account' && <AccountTab />}
         {activeSubTab === 'password' && <PasswordTab />}
+        {activeSubTab === 'blocked' && <BlockedUsersTab />}
         {activeSubTab === 'delete' && <DeleteTab />}
+        {activeSubTab === 'languages' && <LanguagesTab />}
         {activeSubTab === 'logout' && <LogoutTab />}
       </div>
     </div>
@@ -643,6 +652,304 @@ function LogoutTab() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UKFlag() {
+  return (
+    <svg viewBox='0 0 32 32' className='w-full h-full object-cover rounded-full'>
+      <clipPath id='circle-uk'>
+        <circle cx='16' cy='16' r='16' />
+      </clipPath>
+      <g clipPath='url(#circle-uk)'>
+        <rect width='32' height='32' fill='#012169' />
+        <path d='M0 0 L32 32 M32 0 L0 32' stroke='#ffffff' strokeWidth='4' />
+        <path d='M0 0 L32 32 M32 0 L0 32' stroke='#C8102E' strokeWidth='2' />
+        <path d='M16 0 V32 M0 16 H32' stroke='#ffffff' strokeWidth='7' />
+        <path d='M16 0 V32 M0 16 H32' stroke='#C8102E' strokeWidth='4' />
+      </g>
+    </svg>
+  );
+}
+
+function NigeriaFlag() {
+  return (
+    <svg viewBox='0 0 32 32' className='w-full h-full object-cover rounded-full'>
+      <clipPath id='circle-ng'>
+        <circle cx='16' cy='16' r='16' />
+      </clipPath>
+      <g clipPath='url(#circle-ng)'>
+        <rect x='0' y='0' width='10.66' height='32' fill='#008751' />
+        <rect x='10.66' y='0' width='10.68' height='32' fill='#ffffff' />
+        <rect x='21.34' y='0' width='10.66' height='32' fill='#008751' />
+      </g>
+    </svg>
+  );
+}
+
+function FranceFlag() {
+  return (
+    <svg viewBox='0 0 32 32' className='w-full h-full object-cover rounded-full'>
+      <clipPath id='circle-fr'>
+        <circle cx='16' cy='16' r='16' />
+      </clipPath>
+      <g clipPath='url(#circle-fr)'>
+        <rect x='0' y='0' width='10.66' height='32' fill='#002395' />
+        <rect x='10.66' y='0' width='10.68' height='32' fill='#ffffff' />
+        <rect x='21.34' y='0' width='10.66' height='32' fill='#ED2939' />
+      </g>
+    </svg>
+  );
+}
+
+function SpainFlag() {
+  return (
+    <svg viewBox='0 0 32 32' className='w-full h-full object-cover rounded-full'>
+      <clipPath id='circle-es'>
+        <circle cx='16' cy='16' r='16' />
+      </clipPath>
+      <g clipPath='url(#circle-es)'>
+        <rect x='0' y='0' width='32' height='8' fill='#AA151B' />
+        <rect x='0' y='8' width='32' height='16' fill='#F1BF00' />
+        <rect x='0' y='24' width='32' height='8' fill='#AA151B' />
+      </g>
+    </svg>
+  );
+}
+
+function GermanyFlag() {
+  return (
+    <svg viewBox='0 0 32 32' className='w-full h-full object-cover rounded-full'>
+      <clipPath id='circle-de'>
+        <circle cx='16' cy='16' r='16' />
+      </clipPath>
+      <g clipPath='url(#circle-de)'>
+        <rect x='0' y='0' width='32' height='10.66' fill='#000000' />
+        <rect x='0' y='10.66' width='32' height='10.68' fill='#DD0000' />
+        <rect x='0' y='21.34' width='32' height='10.66' fill='#FFCE00' />
+      </g>
+    </svg>
+  );
+}
+
+function PortugalFlag() {
+  return (
+    <svg viewBox='0 0 32 32' className='w-full h-full object-cover rounded-full'>
+      <clipPath id='circle-pt'>
+        <circle cx='16' cy='16' r='16' />
+      </clipPath>
+      <g clipPath='url(#circle-pt)'>
+        <rect x='0' y='0' width='12.8' height='32' fill='#006600' />
+        <rect x='12.8' y='0' width='19.2' height='32' fill='#FF0000' />
+        <circle cx='12.8' cy='16' r='4.5' fill='#FFCE00' stroke='#000000' strokeWidth='0.5' />
+      </g>
+    </svg>
+  );
+}
+
+const langToCodeMap: Record<string, string> = {
+  english: 'en',
+  pidgin: 'pcm',
+  french: 'fr',
+  spanish: 'es',
+  german: 'de',
+  portuguese: 'pt',
+};
+
+const codeToLangMap: Record<string, string> = {
+  en: 'english',
+  pcm: 'pidgin',
+  fr: 'french',
+  es: 'spanish',
+  de: 'german',
+  pt: 'portuguese',
+};
+
+function LanguagesTab() {
+  const {toast} = useToast();
+  const {user} = useAuth();
+  const {data: meResponse} = useMe();
+  const {setLanguage, t} = useTranslation();
+  const updateLanguageMutation = useUpdateLanguage();
+
+  const meData = (meResponse as any)?.data?.data || (meResponse as any)?.data || null;
+  const apiUser = meData || user;
+  const initialLangId = codeToLangMap[apiUser?.language || 'en'] || 'english';
+
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(initialLangId);
+  const [savedLanguage, setSavedLanguage] = useState<string>(initialLangId);
+  const [isSaved, setIsSaved] = useState(false);
+
+  const languages = [
+    {id: 'english', label: 'English', flag: <UKFlag />},
+    {id: 'pidgin', label: 'Pidgin', flag: <NigeriaFlag />},
+    {id: 'french', label: 'French', flag: <FranceFlag />},
+    {id: 'spanish', label: 'Spanish', flag: <SpainFlag />},
+    {id: 'german', label: 'German', flag: <GermanyFlag />},
+    {id: 'portuguese', label: 'Portugese', flag: <PortugalFlag />},
+  ];
+
+  const hasChanges = selectedLanguage !== savedLanguage;
+  const isPending = updateLanguageMutation.isPending;
+  const isYellowState = hasChanges || isPending || isSaved;
+
+  const handleSave = () => {
+    setIsSaved(false);
+    const langCode = langToCodeMap[selectedLanguage] || 'en';
+
+    updateLanguageMutation.mutate(langCode, {
+      onSuccess: () => {
+        setSavedLanguage(selectedLanguage);
+        setIsSaved(true);
+        setLanguage(langCode as SupportedLanguage);
+        const activeLang = languages.find((l) => l.id === selectedLanguage);
+        toast({
+          title: 'Language Updated',
+          description: `Your language preference has been saved to ${activeLang?.label}.`,
+          variant: 'success',
+        });
+      },
+      onError: (err: any) => {
+        toast({
+          title: 'Update Failed',
+          description:
+            err?.response?.data?.message || 'Unable to update language. Please try again.',
+          variant: 'destructive',
+        });
+      },
+    });
+  };
+
+  return (
+    <div className='flex flex-col justify-between h-full w-full min-h-[420px] pb-4'>
+      <div className='flex flex-col gap-6 pt-4'>
+        {languages.map((lang) => {
+          const isSelected = selectedLanguage === lang.id;
+          return (
+            <div key={lang.id} className='flex items-center gap-12 sm:gap-20 max-w-md'>
+              <div className='flex items-center gap-4 w-36 shrink-0'>
+                <div className='w-8 h-8 rounded-full shrink-0 shadow-sm overflow-hidden'>
+                  {lang.flag}
+                </div>
+                <span className='text-sm font-medium text-zinc-200'>
+                  {lang.label}
+                </span>
+              </div>
+
+              <button
+                type='button'
+                onClick={() => {
+                  setSelectedLanguage(lang.id);
+                  setIsSaved(false);
+                }}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isSelected ? 'bg-[#001F3F]' : 'bg-[#52525B]'
+                }`}>
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    isSelected ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className='flex justify-end mt-16 w-full'>
+        <button
+          onClick={handleSave}
+          disabled={isPending}
+          className={`w-64 py-3.5 font-semibold text-sm rounded-xl transition-all duration-300 cursor-pointer border-none flex items-center justify-center gap-2 shadow-sm ${
+            isYellowState
+              ? 'bg-[#FBBE15] text-[#1a1a1a] hover:bg-[#e5ab13]'
+              : 'bg-[#EFEFEF] text-zinc-600 hover:bg-white'
+          }`}>
+          {isPending && (
+            <Loader2 size={16} className='animate-spin text-[#1a1a1a]' />
+          )}
+          {isPending ? t('settings.language.saving', 'Saving...') : t('settings.language.save', 'Save')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BlockedUsersTab() {
+  const { blockedUsers, unblockUser } = useBlockedUsers();
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const handleUnblock = (user: BlockedUser) => {
+    unblockUser(user.id);
+    setToastMessage(`${user.fullName} is unblocked 🚫`);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
+
+  if (!blockedUsers || blockedUsers.length === 0) {
+    return (
+      <div className='flex flex-col items-center justify-center py-28 text-center select-none'>
+        <div className='w-9 h-9 rounded-full border border-zinc-500 flex items-center justify-center mb-3 text-zinc-400'>
+          <Ban size={18} />
+        </div>
+        <p className='text-zinc-400 text-xs sm:text-sm font-normal m-0'>
+          You haven&apos;t blocked anyone yet.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className='flex flex-col gap-6 max-w-lg relative min-h-[300px]'>
+      <div className='flex flex-col gap-4 pt-2'>
+        {blockedUsers.map((user) => (
+          <div
+            key={user.id}
+            className='flex items-center justify-between py-2'>
+            <div className='flex items-center gap-3.5'>
+              <div className='w-10 h-10 rounded-full overflow-hidden bg-zinc-700 shrink-0 border border-white/10'>
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.fullName}
+                    className='w-full h-full object-cover'
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/images/profile.png';
+                    }}
+                  />
+                ) : (
+                  <div className='w-full h-full flex items-center justify-center text-xs font-bold text-zinc-300'>
+                    {user.fullName.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div className='flex flex-col'>
+                <span className='text-sm font-semibold text-white leading-tight'>
+                  {user.fullName}
+                </span>
+                <span className='text-[11px] text-zinc-400 mt-0.5'>
+                  Blocked · {user.blockedAt}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleUnblock(user)}
+              className='px-4 py-1.5 bg-[#2a2a2a] hover:bg-zinc-700 text-white text-xs font-semibold rounded-md border-none cursor-pointer transition-colors shadow-sm'>
+              Unblock
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Floating pill toast */}
+      {toastMessage && (
+        <div className='fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 bg-black/85 backdrop-blur-md text-white text-xs rounded-full border border-white/15 shadow-2xl animate-in fade-in slide-in-from-bottom-3'>
+          <span>{toastMessage}</span>
         </div>
       )}
     </div>

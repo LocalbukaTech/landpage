@@ -6,22 +6,25 @@ import {
   Repeat2,
   Bookmark,
   Tag,
+  Archive,
   Pencil,
   X,
 } from 'lucide-react';
 import type {Post} from '@/types/post';
 import {ProfileVideoGrid} from './ProfileVideoGrid';
+import {useTranslation} from '@/context/LanguageContext';
 
 const myProfileTabs = [
-  {id: 'videos', label: 'Videos', icon: VideoIcon},
-  {id: 'repost', label: 'Repost', icon: Repeat2},
-  {id: 'saved', label: 'Saved', icon: Bookmark},
-  {id: 'tagged', label: 'Tagged', icon: Tag},
+  {id: 'videos', labelKey: 'nav.videos', defaultLabel: 'Videos', icon: VideoIcon},
+  {id: 'repost', labelKey: 'nav.repost', defaultLabel: 'Repost', icon: Repeat2},
+  {id: 'saved', labelKey: 'nav.saved', defaultLabel: 'Saved', icon: Bookmark},
+  {id: 'tagged', labelKey: 'nav.tagged', defaultLabel: 'Tagged', icon: Tag},
+  {id: 'archive', labelKey: 'nav.archive', defaultLabel: 'Archive', icon: Archive},
 ];
 
 const otherProfileTabs = [
-  {id: 'videos', label: 'Videos', icon: VideoIcon},
-  {id: 'repost', label: 'Repost', icon: Repeat2},
+  {id: 'videos', labelKey: 'nav.videos', defaultLabel: 'Videos', icon: VideoIcon},
+  {id: 'repost', labelKey: 'nav.repost', defaultLabel: 'Repost', icon: Repeat2},
 ];
 
 interface ProfileTabsProps {
@@ -41,6 +44,7 @@ export function ProfileTabs({
   isEditable,
   isOtherProfile,
 }: ProfileTabsProps) {
+  const {t} = useTranslation();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -72,7 +76,7 @@ export function ProfileTabs({
                     : 'border-transparent text-zinc-500 hover:text-zinc-300'
                 }`}>
                 <tab.icon size={16} />
-                <span>{tab.label}</span>
+                <span>{t(tab.labelKey, tab.defaultLabel)}</span>
               </button>
             );
           })}

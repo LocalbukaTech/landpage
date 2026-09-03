@@ -50,6 +50,9 @@ export interface User {
   avatar?: string;
   bio?: string;
   location?: string;
+  language?: string;
+  loyaltyPoints?: number;
+  referralCode?: string;
   preferences?: string[];
 }
 
@@ -184,6 +187,10 @@ export const userAuthService = {
     ),
 
   deleteMe: () => api.delete<ApiResponse<void>>('/users/me'),
+
+  /** PATCH /users/me/language — Update user language preference */
+  updateLanguage: (language: string) =>
+    api.patch<ApiResponse<User>>('/users/me/language', { language }),
 
   changePassword: (data: ChangePasswordPayload) =>
     api.patch<ApiResponse<{message: string}>>('/users/me/password', data),

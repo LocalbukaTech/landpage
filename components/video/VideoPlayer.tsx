@@ -1,13 +1,13 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy } from 'lucide-react';
+import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy, Archive, RotateCcw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Post } from '@/types/post';
 import { VideoOverlay } from '@/components/video/VideoOverlay';
 import { cn, ensureHttps } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import { useDeletePost } from '@/lib/api/services/posts.hooks';
+import { useDeletePost, useArchivePost, useUnarchivePost } from '@/lib/api/services/posts.hooks';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -81,6 +81,8 @@ export function VideoPlayer({
   const { user } = useAuth();
   const { toast } = useToast();
   const deletePostMutation = useDeletePost();
+  const archivePostMutation = useArchivePost();
+  const unarchivePostMutation = useUnarchivePost();
   const isOwner = Boolean(user?.id && post?.user?.id === user.id);
 
   const isVideo = post.mediaType === 'video';
@@ -237,8 +239,8 @@ export function VideoPlayer({
     }
 
     const diffY = touchStartY.current - touchEndY.current;
-    const diffX = touchStartX.current !== null && touchEndX.current !== null 
-      ? touchStartX.current - touchEndX.current 
+    const diffX = touchStartX.current !== null && touchEndX.current !== null
+      ? touchStartX.current - touchEndX.current
       : 0;
 
     const minSwipeDistance = 50;
@@ -379,7 +381,7 @@ export function VideoPlayer({
       ) : (
         <div className='relative w-full h-full overflow-hidden select-none'>
           {/* Slide container shifting horizontally */}
-          <div 
+          <div
             className='flex w-full h-full transition-transform duration-300 ease-out'
             style={{ transform: `translateX(-${activeImageIndex * 100}%)` }}
           >
@@ -396,9 +398,9 @@ export function VideoPlayer({
                 {/* Slide Text Overlay Caption */}
                 {post.imageCaptions && post.imageCaptions[idx] && (
                   <div className='absolute inset-0 flex items-center justify-center p-4 pointer-events-none z-10 select-none'>
-                    <span 
+                    <span
                       className='text-white font-bold text-base md:text-lg text-center break-words bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-xs'
-                      // style={{ textShadow: '0px 0px 4px rgba(0,0,0,1), -1px -1px 0px rgba(0,0,0,1), 1px -1px 0px rgba(0,0,0,1), -1px 1px 0px rgba(0,0,0,1), 1px 1px 0px rgba(0,0,0,1)' }}
+                    // style={{ textShadow: '0px 0px 4px rgba(0,0,0,1), -1px -1px 0px rgba(0,0,0,1), 1px -1px 0px rgba(0,0,0,1), -1px 1px 0px rgba(0,0,0,1), 1px 1px 0px rgba(0,0,0,1)' }}
                     >
                       {post.imageCaptions[idx]}
                     </span>
@@ -544,9 +546,55 @@ export function VideoPlayer({
                         setShowMenu(false);
                         setShowDeleteConfirm(true);
                       }}
-                      className='w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
-                      <Trash2 size={15} />
+                      className='w-full px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <Trash2 size={15} className='text-red-500' />
                       <span>Delete Post</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        if (post.isArchived) {
+                          unarchivePostMutation.mutate(post.id, {
+                            onSuccess: () => {
+                              toast({
+                                title: 'Restored',
+                                description: 'Post restored back to profile.',
+                                variant: 'success',
+                              });
+                              router.push('/profile');
+                            },
+                            onError: () => {
+                              toast({
+                                title: 'Error',
+                                description: 'Could not restore post.',
+                                variant: 'destructive',
+                              });
+                            },
+                          });
+                        } else {
+                          archivePostMutation.mutate(post.id, {
+                            onSuccess: () => {
+                              toast({
+                                title: 'Archived',
+                                description: 'Post archived successfully',
+                                variant: 'success',
+                              });
+                              router.push('/profile?tab=archive');
+                            },
+                            onError: () => {
+                              toast({
+                                title: 'Error',
+                                description: 'Could not archive post.',
+                                variant: 'destructive',
+                              });
+                            },
+                          });
+                        }
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      {post.isArchived ? <RotateCcw size={15} className='text-blue-400' /> : <Archive size={15} className='text-green-500' />}
+                      <span>{post.isArchived ? 'Restore Post' : 'Archive Post'}</span>
                     </button>
                   </>
                 ) : (
@@ -574,9 +622,9 @@ export function VideoPlayer({
       </div>
 
       {/* Video Overlay */}
-      <VideoOverlay 
-        post={post} 
-        showTimestamp={showTimestamp} 
+      <VideoOverlay
+        post={post}
+        showTimestamp={showTimestamp}
         activeImageIndex={activeImageIndex}
         setActiveImageIndex={setActiveImageIndex}
       />

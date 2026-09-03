@@ -113,6 +113,18 @@ export const useUpdateMe = () => {
   });
 };
 
+export const useUpdateLanguage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (language: string) => userAuthService.updateLanguage(language),
+    onSuccess: (response) => {
+      const user = (response as any)?.data?.data || (response as any)?.data;
+      if (user) setUser(user);
+      queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
+    },
+  });
+};
+
 export const useDeleteMe = () => {
   return useMutation({
     mutationFn: () => userAuthService.deleteMe(),

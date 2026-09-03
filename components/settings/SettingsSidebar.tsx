@@ -1,6 +1,6 @@
 'use client';
 
-import {User, Shield, HelpCircle} from 'lucide-react';
+import {User, Lock, RotateCcw} from 'lucide-react';
 import Link from 'next/link';
 
 interface SettingsSidebarProps {
@@ -10,13 +10,13 @@ interface SettingsSidebarProps {
 
 const sidebarItems = [
   {id: 'account', label: 'Account Information', icon: User},
-  {id: 'notifications', label: 'Notifications & Privacy', icon: Shield},
-  {id: 'support', label: 'Help & Support', icon: HelpCircle},
+  {id: 'notifications', label: 'Notifications & Privacy', icon: Lock},
+  {id: 'support', label: 'Rewards & Support', icon: RotateCcw},
 ];
 
 const footerLinks = [
   {label: 'Company', href: 'https://localbuka.com/company'},
-  {label: 'Blogs', href: 'https://localbuka.com/blog'},
+  {label: 'Program', href: 'https://localbuka.com/company'},
   {label: 'Terms & Policies', href: 'https://localbuka.com/privacy'},
 ];
 

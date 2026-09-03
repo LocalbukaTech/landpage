@@ -3,7 +3,7 @@
 import {useState, useRef} from 'react';
 import Image from 'next/image';
 import {useRouter} from 'next/navigation';
-import {Camera, Eye, EyeOff, Loader2, MapPin} from 'lucide-react';
+import {Camera, Eye, EyeOff, Loader2, MapPin, MoreHorizontal, Flag} from 'lucide-react';
 import {AvatarCropModal} from '@/components/ui/AvatarCropModal';
 import {useToast} from '@/hooks/use-toast';
 import {
@@ -19,7 +19,7 @@ import {useAuth} from '@/context/AuthContext';
 import {useQueryClient} from '@tanstack/react-query';
 import {useBlockedUsers, type BlockedUser} from '@/hooks/useBlockedUsers';
 import {useTranslation, type SupportedLanguage} from '@/context/LanguageContext';
-import {Ban, MoreHorizontal, Flag} from 'lucide-react';
+import {Ban, JapanFlag} from 'lucide-react';
 
 interface AccountInformationProps {
   activeSubTab: string;

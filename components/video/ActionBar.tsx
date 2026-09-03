@@ -39,7 +39,7 @@ export function ActionBar({
   const unarchivePostMutation = useUnarchivePost();
   const [isShareOpen, setIsShareOpen] = useState(false);
 
-  const isOwnPost = !!(user?.id && post?.user?.id && post.user.id === user.id);
+  const _isOwnPost = !!(user?.id && post?.user?.id && post.user.id === user.id);
 
   // Fetch user profile of post creator to check if already followed
   const {data: profileResponse} = useUserProfile(
@@ -156,7 +156,7 @@ export function ActionBar({
     });
   };
 
-  const handleArchiveToggle = () => {
+  const _handleArchiveToggle = () => {
     requireAuth(() => {
       if (post.isArchived) {
         unarchivePostMutation.mutate(post.id, {

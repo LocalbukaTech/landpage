@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, startTransition } from 'react';
 import { profileService } from '@/lib/api/services/profile.service';
 
 export interface BlockedUser {
@@ -45,6 +45,9 @@ export function useBlockedUsers() {
     } catch {
       // ignore
     }
+  }, []);
+
+  useEffect(() => {
     setIsLoaded(true);
   }, []);
 

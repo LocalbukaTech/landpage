@@ -7,7 +7,6 @@ import {
   Loader2,
   MapPin,
   Search as SearchIcon,
-  Tag,
   Volume2,
   VolumeX,
   X,

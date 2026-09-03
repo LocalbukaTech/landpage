@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, startTransition } from 'react';
 import { useMe } from '@/lib/api/services/auth.hooks';
 
 import en from '@/lib/i18n/translations/en.json';

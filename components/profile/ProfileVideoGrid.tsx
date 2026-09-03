@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Play, Trash2, Pencil } from "lucide-react";
+import { Play, Trash2, Pencil, Archive, RotateCcw } from "lucide-react";
 import type { Post } from "@/types/post";
 import { formatCount } from "@/constants/mockVideos";
-import { useDeletePost, useToggleSave } from "@/lib/api/services/posts.hooks";
+import {
+  useDeletePost,
+  useToggleSave,
+  useArchivePost,
+  useUnarchivePost,
+} from "@/lib/api/services/posts.hooks";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,10 +82,51 @@ export function ProfileVideoGrid({
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
   const deletePostMutation = useDeletePost();
   const toggleSaveMutation = useToggleSave();
+  const archivePostMutation = useArchivePost();
+  const unarchivePostMutation = useUnarchivePost();
+
   const [pressTimer, setPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [didLongPress, setDidLongPress] = useState(false);
 
   const canEdit = isEditable && !isOtherProfile;
+
+  const handleArchive = (postId: string) => {
+    archivePostMutation.mutate(postId, {
+      onSuccess: () => {
+        toast({
+          title: 'Archived',
+          description: 'Post moved to your archive.',
+          variant: 'success',
+        });
+      },
+      onError: () => {
+        toast({
+          title: 'Error',
+          description: 'Could not archive post. Please try again.',
+          variant: 'destructive',
+        });
+      },
+    });
+  };
+
+  const handleUnarchive = (postId: string) => {
+    unarchivePostMutation.mutate(postId, {
+      onSuccess: () => {
+        toast({
+          title: 'Restored',
+          description: 'Post restored back to your profile.',
+          variant: 'success',
+        });
+      },
+      onError: () => {
+        toast({
+          title: 'Error',
+          description: 'Could not restore post. Please try again.',
+          variant: 'destructive',
+        });
+      },
+    });
+  };
 
   const handlePressStart = () => {
     setDidLongPress(false);
@@ -168,7 +214,7 @@ export function ProfileVideoGrid({
   if (!posts || posts.length === 0) {
     return (
       <div className='flex items-center justify-center py-16 text-zinc-500 text-sm'>
-        No posts yet
+        {activeTab === 'archive' ? 'No archived posts yet' : 'No posts yet'}
       </div>
     );
   }
@@ -205,9 +251,30 @@ export function ProfileVideoGrid({
             </div>
           </button>
 
-          {/* Edit & Delete Action Overlays (Only on own editable profile) */}
+          {/* Edit, Archive & Delete Action Overlays (Only on own editable profile) */}
           {canEdit && isEditing && (
             <div className='absolute top-2 right-2 flex items-center gap-1.5 z-10'>
+              {activeTab === 'archive' ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUnarchive(post.id);
+                  }}
+                  title='Restore / Unarchive Post'
+                  className='p-1.5 bg-[#001F3F] text-white rounded-full shadow-lg hover:bg-blue-900 transition-colors border-none cursor-pointer'>
+                  <RotateCcw size={15} />
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleArchive(post.id);
+                  }}
+                  title='Archive Post'
+                  className='p-1.5 bg-[#001F3F] text-white rounded-full shadow-lg hover:bg-blue-900 transition-colors border-none cursor-pointer'>
+                  <Archive size={15} />
+                </button>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();

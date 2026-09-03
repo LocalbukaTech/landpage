@@ -313,3 +313,39 @@ export const useToggleCommentLike = () => {
     },
   });
 };
+
+/** Get archived posts */
+export const useArchivedPosts = (params?: PostsQueryParams) => {
+  return useQuery({
+    queryKey: ['posts', 'archived', params],
+    queryFn: () => postsService.getArchivedPosts(params),
+  });
+};
+
+/** Archive a post */
+export const useArchivePost = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) => postsService.archivePost(postId),
+    onSuccess: (_, postId) => {
+      queryClient.invalidateQueries({queryKey: queryKeys.posts.detail(postId)});
+      queryClient.invalidateQueries({queryKey: queryKeys.posts.all});
+      queryClient.invalidateQueries({queryKey: ['posts', 'archived']});
+      queryClient.invalidateQueries({queryKey: ['users']});
+    },
+  });
+};
+
+/** Unarchive / restore a post */
+export const useUnarchivePost = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) => postsService.unarchivePost(postId),
+    onSuccess: (_, postId) => {
+      queryClient.invalidateQueries({queryKey: queryKeys.posts.detail(postId)});
+      queryClient.invalidateQueries({queryKey: queryKeys.posts.all});
+      queryClient.invalidateQueries({queryKey: ['posts', 'archived']});
+      queryClient.invalidateQueries({queryKey: ['users']});
+    },
+  });
+};

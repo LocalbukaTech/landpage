@@ -32,6 +32,8 @@ export interface Post {
   isLiked: boolean;
   isSaved: boolean;
   isReposted: boolean;
+  isArchived?: boolean;
+  archivedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   user: PostUser;

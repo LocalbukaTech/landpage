@@ -12,6 +12,7 @@ import {
   useSavedPosts,
   useUserPosts,
 } from '@/lib/api/services/profile.hooks';
+import {useArchivedPosts} from '@/lib/api/services/posts.hooks';
 import type {Post} from '@/types/post';
 import {Loader2} from 'lucide-react';
 
@@ -48,6 +49,10 @@ function ProfileContent() {
     page: 1,
     pageSize: 50,
   });
+  const {data: archivedPostsResponse, isLoading: isLoadingArchive} = useArchivedPosts({
+    page: 1,
+    pageSize: 50,
+  });
 
   // Calculate posts count from API response
   const postsCount = useMemo(() => {
@@ -60,6 +65,14 @@ function ProfileContent() {
 
   const displayPosts = useMemo(() => {
     if (activeTab === 'tagged') return [];
+
+    if (activeTab === 'archive') {
+      if (Array.isArray(archivedPostsResponse)) return archivedPostsResponse;
+      const data = (archivedPostsResponse as any)?.data;
+      if (Array.isArray(data)) return data;
+      if (data && 'data' in data && Array.isArray(data.data)) return data.data;
+      return [];
+    }
 
     if (activeTab === 'repost') {
       return (rePostsResponse?.data?.data || []).map(
@@ -80,14 +93,16 @@ function ProfileContent() {
     savedPostsResponse,
     userPostsResponse,
     rePostsResponse,
+    archivedPostsResponse,
   ]) as Post[];
 
   const isLoadingData = useMemo(() => {
+    if (activeTab === 'archive') return isLoadingArchive;
     if (activeTab === 'saved') return isLoadingSaved;
     if (activeTab === 'videos') return isLoadingPosts;
     if (activeTab === 'repost') return isLoadingRepost;
     return false;
-  }, [activeTab, isLoadingSaved, isLoadingPosts, isLoadingRepost]);
+  }, [activeTab, isLoadingArchive, isLoadingSaved, isLoadingPosts, isLoadingRepost]);
 
   useEffect(() => {
     if (!isAuthenticated) {

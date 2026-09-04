@@ -48,8 +48,8 @@ function SettingsContent() {
       {/* Mobile: horizontal section nav */}
       <div className='md:hidden flex gap-1 overflow-x-auto px-4 py-2.5 scrollbar-hide border-b border-white/10'>
         {[
-          {id: 'account', label: 'Account'},
-          {id: 'notifications', label: 'Notifications'},
+          {id: 'account', label: 'Account Information'},
+          {id: 'notifications', label: 'Notifications & Privacy'},
           {id: 'support', label: 'Rewards & Support'},
         ].map((item) => (
           <button

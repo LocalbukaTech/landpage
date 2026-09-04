@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {RiLinkedinFill} from 'react-icons/ri';
 import {useTeamsQuery} from '@/lib/api/services/teams.hooks';
 import type {Team} from '@/lib/api/services/teams.service';
-import {capitalize} from '@/lib/utils';
+import {capitalize, formatExternalUrl} from '@/lib/utils';
 
 const DEPARTMENTS: {key: string; label: string}[] = [
   {key: 'leadership', label: 'Leadership'},
@@ -90,7 +90,7 @@ export function TeamsByDepartment() {
                     </p>
                     {member.linkedin_url && (
                       <Link
-                        href={member.linkedin_url}
+                        href={formatExternalUrl(member.linkedin_url)}
                         target='_blank'
                         rel='noopener noreferrer'
                         className='inline-block mt-2'

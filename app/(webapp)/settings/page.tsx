@@ -1,16 +1,23 @@
 'use client';
 
-import {useState} from 'react';
-import {useRouter} from 'next/navigation';
+import {useState, Suspense} from 'react';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {ArrowLeft, Search} from 'lucide-react';
 import {SettingsSidebar} from '@/components/settings/SettingsSidebar';
 import {AccountInformation} from '@/components/settings/AccountInformation';
 import {NotificationsPrivacy} from '@/components/settings/NotificationsPrivacy';
-import {HelpSupport} from '@/components/settings/HelpSupport';
-export default function SettingsPage() {
+import {RewardsSupport} from '@/components/settings/RewardsSupport';
+
+function SettingsContent() {
   const router = useRouter();
-  const [activeSection, setActiveSection] = useState('account');
-  const [activeSubTab, setActiveSubTab] = useState('account');
+  const searchParams = useSearchParams();
+  const initialSub = searchParams.get('tab') || searchParams.get('sub') || 'account';
+  const initialSection =
+    searchParams.get('section') ||
+    (['help', 'refer', 'terms'].includes(initialSub) ? 'support' : 'account');
+
+  const [activeSection, setActiveSection] = useState(initialSection);
+  const [activeSubTab, setActiveSubTab] = useState(initialSub);
 
   return (
     <div className='min-h-dvh bg-[#1a1a1a] text-white'>
@@ -50,6 +57,7 @@ export default function SettingsPage() {
             onClick={() => {
               setActiveSection(item.id);
               if (item.id === 'account') setActiveSubTab('account');
+              if (item.id === 'support') setActiveSubTab('help');
             }}
             className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border-none whitespace-nowrap ${
               activeSection === item.id
@@ -66,18 +74,28 @@ export default function SettingsPage() {
         {/* Left Sidebar — desktop only */}
         <div className='hidden md:block w-56 shrink-0 py-4'>
           <SettingsSidebar
-            activeSection={activeSection}
-            onSectionChange={(section) => {
-              setActiveSection(section);
-              if (section === 'account') {
-                setActiveSubTab('account');
+            activeSection={activeSubTab === 'logout' ? 'logout' : activeSection}
+          onSectionChange={(section) => {
+              if (section === 'logout') {
+                setActiveSection('account');
+                setActiveSubTab('logout');
+              } else if (section === 'support') {
+                setActiveSection('support');
+                setActiveSubTab('refer');
+              } else {
+                setActiveSection(section);
+                if (section === 'account' && activeSubTab === 'logout') {
+                  setActiveSubTab('account');
+                } else if (section === 'account' && ['refer', 'help', 'terms'].includes(activeSubTab)) {
+                  setActiveSubTab('account');
+                }
               }
             }}
           />
         </div>
 
         {/* Right Content */}
-        <div className='flex-1 py-4 max-w-3xl min-w-0'>
+        <div className='flex-1 py-4 w-full min-w-0'>
           {activeSection === 'account' && (
             <AccountInformation
               activeSubTab={activeSubTab}
@@ -85,9 +103,22 @@ export default function SettingsPage() {
             />
           )}
           {activeSection === 'notifications' && <NotificationsPrivacy />}
-          {activeSection === 'support' && <HelpSupport />}
+          {activeSection === 'support' && (
+            <RewardsSupport
+              activeSubTab={activeSubTab}
+              onSubTabChange={setActiveSubTab}
+            />
+          )}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className='min-h-dvh bg-[#1a1a1a]' />}>
+      <SettingsContent />
+    </Suspense>
   );
 }

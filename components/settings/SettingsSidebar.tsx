@@ -1,29 +1,32 @@
 'use client';
 
-import {User, Lock, RotateCcw} from 'lucide-react';
+import {User, Lock, RotateCcw, LogOut} from 'lucide-react';
 import Link from 'next/link';
+import {useTranslation} from '@/context/LanguageContext';
 
 interface SettingsSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
 }
 
-const sidebarItems = [
-  {id: 'account', label: 'Account Information', icon: User},
-  {id: 'notifications', label: 'Notifications & Privacy', icon: Lock},
-  {id: 'support', label: 'Rewards & Support', icon: RotateCcw},
-];
-
-const footerLinks = [
-  {label: 'Company', href: 'https://localbuka.com/company'},
-  {label: 'Program', href: 'https://localbuka.com/company'},
-  {label: 'Terms & Policies', href: 'https://localbuka.com/privacy'},
-];
-
 export function SettingsSidebar({
   activeSection,
   onSectionChange,
 }: SettingsSidebarProps) {
+  const {t} = useTranslation();
+
+  const sidebarItems = [
+    {id: 'account', label: t('settings.account', 'Account Information'), icon: User},
+    {id: 'notifications', label: t('settings.notifications', 'Notifications & Privacy'), icon: Lock},
+    {id: 'support', label: t('settings.rewardsSupport', 'Rewards & Support'), icon: RotateCcw},
+  ];
+
+  const footerLinks = [
+    {label: t('nav.company', 'Company'), href: '/company'},
+    {label: t('nav.program', 'Program'), href: '/rewards'},
+    {label: t('nav.termsAndPolicies', 'Terms & Policies'), href: '/privacy'},
+  ];
+
   return (
     <div className='flex flex-col justify-between h-full'>
       <nav className='flex flex-col gap-1'>
@@ -43,17 +46,27 @@ export function SettingsSidebar({
         })}
       </nav>
 
-      <footer className='flex flex-col gap-2 pt-6 mt-auto'>
+      <button
+        onClick={() => onSectionChange('logout')}
+        className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer bg-transparent border-0 text-left mt-auto ${
+          activeSection === 'logout' ? 'text-[#FBBE15]' : 'text-white hover:text-zinc-300'
+        }`}>
+        <LogOut size={18} />
+        <span>{t('settings.logout', 'Logout')}</span>
+      </button>
+
+      <footer className='flex flex-col gap-1.5 pt-4 text-xs text-zinc-400'>
         {footerLinks.map((link) => (
           <Link
             key={link.label}
             href={link.href}
-            target='_blank'
-            className='text-xs text-zinc-400 hover:text-zinc-300 transition-colors font-semibold'>
+            className='hover:text-white transition-colors cursor-pointer text-zinc-400 no-underline'>
             {link.label}
           </Link>
         ))}
-        <span className='text-[11px] text-zinc-600 mt-1'>&copy; {new Date().getFullYear()} LocalBuka</span>
+        <span className='pt-2 text-zinc-400'>
+          © {new Date().getFullYear()} LocalBuka
+        </span>
       </footer>
     </div>
   );

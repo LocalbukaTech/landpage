@@ -16,6 +16,7 @@ import {
   setUserAuthToken,
 } from '@/lib/auth';
 import type {User} from '@/lib/api/services/auth.service';
+import {setAnalyticsUser} from '@/lib/analytics';
 
 interface AuthContextValue {
   user: User | null;
@@ -114,6 +115,7 @@ export function AuthProvider({
   }, []);
 
   const logout = useCallback(() => {
+    setAnalyticsUser(null, null, null, null);
     logoutUser();
     setUser(null);
     setToken(null);

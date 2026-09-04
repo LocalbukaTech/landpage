@@ -1,7 +1,7 @@
-import Image from "next/image";
-import { FEATURES } from "@/lib/constants";
-import SectionHeader from "../SectionHeader";
-import { Reveal } from "@/components/anim/Reveal";
+import Image from 'next/image';
+import { FEATURES } from '@/lib/constants';
+import SectionHeader from '../SectionHeader';
+import { Reveal } from '@/components/anim/Reveal';
 
 export function WhyLocalBukaSection() {
   return (
@@ -38,3 +38,4 @@ export function WhyLocalBukaSection() {
     </section>
   );
 }
+

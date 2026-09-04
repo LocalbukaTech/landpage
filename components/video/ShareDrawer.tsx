@@ -3,7 +3,6 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Copy, Check, Mail, Info } from "lucide-react";
-import { FaSnapchat } from "react-icons/fa6";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useSharePost } from "@/lib/api/services/posts.hooks";
@@ -42,9 +41,6 @@ const Icons = {
     <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
       <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-1.92 9.03c-.144.64-.524.797-1.059.497l-2.92-2.152-1.41 1.356c-.156.156-.288.288-.588.288l.21-2.97 5.404-4.88c.234-.208-.05-.324-.361-.118l-6.677 4.204-2.88-.9c-.626-.196-.639-.626.13-.924l11.258-4.34c.522-.196.98.118.813.829z" />
     </svg>
-  ),
-  Snapchat: ({ className }: { className?: string }) => (
-    <FaSnapchat className={className ? className.replace('text-white', 'text-black') : 'w-8 h-8 text-black'} />
   ),
   Reddit: () => (
     <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
@@ -117,7 +113,6 @@ export function ShareDrawer({
     { name: "Email", icon: Mail, color: "bg-neutral-600", url: `mailto:?subject=${encodeURIComponent(shareText)}&body=${encodeURIComponent(shareUrl)}` },
     { name: "TikTok", icon: Icons.TikTok, color: "bg-black", isCopyOnly: true },
     { name: "Instagram", icon: Icons.Instagram, color: "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]", isCopyOnly: true },
-    { name: "Snapchat", icon: Icons.Snapchat, color: "bg-[#FFFC00] !text-black", isCopyOnly: true },
   ];
 
   return (
@@ -285,7 +280,7 @@ export function ShareDrawer({
               <DialogDescription className="text-neutral-400 text-base leading-relaxed">
                 The link has been copied to your clipboard! 
                 <br />
-                <span className="text-white font-medium">Instagram, TikTok, and Snapchat</span> are best shared directly through their mobile apps.
+                <span className="text-white font-medium">Instagram and TikTok</span> are best shared directly through their mobile apps.
               </DialogDescription>
             </div>
           </DialogHeader>

@@ -1,6 +1,7 @@
 'use client';
 
 import {useState} from 'react';
+import {useTranslation} from '@/context/LanguageContext';
 import {useToast} from '@/hooks/use-toast';
 
 interface NotificationsPrivacyProps {
@@ -86,6 +87,7 @@ export function NotificationsPrivacy({
   activeSubTab,
   onSubTabChange,
 }: NotificationsPrivacyProps) {
+  const {t} = useTranslation();
   const {toast} = useToast();
   const [internalTab, setInternalTab] = useState(
     activeSubTab && validTabIds.includes(activeSubTab) ? activeSubTab : 'push',
@@ -146,9 +148,9 @@ export function NotificationsPrivacy({
   });
 
   const subTabs = [
-    {id: 'push', label: 'Push Notifications'},
-    {id: 'privacy', label: 'Privacy Settings'},
-    {id: 'data', label: 'Data Sharing / Permissions'},
+    {id: 'push', label: t('notifications.push', 'Push Notifications')},
+    {id: 'privacy', label: t('notifications.privacy', 'Privacy Settings')},
+    {id: 'data', label: t('notifications.data', 'Data Sharing / Permissions')},
   ];
 
   const handleTabChange = (tabId: string) => {
@@ -186,7 +188,6 @@ export function NotificationsPrivacy({
       variant: 'default',
     });
   };
-
 
   // Save Handlers
   const handleSavePush = () => {
@@ -230,7 +231,6 @@ export function NotificationsPrivacy({
       variant: 'default',
     });
   };
-
 
   // Reusable Toggle Switch Component
   const renderToggleSwitch = (

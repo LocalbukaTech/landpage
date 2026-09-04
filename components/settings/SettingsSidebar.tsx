@@ -60,11 +60,13 @@ export function SettingsSidebar({
           <Link
             key={link.label}
             href={link.href}
-            className='hover:text-zinc-300 transition-colors font-medium'>
+            className='hover:text-white transition-colors cursor-pointer text-zinc-400 no-underline'>
             {link.label}
           </Link>
         ))}
-        <span className='text-[11px] text-zinc-600 mt-1 font-normal'>&copy; 2025 Localbuka</span>
+        <span className='pt-2 text-zinc-400'>
+          © {new Date().getFullYear()} LocalBuka
+        </span>
       </footer>
     </div>
   );

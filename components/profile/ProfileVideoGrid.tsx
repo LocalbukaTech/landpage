@@ -252,12 +252,13 @@ export function ProfileVideoGrid({
           </button>
 
           {/* Edit, Archive & Delete Action Overlays (Only on own editable profile) */}
-          {canEdit && isEditing && (
+          {canEdit && (isEditing || activeTab === 'archive') && (
             <div className='absolute top-2 right-2 flex items-center gap-1.5 z-10'>
               {activeTab === 'archive' ? (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
                     handleUnarchive(post.id);
                   }}
                   title='Restore / Unarchive Post'
@@ -268,6 +269,7 @@ export function ProfileVideoGrid({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    e.preventDefault();
                     handleArchive(post.id);
                   }}
                   title='Archive Post'
@@ -278,6 +280,7 @@ export function ProfileVideoGrid({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   router.push(`/studio?edit=${post.id}`);
                 }}
                 title='Edit Post in Localbuka Studio'
@@ -287,6 +290,7 @@ export function ProfileVideoGrid({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   setPostToDelete(post);
                 }}
                 title='Delete Post'

@@ -164,6 +164,7 @@ export const useDeletePost = () => {
     mutationFn: (id: string) => postsService.deletePost(id),
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: queryKeys.posts.all});
+      queryClient.invalidateQueries({queryKey: ['posts', 'archived']});
       queryClient.invalidateQueries({queryKey: queryKeys.users.all});
     },
   });

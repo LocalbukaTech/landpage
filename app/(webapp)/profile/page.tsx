@@ -1,6 +1,6 @@
 'use client';
 
-import {Suspense, useEffect, useMemo, useState} from 'react';
+import {Suspense, useEffect, useMemo} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {MainLayout} from '@/components/layout/MainLayout';
 import {ProfileHeader} from '@/components/profile/ProfileHeader';
@@ -21,12 +21,9 @@ function ProfileContent() {
   const router = useRouter();
   const {isAuthenticated, openAuthModal, user: authUser} = useAuth();
 
-  const [activeTab, setActiveTab] = useState(
-    searchParams.get('tab') || 'videos',
-  );
+  const activeTab = searchParams.get('tab') || 'videos';
 
   const handleTabChange = (tabId: string) => {
-    setActiveTab(tabId);
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tabId);
     router.replace(`/profile?${params.toString()}`, {scroll: false});

@@ -42,6 +42,8 @@ export const queryKeys = {
     all: ['teams'] as const,
     list: (filters?: Record<string, any>) =>
       [...queryKeys.teams.all, 'list', filters] as const,
+    admin: (filters?: Record<string, any>) =>
+      [...queryKeys.teams.all, 'admin', filters] as const,
     detail: (id: string) => [...queryKeys.teams.all, 'detail', id] as const,
   },
 

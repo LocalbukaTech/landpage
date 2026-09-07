@@ -44,6 +44,12 @@ export const teamsService = {
   list: (params?: TeamsQueryParams) =>
     api.get<ApiResponse<TeamsListData>>('/teams?all=false&approved=true', {params}),
 
+  getAll: (params?: TeamsQueryParams) =>
+    api.get<ApiResponse<TeamsListData>>('/teams/all', {params}),
+
+  getAdminTeams: (params?: TeamsQueryParams) =>
+    api.get<ApiResponse<TeamsListData>>('/teams/all', {params}),
+
   getById: (id: string) => api.get<ApiResponse<Team>>(`/teams/${id}`),
 
   update: (id: string, data: FormData) =>

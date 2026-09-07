@@ -4,8 +4,7 @@
 User-agent: *
 Allow: /
 
-# Disallow admin and private routes
-Disallow: /secure-admin/
+# Disallow private routes
 Disallow: /api/
 Disallow: /_next/
 Disallow: /signin

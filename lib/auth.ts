@@ -69,13 +69,30 @@ export const removeAdminUser = () => {
 // Admin Combined Auth Functions (existing)
 // ============================================
 
+import { isValidJwtToken, parseJwtPayload } from './jwt';
+export { isValidJwtToken, parseJwtPayload };
+
 export const logout = () => {
   removeAuthToken();
   removeAdminUser();
 };
 
 export const isAuthenticated = (): boolean => {
-  return !!getAuthToken();
+  const token = getAuthToken();
+  if (!token || !isValidJwtToken(token)) {
+    if (token) {
+      logout();
+    }
+    return false;
+  }
+
+  const admin = getAdminUser();
+  if (!admin || typeof admin !== 'object' || !admin.id || !admin.email) {
+    logout();
+    return false;
+  }
+
+  return true;
 };
 
 // ============================================
@@ -136,6 +153,13 @@ export const logoutUser = () => {
 };
 
 export const isUserAuthenticated = (): boolean => {
-  return !!getUserAuthToken();
+  const token = getUserAuthToken();
+  if (!token || !isValidJwtToken(token)) {
+    if (token) {
+      logoutUser();
+    }
+    return false;
+  }
+  return true;
 };
 

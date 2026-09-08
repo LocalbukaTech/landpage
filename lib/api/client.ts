@@ -34,12 +34,16 @@ apiClient.interceptors.request.use(
     const currentPath = window.location.pathname.toLowerCase();
     const isAdminSection = currentPath.startsWith('/secure-admin');
     
-    const token = isAdminSection 
-      ? Cookies.get(TOKEN_KEY)  // Admin token for admin sections
-      : Cookies.get('localbuka_user_token');  // User token for user sections
-
-    if (token && isValidJwtToken(token)) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (isAdminSection) {
+      const token = Cookies.get(TOKEN_KEY);
+      if (token && isValidJwtToken(token)) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } else {
+      const token = Cookies.get('localbuka_user_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
 
     return config;
@@ -63,7 +67,7 @@ apiClient.interceptors.response.use(
       switch (status) {
         case 401:
         case 403:
-          // Unauthorized / Forbidden - evict credentials and redirect if in protected admin section
+          // Unauthorized / Forbidden - evict credentials and redirect ONLY in protected admin section
           if (typeof window !== 'undefined') {
             const currentPath = window.location.pathname.toLowerCase();
             const isAdminSection = currentPath.startsWith('/secure-admin');
@@ -75,9 +79,6 @@ apiClient.interceptors.response.use(
               if (!isLoginPage) {
                 window.location.href = '/secure-admin/login';
               }
-            } else {
-              Cookies.remove('localbuka_user_token');
-              Cookies.remove('localbuka_user');
             }
           }
           break;

@@ -7,7 +7,6 @@ import {StudioOverviewTab} from '@/components/studio/StudioOverviewTab';
 import {StudioVideosTab} from '@/components/studio/StudioVideosTab';
 import {StudioImagesTab} from '@/components/studio/StudioImagesTab';
 import {StudioEditorTab} from '@/components/studio/StudioEditorTab';
-import {EditPostDetails} from '@/components/upload/EditPostDetails';
 import type {StudioTab, UploadStep, StudioMetrics} from '@/components/studio/types';
 import type {Post} from '@/types/post';
 import {useCreatePost, useUpdatePost, usePost, useDeletePost} from '@/lib/api/services/posts.hooks';
@@ -212,13 +211,95 @@ function LocalbukaStudioDashboardContent() {
     }
   };
 
-  const handleCreatePost = (data: {
+  const handlePost = (data: {
     description: string;
     imageCaptions?: string[];
     tags: string[];
     location: string;
     restaurantId?: string;
   }) => {
+    // EDIT MODE
+    if (editPostId) {
+      if (selectedFiles.length > 0) {
+        const formData = new FormData();
+        const isVideo = selectedFiles[0].type.startsWith('video/');
+        formData.append('mediaType', isVideo ? 'video' : 'image');
+
+        if (isVideo) {
+          formData.append('media', selectedFiles[0]);
+          if (data.description) formData.append('caption', data.description);
+        } else {
+          selectedFiles.forEach((file) => formData.append('media', file));
+          if (data.description) formData.append('caption', data.description);
+          if (data.imageCaptions && data.imageCaptions.length > 0) {
+            data.imageCaptions.forEach((cap) => formData.append('imageCaptions', cap));
+          }
+        }
+        if (data.location) formData.append('location', data.location);
+        if (data.tags && data.tags.length > 0) {
+          data.tags.forEach((tag) => formData.append('tags', tag));
+        }
+        if (data.restaurantId) formData.append('restaurantId', data.restaurantId);
+
+        updatePostMutation.mutate(
+          {id: editPostId, data: formData},
+          {
+            onSuccess: () => {
+              toast({
+                title: 'Post updated! 🎉',
+                description: 'Your changes have been saved.',
+              });
+              refetchPosts();
+              router.push('/studio');
+              setActiveTab('overview');
+            },
+            onError: (err: any) => {
+              toast({
+                title: 'Update failed',
+                description: err?.response?.data?.message || 'Failed to update post.',
+                variant: 'destructive',
+              });
+            },
+          }
+        );
+      } else {
+        const isVideoPost = existingPost?.mediaType === 'video';
+        const jsonData: Record<string, any> = {
+          caption: data.description,
+          location: data.location,
+          tags: data.tags,
+          restaurantId: data.restaurantId,
+        };
+        if (!isVideoPost && data.imageCaptions && data.imageCaptions.length > 0) {
+          jsonData.imageCaptions = data.imageCaptions;
+        }
+
+        updatePostMutation.mutate(
+          {id: editPostId, data: jsonData},
+          {
+            onSuccess: () => {
+              toast({
+                title: 'Post updated! 🎉',
+                description: 'Your changes have been saved.',
+              });
+              refetchPosts();
+              router.push('/studio');
+              setActiveTab('overview');
+            },
+            onError: (err: any) => {
+              toast({
+                title: 'Update failed',
+                description: err?.response?.data?.message || 'Failed to update post.',
+                variant: 'destructive',
+              });
+            },
+          }
+        );
+      }
+      return;
+    }
+
+    // CREATE MODE
     if (selectedFiles.length === 0) return;
 
     const formData = new FormData();
@@ -258,49 +339,6 @@ function LocalbukaStudioDashboardContent() {
     });
   };
 
-  const handleSaveEditedPost = (data: {
-    caption: string;
-    imageCaptions?: string[];
-    tags: string[];
-    location?: string;
-    restaurantId?: string | null;
-  }) => {
-    if (!editPostId) return;
-
-    const isVideoPost = existingPost?.mediaType === 'video';
-    const jsonData: Record<string, any> = {
-      caption: data.caption,
-      location: data.location || '',
-      tags: data.tags,
-      restaurantId: data.restaurantId !== undefined ? data.restaurantId : null,
-    };
-    if (!isVideoPost && data.imageCaptions && data.imageCaptions.length > 0) {
-      jsonData.imageCaptions = data.imageCaptions;
-    }
-
-    updatePostMutation.mutate(
-      {id: editPostId, data: jsonData},
-      {
-        onSuccess: () => {
-          toast({
-            title: 'Post updated! 🎉',
-            description: 'Your changes have been saved.',
-          });
-          refetchPosts();
-          router.push('/studio');
-          setActiveTab('overview');
-        },
-        onError: (err: any) => {
-          toast({
-            title: 'Update failed',
-            description: err?.response?.data?.message || 'Failed to update post.',
-            variant: 'destructive',
-          });
-        },
-      }
-    );
-  };
-
   const handleAddFiles = (newFiles: File[]) => {
     const newImages = newFiles.filter((file) => file.type.startsWith('image/'));
     if (newImages.length === 0) return;
@@ -316,7 +354,7 @@ function LocalbukaStudioDashboardContent() {
   };
 
   const handleRemoveFile = (index: number) => {
-    if (selectedFiles.length <= 1) {
+    if (selectedFiles.length <= 1 && !editPostId) {
       handleDiscard();
       return;
     }
@@ -324,6 +362,11 @@ function LocalbukaStudioDashboardContent() {
   };
 
   const handleDiscard = () => {
+    if (editPostId) {
+      router.push('/studio');
+      setActiveTab('overview');
+      return;
+    }
     setSelectedFiles([]);
     setCropIndices([]);
     setCurrentCropPointer(0);
@@ -371,42 +414,32 @@ function LocalbukaStudioDashboardContent() {
         />
       )}
 
-      {activeTab === 'create' && (
-        <StudioEditorTab
-          step={step}
-          selectedFiles={selectedFiles}
-          cropIndices={cropIndices}
-          currentCropPointer={currentCropPointer}
-          isUploading={createPostMutation.isPending}
-          onAcceptTerms={handleAcceptTerms}
-          onRefuseTerms={handleRefuseTerms}
-          onFileSelect={handleFileSelect}
-          onCropSuccess={handleCropSuccess}
-          onPost={handleCreatePost}
-          onAddFiles={handleAddFiles}
-          onRemoveFile={handleRemoveFile}
-          onDiscard={handleDiscard}
-          onSuccessDone={() => {
-            handleTabChange('overview');
-            refetchPosts();
-          }}
-        />
-      )}
-
-      {activeTab === 'edit' && (
-        isLoadingExistingPost || !existingPost ? (
+      {(activeTab === 'create' || activeTab === 'edit') && (
+        Boolean(editPostId) && (isLoadingExistingPost || !existingPost) ? (
           <div className='flex flex-col items-center justify-center min-h-[400px] gap-3 bg-[#121217] border border-white/10 rounded-2xl p-12 my-6'>
             <Loader2 className='w-8 h-8 animate-spin text-[#FBBE15]' />
             <span className='text-xs font-semibold text-zinc-400'>Fetching post details...</span>
           </div>
         ) : (
-          <EditPostDetails
-            post={existingPost}
-            isSaving={updatePostMutation.isPending}
-            onSave={handleSaveEditedPost}
-            onCancel={() => {
-              router.replace('/studio', {scroll: false});
-              setActiveTab('overview');
+          <StudioEditorTab
+            step={step}
+            editPostId={editPostId}
+            existingPost={existingPost}
+            selectedFiles={selectedFiles}
+            cropIndices={cropIndices}
+            currentCropPointer={currentCropPointer}
+            isUploading={createPostMutation.isPending || updatePostMutation.isPending}
+            onAcceptTerms={handleAcceptTerms}
+            onRefuseTerms={handleRefuseTerms}
+            onFileSelect={handleFileSelect}
+            onCropSuccess={handleCropSuccess}
+            onPost={handlePost}
+            onAddFiles={handleAddFiles}
+            onRemoveFile={handleRemoveFile}
+            onDiscard={handleDiscard}
+            onSuccessDone={() => {
+              handleTabChange('overview');
+              refetchPosts();
             }}
           />
         )

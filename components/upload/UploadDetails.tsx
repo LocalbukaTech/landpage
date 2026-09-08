@@ -31,7 +31,13 @@ import {
 import { RiRestaurant2Fill } from 'react-icons/ri';
 
 interface UploadDetailsProps {
-  files: File[];
+  files?: File[];
+  existingMediaUrls?: string[];
+  initialCaption?: string;
+  initialImageCaptions?: string[];
+  initialLocation?: string;
+  initialRestaurant?: { id: string; name: string } | null;
+  isEditing?: boolean;
   submitText?: string;
   onPost: (data: {
     description: string;
@@ -48,6 +54,12 @@ interface UploadDetailsProps {
 
 export function UploadDetails({
   files = [],
+  existingMediaUrls = [],
+  initialCaption = '',
+  initialImageCaptions = [],
+  initialLocation = '',
+  initialRestaurant = null,
+  isEditing: _isEditing = false,
   submitText = 'Post',
   onPost,
   onDiscard,
@@ -59,14 +71,24 @@ export function UploadDetails({
     if (files.length > 0) {
       return files[0].type.startsWith('image/');
     }
+    if (existingMediaUrls.length > 0) {
+      const url = existingMediaUrls[0];
+      const isVideoUrl = Boolean(
+        url.match(/\.(mp4|mov|webm|avi|mkv)(\?.*)?$/i) ||
+        url.includes('/video/upload/') ||
+        url.includes('resource_type=video')
+      );
+      return !isVideoUrl;
+    }
     return true;
-  }, [files]);
-  const totalSlides = files.length;
+  }, [files, existingMediaUrls]);
+  const totalSlides = files.length > 0 ? files.length : existingMediaUrls.length;
   const [activeIndex, setActiveIndex] = useState(0);
-  const [captions, setCaptions] = useState<string[]>(() =>
-    isImage ? Array(totalSlides).fill('') : []
-  );
-  const [generalCaption, setGeneralCaption] = useState('');
+  const [captions, setCaptions] = useState<string[]>(() => {
+    if (isImage && initialImageCaptions.length > 0) return initialImageCaptions;
+    return isImage ? Array(totalSlides).fill('') : [];
+  });
+  const [generalCaption, setGeneralCaption] = useState(initialCaption);
 
   const {user: authUser} = useAuth();
   const {lat, lng} = useGeolocation();
@@ -107,17 +129,17 @@ export function UploadDetails({
     if (!isImage) return;
     const timer = setTimeout(() => {
       setCaptions((prev) => {
-        if (prev.length === files.length) return prev;
-        if (prev.length < files.length) {
-          const diff = files.length - prev.length;
+        if (prev.length === totalSlides) return prev;
+        if (prev.length < totalSlides) {
+          const diff = totalSlides - prev.length;
           return [...prev, ...Array(diff).fill('')];
         } else {
-          return prev.slice(0, files.length);
+          return prev.slice(0, totalSlides);
         }
       });
     }, 0);
     return () => clearTimeout(timer);
-  }, [files.length, isImage]);
+  }, [totalSlides, isImage]);
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0 && onAddFiles) {
@@ -151,8 +173,13 @@ export function UploadDetails({
         clearTimeout(timer);
         urls.forEach((url) => URL.revokeObjectURL(url));
       };
+    } else if (existingMediaUrls.length > 0) {
+      const timer = setTimeout(() => {
+        setMediaUrls(existingMediaUrls);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [files]);
+  }, [files, existingMediaUrls]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStart.current = e.touches[0].clientX;
@@ -162,7 +189,7 @@ export function UploadDetails({
     if (touchStart.current === null) return;
     const diff = touchStart.current - e.changedTouches[0].clientX;
     const threshold = 50;
-    if (diff > threshold && activeIndex < files.length - 1) {
+    if (diff > threshold && activeIndex < totalSlides - 1) {
       setActiveIndex((prev) => prev + 1);
     } else if (diff < -threshold && activeIndex > 0) {
       setActiveIndex((prev) => prev - 1);
@@ -185,11 +212,42 @@ export function UploadDetails({
   const [inputFocus, setInputFocus] = useState(false);
 
   // Tagging States
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>(() =>
+    initialLocation ? [initialLocation] : []
+  );
   const [selectedRestaurant, setSelectedRestaurant] = useState<{
     id: string;
     name: string;
-  } | null>(null);
+  } | null>(initialRestaurant);
+
+  // Sync initial props asynchronously when fetched on edit post
+  useEffect(() => {
+    if (initialCaption) {
+      const timer = setTimeout(() => setGeneralCaption(initialCaption), 0);
+      return () => clearTimeout(timer);
+    }
+  }, [initialCaption]);
+
+  useEffect(() => {
+    if (isImage && initialImageCaptions && initialImageCaptions.length > 0) {
+      const timer = setTimeout(() => setCaptions(initialImageCaptions), 0);
+      return () => clearTimeout(timer);
+    }
+  }, [initialImageCaptions, isImage]);
+
+  useEffect(() => {
+    if (initialLocation) {
+      const timer = setTimeout(() => setSelectedLocations([initialLocation]), 0);
+      return () => clearTimeout(timer);
+    }
+  }, [initialLocation]);
+
+  useEffect(() => {
+    if (initialRestaurant) {
+      const timer = setTimeout(() => setSelectedRestaurant(initialRestaurant), 0);
+      return () => clearTimeout(timer);
+    }
+  }, [initialRestaurant]);
 
 
   // Video States
@@ -379,10 +437,10 @@ export function UploadDetails({
             {isImage && (
               <div className='relative mb-5 flex flex-col'>
                 <h3 className='text-sm font-bold text-zinc-300 uppercase tracking-wide mb-2 flex items-center justify-between'>
-                  <span>Image Slide Text Overlay {files.length > 1 && `(Slide ${activeIndex + 1} of ${files.length})`}</span>
-                  {files.length > 1 && (
+                  <span>Image Slide Text Overlay {totalSlides > 1 && `(Slide ${activeIndex + 1} of ${totalSlides})`}</span>
+                  {totalSlides > 1 && (
                     <span className='text-[10px] font-bold text-zinc-300 bg-white/10 px-2 py-0.5 rounded-full border border-white/10'>
-                      Slide {activeIndex + 1} of {files.length}
+                      Slide {activeIndex + 1} of {totalSlides}
                     </span>
                   )}
                 </h3>
@@ -403,7 +461,7 @@ export function UploadDetails({
               </div>
             )}
 
-            {isImage && files.length > 1 && (
+            {isImage && totalSlides > 1 && (
               <div className='bg-[#fbbe15]/10 border border-[#fbbe15]/20 rounded-xl p-4 mb-4 flex flex-col gap-3'>
                 <p className='text-zinc-300 text-xs font-semibold leading-relaxed'>
                 <strong>Multi-Image Tip:</strong> You can add a different text overlay caption centered on each image slide! Switch slides using the controls below or by swiping the preview image.
@@ -417,11 +475,11 @@ export function UploadDetails({
                     ← Prev Slide
                   </button>
                   <span className='text-xs font-bold text-white bg-white/10 px-3 py-1.5 rounded-full border border-white/10'>
-                    Slide {activeIndex + 1} of {files.length}
+                    Slide {activeIndex + 1} of {totalSlides}
                   </span>
                   <button
-                    onClick={() => setActiveIndex((prev) => Math.min(files.length - 1, prev + 1))}
-                    disabled={activeIndex === files.length - 1}
+                    onClick={() => setActiveIndex((prev) => Math.min(totalSlides - 1, prev + 1))}
+                    disabled={activeIndex === totalSlides - 1}
                     className='px-3.5 py-2 text-xs font-bold text-white bg-white/10 border border-white/10 rounded-lg hover:bg-white/20 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs'
                   >
                     Next Slide →
@@ -730,7 +788,7 @@ export function UploadDetails({
                 </div>
 
                 {/* Left/Right Navigation Chevrons */}
-                {files.length > 1 && (
+                {totalSlides > 1 && (
                   <>
                     {activeIndex > 0 && (
                       <button
@@ -744,7 +802,7 @@ export function UploadDetails({
                         <ChevronLeft size={20} />
                       </button>
                     )}
-                    {activeIndex < files.length - 1 && (
+                    {activeIndex < totalSlides - 1 && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -796,7 +854,7 @@ export function UploadDetails({
 
                     {/* Dots Carousel Indicators */}
                     <div className='absolute top-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-20 bg-black/40 px-2.5 py-1.5 rounded-full backdrop-blur-xs'>
-                      {files.map((_, idx) => (
+                      {mediaUrls.map((_, idx) => (
                         <button
                           key={idx}
                           onClick={(e) => {

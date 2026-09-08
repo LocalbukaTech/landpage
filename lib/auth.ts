@@ -153,13 +153,6 @@ export const logoutUser = () => {
 };
 
 export const isUserAuthenticated = (): boolean => {
-  const token = getUserAuthToken();
-  if (!token || !isValidJwtToken(token)) {
-    if (token) {
-      logoutUser();
-    }
-    return false;
-  }
-  return true;
+  return !!getUserAuthToken();
 };
 

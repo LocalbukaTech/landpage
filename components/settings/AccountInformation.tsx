@@ -879,16 +879,30 @@ function LanguagesTab() {
 }
 
 function BlockedUsersTab() {
-  const { blockedUsers, unblockUser } = useBlockedUsers();
+  const { blockedUsers, unblockUser, isLoading } = useBlockedUsers();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleUnblock = (user: BlockedUser) => {
-    unblockUser(user.id);
-    setToastMessage(`${user.fullName} is unblocked 🚫`);
+  const handleUnblock = async (user: BlockedUser) => {
+    try {
+      await unblockUser(user.id);
+      setToastMessage(`${user.fullName} is unblocked 🚫`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to unblock user';
+      setToastMessage(msg);
+    }
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
   };
+
+  if (isLoading) {
+    return (
+      <div className='flex flex-col items-center justify-center py-28 text-center'>
+        <Loader2 className='w-6 h-6 animate-spin text-[#FFC727] mb-2' />
+        <p className='text-zinc-400 text-xs'>Loading blocked accounts...</p>
+      </div>
+    );
+  }
 
   if (!blockedUsers || blockedUsers.length === 0) {
     return (

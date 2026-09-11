@@ -15,47 +15,39 @@
   "nav.company": "Kamfaninmu",
   "nav.blogs": "Shafukan Shafi",
   "nav.termsAndPolicies": "Ka'idoji da Manufofi",
-
   "settings.title": "Saituna",
   "settings.account": "Bayanin Asusu",
   "settings.notifications": "Sanarwa da Tsaro",
   "settings.support": "Taimako da Tallafi",
   "settings.logout": "Fita",
-
   "settings.tabs.account": "Asusu",
   "settings.tabs.password": "Pasiward da Tsaro",
   "settings.tabs.delete": "Goge Asusu",
   "settings.tabs.languages": "Harsuna",
-
   "settings.account.fullName": "Cikakken Suna",
   "settings.account.username": "Sunan Mai Amfani",
   "settings.account.location": "Wuri",
   "settings.account.bio": "Bayanin Kanka",
   "settings.account.save": "Ajiye",
   "settings.account.saving": "Ajiye...",
-
   "settings.password.current": "Tsohuwar Pasiward",
   "settings.password.new": "Sabuwar Pasiward",
   "settings.password.confirm": "Maimaita Sabuwar Pasiward",
   "settings.password.save": "Ajiye",
-
   "settings.delete.title": "Goge asusunkun gaba daya ba za a iya dawo da shi ba.",
   "settings.delete.button": "Goge",
   "settings.delete.confirm": "Kana So Ka Goge Asusu?",
   "settings.delete.confirmText": "Wannan aikin ba za a iya sokewa ba. Dukkan bayananka za su goge.",
   "settings.delete.yes": "Eh, Goge",
   "settings.delete.cancel": "Fasa",
-
   "settings.logout.text": "Fita lafiya daga asusunkun domin kiyaye bayananka.",
   "settings.logout.button": "Fita",
   "settings.logout.confirm": "Kana So Ka Fita?",
   "settings.logout.confirmText": "Ka tabbata kana so ka fita daga asusunka?",
   "settings.logout.yes": "Eh, Fita",
-
   "settings.language.title": "Harsuna",
   "settings.language.save": "Ajiye",
   "settings.language.saving": "Ajiye...",
-
   "notifications.push": "Sanarwar Tura Sako",
   "notifications.privacy": "Saitunan Tsaro",
   "notifications.data": "Raba Bayani / Izini",

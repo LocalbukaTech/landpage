@@ -15,47 +15,39 @@
   "nav.company": "Empresa",
   "nav.blogs": "Blogs",
   "nav.termsAndPolicies": "Termos e Políticas",
-
   "settings.title": "Configurações",
   "settings.account": "Informações da Conta",
   "settings.notifications": "Notificações e Privacidade",
   "settings.support": "Ajuda e Suporte",
   "settings.logout": "Sair",
-
   "settings.tabs.account": "Conta",
   "settings.tabs.password": "Senha e Segurança",
   "settings.tabs.delete": "Excluir Conta",
   "settings.tabs.languages": "Idiomas",
-
   "settings.account.fullName": "Nome Completo",
   "settings.account.username": "Nome de Usuário",
   "settings.account.location": "Localização",
   "settings.account.bio": "Biografia",
   "settings.account.save": "Salvar",
   "settings.account.saving": "Salvando...",
-
   "settings.password.current": "Senha Atual",
   "settings.password.new": "Nova Senha",
   "settings.password.confirm": "Confirmar Nova Senha",
   "settings.password.save": "Salvar",
-
   "settings.delete.title": "A exclusão da sua conta é permanente e não pode ser desfeita.",
   "settings.delete.button": "Excluir",
   "settings.delete.confirm": "Excluir Conta?",
   "settings.delete.confirmText": "Esta ação é permanente. Todos os seus dados serão perdidos.",
   "settings.delete.yes": "Sim, Excluir",
   "settings.delete.cancel": "Cancelar",
-
   "settings.logout.text": "Saia com segurança para proteger suas informações.",
   "settings.logout.button": "Sair",
   "settings.logout.confirm": "Sair?",
   "settings.logout.confirmText": "Tem certeza de que deseja sair?",
   "settings.logout.yes": "Sim, Sair",
-
   "settings.language.title": "Idiomas",
   "settings.language.save": "Salvar",
   "settings.language.saving": "Salvando...",
-
   "notifications.push": "Notificações Push",
   "notifications.privacy": "Configurações de Privacidade",
   "notifications.data": "Compartilhamento de Dados / Permissões",

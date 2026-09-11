@@ -130,3 +130,56 @@ export const useFollowers = (
     refetchInterval: 5000, // Refetch followers list every 5 seconds for near real-time updates
   });
 };
+
+export const useBlockUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => profileService.blockUser(id),
+    onSuccess: (_, id) => {
+      // Invalidate target user profile, stats, posts, and block status
+      queryClient.invalidateQueries({ queryKey: ['users', id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.blocked() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.blockStatus(id) });
+      // Invalidate feed and follow relations (mutual unfollow takes effect)
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['users', { following: true }] });
+      queryClient.invalidateQueries({ queryKey: ['users', 'list'] });
+    },
+  });
+};
+
+export const useUnblockUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => profileService.unblockUser(id),
+    onSuccess: (_, id) => {
+      // Invalidate target user profile and block status
+      queryClient.invalidateQueries({ queryKey: ['users', id] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.blocked() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.blockStatus(id) });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    },
+  });
+};
+
+export const useBlockedUsersList = (params?: { page?: number; pageSize?: number }) => {
+  return useQuery({
+    queryKey: queryKeys.users.blocked(params),
+    queryFn: () => profileService.getBlockedUsers(params),
+  });
+};
+
+export const useBlockStatus = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.users.blockStatus(id),
+    queryFn: () => profileService.getBlockStatus(id),
+    enabled: !!id,
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status || error?.status;
+      if (status === 403 || status === 401) return false;
+      return failureCount < 2;
+    },
+  });
+};

@@ -235,6 +235,26 @@ export const BUKA_HERO_LANGUAGES: BukaHeroLanguage[] = [
     body: 'From local favorites to top-rated spots, your next meal is right here.',
   },
   {
+    language: 'French',
+    headline: "Qu'est-ce que tu veux manger aujourd'hui ?",
+    body: 'Des favoris locaux aux endroits les mieux notés, votre prochain repas est juste ici.',
+  },
+  {
+    language: 'Spanish',
+    headline: '¿Qué quieres comer hoy?',
+    body: 'Desde los favoritos locales hasta los mejores lugares, tu próxima comida está aquí.',
+  },
+  {
+    language: 'Portuguese',
+    headline: 'O que você quer comer hoje?',
+    body: 'Dos favoritos locais aos melhores restaurantes, sua próxima refeição está aqui.',
+  },
+  {
+    language: 'German',
+    headline: 'Was möchtest du heute essen?',
+    body: 'Von lokalen Favoriten bis hin zu Top-bewerteten Orten – deine nächste Mahlzeit ist genau hier.',
+  },
+  {
     language: 'Yoruba',
     headline: 'Kín Ni O Fẹ́ Jẹ?!',
     body: 'Láti ibi oúnjẹ ìbílẹ̀ dé àwọn ilé oúnjẹ tó gbajúmọ̀, oúnjẹ rẹ tó kàn ti wà níhìn-ín.',

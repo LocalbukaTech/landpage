@@ -15,47 +15,39 @@
   "nav.company": "Unternehmen",
   "nav.blogs": "Blogs",
   "nav.termsAndPolicies": "AGB & Richtlinien",
-
   "settings.title": "Einstellungen",
   "settings.account": "Kontoinformationen",
   "settings.notifications": "Benachrichtigungen & Datenschutz",
   "settings.support": "Hilfe & Support",
   "settings.logout": "Abmelden",
-
   "settings.tabs.account": "Konto",
   "settings.tabs.password": "Passwort & Sicherheit",
   "settings.tabs.delete": "Konto löschen",
   "settings.tabs.languages": "Sprachen",
-
   "settings.account.fullName": "Vollständiger Name",
   "settings.account.username": "Benutzername",
   "settings.account.location": "Standort",
   "settings.account.bio": "Biografie",
   "settings.account.save": "Speichern",
   "settings.account.saving": "Speichern...",
-
   "settings.password.current": "Aktuelles Passwort",
   "settings.password.new": "Neues Passwort",
   "settings.password.confirm": "Neues Passwort bestätigen",
   "settings.password.save": "Speichern",
-
   "settings.delete.title": "Das Löschen Ihres Kontos ist dauerhaft und kann nicht rückgängig gemacht werden.",
   "settings.delete.button": "Löschen",
   "settings.delete.confirm": "Konto löschen?",
   "settings.delete.confirmText": "Diese Aktion ist dauerhaft. Alle Ihre Daten gehen verloren.",
   "settings.delete.yes": "Ja, löschen",
   "settings.delete.cancel": "Abbrechen",
-
   "settings.logout.text": "Melden Sie sich sicher ab, um Ihre Daten zu schützen.",
   "settings.logout.button": "Abmelden",
   "settings.logout.confirm": "Abmelden?",
   "settings.logout.confirmText": "Sind Sie sicher, dass Sie sich abmelden möchten?",
   "settings.logout.yes": "Ja, abmelden",
-
   "settings.language.title": "Sprachen",
   "settings.language.save": "Speichern",
   "settings.language.saving": "Speichern...",
-
   "notifications.push": "Push-Benachrichtigungen",
   "notifications.privacy": "Datenschutzeinstellungen",
   "notifications.data": "Datenfreigabe / Berechtigungen",

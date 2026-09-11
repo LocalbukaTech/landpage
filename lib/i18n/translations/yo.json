@@ -15,47 +15,39 @@
   "nav.company": "Ile-iṣẹ",
   "nav.blogs": "Awọn Bulọọgi",
   "nav.termsAndPolicies": "Ofin & Ilana",
-
   "settings.title": "Eto",
   "settings.account": "Alaye Akaunti",
   "settings.notifications": "Ìfitónilétí & Asírí",
   "settings.support": "Iranlọwọ & Atilẹyin",
   "settings.logout": "Jade",
-
   "settings.tabs.account": "Akaunti",
   "settings.tabs.password": "Ọrọigbaniwọle & Aabo",
   "settings.tabs.delete": "Paarẹ Akaunti",
   "settings.tabs.languages": "Awọn Ede",
-
   "settings.account.fullName": "Orukọ Ni Kikun",
   "settings.account.username": "Orukọ Olumulo",
   "settings.account.location": "Ibi",
   "settings.account.bio": "Nipa Ẹ",
   "settings.account.save": "Fipamọ",
   "settings.account.saving": "Npamọ...",
-
   "settings.password.current": "Ọrọigbaniwọle Lọwọlọwọ",
   "settings.password.new": "Ọrọigbaniwọle Titun",
   "settings.password.confirm": "Jẹrisi Ọrọigbaniwọle Titun",
   "settings.password.save": "Fipamọ",
-
   "settings.delete.title": "Pipa akaunti rẹ run jẹ patapata ati pe ko le ṣe atunṣe.",
   "settings.delete.button": "Paarẹ",
   "settings.delete.confirm": "Paarẹ Akaunti?",
   "settings.delete.confirmText": "Igbesẹ yii jẹ ayeraye ati pe ko le ṣe atunṣe. Gbogbo data rẹ yoo sọnu.",
   "settings.delete.yes": "Bẹẹni, Paarẹ",
   "settings.delete.cancel": "Fagilee",
-
   "settings.logout.text": "Jade lailewu lati daabobo alaye rẹ.",
   "settings.logout.button": "Jade",
   "settings.logout.confirm": "Jade?",
   "settings.logout.confirmText": "Ṣe o da ọ loju pe o fẹ jade kuro ninu akaunti rẹ?",
   "settings.logout.yes": "Bẹẹni, Jade",
-
   "settings.language.title": "Awọn Ede",
   "settings.language.save": "Fipamọ",
   "settings.language.saving": "Npamọ...",
-
   "notifications.push": "Awọn Ìfitónilétí Push",
   "notifications.privacy": "Eto Asírí",
   "notifications.data": "Pinpin Data / Awọn Igbanilaaye",

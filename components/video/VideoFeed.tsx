@@ -5,6 +5,7 @@ import {motion, AnimatePresence} from 'framer-motion';
 import {Loader2} from 'lucide-react';
 import type {Post} from '@/types/post';
 import {feedStore, type FeedType} from '@/lib/feed-state';
+import {markPostAsSeen} from '@/lib/feed-shuffle';
 import {VideoPlayer} from '@/components/video/VideoPlayer';
 import {ActionBar} from '@/components/video/ActionBar';
 import {VideoNavigation} from '@/components/video/VideoNavigation';
@@ -108,12 +109,12 @@ export function VideoFeed({
     }
   }, [currentIndex, posts.length, hasMore, isLoadingMore, onLoadMore]);
 
-  // Persist the current video position so the feed can be restored after
-  // navigating away (to profile, other-profile, etc.) and coming back.
+  // Persist the current video position and mark post as seen for feed ranking
   useEffect(() => {
     const post = posts[currentIndex];
     if (post?.id) {
       feedStore.save(post.id, feedType);
+      markPostAsSeen(post.id);
     }
   }, [currentIndex, posts, feedType]);
 

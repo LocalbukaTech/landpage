@@ -15,47 +15,39 @@
   "nav.company": "Empresa",
   "nav.blogs": "Blogs",
   "nav.termsAndPolicies": "Términos y Políticas",
-
   "settings.title": "Configuración",
   "settings.account": "Información de la Cuenta",
   "settings.notifications": "Notificaciones y Privacidad",
   "settings.support": "Ayuda y Soporte",
   "settings.logout": "Cerrar Sesión",
-
   "settings.tabs.account": "Cuenta",
   "settings.tabs.password": "Contraseña y Seguridad",
   "settings.tabs.delete": "Eliminar Cuenta",
   "settings.tabs.languages": "Idiomas",
-
   "settings.account.fullName": "Nombre Completo",
   "settings.account.username": "Nombre de Usuario",
   "settings.account.location": "Ubicación",
   "settings.account.bio": "Biografía",
   "settings.account.save": "Guardar",
   "settings.account.saving": "Guardando...",
-
   "settings.password.current": "Contraseña Actual",
   "settings.password.new": "Nueva Contraseña",
   "settings.password.confirm": "Confirmar Nueva Contraseña",
   "settings.password.save": "Guardar",
-
   "settings.delete.title": "Eliminar tu cuenta es permanente y no se puede deshacer.",
   "settings.delete.button": "Eliminar",
   "settings.delete.confirm": "¿Eliminar Cuenta?",
   "settings.delete.confirmText": "Esta acción es permanente. Se perderán todos tus datos.",
   "settings.delete.yes": "Sí, Eliminar",
   "settings.delete.cancel": "Cancelar",
-
   "settings.logout.text": "Cierra sesión de forma segura para proteger tu información.",
   "settings.logout.button": "Cerrar Sesión",
   "settings.logout.confirm": "¿Cerrar Sesión?",
   "settings.logout.confirmText": "¿Estás seguro de que deseas cerrar sesión?",
   "settings.logout.yes": "Sí, Cerrar Sesión",
-
   "settings.language.title": "Idiomas",
   "settings.language.save": "Guardar",
   "settings.language.saving": "Guardando...",
-
   "notifications.push": "Notificaciones Push",
   "notifications.privacy": "Configuración de Privacidad",
   "notifications.data": "Compartir Datos / Permisos",

@@ -1,94 +1,37 @@
 'use client';
 
-import { useState, useEffect, useCallback, useTransition } from 'react';
-import { profileService } from '@/lib/api/services/profile.service';
+import { useMemo, useCallback } from 'react';
+import {
+  useBlockedUsersList,
+  useBlockUser,
+  useUnblockUser,
+} from '@/lib/api/services/profile.hooks';
+import type { BlockedUser } from '@/types/user';
 
-export interface BlockedUser {
-  id: string;
-  fullName: string;
-  username?: string;
-  avatar?: string;
-  blockedAt: string;
-}
+export type { BlockedUser };
 
-const STORAGE_KEY = 'localbuka_blocked_users';
+export function useBlockedUsers(params?: { page?: number; pageSize?: number }) {
+  const {
+    data: blockedResponse,
+    isLoading,
+    isError,
+    refetch,
+  } = useBlockedUsersList(params);
 
-const DEFAULT_BLOCKED_USERS: BlockedUser[] = [
-  {
-    id: 'user-wilson-1',
-    fullName: 'Wilson Babafemi',
-    username: 'wilsonb',
-    avatar: '/images/avatar-marcus.png',
-    blockedAt: 'Jul 30',
-  },
-  {
-    id: 'user-jubril-2',
-    fullName: 'Jubril Babatunde Olanrewaju',
-    username: 'jubrilb',
-    avatar: '/images/avatar-bryan.jpg',
-    blockedAt: 'Aug 14',
-  },
-];
+  const blockUserMutation = useBlockUser();
+  const unblockUserMutation = useUnblockUser();
 
-export function useBlockedUsers() {
-  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>(DEFAULT_BLOCKED_USERS);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [, startTransition] = useTransition();
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        startTransition(() => {
-          setBlockedUsers(JSON.parse(stored));
-        });
-      } else {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_BLOCKED_USERS));
-      }
-    } catch {
-      // ignore
+  // Extract blocked users array from API response (supports { data: [...] } or direct array)
+  const blockedUsers: BlockedUser[] = useMemo(() => {
+    const rawData = (blockedResponse as any)?.data?.data || (blockedResponse as any)?.data;
+    if (Array.isArray(rawData)) {
+      return rawData;
     }
-    startTransition(() => {
-      setIsLoaded(true);
-    });
-  }, []);
+    return [];
+  }, [blockedResponse]);
 
-  useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY && e.newValue) {
-        try {
-          setBlockedUsers(JSON.parse(e.newValue));
-        } catch {
-          // ignore
-        }
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
-
-  const saveToStorage = (users: BlockedUser[]) => {
-    setBlockedUsers(users);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-      window.dispatchEvent(new Event('localbuka_blocked_change'));
-    } catch {
-      // ignore
-    }
-  };
-
-  useEffect(() => {
-    const handleLocalChange = () => {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) setBlockedUsers(JSON.parse(stored));
-      } catch {
-        // ignore
-      }
-    };
-    window.addEventListener('localbuka_blocked_change', handleLocalChange);
-    return () => window.removeEventListener('localbuka_blocked_change', handleLocalChange);
-  }, []);
+  const total = (blockedResponse as any)?.data?.total ?? blockedUsers.length;
+  const totalPages = (blockedResponse as any)?.data?.totalPages ?? 1;
 
   const isUserBlocked = useCallback(
     (userId?: string | null) => {
@@ -99,49 +42,34 @@ export function useBlockedUsers() {
   );
 
   const blockUser = useCallback(
-    (user: { id: string; fullName?: string; username?: string; avatar?: string }) => {
-      if (!user.id) return;
-      const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const newBlockedUser: BlockedUser = {
-        id: user.id,
-        fullName: user.fullName || user.username || 'User',
-        username: user.username,
-        avatar: user.avatar,
-        blockedAt: dateStr,
-      };
-
-      const updated = [newBlockedUser, ...blockedUsers.filter((u) => u.id !== user.id)];
-      saveToStorage(updated);
-
-      try {
-        (profileService as any).blockUser?.(user.id);
-      } catch {
-        // ignore
-      }
+    async (userOrId: string | { id: string; fullName?: string; username?: string; avatar?: string }) => {
+      const id = typeof userOrId === 'string' ? userOrId : userOrId.id;
+      if (!id) return;
+      return blockUserMutation.mutateAsync(id);
     },
-    [blockedUsers]
+    [blockUserMutation]
   );
 
   const unblockUser = useCallback(
-    (userId: string) => {
+    async (userId: string) => {
       if (!userId) return;
-      const updated = blockedUsers.filter((u) => u.id !== userId);
-      saveToStorage(updated);
-
-      try {
-        (profileService as any).unblockUser?.(userId);
-      } catch {
-        // ignore
-      }
+      return unblockUserMutation.mutateAsync(userId);
     },
-    [blockedUsers]
+    [unblockUserMutation]
   );
 
   return {
     blockedUsers,
+    total,
+    totalPages,
     isUserBlocked,
     blockUser,
     unblockUser,
-    isLoaded,
+    isBlocking: blockUserMutation.isPending,
+    isUnblocking: unblockUserMutation.isPending,
+    isLoading,
+    isLoaded: !isLoading,
+    isError,
+    refetch,
   };
 }

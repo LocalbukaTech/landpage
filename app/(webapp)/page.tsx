@@ -16,6 +16,7 @@ import {feedStore, type FeedType} from '@/lib/feed-state';
 import {PasswordPromptModal} from '@/components/modals';
 import {useAuth} from '@/context/AuthContext';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
+import {useShuffledFeed} from '@/hooks/useShuffledFeed';
 import {trackEvent} from '@/lib/analytics';
 
 function HomeContent() {
@@ -152,9 +153,16 @@ function HomeContent() {
   const isFetchingNextPage =
     feedType === 'following' ? isFetchingNextPersonalisedPage : isFetchingNextChronologicalPage;
 
-  const posts = useMemo(() => {
+  const rawPosts = useMemo(() => {
     return activeData?.pages.flatMap((page) => page.data) || [];
   }, [activeData]);
+
+  // Apply Weighted Reservoir Shuffle on 'foryou' feed while keeping 'following' chronological
+  const posts = useShuffledFeed(rawPosts, {
+    enabled: feedType === 'foryou',
+    targetVideoId: videoId,
+    resetKey: `${feedType}-${wasReset}`,
+  });
 
   // Find the index to start the feed at.
   // Priority: 1) URL ?video=<id>  2) saved post from store  3) 0

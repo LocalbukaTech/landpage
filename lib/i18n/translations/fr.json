@@ -15,47 +15,39 @@
   "nav.company": "Entreprise",
   "nav.blogs": "Blogs",
   "nav.termsAndPolicies": "Conditions & Politiques",
-
   "settings.title": "Paramètres",
   "settings.account": "Informations du Compte",
   "settings.notifications": "Notifications & Confidentialité",
   "settings.support": "Aide & Support",
   "settings.logout": "Déconnexion",
-
   "settings.tabs.account": "Compte",
   "settings.tabs.password": "Mot de Passe & Sécurité",
   "settings.tabs.delete": "Supprimer le Compte",
   "settings.tabs.languages": "Langues",
-
   "settings.account.fullName": "Nom Complet",
   "settings.account.username": "Nom d'Utilisateur",
   "settings.account.location": "Localisation",
   "settings.account.bio": "Biographie",
   "settings.account.save": "Enregistrer",
   "settings.account.saving": "Enregistrement...",
-
   "settings.password.current": "Mot de Passe Actuel",
   "settings.password.new": "Nouveau Mot de Passe",
   "settings.password.confirm": "Confirmer le Nouveau Mot de Passe",
   "settings.password.save": "Enregistrer",
-
   "settings.delete.title": "La suppression de votre compte est définitive et irréversible.",
   "settings.delete.button": "Supprimer",
   "settings.delete.confirm": "Supprimer le Compte?",
   "settings.delete.confirmText": "Cette action est définitive et irréversible. Toutes vos données seront perdues.",
   "settings.delete.yes": "Oui, Supprimer",
   "settings.delete.cancel": "Annuler",
-
   "settings.logout.text": "Déconnectez-vous en toute sécurité pour protéger vos informations.",
   "settings.logout.button": "Se Déconnecter",
   "settings.logout.confirm": "Se Déconnecter?",
   "settings.logout.confirmText": "Êtes-vous sûr de vouloir vous déconnecter?",
   "settings.logout.yes": "Oui, Se Déconnecter",
-
   "settings.language.title": "Langues",
   "settings.language.save": "Enregistrer",
   "settings.language.saving": "Enregistrement...",
-
   "notifications.push": "Notifications Push",
   "notifications.privacy": "Paramètres de Confidentialité",
   "notifications.data": "Partage de Données / Autorisations",

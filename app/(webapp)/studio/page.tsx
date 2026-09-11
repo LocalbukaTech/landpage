@@ -328,11 +328,14 @@ function LocalbukaStudioDashboardContent() {
         setStep('SUCCESS');
         refetchPosts();
       },
-      onError: (error) => {
+      onError: (error: any) => {
         console.error('Upload failed', error);
         toast({
           title: 'Upload failed',
-          description: 'Failed to upload post. Please try again.',
+          description:
+            error?.response?.data?.message ||
+            error?.message ||
+            'Failed to upload post. Please try again.',
           variant: 'destructive',
         });
       },

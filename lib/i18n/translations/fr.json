@@ -70,5 +70,8 @@
   "notifications.save": "Enregistrer",
   "notifications.comingSoon": "Bientôt Disponible",
   "notifications.privacyComingSoon": "Les paramètres de confidentialité seront disponibles dans une prochaine mise à jour.",
-  "notifications.dataComingSoon": "Les paramètres de partage de données et d'autorisations seront disponibles dans une prochaine mise à jour."
+  "notifications.dataComingSoon": "Les paramètres de partage de données et d'autorisations seront disponibles dans une prochaine mise à jour.",
+
+  "buka.hero.headline": "Qu'est-ce Que Tu Veux Manger?!",
+  "buka.hero.body": "Des spécialités locales aux adresses les mieux notées, votre prochain repas est juste ici."
 }

@@ -249,5 +249,25 @@ export const BUKA_HERO_LANGUAGES: BukaHeroLanguage[] = [
     headline: 'Me kake/kike so ka/ki ci yau?',
     body: 'Daga wuraren cin abinci na gargajiya zuwa gidajen abinci masu inganci, abincinka na gaba yana nan.',
   },
+  {
+    language: 'French',
+    headline: 'Qu\'est-ce Que Tu Veux Manger?!',
+    body: 'Des spécialités locales aux adresses les mieux notées, votre prochain repas est juste ici.',
+  },
+  {
+    language: 'Spanish',
+    headline: '¿Qué Se Te Antoja Comer?!',
+    body: 'De los favoritos locales a los restaurantes mejor valorados, tu próxima comida está aquí.',
+  },
+  {
+    language: 'Portuguese',
+    headline: 'O Que Você Quer Comer?!',
+    body: 'Dos favoritos locais aos melhores restaurantes, a sua próxima refeição está bem aqui.',
+  },
+  {
+    language: 'German',
+    headline: 'Was Möchtest Du Essen?!',
+    body: 'Von lokalen Lieblingsspeisen bis zu Top-bewerteten Restaurants — dein nächstes Essen wartet hier.',
+  },
 ];
 

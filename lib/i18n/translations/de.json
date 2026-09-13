@@ -70,5 +70,8 @@
   "notifications.save": "Speichern",
   "notifications.comingSoon": "Demnächst",
   "notifications.privacyComingSoon": "Datenschutzeinstellungen werden in einem zukünftigen Update verfügbar sein.",
-  "notifications.dataComingSoon": "Datenfreigabeeinstellungen werden in einem zukünftigen Update verfügbar sein."
+  "notifications.dataComingSoon": "Datenfreigabeeinstellungen werden in einem zukünftigen Update verfügbar sein.",
+
+  "buka.hero.headline": "Was Möchtest Du Essen?!",
+  "buka.hero.body": "Von lokalen Lieblingsspeisen bis zu Top-bewerteten Restaurants — dein nächstes Essen wartet hier."
 }

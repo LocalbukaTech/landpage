@@ -70,5 +70,8 @@
   "notifications.save": "Guardar",
   "notifications.comingSoon": "Próximamente",
   "notifications.privacyComingSoon": "La configuración de privacidad estará disponible en una próxima actualización.",
-  "notifications.dataComingSoon": "La configuración de permisos y datos estará disponible en una próxima actualización."
+  "notifications.dataComingSoon": "La configuración de permisos y datos estará disponible en una próxima actualización.",
+
+  "buka.hero.headline": "¿Qué Se Te Antoja Comer?!",
+  "buka.hero.body": "De los favoritos locales a los restaurantes mejor valorados, tu próxima comida está aquí."
 }

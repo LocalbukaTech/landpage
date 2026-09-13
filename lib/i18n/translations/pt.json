@@ -70,5 +70,8 @@
   "notifications.save": "Salvar",
   "notifications.comingSoon": "Em Breve",
   "notifications.privacyComingSoon": "As configurações de privacidade estarão disponíveis em uma atualização futura.",
-  "notifications.dataComingSoon": "As configurações de compartilhamento estarão disponíveis em uma atualização futura."
+  "notifications.dataComingSoon": "As configurações de compartilhamento estarão disponíveis em uma atualização futura.",
+
+  "buka.hero.headline": "O Que Você Quer Comer?!",
+  "buka.hero.body": "Dos favoritos locais aos melhores restaurantes, a sua próxima refeição está bem aqui."
 }

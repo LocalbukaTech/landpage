@@ -1,8 +1,8 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, useMemo} from 'react';
 import Link from 'next/link';
-import {Search, Calendar, SlidersHorizontal, Eye, Loader2} from 'lucide-react';
+import {Search, Calendar, SlidersHorizontal, Eye, Loader2, X} from 'lucide-react';
 import {StatusBadge} from '@/components/admin/ui/StatusBadge';
 import {Pagination} from '@/components/admin/ui/Pagination';
 import {MdVerified} from 'react-icons/md';
@@ -17,21 +17,42 @@ import {
   TableCell,
 } from '@/components/ui/table';
 
+const PAGE_SIZE = 10;
+
 export default function BukaManagement() {
   const [selectedRestaurants, setSelectedRestaurants] = useState<Set<string>>(
     new Set(),
   );
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('approved');
+  const [searchTerm, setSearchTerm] = useState('');
 
+  // Fetch restaurants without sending search query to endpoint
   const {data, isLoading, isFetching} = useRestaurants({
-    page,
-    pageSize: 10,
+    page: 1,
+    pageSize: 500,
     status: statusFilter,
   });
 
-  const restaurants = data?.data || [];
-  const totalPages = data?.totalPages || 1;
+  const allRestaurants = useMemo(() => data?.data || [], [data?.data]);
+
+  // Client-side search by restaurant name on already fetched data
+  const filteredRestaurants = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return allRestaurants;
+    return allRestaurants.filter((buka) =>
+      buka.name?.toLowerCase().includes(query),
+    );
+  }, [allRestaurants, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredRestaurants.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  // Current page slice
+  const restaurants = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredRestaurants.slice(start, start + PAGE_SIZE);
+  }, [filteredRestaurants, currentPage]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -52,7 +73,18 @@ export default function BukaManagement() {
   };
 
   const isAllSelected =
-    restaurants.length > 0 && selectedRestaurants.size === restaurants.length;
+    restaurants.length > 0 &&
+    restaurants.every((b) => b.id && selectedRestaurants.has(b.id));
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setPage(1);
+  };
 
   return (
     <div className='flex flex-col gap-6'>
@@ -62,15 +94,25 @@ export default function BukaManagement() {
           <div className='flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-gray-800 rounded-t-xl overflow-x-auto scrollbar-thin gap-4'>
             <div className='relative w-[300px] shrink-0'>
               <Search
-                className='absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 dark:text-gray-600'
+                className='absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500'
                 size={16}
               />
               <input
                 type='text'
-                placeholder='Search disabled...'
-                disabled
-                className='w-full bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed opacity-60 focus:outline-none'
+                placeholder='Search by restaurant name...'
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className='w-full bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/60 rounded-lg pl-10 pr-9 py-2.5 text-sm text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[#fbbe15] focus:border-[#fbbe15] transition-all'
               />
+              {searchTerm && (
+                <button
+                  type='button'
+                  onClick={handleClearSearch}
+                  className='absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700/60 transition-colors cursor-pointer'
+                  aria-label='Clear search'>
+                  <X size={14} />
+                </button>
+              )}
             </div>
 
             <div className='flex items-center gap-5 pr-1'>
@@ -83,6 +125,7 @@ export default function BukaManagement() {
                   onChange={(e) => {
                     setStatusFilter(e.target.value);
                     setPage(1);
+                    setSelectedRestaurants(new Set());
                   }}
                   className='text-sm bg-transparent border-none focus:ring-0 text-gray-600 dark:text-gray-300 font-semibold cursor-pointer outline-none dark:bg-gray-900'>
                   <option value='approved' className='dark:bg-gray-900 dark:text-gray-200'>Approved</option>
@@ -136,8 +179,18 @@ export default function BukaManagement() {
               <div className='flex flex-col justify-center items-center grow text-gray-300 dark:text-gray-600 gap-3 py-24'>
                 <Search size={44} strokeWidth={1} />
                 <p className='text-sm font-medium uppercase tracking-widest text-gray-400 dark:text-gray-500'>
-                  No restaurants found
+                  {searchTerm.trim()
+                    ? `No restaurants found matching "${searchTerm.trim()}"`
+                    : 'No restaurants found'}
                 </p>
+                {searchTerm.trim() && (
+                  <button
+                    type='button'
+                    onClick={handleClearSearch}
+                    className='text-xs font-semibold text-[#fbbe15] hover:underline cursor-pointer border-none bg-transparent'>
+                    Clear search
+                  </button>
+                )}
               </div>
             )}
 
@@ -286,7 +339,7 @@ export default function BukaManagement() {
           </div>
 
           <Pagination
-            currentPage={page}
+            currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setPage}
           />

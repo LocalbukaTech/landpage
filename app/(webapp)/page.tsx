@@ -8,16 +8,6 @@ import { VideoFeed } from "@/components/video/VideoFeed";
 import {
   useInfinitePosts,
   useInfinitePersonalisedFeed,
-<<<<<<< Updated upstream
-} from '@/lib/api/services/posts.hooks';
-import {Loader2} from 'lucide-react';
-import {cn} from '@/lib/utils';
-import {queryKeys} from '@/lib/api/types';
-import {feedStore, type FeedType} from '@/lib/feed-state';
-import {PasswordPromptModal} from '@/components/modals';
-import {useAuth} from '@/context/AuthContext';
-import {useRequireAuth} from '@/hooks/useRequireAuth';
-=======
 } from "@/lib/api/services/posts.hooks";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,8 +16,6 @@ import { feedStore, type FeedType } from "@/lib/feed-state";
 import { PasswordPromptModal } from "@/components/modals";
 import { useAuth } from "@/context/AuthContext";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
-import { trackEvent } from "@/lib/analytics";
->>>>>>> Stashed changes
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -96,14 +84,6 @@ function HomeContent() {
       return () => clearTimeout(timer);
     }
   }, [feedType, isAuthenticated]);
-
-  // Track home view in GA4 on load and when tab changes
-  useEffect(() => {
-    trackEvent("home_view", {
-      feed_type: feedType,
-      page_name: "home",
-    });
-  }, [feedType]);
 
   // The post ID to restore to (null if first visit or reset).
   const savedPostId = wasReset ? null : feedStore.getPostId();

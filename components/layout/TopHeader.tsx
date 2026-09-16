@@ -7,6 +7,7 @@ import {useAuth} from '@/context/AuthContext';
 import {useRouter} from 'next/navigation';
 import {useToast} from '@/hooks/use-toast';
 import {useQueryClient} from '@tanstack/react-query';
+import {useTranslation} from '@/context/LanguageContext';
 
 interface TopHeaderProps {
   onMobileMenuOpen?: () => void;
@@ -17,6 +18,7 @@ export function TopHeader({onMobileMenuOpen}: TopHeaderProps) {
   const router = useRouter();
   const {toast} = useToast();
   const queryClient = useQueryClient();
+  const {t} = useTranslation();
 
   const handleLogout = () => {
     logout();
@@ -30,10 +32,10 @@ export function TopHeader({onMobileMenuOpen}: TopHeaderProps) {
   };
 
   const navItems = [
-    {label: 'Account', href: '/settings/profile', active: true},
-    {label: 'Password & Security', href: '/settings/security', active: false},
-    {label: 'Delete Account', href: '/settings?tab=delete', active: false},
-    {label: 'Logout', href: null, active: false, onClick: handleLogout},
+    {label: t('settings.tabs.account', 'Account'), href: '/settings/profile', active: true},
+    {label: t('settings.tabs.password', 'Password & Security'), href: '/settings/security', active: false},
+    {label: t('settings.tabs.delete', 'Delete Account'), href: '/settings?tab=delete', active: false},
+    {label: t('settings.logout', 'Logout'), href: null, active: false, onClick: handleLogout},
   ];
 
   return (
@@ -55,7 +57,7 @@ export function TopHeader({onMobileMenuOpen}: TopHeaderProps) {
           <Search className='absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#9CA3AF]' />
           <input
             type='text'
-            placeholder='Search'
+            placeholder={t('nav.search', 'Search')}
             className='w-full h-10 bg-[#1A1A1A] text-white text-[15px] rounded-[10px] pl-[42px] pr-4 outline-none border-none placeholder:text-[#6B7280] focus:ring-1 focus:ring-[#F5B400] transition-all'
           />
         </div>

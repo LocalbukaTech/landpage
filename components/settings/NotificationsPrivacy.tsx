@@ -7,6 +7,7 @@ interface NotificationsPrivacyProps {
   onSubTabChange?: (tab: string) => void;
 }
 
+// 1. Push Notifications Config
 const pushNotificationSettings = [
   {
     label: "Order Updates",
@@ -69,6 +70,60 @@ export function NotificationsPrivacy({
       return acc;
     }, {}),
   );
+  const currentTab =
+    onSubTabChange && activeSubTab && validTabIds.includes(activeSubTab)
+      ? activeSubTab
+      : internalTab;
+
+  // Push Notifications State
+  const [pushToggles, setPushToggles] = useState<Record<string, boolean>>(() => {
+    const defaults = Object.fromEntries(
+      pushNotificationSettings.map((s) => [s.key, s.defaultOn]),
+    );
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('lb_push_settings');
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // fallback to defaults
+      }
+    }
+    return defaults;
+  });
+
+  // Privacy Settings State
+  const [privacyToggles, setPrivacyToggles] = useState<Record<string, boolean>>(
+    () => {
+      const defaults = Object.fromEntries(
+        privacySettings.map((s) => [s.key, s.defaultOn]),
+      );
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('lb_privacy_settings');
+          if (saved) return JSON.parse(saved);
+        } catch {
+          // fallback to defaults
+        }
+      }
+      return defaults;
+    },
+  );
+
+  // Data Sharing / Permissions State
+  const [dataToggles, setDataToggles] = useState<Record<string, boolean>>(() => {
+    const defaults = Object.fromEntries(
+      dataSharingSettings.map((s) => [s.key, s.defaultOn]),
+    );
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('lb_data_permissions');
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // fallback to defaults
+      }
+    }
+    return defaults;
+  });
 
   const subTabs = [
     { id: "push", label: "Push Notifications" },
@@ -77,13 +132,49 @@ export function NotificationsPrivacy({
   ];
 
   const handleTabChange = (tabId: string) => {
-    setCurrentTab(tabId);
+    setInternalTab(tabId);
     onSubTabChange?.(tabId);
   };
 
   const handleToggle = (label: string) => {
     setToggles((prev) => ({ ...prev, [label]: !prev[label] }));
   };
+
+  const handleSaveData = () => {
+    try {
+      localStorage.setItem('lb_data_permissions', JSON.stringify(dataToggles));
+    } catch {
+      // Ignore storage error
+    }
+    toast({
+      title: 'Settings Saved',
+      description: 'Data sharing and permissions updated successfully.',
+      variant: 'default',
+    });
+  };
+
+  // Reusable Toggle Switch Component
+  const renderToggleSwitch = (
+    checked: boolean,
+    onToggle: () => void,
+    ariaLabel: string,
+  ) => (
+    <button
+      type='button'
+      role='switch'
+      aria-checked={checked}
+      aria-label={ariaLabel}
+      onClick={onToggle}
+      className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer border-none shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#FBBE15] ${
+        checked ? 'bg-[#001F3F]' : 'bg-zinc-600'
+      }`}>
+      <span
+        className={`inline-block w-5 h-5 rounded-full bg-white transition-transform duration-200 shadow-sm ${
+          checked ? 'translate-x-5.5' : 'translate-x-0.5'
+        }`}
+      />
+    </button>
+  );
 
   return (
     <div className="flex flex-col gap-0">

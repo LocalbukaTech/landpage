@@ -3,11 +3,12 @@
 import {Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {Loader2} from 'lucide-react';
+import {getSafeRedirectUrl} from '@/lib/utils';
 
 const SuccessContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const redirect = getSafeRedirectUrl(searchParams.get('redirect'), '/');
 
   const handleProceed = () => {
     router.push(`/signup/music-policy?redirect=${encodeURIComponent(redirect)}`);

@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import type {Post} from '@/types/post';
 import type {UploadStep} from './types';
 import {Prohibition} from '@/components/upload/Prohibition';
 import {UploadDropzone} from '@/components/upload/UploadDropzone';
@@ -11,8 +10,6 @@ import {UploadSuccess} from '@/components/upload/UploadSuccess';
 
 interface StudioEditorTabProps {
   step: UploadStep;
-  editPostId: string | null;
-  existingPost: Post | null;
   selectedFiles: File[];
   cropIndices: number[];
   currentCropPointer: number;
@@ -36,8 +33,6 @@ interface StudioEditorTabProps {
 
 export function StudioEditorTab({
   step,
-  editPostId,
-  existingPost,
   selectedFiles,
   cropIndices,
   currentCropPointer,
@@ -82,28 +77,10 @@ export function StudioEditorTab({
         </div>
       )}
 
-      {step === 'DETAILS' && (selectedFiles.length > 0 || Boolean(editPostId)) && (
+      {step === 'DETAILS' && selectedFiles.length > 0 && (
         <UploadDetails
           files={selectedFiles}
-          existingMediaUrls={
-            editPostId && existingPost
-              ? existingPost.mediaUrls || (existingPost.mediaUrl ? [existingPost.mediaUrl] : [])
-              : []
-          }
-          initialCaption={existingPost?.caption || ''}
-          initialImageCaptions={
-            existingPost?.mediaType === 'image'
-              ? existingPost?.imageCaptions || []
-              : []
-          }
-          initialLocation={existingPost?.location || ''}
-          initialRestaurant={
-            existingPost?.restaurant
-              ? {id: existingPost.restaurant.id, name: existingPost.restaurant.name}
-              : null
-          }
-          isEditing={Boolean(editPostId)}
-          submitText={editPostId ? 'Save Changes' : 'Publish Post'}
+          submitText='Publish Post'
           onPost={onPost}
           onDiscard={onDiscard}
           isUploading={isUploading}

@@ -6,9 +6,10 @@ import {useState, useEffect} from 'react';
 import {cn} from '@/lib/utils';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
 import {useFollowUser, useUserProfile} from '@/lib/api/services/profile.hooks';
-import {useRepostPost} from '@/lib/api/services/posts.hooks';
+import {useRepostPost, useArchivePost, useUnarchivePost} from '@/lib/api/services/posts.hooks';
 import {useAuth} from '@/context/AuthContext';
 import {useRouter} from 'next/navigation';
+import {useToast} from '@/hooks/use-toast';
 import {ShareDrawer} from './ShareDrawer';
 import {AnimatedCount} from './AnimatedCount';
 import type {Post} from '@/types/post';
@@ -31,9 +32,14 @@ export function ActionBar({
   const {requireAuth} = useRequireAuth();
   const {user} = useAuth();
   const router = useRouter();
+  const {toast} = useToast();
   const followUserMutation = useFollowUser();
   const repostPostMutation = useRepostPost();
+  const archivePostMutation = useArchivePost();
+  const unarchivePostMutation = useUnarchivePost();
   const [isShareOpen, setIsShareOpen] = useState(false);
+
+  const _isOwnPost = !!(user?.id && post?.user?.id && post.user.id === user.id);
 
   // Fetch user profile of post creator to check if already followed
   const {data: profileResponse} = useUserProfile(
@@ -150,6 +156,48 @@ export function ActionBar({
     });
   };
 
+  const _handleArchiveToggle = () => {
+    requireAuth(() => {
+      if (post.isArchived) {
+        unarchivePostMutation.mutate(post.id, {
+          onSuccess: () => {
+            toast({
+              title: 'Restored',
+              description: 'Post restored back to profile.',
+              variant: 'success',
+            });
+            router.push('/profile');
+          },
+          onError: () => {
+            toast({
+              title: 'Error',
+              description: 'Could not restore post.',
+              variant: 'destructive',
+            });
+          },
+        });
+      } else {
+        archivePostMutation.mutate(post.id, {
+          onSuccess: () => {
+            toast({
+              title: 'Archived',
+              description: 'Post archived! View it in your profile archive.',
+              variant: 'success',
+            });
+            router.push('/profile?tab=archive');
+          },
+          onError: () => {
+            toast({
+              title: 'Error',
+              description: 'Could not archive post.',
+              variant: 'destructive',
+            });
+          },
+        });
+      }
+    });
+  };
+
   const actions = [
     {
       id: 'like',
@@ -159,6 +207,7 @@ export function ActionBar({
       isActive: isLiked,
       onClick: handleLike,
       activeClass: 'text-red-500',
+      showCount: true,
     },
     {
       id: 'comment',
@@ -168,6 +217,7 @@ export function ActionBar({
       isActive: (post?.commentCount ?? post?.commentsCount ?? 0) === -1,
       onClick: () => onCommentClick?.(),
       activeClass: 'text-[#fbbe15]',
+      showCount: true,
     },
     {
       id: 'save',
@@ -177,6 +227,7 @@ export function ActionBar({
       isActive: isSaved,
       onClick: handleSave,
       activeClass: 'text-[#fbbe15]',
+      showCount: true,
     },
     {
       id: 'share',
@@ -186,6 +237,7 @@ export function ActionBar({
       isActive: (sharesCount || 0) > 0,
       onClick: handleShare,
       activeClass: 'text-[#fbbe15]',
+      showCount: true,
     },
     {
       id: 'repost',
@@ -246,7 +298,11 @@ export function ActionBar({
               fill={action.isActive ? 'currentColor' : 'none'}
             />
           </div>
-          <AnimatedCount count={action.count || 0} />
+          {action.showCount ? (
+            <AnimatedCount count={action.count || 0} />
+          ) : (
+            <span className='text-[10px] font-semibold text-zinc-300'>{action.label}</span>
+          )}
         </button>
       ))}
 

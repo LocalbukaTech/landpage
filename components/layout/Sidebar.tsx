@@ -13,6 +13,7 @@ import { useUnreadCount } from '@/lib/api/services/notifications.hooks';
 import { feedStore, type FeedType } from '@/lib/feed-state';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { useTranslation } from '@/context/LanguageContext';
 import {
   getDesktopNavItems,
   getMobileBottomNavItems,
@@ -21,7 +22,20 @@ import {
   type NavItemConfig,
 } from './sidebar.config';
 
+const navKeyMap: Record<string, string> = {
+  home: 'nav.home',
+  buka: 'nav.buka',
+  'list-restaurant': 'nav.listRestaurant',
+  upload: 'nav.upload',
+  notifications: 'nav.notifications',
+  saved: 'nav.saved',
+  community: 'nav.community',
+  rewards: 'nav.rewards',
+  profile: 'nav.profile',
+};
+
 export function Sidebar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -213,7 +227,7 @@ export function Sidebar() {
               <>
                 <Search className='absolute left-3 text-zinc-400' size={18} />
                 <span className='w-full py-2.5 px-3 pl-10 text-sm text-zinc-400 rounded-lg'>
-                  Search
+                  {t('nav.search', 'Search')}
                 </span>
               </>
             )}
@@ -232,6 +246,10 @@ export function Sidebar() {
                 isNotificationItem && isNotificationOpen
                   ? true
                   : isActive && !isNotificationOpen;
+
+              const displayLabel = navKeyMap[item.id]
+                ? t(navKeyMap[item.id], item.label)
+                : item.label;
 
               if (isNotificationItem && isAuthenticated) {
                 return (
@@ -254,7 +272,7 @@ export function Sidebar() {
                           <div className='absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse' />
                         )}
                       </div>
-                      {!isCollapsed && <span>{item.label}</span>}
+                      {!isCollapsed && <span>{displayLabel}</span>}
                     </button>
                   </div>
                 );
@@ -290,7 +308,7 @@ export function Sidebar() {
                         strokeWidth={activeState ? 2.5 : 2}
                       />
                     )}
-                    {!isCollapsed && <span>{item.label}</span>}
+                    {!isCollapsed && <span>{displayLabel}</span>}
                   </Link>
                 </div>
               );
@@ -340,7 +358,7 @@ export function Sidebar() {
             <button
               onClick={() => alert('Community feed coming soon!')}
               className='text-[15px] font-bold text-white/50 hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none relative py-1'>
-              Community
+              {t('nav.community', 'Community')}
             </button>
             <button
               onClick={() => {
@@ -354,7 +372,7 @@ export function Sidebar() {
                   ? 'text-white'
                   : 'text-white/50 hover:text-white'
               )}>
-              Following
+              {t('nav.following', 'Following')}
               {feedType === 'following' && (
                 <div className='absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-xs' />
               )}
@@ -367,7 +385,7 @@ export function Sidebar() {
                   ? 'text-white'
                   : 'text-white/50 hover:text-white'
               )}>
-              For You
+              {t('nav.forYou', 'For You')}
               {feedType === 'foryou' && (
                 <div className='absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-xs' />
               )}
@@ -404,7 +422,12 @@ export function Sidebar() {
       <div className='md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#1a1a1a] border-t border-white/5 flex items-center justify-around z-50 pb-safe'>
         {mobileBottomNavItems.map((item) => {
           const isActive = isItemActive(item.href);
-          const label = item.mobileBottomLabel || item.label;
+          const rawLabel = item.mobileBottomLabel || item.label;
+          const displayLabel = item.mobileBottomLabel
+            ? t('nav.inbox', item.mobileBottomLabel)
+            : navKeyMap[item.id]
+            ? t(navKeyMap[item.id], item.label)
+            : rawLabel;
 
           // Special central upload button
           if (item.actionType === 'upload-button') {
@@ -451,7 +474,7 @@ export function Sidebar() {
                   )}
                 </div>
               )}
-              <span className='text-[10px] font-medium'>{label}</span>
+              <span className='text-[10px] font-medium'>{displayLabel}</span>
             </Link>
           );
         })}

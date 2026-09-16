@@ -85,6 +85,14 @@ function HomeContent() {
     }
   }, [feedType, isAuthenticated]);
 
+  // Track home view in GA4 on load and when tab changes
+  useEffect(() => {
+    trackEvent('home_view', {
+      feed_type: feedType,
+      page_name: 'home',
+    });
+  }, [feedType]);
+
   // The post ID to restore to (null if first visit or reset).
   const savedPostId = wasReset ? null : feedStore.getPostId();
 

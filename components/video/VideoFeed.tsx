@@ -87,10 +87,12 @@ export function VideoFeed({
     if (!anchorId) return;
 
     const anchorIndex = shuffledPosts.findIndex((post) => post.id === anchorId);
-    if (anchorIndex >= 0 && anchorIndex !== currentIndex) {
+    if (anchorIndex >= 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentIndex(anchorIndex);
     }
-  }, [currentIndex, initialIndex, initialPostId, posts, shuffledPosts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPostId, initialIndex, posts]);
 
   const handlePrevious = useCallback(() => {
     if (currentIndex > 0 && !isTransitioningRef.current) {

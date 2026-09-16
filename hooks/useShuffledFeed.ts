@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import type { Post } from "@/types/post";
 import {
   getSeenPostIds,
@@ -17,48 +17,38 @@ export function useShuffledFeed(
   rawPosts: Post[],
   options: UseShuffledFeedOptions = {},
 ) {
-  const shuffledRef = useRef<Post[]>([]);
-  const seenRawCountRef = useRef(0);
-  const prevResetKeyRef = useRef(options.resetKey);
-  const prevEnabledRef = useRef(options.enabled ?? true);
-  const prevTargetVideoIdRef = useRef(options.targetVideoId ?? null);
+  const {
+    enabled = true,
+    targetVideoId = null,
+    resetKey = null,
+    cooldownHours = 24,
+    // include any other FeedShuffleOptions fields you pass
+    ...shuffleOptions
+  } = options;
 
-  return useMemo(() => {
-    const enabled = options.enabled ?? true;
-    const targetVideoId = options.targetVideoId ?? null;
-    const resetKey = options.resetKey ?? null;
-    const forceFullReshuffle =
-      resetKey !== prevResetKeyRef.current ||
-      enabled !== prevEnabledRef.current ||
-      targetVideoId !== prevTargetVideoIdRef.current;
+  // Serialize non-primitive options so useMemo deps are stable
+  const optionsKey = JSON.stringify(shuffleOptions);
 
-    prevResetKeyRef.current = resetKey;
-    prevEnabledRef.current = enabled;
-    prevTargetVideoIdRef.current = targetVideoId;
-
+  const shuffled = useMemo(() => {
     if (!enabled) {
-      shuffledRef.current = rawPosts;
-      seenRawCountRef.current = rawPosts.length;
       return targetVideoId ? applyTargetPin(rawPosts, targetVideoId) : rawPosts;
     }
 
-    if (forceFullReshuffle || rawPosts.length === 0) {
-      const seenIds = getSeenPostIds(options.cooldownHours ?? 24);
-      shuffledRef.current = shuffleFeed(rawPosts, seenIds, options);
-      seenRawCountRef.current = rawPosts.length;
-      return applyTargetPin(shuffledRef.current, targetVideoId);
+    if (rawPosts.length === 0) {
+      return applyTargetPin([], targetVideoId);
     }
 
-    if (rawPosts.length > seenRawCountRef.current) {
-      const newSlice = rawPosts.slice(seenRawCountRef.current);
-      const seenIds = getSeenPostIds(options.cooldownHours ?? 24);
-      const shuffledSlice = shuffleFeed(newSlice, seenIds, options);
-      shuffledRef.current = [...shuffledRef.current, ...shuffledSlice];
-      seenRawCountRef.current = rawPosts.length;
-    }
+    const seenIds = getSeenPostIds(cooldownHours);
+    const result = shuffleFeed(rawPosts, seenIds, {
+      cooldownHours,
+      ...shuffleOptions,
+    });
 
-    return applyTargetPin(shuffledRef.current, targetVideoId);
-  }, [rawPosts, options]);
+    return applyTargetPin(result, targetVideoId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawPosts, enabled, targetVideoId, resetKey, cooldownHours, optionsKey]);
+
+  return shuffled;
 }
 
 function applyTargetPin(posts: Post[], targetVideoId: string | null) {

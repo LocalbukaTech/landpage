@@ -226,7 +226,7 @@ export interface BukaHeroLanguage {
 export const BUKA_HERO_LANGUAGES: BukaHeroLanguage[] = [
   {
     language: 'Pidgin',
-    headline: 'Wetin You Wan Chop?!',
+    headline: 'Wetin You Wan Chop Today?!',
     body: 'From correct local food wey people love to places wey people dey hype, your next chow dey here.',
   },
   {
@@ -247,7 +247,7 @@ export const BUKA_HERO_LANGUAGES: BukaHeroLanguage[] = [
   {
     language: 'Portuguese',
     headline: 'O que você quer comer hoje?',
-    body: 'Dos favoritos locais aos melhores restaurantes, sua próxima refeição está aqui.',
+    body: 'Dos favoritos locales aos melhores restaurantes, sua próxima refeição está aqui.',
   },
   {
     language: 'German',
@@ -256,18 +256,18 @@ export const BUKA_HERO_LANGUAGES: BukaHeroLanguage[] = [
   },
   {
     language: 'Yoruba',
-    headline: 'Kín Ni O Fẹ́ Jẹ?!',
-    body: 'Láti ibi oúnjẹ ìbílẹ̀ dé àwọn ilé oúnjẹ tó gbajúmọ̀, oúnjẹ rẹ tó kàn ti wà níhìn-ín.',
+    headline: 'Kí Ni O Fẹ́ Jẹ Lónìí?',
+    body: 'Láti àwọn ibi tí o fẹ́ràn jùlọ ní àdúgbò rẹ dé àwọn tí a fi ẹ̀tọ́ ṣàyẹ̀wò jùlọ, oúnjẹ rẹ tí ń bọ̀ ti wà níbí.',
   },
   {
     language: 'Igbo',
-    headline: 'Gịnị KỊ Chọrọ Iri?!',
-    body: 'Site na ebe oriri obodo ruo na ụlọ oriri kacha mma, nri gị na-esote dị nso.',
+    headline: 'Kịnị Na-Agụ Gị Agụụ?!',
+    body: 'Site n’ebe nri kacha mma gburugburu gị ruo ebe ndị mmadụ na-aja mma, nri gị dị njikere ebe a.',
   },
   {
     language: 'Hausa',
     headline: 'Me kake/kike so ka/ki ci yau?',
-    body: 'Daga wuraren cin abinci na gargajiya zuwa gidajen abinci masu inganci, abincinka na gaba yana nan.',
+    body: 'Daga wuraren da ka fi so a yankinka zuwa wuraren da aka fi ƙima, abincinka na gaba yana nan.',
   },
 ];
 

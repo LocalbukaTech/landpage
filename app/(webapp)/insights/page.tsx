@@ -31,7 +31,7 @@ function InsightsContent() {
 
   const [activeTab, setActiveTab] = useState<InsightsTab>('overview');
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
-  const [isDemo, setIsDemo] = useState(isDemoFromQuery);
+  const isDemo = isDemoFromQuery;
 
   const { data, isLoading, isError } = useInsightsDashboard(
     periodMap[timeRange],

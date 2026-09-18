@@ -284,70 +284,68 @@ export function OverviewTab({
 
   const metricCards = [
     {
-      label: m.views.label,
+      label: 'View',
       value: m.views.formattedValue,
       change: m.views.formattedChange,
       isPositive: m.views.isPositive,
-      icon: <Eye size={18} className='text-[#FBBE15]' />,
+      iconColor: '#FBBE15',
+      icon: <Eye size={14} className='text-[#FBBE15]' />,
     },
     {
-      label: m.reach.label,
+      label: 'Reach',
       value: m.reach.formattedValue,
       change: m.reach.formattedChange,
       isPositive: m.reach.isPositive,
-      icon: <Radio size={18} className='text-sky-400' />,
+      iconColor: '#38BDF8',
+      icon: <Radio size={14} className='text-sky-500' />,
     },
     {
-      label: m.engagement.label,
+      label: 'Engagement',
       value: m.engagement.formattedValue,
       change: m.engagement.formattedChange,
       isPositive: m.engagement.isPositive,
-      icon: <Zap size={18} className='text-violet-400' />,
+      iconColor: '#EF4444',
+      icon: <Zap size={14} className='text-red-500' />,
     },
     {
-      label: m.newFollowers.label,
+      label: 'New Followers',
       value: m.newFollowers.formattedValue,
       change: m.newFollowers.formattedChange,
       isPositive: m.newFollowers.isPositive,
-      icon: <UserPlus size={18} className='text-emerald-400' />,
+      iconColor: '#10B981',
+      icon: <UserPlus size={14} className='text-emerald-500' />,
     },
   ];
 
   return (
     <div className='flex flex-col gap-6 animate-in fade-in duration-200'>
-      {/* Metric cards */}
+      {/* Metric cards (Figma White Cards Design) */}
       <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
         {metricCards.map((card) => (
           <div
             key={card.label}
-            className='bg-[#161616] border border-white/10 rounded-2xl p-5 flex flex-col justify-between gap-4 shadow-lg hover:border-white/20 transition-colors'
+            className='bg-[#ECECEC] rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-[130px] sm:h-[140px] shadow-md transition-all hover:scale-[1.01]'
           >
-            <div className='flex items-center justify-between'>
-              <span className='text-xs font-bold text-zinc-400 uppercase tracking-wider'>
+            <div className='flex items-center gap-1.5'>
+              {card.icon}
+              <span className='text-[11px] sm:text-xs font-semibold text-zinc-600 tracking-tight'>
                 {card.label}
               </span>
-              <div className='w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center'>
-                {card.icon}
-              </div>
             </div>
-            <div className='flex items-baseline justify-between gap-2'>
-              <span className='text-2xl sm:text-3xl font-black text-white tracking-tight'>
+
+            <div className='my-auto'>
+              <span className='text-2xl sm:text-3xl font-black text-[#141414] tracking-tight block'>
                 {card.value}
               </span>
-              <span
-                className={`inline-flex items-center gap-0.5 text-xs font-bold px-2 py-0.5 rounded-full border ${
-                  card.isPositive
-                    ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
-                    : 'text-rose-400 bg-rose-500/10 border-rose-500/20'
-                }`}
-              >
-                {card.isPositive ? (
-                  <ArrowUpRight size={12} />
-                ) : (
-                  <ArrowDownRight size={12} />
-                )}
+            </div>
+
+            <div className='flex items-center justify-between'>
+              <span className='text-xs sm:text-sm font-bold text-emerald-600 font-mono'>
                 {card.change}
               </span>
+              <div className='w-7 h-7 rounded-full bg-[#1E1E1E] flex items-center justify-center text-emerald-400'>
+                <ArrowUpRight size={14} strokeWidth={2.5} />
+              </div>
             </div>
           </div>
         ))}

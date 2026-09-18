@@ -35,6 +35,7 @@ export function AccountInformation({
   const subTabs = [
     {id: 'account', label: t('settings.tabs.account', 'Account')},
     {id: 'password', label: t('settings.tabs.password', 'Password & Security')},
+    {id: 'delete', label: t('settings.tabs.delete', 'Delete Account')},
     {id: 'blocked', label: t('settings.tabs.blocked', 'Blocked Users')},
     {id: 'languages', label: t('settings.tabs.languages', 'Languages')},
     {id: 'logout', label: t('settings.tabs.logout', 'Logout')},

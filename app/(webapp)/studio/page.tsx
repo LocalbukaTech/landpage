@@ -218,6 +218,19 @@ function LocalbukaStudioDashboardContent() {
     location: string;
     restaurantId?: string;
   }) => {
+    const isImageUpload = selectedFiles.length > 0
+      ? selectedFiles[0].type.startsWith('image/')
+      : existingPost?.mediaType === 'image';
+
+    if (isImageUpload && (!data.description || !data.description.trim())) {
+      toast({
+        title: 'Description required',
+        description: 'Please write a post description for your image post.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // EDIT MODE
     if (editPostId) {
       if (selectedFiles.length > 0) {
@@ -231,8 +244,11 @@ function LocalbukaStudioDashboardContent() {
         } else {
           selectedFiles.forEach((file) => formData.append('media', file));
           if (data.description) formData.append('caption', data.description);
-          if (data.imageCaptions && data.imageCaptions.length > 0) {
-            data.imageCaptions.forEach((cap) => formData.append('imageCaptions', cap));
+          const hasAnyImageCaption = data.imageCaptions?.some((cap) => cap && cap.trim().length > 0);
+          if (hasAnyImageCaption) {
+            for (let i = 0; i < selectedFiles.length; i++) {
+              formData.append('imageCaptions', data.imageCaptions?.[i] || '');
+            }
           }
         }
         if (data.location) formData.append('location', data.location);
@@ -270,8 +286,12 @@ function LocalbukaStudioDashboardContent() {
           tags: data.tags,
           restaurantId: data.restaurantId,
         };
-        if (!isVideoPost && data.imageCaptions && data.imageCaptions.length > 0) {
-          jsonData.imageCaptions = data.imageCaptions;
+        if (!isVideoPost) {
+          const hasAnyImageCaption = data.imageCaptions?.some((cap) => cap && cap.trim().length > 0);
+          if (hasAnyImageCaption) {
+            const totalCount = existingPost?.mediaUrls?.length || (existingPost?.mediaUrl ? 1 : 0);
+            jsonData.imageCaptions = Array.from({ length: totalCount }, (_, i) => data.imageCaptions?.[i] || '');
+          }
         }
 
         updatePostMutation.mutate(
@@ -312,8 +332,11 @@ function LocalbukaStudioDashboardContent() {
     } else {
       selectedFiles.forEach((file) => formData.append('media', file));
       if (data.description) formData.append('caption', data.description);
-      if (data.imageCaptions && data.imageCaptions.length > 0) {
-        data.imageCaptions.forEach((cap) => formData.append('imageCaptions', cap));
+      const hasAnyImageCaption = data.imageCaptions?.some((cap) => cap && cap.trim().length > 0);
+      if (hasAnyImageCaption) {
+        for (let i = 0; i < selectedFiles.length; i++) {
+          formData.append('imageCaptions', data.imageCaptions?.[i] || '');
+        }
       }
     }
 

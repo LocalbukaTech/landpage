@@ -31,6 +31,7 @@ const navKeyMap: Record<string, string> = {
   saved: 'nav.saved',
   community: 'nav.community',
   rewards: 'nav.rewards',
+  insights: 'nav.insights',
   profile: 'nav.profile',
 };
 

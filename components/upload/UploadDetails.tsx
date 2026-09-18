@@ -407,8 +407,13 @@ export function UploadDetails({
             {/* General Caption Section */}
             <div className='relative mb-5 flex flex-col'>
               <div className='flex justify-between items-center mb-2'>
-                <h3 className='text-sm font-bold text-zinc-300 uppercase tracking-wide'>
-                  Post Description
+                <h3 className='text-sm font-bold text-zinc-300 uppercase tracking-wide flex items-center gap-1.5'>
+                  <span>Post Description</span>
+                  {isImage ? (
+                    <span className='text-xs font-semibold text-[#fbbe15] lowercase'>* (required for images)</span>
+                  ) : (
+                    <span className='text-xs font-normal text-zinc-500 lowercase'>(optional)</span>
+                  )}
                 </h3>
                 <button
                   onClick={handleHashtagClick}
@@ -422,7 +427,11 @@ export function UploadDetails({
                 <textarea
                   value={generalCaption}
                   onChange={(e) => setGeneralCaption(e.target.value)}
-                  placeholder="Tell your followers about this post... Add details, tags, and reviews!"
+                  placeholder={
+                    isImage
+                      ? "Tell your followers about this post... Add details, tags, and reviews! (Required)"
+                      : "Tell your followers about this video... (Optional)"
+                  }
                   maxLength={4000}
                   className='w-full h-24 bg-[#1e1e1e] rounded-xl p-4 resize-none border border-white/10 focus:ring-2 focus:ring-[#fbbe15] focus:outline-none placeholder:text-zinc-500 text-white text-sm'
                   disabled={isUploading}
@@ -437,7 +446,11 @@ export function UploadDetails({
             {isImage && (
               <div className='relative mb-5 flex flex-col'>
                 <h3 className='text-sm font-bold text-zinc-300 uppercase tracking-wide mb-2 flex items-center justify-between'>
-                  <span>Image Slide Text Overlay {totalSlides > 1 && `(Slide ${activeIndex + 1} of ${totalSlides})`}</span>
+                  <span className='flex items-center gap-1.5'>
+                    <span>Image Slide Text Overlay</span>
+                    <span className='text-xs font-normal text-zinc-500 lowercase'>(optional)</span>
+                    {totalSlides > 1 && <span className='text-xs text-zinc-400'>· Slide {activeIndex + 1} of {totalSlides}</span>}
+                  </span>
                   {totalSlides > 1 && (
                     <span className='text-[10px] font-bold text-zinc-300 bg-white/10 px-2 py-0.5 rounded-full border border-white/10'>
                       Slide {activeIndex + 1} of {totalSlides}
@@ -449,7 +462,7 @@ export function UploadDetails({
                     type='text'
                     value={description}
                     onChange={(e) => handleDescriptionChange(e.target.value)}
-                    placeholder="e.g. Buzz cut, Juicy burger, Fries (overlays in center of image)..."
+                    placeholder="Optional text overlay centered on this image (e.g. Dish name, price)..."
                     maxLength={80}
                     className='w-full bg-[#1e1e1e] rounded-xl p-3.5 border border-white/10 focus:ring-2 focus:ring-[#fbbe15] focus:outline-none placeholder:text-zinc-500 text-white text-sm pr-16'
                     disabled={isUploading}
@@ -641,17 +654,18 @@ export function UploadDetails({
 
             <div className='mt-auto space-y-3'>
               <button
-                onClick={() =>
+                onClick={() => {
+                  if (isImage && !generalCaption.trim()) return;
                   onPost({
-                    description: generalCaption,
+                    description: generalCaption.trim(),
                     imageCaptions: isImage ? captions : undefined,
                     tags: extractHashtags(generalCaption),
                     location: selectedLocations[0],
                     restaurantId: selectedRestaurant?.id,
-                  })
-                }
-                className='w-full py-3 bg-[#fbbe15] text-[#1a1a1a] font-bold rounded-xl hover:bg-[#e5ac10] transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed'
-                disabled={isUploading}>
+                  });
+                }}
+                className='w-full py-3 bg-[#fbbe15] text-[#1a1a1a] font-bold rounded-xl hover:bg-[#e5ac10] transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer'
+                disabled={isUploading || (isImage && !generalCaption.trim())}>
                 {isUploading ? (
                   <Loader2 className='w-5 h-5 animate-spin' />
                 ) : (

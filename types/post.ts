@@ -19,6 +19,8 @@ export interface Post {
   mediaType: 'image' | 'video';
   caption: string;
   tags: string[];
+  viewsCount?: number;
+  viewCount?: number;
   likesCount?: number;
   likeCount?: number;
   commentsCount?: number;

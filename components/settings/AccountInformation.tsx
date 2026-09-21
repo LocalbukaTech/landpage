@@ -543,7 +543,7 @@ function DeleteTab() {
   };
 
   return (
-    <div className='flex flex-col justify-between h-full'>
+    <div className='flex flex-col'>
       <div className='max-w-2xl'>
         <p className='text-zinc-300 text-sm leading-relaxed'>
           <span className='text-red-500 font-semibold'>Deleting</span> your

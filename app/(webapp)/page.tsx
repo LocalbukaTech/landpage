@@ -16,6 +16,7 @@ import { feedStore, type FeedType } from "@/lib/feed-state";
 import { PasswordPromptModal } from "@/components/modals";
 import { useAuth } from "@/context/AuthContext";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { trackEvent } from "@/lib/analytics";
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -87,9 +88,9 @@ function HomeContent() {
 
   // Track home view in GA4 on load and when tab changes
   useEffect(() => {
-    trackEvent('home_view', {
+    trackEvent("home_view", {
       feed_type: feedType,
-      page_name: 'home',
+      page_name: "home",
     });
   }, [feedType]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 interface NotificationsPrivacyProps {
@@ -79,6 +79,22 @@ const getDefaults = (settings: ToggleSetting[]) =>
     boolean
   >;
 
+// Helper to safely load settings from localStorage during state init
+const loadStoredSettings = (
+  storageKey: string,
+  defaults: Record<string, boolean>,
+): Record<string, boolean> => {
+  // Guard for SSR — window is not available on the server
+  if (typeof window === "undefined") return defaults;
+  try {
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) return defaults;
+    return { ...defaults, ...JSON.parse(saved) };
+  } catch {
+    return defaults;
+  }
+};
+
 export function NotificationsPrivacy({
   activeSubTab = "push",
   onSubTabChange,
@@ -91,28 +107,14 @@ export function NotificationsPrivacy({
       ? activeSubTab
       : internalTab;
 
+  // Lazy initializers read from localStorage during the first render on the client.
+  // On the server, they fall back to defaults (no hydration mismatch).
   const [pushToggles, setPushToggles] = useState(() =>
-    getDefaults(pushNotificationSettings),
+    loadStoredSettings(PUSH_STORAGE_KEY, getDefaults(pushNotificationSettings)),
   );
   const [dataToggles, setDataToggles] = useState(() =>
-    getDefaults(dataSharingSettings),
+    loadStoredSettings(DATA_STORAGE_KEY, getDefaults(dataSharingSettings)),
   );
-
-  // Load saved settings on the client only (avoids hydration mismatch)
-  useEffect(() => {
-    try {
-      const savedPush = localStorage.getItem(PUSH_STORAGE_KEY);
-      if (savedPush) {
-        setPushToggles((prev) => ({ ...prev, ...JSON.parse(savedPush) }));
-      }
-      const savedData = localStorage.getItem(DATA_STORAGE_KEY);
-      if (savedData) {
-        setDataToggles((prev) => ({ ...prev, ...JSON.parse(savedData) }));
-      }
-    } catch {
-      // fall back to defaults
-    }
-  }, []);
 
   const handleTabChange = (tabId: string) => {
     setInternalTab(tabId);

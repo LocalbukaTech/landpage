@@ -74,7 +74,7 @@ const PUSH_STORAGE_KEY = "lb_push_settings";
 const DATA_STORAGE_KEY = "lb_data_permissions";
 
 const getDefaults = (settings: ToggleSetting[]) =>
-  Object.fromEntries(settings.map((s) => [s.key, s.defaultOn])) as Record
+  Object.fromEntries(settings.map((s) => [s.key, s.defaultOn])) as Record<
     string,
     boolean
   >;
@@ -162,12 +162,15 @@ export function NotificationsPrivacy({
   ) => (
     <div key={setting.key} className="flex items-center justify-between">
       <div className="flex flex-col gap-0.5">
-        <span className="text-sm font-semibold text-white">{setting.label}</span>
+        <span className="text-sm font-semibold text-white">
+          {setting.label}
+        </span>
         <span className="text-xs text-zinc-400">{setting.description}</span>
       </div>
       {renderToggleSwitch(
         !!values[setting.key],
-        () => setValues((prev) => ({ ...prev, [setting.key]: !prev[setting.key] })),
+        () =>
+          setValues((prev) => ({ ...prev, [setting.key]: !prev[setting.key] })),
         setting.label,
       )}
     </div>

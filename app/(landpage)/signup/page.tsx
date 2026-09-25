@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, ChevronRight, Loader2 } from 'lucide-react';
+import { PasswordChecklist, allPasswordRulesPass } from './password-checklist';
 import { useSignupMutation } from '@/lib/api/services/auth.hooks';
 import { useValidateReferralCode } from '@/lib/api/services/referral.hooks';
 import { useToast } from '@/hooks/use-toast';
@@ -114,8 +115,11 @@ const SignUpContent = () => {
     setError(''); // Clear error when user types
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const allRulesPass = allPasswordRulesPass(formData.password);
+
+  const handleSubmit = async (e: React.FormEvent) => { 
     e.preventDefault();
+    if (!allRulesPass) return;
     setError('');
     const trimmedCode = formData.referralCode.trim();
     const deviceId = trimmedCode ? getDeviceId() : undefined;
@@ -362,6 +366,8 @@ const SignUpContent = () => {
               </button>
             </div>
 
+            <PasswordChecklist password={formData.password} />
+
             <p className='text-sm text-gray-500 dark:text-gray-400'>
               By signing up you agree with our{' '}
               <Link href='/privacy' className='text-primary hover:underline'>
@@ -376,7 +382,7 @@ const SignUpContent = () => {
 
             <button
               type='submit'
-              disabled={signupMutation.isPending}
+              disabled={signupMutation.isPending || !allRulesPass}
               className='w-full py-3.5 bg-primary hover:bg-primary/90 text-[#0A1F44] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'>
               {signupMutation.isPending ? (
                 <>

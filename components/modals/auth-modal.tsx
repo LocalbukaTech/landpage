@@ -17,6 +17,10 @@ import {useToast} from '@/hooks/use-toast';
 import {userAuthService} from '@/lib/api';
 import {API_BASE_URL} from '@/lib/api/client';
 import {trackEvent, setAnalyticsUser} from '@/lib/analytics';
+import {
+  PasswordChecklist,
+  allPasswordRulesPass,
+} from '@/app/(landpage)/signup/password-checklist';
 
 type AuthTab = 'signin' | 'signup' | 'forgot' | 'reset';
 
@@ -165,8 +169,11 @@ export function AuthModal() {
     );
   };
 
+  const allRulesPass = allPasswordRulesPass(signupData.password);
+
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!allRulesPass) return;
     setError('');
 
     const trimmedCode = signupData.referralCode.trim();
@@ -548,6 +555,9 @@ export function AuthModal() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
+              <PasswordChecklist password={signupData.password} />
+
               <p className='text-xs text-zinc-500'>
                 By signing up you agree with our{' '}
                 <a
@@ -565,7 +575,7 @@ export function AuthModal() {
               </p>
               <button
                 type='submit'
-                disabled={isLoading}
+                disabled={isLoading || !allRulesPass}
                 className='w-full py-3.5 bg-[#fbbe15] hover:bg-[#e5ac10] text-[#1a1a1a] font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer text-sm'>
                 {signupMutation.isPending ? (
                   <>

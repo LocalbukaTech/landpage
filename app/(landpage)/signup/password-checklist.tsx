@@ -26,7 +26,7 @@ export const passwordRules = [
     label: "At least 1 special character (@, #, $, %, !, etc.)",
     test: (p: string) => /[^A-Za-z0-9\s]/.test(p),
   },
-];     
+];
 
 export const allPasswordRulesPass = (password: string) =>
   passwordRules.every((rule) => rule.test(password));
@@ -52,7 +52,7 @@ export const PasswordChecklist = ({ password }: { password: string }) => {
                   ? "bg-emerald-500"
                   : idx === passedCount && hasTyped
                   ? "bg-amber-400 dark:bg-amber-500"
-                  : "bg-gray-200 dark:bg-gray-800"
+                  : "bg-gray-200 dark:bg-white/10"
               }`}
             />
           );
@@ -62,7 +62,7 @@ export const PasswordChecklist = ({ password }: { password: string }) => {
       {/* Dynamic Single-Hint Guidance */}
       <div className="min-h-[22px] flex items-center justify-between text-xs transition-all duration-200">
         {isAllPassed ? (
-          <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium animate-in fade-in slide-in-from-left-1 duration-200">
+          <div className="flex items-center gap-1.5 text-emerald-500 dark:text-emerald-400 font-medium animate-in fade-in slide-in-from-left-1 duration-200">
             <div className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
               <Check className="w-2.5 h-2.5 stroke-[3]" />
             </div>
@@ -71,14 +71,14 @@ export const PasswordChecklist = ({ password }: { password: string }) => {
         ) : (
           <div
             key={firstUnmetRule?.id}
-            className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 animate-in fade-in slide-in-from-left-1 duration-200"
+            className="flex items-center gap-1.5 text-gray-500 dark:text-zinc-400 animate-in fade-in slide-in-from-left-1 duration-200"
           >
-            <div className="w-4 h-4 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 flex items-center justify-center shrink-0">
-              <AlertCircle className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+            <div className="w-4 h-4 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-zinc-400 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-3 h-3 text-gray-400 dark:text-zinc-400" />
             </div>
             <span>
               Next requirement:{" "}
-              <strong className="font-semibold text-gray-700 dark:text-gray-200">
+              <strong className="font-semibold text-gray-700 dark:text-zinc-200">
                 {firstUnmetRule?.label}
               </strong>
             </span>
@@ -86,7 +86,7 @@ export const PasswordChecklist = ({ password }: { password: string }) => {
         )}
 
         {/* Counter */}
-        <span className="text-[11px] text-gray-400 dark:text-gray-500 font-medium tabular-nums ml-2 shrink-0">
+        <span className="text-[11px] text-gray-400 dark:text-zinc-500 font-medium tabular-nums ml-2 shrink-0">
           {passedCount}/{passwordRules.length}
         </span>
       </div>

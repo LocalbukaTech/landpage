@@ -7,7 +7,6 @@ import {
   type SigninPayload,
   type SigninResponse,
   type SignupPayload,
-  type SignupResponse,
   type VerifyPayload,
   type VerifyResponse,
   type ResendCodePayload,
@@ -16,7 +15,6 @@ import {
   ExchangeGoogleCodeResponse,
   GoogleSigninPayload,
 } from './auth.service';
-import {notifySlack} from '@/lib/slack/slack-notify';
 import {
   setAuthToken,
   setAdminUser,
@@ -70,16 +68,6 @@ export const useExchangeGoogleCodeMutation = () => {
 export const useSignupMutation = () => {
   return useMutation({
     mutationFn: (data: SignupPayload) => userAuthService.signup(data),
-    onSuccess: (response: ApiResponse<SignupResponse>) => {
-      const {user} = response.data;
-      // Fire-and-forget Slack notification for new sign-up
-      notifySlack('signup', {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        username: user.username,
-      });
-    },
   });
 };
 

@@ -98,18 +98,39 @@ export function useShuffledFeed(
     resetKey !== state.resetKey;
 
   if (hasPropsChanged) {
-    const isIncremental =
-      enabled === state.enabled &&
-      targetVideoId === state.targetVideoId &&
-      resetKey === state.resetKey &&
-      rawPosts?.length > state.rawPosts?.length;
+    const isTabOrConfigChange =
+      enabled !== state.enabled ||
+      targetVideoId !== state.targetVideoId ||
+      resetKey !== state.resetKey ||
+      state.rawPosts.length === 0;
 
-    const newShuffled = computeShuffled(
-      rawPosts,
-      options,
-      isIncremental ? state.shuffled : [],
-      isIncremental ? state.rawPosts.length : 0
-    );
+    let newShuffled: Post[];
+
+    if (isTabOrConfigChange) {
+      // Full fresh shuffle when tab, filter, or target video resets
+      newShuffled = computeShuffled(rawPosts, options);
+    } else if (rawPosts.length > state.rawPosts.length) {
+      // Incremental shuffle for newly appended pagination pages
+      const postMap = new Map((rawPosts || []).map((p) => [p.id, p]));
+      const existingShuffledUpdated = state.shuffled.map((p) => postMap.get(p.id) || p);
+      const existingIds = new Set(state.shuffled.map((p) => p.id));
+      const newlyAddedPosts = rawPosts.filter((p) => !existingIds.has(p.id));
+
+      if (newlyAddedPosts.length > 0) {
+        const shuffleOptions = { unseenBonus: options.unseenBonus, cooldownHours: options.cooldownHours, diversitySpacing: options.diversitySpacing, maxSeenEntries: options.maxSeenEntries };
+        const seenPostIds = typeof window !== 'undefined' ? getSeenPostIds(options.cooldownHours) : new Set<string>();
+        const shuffledSlice = shuffleFeed(newlyAddedPosts, seenPostIds, shuffleOptions);
+        newShuffled = [...existingShuffledUpdated, ...shuffledSlice];
+      } else {
+        newShuffled = existingShuffledUpdated;
+      }
+    } else {
+      // Data refetch / like / save / comment update: PRESERVE EXACT ORDER and update post objects in place
+      const postMap = new Map((rawPosts || []).map((p) => [p.id, p]));
+      newShuffled = state.shuffled
+        .filter((p) => postMap.has(p.id)) // Remove deleted posts if any
+        .map((p) => postMap.get(p.id) || p);
+    }
 
     setState({
       rawPosts,

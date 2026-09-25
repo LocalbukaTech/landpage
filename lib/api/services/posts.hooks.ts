@@ -8,10 +8,12 @@ import {useEffect} from 'react';
 import {postsService} from './posts.service';
 import {queryKeys} from '../types';
 import type {
+  Post,
   PostsQueryParams,
   FeedQueryParams,
   CommentsQueryParams,
 } from '@/types/post';
+import {notifySlack} from '@/lib/slack/slack-notify';
 
 /* ─── Queries ─────────────────────────────────────────────── */
 
@@ -136,9 +138,42 @@ export const useCreatePost = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (formData: FormData) => postsService.createPost(formData),
-    onSuccess: () => {
+    onSuccess: async (response) => {
       queryClient.invalidateQueries({queryKey: queryKeys.posts.all});
       queryClient.invalidateQueries({queryKey: queryKeys.users.all});
+
+      // Extract created post
+      const post = ((response as any)?.data?.data || (response as any)?.data) as Post | undefined;
+      if (post && post.id) {
+        const postData = {
+          id: post.id,
+          caption: post.caption,
+          mediaType: post.mediaType,
+          tags: post.tags,
+          user: {
+            id: post.user?.id || '',
+            fullName: post.user?.fullName || `${post.user?.firstName || ''} ${post.user?.lastName || ''}`.trim(),
+            username: post.user?.username,
+            email: post.user?.email,
+          },
+        };
+
+        // Fire new post notification
+        notifySlack('new_post', postData);
+
+        // Check if this is the user's first post
+        if (post.user?.id) {
+          try {
+            const userPostsRes = await postsService.getPosts({ userId: post.user.id, pageSize: 2 });
+            const total = userPostsRes?.data?.total ?? userPostsRes?.data?.data?.length;
+            if (total === 1) {
+              notifySlack('first_post', postData);
+            }
+          } catch {
+            // Silently swallow any secondary check errors
+          }
+        }
+      }
     },
   });
 };

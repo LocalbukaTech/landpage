@@ -26,7 +26,7 @@ export const passwordRules = [
     label: "At least 1 special character (@, #, $, %, !, etc.)",
     test: (p: string) => /[^A-Za-z0-9\s]/.test(p),
   },
-];
+];     
 
 export const allPasswordRulesPass = (password: string) =>
   passwordRules.every((rule) => rule.test(password));

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy, Archive, RotateCcw } from 'lucide-react';
+import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy, Archive, RotateCcw, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Post } from '@/types/post';
 import { VideoOverlay } from '@/components/video/VideoOverlay';
@@ -53,6 +53,7 @@ export function VideoPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [prevPostId, setPrevPostId] = useState(post.id);
+  const [isBuffering, setIsBuffering] = useState(true);
   const touchStartY = useRef<number | null>(null);
   const touchEndY = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
@@ -63,6 +64,7 @@ export function VideoPlayer({
   if (prevPostId !== post.id) {
     setPrevPostId(post.id);
     setActiveImageIndex(0);
+    setIsBuffering(true);
   }
 
   // Scrubber state
@@ -90,18 +92,27 @@ export function VideoPlayer({
 
   // Play/pause based on active state and video changes
   useEffect(() => {
-    if (videoRef.current && isVideo) {
+    const video = videoRef.current;
+    if (video && isVideo) {
       if (isActive) {
-        // Reset video to beginning when switching
-        videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(() => {
+        if (video.readyState >= 1) {
+          video.currentTime = 0;
+        }
+        video.play().catch(() => {
           // Autoplay might be blocked
         });
       } else {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
+        video.pause();
+        if (video.readyState >= 1) {
+          video.currentTime = 0;
+        }
       }
     }
+    return () => {
+      if (video) {
+        video.pause();
+      }
+    };
   }, [isActive, post.id, isVideo]);
 
   // Double-tap heart particles state
@@ -296,7 +307,7 @@ export function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-[420px] h-full bg-black rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
+      className={`relative w-full max-w-[420px] h-full bg-black md:rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
       onClick={handleContainerClick}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -375,6 +386,13 @@ export function VideoPlayer({
           preload='auto'
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
+          onWaiting={() => setIsBuffering(true)}
+          onPlaying={() => {
+            setIsBuffering(false);
+            setIsPlaying(true);
+          }}
+          onCanPlay={() => setIsBuffering(false)}
+          onLoadedData={() => setIsBuffering(false)}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
         />
@@ -483,7 +501,7 @@ export function VideoPlayer({
 
       {/* Paused state — persistent subtle icon */}
       {isVideo && !isPlaying && !showPlayPauseIcon && (
-        <div className='absolute inset-0 flex items-center justify-center z-20 pointer-events-none'>
+         <div className='absolute inset-0 flex items-center justify-center z-20 pointer-events-none'>
           <div className='w-20 h-20 rounded-full bg-black/40 flex items-center justify-center backdrop-blur-sm opacity-70'>
             <Play size={40} className='text-white ml-1' fill='white' />
           </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import {useState} from 'react';
-import {useTranslation} from '@/context/LanguageContext';
-import {useToast} from '@/hooks/use-toast';
+import { useState } from 'react';
+import { useTranslation } from '@/context/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface NotificationsPrivacyProps {
   activeSubTab?: string;
@@ -20,7 +20,7 @@ const pushNotificationSettings = [
   {
     key: 'newNearbyBuka',
     label: 'New Nearby Buka',
-    description: 'Alerts when new local restaurants are available.',
+    description: 'Alerts when new local restaur ants are available.',
     defaultOn: true,
   },
   {
@@ -87,8 +87,8 @@ export function NotificationsPrivacy({
   activeSubTab,
   onSubTabChange,
 }: NotificationsPrivacyProps) {
-  const {t} = useTranslation();
-  const {toast} = useToast();
+  const { t } = useTranslation();
+  const { toast } = useToast();
   const [internalTab, setInternalTab] = useState(
     activeSubTab && validTabIds.includes(activeSubTab) ? activeSubTab : 'push',
   );
@@ -148,9 +148,9 @@ export function NotificationsPrivacy({
   });
 
   const subTabs = [
-    {id: 'push', label: t('notifications.push', 'Push Notifications')},
-    {id: 'privacy', label: t('notifications.privacy', 'Privacy Settings')},
-    {id: 'data', label: t('notifications.data', 'Data Sharing / Permissions')},
+    { id: 'push', label: t('notifications.push', 'Push Notifications') },
+    { id: 'privacy', label: t('notifications.privacy', 'Privacy Settings') },
+    { id: 'data', label: t('notifications.data', 'Data Sharing / Permissions') },
   ];
 
   const handleTabChange = (tabId: string) => {
@@ -160,15 +160,15 @@ export function NotificationsPrivacy({
 
   // Toggle handlers
   const handlePushToggle = (key: string) => {
-    setPushToggles((prev) => ({...prev, [key]: !prev[key]}));
+    setPushToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handlePrivacyToggle = (key: string) => {
-    setPrivacyToggles((prev) => ({...prev, [key]: !prev[key]}));
+    setPrivacyToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleDataToggle = (key: string) => {
-    setDataToggles((prev) => ({...prev, [key]: !prev[key]}));
+    setDataToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   // Reset Handlers
@@ -244,13 +244,11 @@ export function NotificationsPrivacy({
       aria-checked={checked}
       aria-label={ariaLabel}
       onClick={onToggle}
-      className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer border-none shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#FBBE15] ${
-        checked ? 'bg-[#001F3F]' : 'bg-zinc-600'
-      }`}>
+      className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer border-none shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#FBBE15] ${checked ? 'bg-[#001F3F]' : 'bg-zinc-600'
+        }`}>
       <span
-        className={`inline-block w-5 h-5 rounded-full bg-white transition-transform duration-200 shadow-sm ${
-          checked ? 'translate-x-5.5' : 'translate-x-0.5'
-        }`}
+        className={`inline-block w-5 h-5 rounded-full bg-white transition-transform duration-200 shadow-sm ${checked ? 'translate-x-5.5' : 'translate-x-0.5'
+          }`}
       />
     </button>
   );
@@ -265,12 +263,11 @@ export function NotificationsPrivacy({
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`pb-3 text-xs md:text-sm font-medium transition-colors cursor-pointer bg-transparent border-none whitespace-nowrap shrink-0 ${
-                isActive
-                  ? 'text-white border-b-2 border-[#FBBE15]'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-              style={isActive ? {borderBottom: '2px solid #FBBE15'} : {}}>
+              className={`pb-3 text-xs md:text-sm font-medium transition-colors cursor-pointer bg-transparent border-none whitespace-nowrap shrink-0 ${isActive
+                ? 'text-white border-b-2 border-[#FBBE15]'
+                : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              style={isActive ? { borderBottom: '2px solid #FBBE15' } : {}}>
               {tab.label}
             </button>
           );

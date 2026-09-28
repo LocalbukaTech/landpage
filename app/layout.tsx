@@ -129,7 +129,7 @@ export const metadata: Metadata = {
 
   // Other metadata
   other: {
-    "google-adsense-account": "ca-pub-2319578381550272",
+    "google-adsense-account": "ca-pub-7732653394334401",
   },
 };
 
@@ -160,7 +160,12 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Google AdSense */}
-        <meta name="google-adsense-account" content="ca-pub-2319578381550272" />
+        <meta name="google-adsense-account" content="ca-pub-7732653394334401" />
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7732653394334401"
+          crossOrigin="anonymous"
+        />
 
         {/* Canonical URL */}
         <link rel="canonical" href="https://localbuka.com" />
@@ -177,12 +182,6 @@ export default async function RootLayout({
       <body
         className={`${nunitoSans.variable} ${hakuna.variable} font-sans antialiased`}
       >
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2319578381550272"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
         <Script id="clarity-script" strategy="afterInteractive">
           {`
             (function(c,l,a,r,i,t,y){

@@ -12,6 +12,7 @@ import {VideoNavigation} from '@/components/video/VideoNavigation';
 import Comments from '@/components/video/comments';
 import {useToggleLike, useToggleSave} from '@/lib/api/services/posts.hooks';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
+import {ensureHttps} from '@/lib/utils';
 
 const FEED_MUTED_SESSION_KEY = 'localbuka:feed-muted';
 
@@ -64,27 +65,31 @@ export function VideoFeed({
 
   const isTransitioningRef = useRef(false);
 
+  const [direction, setDirection] = useState(0);
+
   const handlePrevious = useCallback(() => {
     if (currentIndex > 0 && !isTransitioningRef.current) {
       isTransitioningRef.current = true;
+      setDirection(-1);
       setCurrentIndex((prev) => prev - 1);
       if (transitionTimeoutRef.current)
         clearTimeout(transitionTimeoutRef.current);
       transitionTimeoutRef.current = setTimeout(() => {
         isTransitioningRef.current = false;
-      }, 600);
+      }, 400);
     }
   }, [currentIndex]);
 
   const handleNext = useCallback(() => {
     if (currentIndex < posts.length - 1 && !isTransitioningRef.current) {
       isTransitioningRef.current = true;
+      setDirection(1);
       setCurrentIndex((prev) => prev + 1);
       if (transitionTimeoutRef.current)
         clearTimeout(transitionTimeoutRef.current);
       transitionTimeoutRef.current = setTimeout(() => {
         isTransitioningRef.current = false;
-      }, 600);
+      }, 400);
     }
   }, [currentIndex, posts.length]);
 
@@ -200,29 +205,36 @@ export function VideoFeed({
   return (
     <div className='fixed top-14 bottom-16 left-0 right-0 flex items-center justify-center md:static md:top-auto md:bottom-auto md:left-auto md:right-auto md:w-full md:h-[calc(100vh-3rem)] md:gap-4 md:max-h-[850px] overscroll-none'>
       <div className='flex gap-3 items-end h-full w-full md:w-auto relative'>
-        <AnimatePresence mode='wait'>
-          {currentPost && (
-            <motion.div
-              key={currentPost.id}
-              variants={fadeVariants}
-              initial='enter'
-              animate='center'
-              exit='exit'
-              transition={{duration: 0.3, ease: 'easeInOut'}}
-              className='h-full w-full flex items-center justify-center md:rounded-2xl overflow-hidden bg-black'>
-              <VideoPlayer
-                post={currentPost}
-                isActive={true}
-                onSwipeUp={handleNext}
-                onSwipeDown={handlePrevious}
-                isMuted={isGlobalMuted}
-                onMuteChange={handleMuteChange}
-                showTimestamp={showTimestamp}
-                onLikeToggle={handleLikeToggle}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {currentPost && (
+          <div
+            className='relative h-full w-full md:w-[420px] md:min-w-[420px] flex-shrink-0 md:rounded-2xl overflow-hidden bg-black flex items-center justify-center'
+            style={{width: '420px', maxWidth: '100%'}}>
+            <AnimatePresence initial={false}>
+              <motion.div
+                key={currentPost.id}
+                variants={fadeVariants}
+                initial='enter'
+                animate='center'
+                exit='exit'
+                transition={{
+                  duration: 0.3,
+                  ease: [0.25, 1, 0.5, 1],
+                }}
+                className='absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden'>
+                <VideoPlayer
+                  post={currentPost}
+                  isActive={true}
+                  onSwipeUp={handleNext}
+                  onSwipeDown={handlePrevious}
+                  isMuted={isGlobalMuted}
+                  onMuteChange={handleMuteChange}
+                  showTimestamp={showTimestamp}
+                  onLikeToggle={handleLikeToggle}
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        )}
 
         {currentPost && (
           <div className='absolute right-2 bottom-20 md:static md:right-auto md:bottom-auto z-10'>
@@ -259,6 +271,30 @@ export function VideoFeed({
           canGoPrevious={currentIndex > 0}
           canGoNext={currentIndex < posts.length - 1}
         />
+      </div>
+
+      {/* Background Preloader for Upcoming Videos & Thumbnails */}
+      <div className='hidden' aria-hidden='true'>
+        {posts.slice(currentIndex + 1, currentIndex + 3).map((nextPost) => (
+          <div key={`preload-${nextPost.id}`}>
+            {nextPost.thumbnailUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={ensureHttps(nextPost.thumbnailUrl)}
+                alt=''
+                loading='eager'
+              />
+            )}
+            {nextPost.mediaType === 'video' && nextPost.mediaUrl && (
+              <video
+                src={ensureHttps(nextPost.mediaUrl)}
+                preload='auto'
+                muted
+                playsInline
+              />
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

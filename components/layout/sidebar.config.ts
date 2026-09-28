@@ -135,7 +135,7 @@ export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
   {
     id: 'community',
     label: 'Community',
-    href: '#',
+    href: '/community',
     icon: Users,
     authRequirement: 'public',
     showInDesktop: true,

@@ -8,6 +8,7 @@ import {
   User,
   Store,
   Gift,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -146,6 +147,16 @@ export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
     label: 'Refer & Earn',
     href: '/rewards',
     icon: Gift,
+    authRequirement: 'auth-prompt',
+    showInDesktop: true,
+    showInMobileBottom: false,
+    showInMobileDrawer: true,
+  },
+  {
+    id: 'insights',
+    label: 'Insights',
+    href: '/insights',
+    icon: TrendingUp,
     authRequirement: 'auth-prompt',
     showInDesktop: true,
     showInMobileBottom: false,

@@ -157,7 +157,7 @@ export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
     label: 'Insights',
     href: '/insights',
     icon: TrendingUp,
-    authRequirement: 'auth-only',
+    authRequirement: 'auth-prompt',
     showInDesktop: true,
     showInMobileBottom: false,
     showInMobileDrawer: true,

@@ -1,8 +1,11 @@
 'use client';
 
+import {useRef, useEffect} from 'react';
 import {VideoFeed} from '@/components/video/VideoFeed';
 import {usePost} from '@/lib/api/services/posts.hooks';
-import {Loader2, ArrowLeft} from 'lucide-react';
+import {useBatchReportViews} from '@/lib/api/services/insights.hooks';
+import {Loader2} from 'lucide-react';
+import {BackCircleButton} from '@/components/ui/BackCircleButton';
 import Link from 'next/link';
 import {useSearchParams} from 'next/navigation';
 import type {Post} from '@/types/post';
@@ -29,13 +32,21 @@ export function PostClient({id, initialPost}: PostClientProps) {
   const post =
     (response as any)?.data?.data || (response as any)?.data || response;
   const goBack = useDynamicBack();
+
+  // Report the single-post view after 2 seconds on screen
+  const batchReportViews = useBatchReportViews();
+  const batchMutateRef = useRef(batchReportViews.mutate);
+  batchMutateRef.current = batchReportViews.mutate;
+  useEffect(() => {
+    if (!id) return;
+    const timer = setTimeout(() => batchMutateRef.current([id]), 2000);
+    return () => clearTimeout(timer);
+  }, [id]);
   return (
     <div className='relative w-full h-full bg-black'>
-      <button
-        onClick={() => goBack('/')}
-        className='absolute top-6 left-6 z-50 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white transition-all backdrop-blur-sm'>
-        <ArrowLeft size={24} />
-      </button>
+      <div className='absolute top-6 left-6 z-50'>
+        <BackCircleButton onClick={() => goBack('/')} size={32} />
+      </div>
 
       {isLoading && !post ? (
         <div className='flex flex-col items-center justify-center h-full w-full text-white/70 space-y-4'>

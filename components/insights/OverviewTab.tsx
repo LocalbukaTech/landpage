@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   BarChart3,
@@ -88,7 +88,29 @@ function PerformanceChart({
     return hi >= 0 ? hi : data.length - 1;
   });
 
+  // Reset active index whenever the data array changes (e.g. time-range filter switch)
+  useEffect(() => {
+    const hi = data.findIndex((p) => p.isHighlight);
+    setActiveIdx(hi >= 0 ? hi : data.length - 1);
+  }, [data]);
+
   if (!data.length) return null;
+
+  // Clamp to valid range — guards against stale state during the transition render
+  const safeIdx = Math.min(activeIdx, data.length - 1);
+
+  // Subsample x-axis ticks so we never render more than 8 labels (avoids crowding)
+  const MAX_X_TICKS = 8;
+  const tickSet = new Set<number>();
+  if (data.length <= MAX_X_TICKS) {
+    data.forEach((_, i) => tickSet.add(i));
+  } else {
+    tickSet.add(0);
+    tickSet.add(data.length - 1);
+    const gap = (data.length - 1) / (MAX_X_TICKS - 1);
+    for (let k = 1; k < MAX_X_TICKS - 1; k++) tickSet.add(Math.round(k * gap));
+  }
+  const isDense = data.length > 14;
 
   const W = 700;
   const H = 200;
@@ -164,9 +186,9 @@ function PerformanceChart({
 
           {/* Active point vertical line */}
           <line
-            x1={toX(activeIdx)}
+            x1={toX(safeIdx)}
             y1={PADDING.t}
-            x2={toX(activeIdx)}
+            x2={toX(safeIdx)}
             y2={H}
             stroke='rgba(251,190,21,0.35)'
             strokeDasharray='3 3'
@@ -189,16 +211,17 @@ function PerformanceChart({
           {data.map((pt, i) => {
             const cx = toX(i);
             const cy = toY(pt.value);
-            const isActive = i === activeIdx;
+            const isActive = i === safeIdx;
+            const r = isActive ? 6 : isDense ? 2.5 : 4;
             return (
               <circle
                 key={pt.date}
                 cx={cx}
                 cy={cy}
-                r={isActive ? 6 : 4}
+                r={r}
                 fill='#FBBE15'
                 stroke={isActive ? '#ffffff' : '#161616'}
-                strokeWidth={isActive ? 2.5 : 1.5}
+                strokeWidth={isActive ? 2.5 : isDense ? 1 : 1.5}
                 className='cursor-pointer'
                 onClick={() => setActiveIdx(i)}
               />
@@ -208,11 +231,13 @@ function PerformanceChart({
 
         {/* Tooltip bubble */}
         {(() => {
-          const pt = data[activeIdx];
-          const pct = toX(activeIdx) / W;
+          const pt = data[safeIdx];
+          const rawPct = toX(safeIdx) / W;
+          // Clamp so the tooltip never clips off the left/right edge
+          const pct = Math.max(0.03, Math.min(0.97, rawPct));
           return (
             <div
-              className='absolute -top-2 pointer-events-none transform -translate-x-1/2'
+              className='absolute pointer-events-none'
               style={{
                 left: `${pct * 100}%`,
                 top: `${(toY(pt.value) / 220) * 100}%`,
@@ -232,22 +257,25 @@ function PerformanceChart({
         })()}
       </div>
 
-      {/* X-axis date labels */}
+      {/* X-axis date labels — subsampled to avoid crowding on 30d/90d/all */}
       <div className='flex justify-between text-[10px] font-semibold border-t border-white/5 pt-2'>
-        {data.map((pt, i) => (
-          <button
-            key={pt.date}
-            type='button'
-            onClick={() => setActiveIdx(i)}
-            className={`bg-transparent border-none p-0 cursor-pointer text-[10px] transition-colors ${
-              i === activeIdx
-                ? 'text-[#FBBE15] font-bold'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            {pt.label}
-          </button>
-        ))}
+        {data.map((pt, i) => {
+          if (!tickSet.has(i)) return null;
+          return (
+            <button
+              key={pt.date}
+              type='button'
+              onClick={() => setActiveIdx(i)}
+              className={`bg-transparent border-none p-0 cursor-pointer text-[10px] transition-colors ${
+                i === safeIdx
+                  ? 'text-[#FBBE15] font-bold'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {pt.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

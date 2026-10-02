@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, ArrowUpRight, Info, AlertCircle, MapPin } from 'lucide-react';
 import type {
   InsightsAudienceData,
@@ -43,7 +43,29 @@ function GrowthChart({
     return hi >= 0 ? hi : points.length - 1;
   });
 
+  // Reset active index whenever points array changes (e.g. time-range filter switch)
+  useEffect(() => {
+    const hi = points.findIndex((p) => p.isHighlight);
+    setActiveIdx(hi >= 0 ? hi : points.length - 1);
+  }, [points]);
+
   if (!points.length) return null;
+
+  // Clamp to valid range — guards against stale state during the transition render
+  const safeIdx = Math.min(activeIdx, points.length - 1);
+
+  // Subsample x-axis ticks so we never render more than 8 labels (avoids crowding)
+  const MAX_X_TICKS = 8;
+  const tickSet = new Set<number>();
+  if (points.length <= MAX_X_TICKS) {
+    points.forEach((_, i) => tickSet.add(i));
+  } else {
+    tickSet.add(0);
+    tickSet.add(points.length - 1);
+    const gap = (points.length - 1) / (MAX_X_TICKS - 1);
+    for (let k = 1; k < MAX_X_TICKS - 1; k++) tickSet.add(Math.round(k * gap));
+  }
+  const isDense = points.length > 14;
 
   const W = 620;
   const H = 190;
@@ -71,8 +93,10 @@ function GrowthChart({
     pathD +
     ` L ${toX(points.length - 1)} ${H} L ${toX(0)} ${H} Z`;
 
-  const activePt = points[activeIdx];
-  const tipLeft = `${(toX(activeIdx) / W) * 100}%`;
+  const activePt = points[safeIdx];
+  const rawTipPct = toX(safeIdx) / W;
+  // Clamp so the tooltip never clips off the left/right edge
+  const tipLeft = `${Math.max(3, Math.min(97, rawTipPct * 100))}%`;
   const tipTop = `${(toY(activePt.value) / (H + 24)) * 100}%`; // rough SVG-to-div mapping
 
   return (
@@ -134,9 +158,9 @@ function GrowthChart({
 
             {/* Active marker line */}
             <line
-              x1={toX(activeIdx)}
+              x1={toX(safeIdx)}
               y1={PT}
-              x2={toX(activeIdx)}
+              x2={toX(safeIdx)}
               y2={H}
               stroke='rgba(251,190,21,0.35)'
               strokeDasharray='3 3'
@@ -157,16 +181,17 @@ function GrowthChart({
 
             {/* Points */}
             {points.map((pt, i) => {
-              const isActive = i === activeIdx;
+              const isActive = i === safeIdx;
+              const r = isActive ? 6 : isDense ? 2.5 : 4;
               return (
                 <circle
                   key={pt.date}
                   cx={toX(i)}
                   cy={toY(pt.value)}
-                  r={isActive ? 6 : 4}
+                  r={r}
                   fill='#FBBE15'
                   stroke={isActive ? '#ffffff' : '#161616'}
-                  strokeWidth={isActive ? 2.5 : 1.5}
+                  strokeWidth={isActive ? 2.5 : isDense ? 1 : 1.5}
                   className='cursor-pointer'
                   onClick={() => setActiveIdx(i)}
                 />
@@ -190,22 +215,25 @@ function GrowthChart({
           </div>
         </div>
 
-        {/* X-axis labels */}
+        {/* X-axis labels — subsampled to avoid crowding on 30d/90d/all */}
         <div className='flex justify-between pl-8 text-[10px] font-semibold border-t border-white/5 pt-2'>
-          {points.map((pt, i) => (
-            <button
-              key={pt.date}
-              type='button'
-              onClick={() => setActiveIdx(i)}
-              className={`bg-transparent border-none p-0 cursor-pointer text-[10px] transition-colors ${
-                i === activeIdx
-                  ? 'text-[#FBBE15] font-bold'
-                  : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              {pt.label}
-            </button>
-          ))}
+          {points.map((pt, i) => {
+            if (!tickSet.has(i)) return null;
+            return (
+              <button
+                key={pt.date}
+                type='button'
+                onClick={() => setActiveIdx(i)}
+                className={`bg-transparent border-none p-0 cursor-pointer text-[10px] transition-colors ${
+                  i === safeIdx
+                    ? 'text-[#FBBE15] font-bold'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {pt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

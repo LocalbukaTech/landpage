@@ -11,6 +11,7 @@ import {ActionBar} from '@/components/video/ActionBar';
 import {VideoNavigation} from '@/components/video/VideoNavigation';
 import Comments from '@/components/video/comments';
 import {useToggleLike, useToggleSave} from '@/lib/api/services/posts.hooks';
+import {useBatchReportViews} from '@/lib/api/services/insights.hooks';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
 import {ensureHttps} from '@/lib/utils';
 
@@ -55,6 +56,47 @@ export function VideoFeed({
 
   const toggleLikeMutation = useToggleLike();
   const toggleSaveMutation = useToggleSave();
+
+  // ── Batch view tracking ────────────────────────────────────────────────────
+  // Report views after a post has been visible for 2 seconds; flush on unmount
+  const batchReportViews = useBatchReportViews();
+  const pendingViewsRef = useRef<Set<string>>(new Set());
+  const viewTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Stable ref so we can call mutate inside effects without stale-closure issues
+  const batchMutateRef = useRef(batchReportViews.mutate);
+  useEffect(() => {
+    batchMutateRef.current = batchReportViews.mutate;
+  });
+
+  useEffect(() => {
+    const post = posts[currentIndex];
+    if (!post?.id) return;
+    if (viewTimerRef.current) clearTimeout(viewTimerRef.current);
+    viewTimerRef.current = setTimeout(() => {
+      pendingViewsRef.current.add(post.id);
+      // Flush eagerly when batch reaches 10 to avoid holding too many in memory
+      if (pendingViewsRef.current.size >= 10) {
+        const ids = Array.from(pendingViewsRef.current);
+        pendingViewsRef.current.clear();
+        batchMutateRef.current(ids);
+      }
+    }, 2000);
+    return () => {
+      if (viewTimerRef.current) clearTimeout(viewTimerRef.current);
+    };
+  }, [currentIndex, posts]);
+
+  // Flush any remaining pending views when the feed unmounts
+  useEffect(() => {
+    return () => {
+      if (viewTimerRef.current) clearTimeout(viewTimerRef.current);
+      if (pendingViewsRef.current.size > 0) {
+        const ids = Array.from(pendingViewsRef.current);
+        pendingViewsRef.current.clear();
+        batchMutateRef.current(ids);
+      }
+    };
+  }, []);
 
   // --- COMMENTS DRAWER STATE ---
   const [isCommentsOpen, setIsCommentsOpen] = useState(initialCommentsOpen);

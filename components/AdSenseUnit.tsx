@@ -52,7 +52,7 @@ export default function AdSenseUnit() {
         ref={adRef}
         className='adsbygoogle'
         style={{display: 'block', width: '100%'}}
-        data-ad-client='ca-pub-7732653394334401'
+        data-ad-client='ca-pub-2319578381550272'
         data-ad-slot='3060488859'
         data-ad-format='auto'
         data-full-width-responsive='true'

@@ -1,8 +1,11 @@
 'use client';
 
+import {useEffect} from 'react';
 import {VideoFeed} from '@/components/video/VideoFeed';
 import {usePost} from '@/lib/api/services/posts.hooks';
-import {Loader2, ArrowLeft} from 'lucide-react';
+import {useBatchReportViews} from '@/lib/api/services/insights.hooks';
+import {Loader2} from 'lucide-react';
+import {BackCircleButton} from '@/components/ui/BackCircleButton';
 import {useRouter, useSearchParams} from 'next/navigation';
 import type {Post} from '@/types/post';
 
@@ -27,15 +30,20 @@ export function SinglePostViewClient({id, initialPost}: SinglePostViewClientProp
   const post = (response as any)?.data?.data || (response as any)?.data || response;
   const router = useRouter();
 
+  // Report the single-post view after 2 seconds on screen
+  const { mutate: reportViews } = useBatchReportViews();
+  useEffect(() => {
+    if (!id) return;
+    const timer = setTimeout(() => reportViews([id]), 2000);
+    return () => clearTimeout(timer);
+  }, [id, reportViews]);
+
   return (
     <div className='relative w-full h-full bg-black'>
       {/* Dynamic Back Button */}
-      <button
-        onClick={() => router.back()}
-        className='absolute top-6 left-6 z-50 p-2.5 bg-black/40 hover:bg-black/70 rounded-full text-white transition-all backdrop-blur-md cursor-pointer border border-white/10 shadow-lg'
-        title='Go Back'>
-        <ArrowLeft size={22} />
-      </button>
+      <div className='absolute top-6 left-6 z-50'>
+        <BackCircleButton onClick={() => router.back()} size={32} />
+      </div>
 
       {isLoading && !post ? (
         <div className='flex flex-col items-center justify-center h-full w-full text-white/70 space-y-4 min-h-[60vh]'>

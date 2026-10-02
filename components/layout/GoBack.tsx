@@ -1,24 +1,49 @@
 'use client';
-import {ChevronLeftCircle} from 'lucide-react';
-import {useRouter} from 'next/navigation';
+
+import React from 'react';
+import { useRouter } from 'next/navigation';
 
 interface IGoBack {
-  color: 'black' | 'white';
+  color?: 'black' | 'white';
   url?: string;
+  className?: string;
+  size?: number;
 }
-const GoBack = ({color}: IGoBack) => {
+
+const GoBack = ({ color = 'white', url, className = '', size = 26 }: IGoBack) => {
   const router = useRouter();
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (url) {
+      router.push(url);
+    } else {
+      router.back();
+    }
+  };
+
+  const fillColor = color === 'black' ? '#000000' : '#FFFFFF';
+
   return (
     <button
-      onClick={() => router.back()}
-      className={`inline-flex items-center gap-2 transition-colors ${
-        color === 'black'
-          ? 'text-black hover:text-black/80'
-          : 'text-white hover:text-white/80'
-      }`}>
-      <ChevronLeftCircle
-        className={`w-7 h-7 ${color === 'black' ? 'text-black' : 'text-white'}`}
-      />
+      type='button'
+      onClick={handleClick}
+      aria-label='Go back'
+      className={`p-0 bg-transparent border-none inline-flex items-center justify-center transition-all cursor-pointer active:scale-95 hover:opacity-80 shrink-0 ${className}`}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox='0 0 26 26'
+        fill='none'
+        xmlns='http://www.w3.org/2000/svg'
+        style={{ width: `${size}px`, height: `${size}px` }}
+      >
+        <path
+          d='M12.6563 0C10.1531 0 7.70613 0.742276 5.62482 2.13296C3.54351 3.52365 1.92133 5.50029 0.963406 7.81291C0.00548378 10.1255 -0.245152 12.6703 0.243192 15.1254C0.731536 17.5804 1.93693 19.8356 3.70694 21.6056C5.47695 23.3756 7.73207 24.581 10.1871 25.0693C12.6422 25.5577 15.187 25.307 17.4996 24.3491C19.8122 23.3912 21.7889 21.769 23.1795 19.6877C24.5702 17.6064 25.3125 15.1594 25.3125 12.6563C25.3088 9.30075 23.9742 6.08374 21.6015 3.71104C19.2288 1.33834 16.0118 0.00372214 12.6563 0ZM12.6563 22.5C10.7093 22.5 8.80616 21.9227 7.18736 20.841C5.56857 19.7594 4.30687 18.222 3.56182 16.4233C2.81677 14.6246 2.62183 12.6453 3.00165 10.7358C3.38147 8.82633 4.319 7.07234 5.69567 5.69567C7.07235 4.31899 8.82634 3.38147 10.7358 3.00165C12.6453 2.62182 14.6246 2.81676 16.4233 3.56181C18.222 4.30686 19.7594 5.56856 20.841 7.18736C21.9227 8.80615 22.5 10.7093 22.5 12.6563C22.4972 15.2661 21.4592 17.7683 19.6138 19.6138C17.7683 21.4592 15.2661 22.4972 12.6563 22.5ZM15.5262 8.96367L11.8359 12.6563L15.5297 16.3488C15.7939 16.613 15.9423 16.9713 15.9423 17.3449C15.9423 17.7185 15.7939 18.0768 15.5297 18.341C15.2655 18.6052 14.9072 18.7536 14.5336 18.7536C14.16 18.7536 13.8017 18.6052 13.5375 18.341L8.85001 13.6535C8.71891 13.5229 8.61489 13.3676 8.54391 13.1967C8.47293 13.0258 8.4364 12.8425 8.4364 12.6574C8.4364 12.4723 8.47293 12.2891 8.54391 12.1181C8.61489 11.9472 8.71891 11.792 8.85001 11.6613L13.5375 6.97383C13.6683 6.84302 13.8236 6.73926 13.9945 6.66846C14.1654 6.59767 14.3486 6.56123 14.5336 6.56123C14.7186 6.56123 14.9018 6.59767 15.0727 6.66846C15.2436 6.73926 15.3989 6.84302 15.5297 6.97383C15.6605 7.10464 15.7643 7.25993 15.8351 7.43084C15.9059 7.60175 15.9423 7.78493 15.9423 7.96992C15.9423 8.15492 15.9059 8.3381 15.8351 8.50901C15.7643 8.67992 15.6605 8.83521 15.5297 8.96602L15.5262 8.96367Z'
+          fill={fillColor}
+        />
+      </svg>
     </button>
   );
 };

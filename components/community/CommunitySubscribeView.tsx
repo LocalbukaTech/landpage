@@ -38,6 +38,14 @@ export function CommunitySubscribeView({
     }, 600);
   };
 
+  const handleBack = () => {
+    if (typeof window !== 'undefined' && window.history.length > 2) {
+      router.back();
+    } else {
+      router.push(`/community/${communityId}`);
+    }
+  };
+
   const handleConfirmCancel = () => {
     setShowCancelModal(false);
     toast({
@@ -50,7 +58,7 @@ export function CommunitySubscribeView({
     <div className='w-full max-w-4xl mx-auto space-y-8 py-2 text-white'>
       {/* Header */}
       <div className='pb-4 border-b border-white/10 flex items-center gap-3.5'>
-        <BackCircleButton onClick={() => router.back()} size={26} />
+        <BackCircleButton onClick={handleBack} size={26} />
         <h1 className='text-2xl sm:text-3xl font-extrabold tracking-tight'>
           Your membership
         </h1>

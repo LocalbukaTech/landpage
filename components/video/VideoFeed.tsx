@@ -64,7 +64,9 @@ export function VideoFeed({
   const viewTimerRef = useRef<NodeJS.Timeout | null>(null);
   // Stable ref so we can call mutate inside effects without stale-closure issues
   const batchMutateRef = useRef(batchReportViews.mutate);
-  batchMutateRef.current = batchReportViews.mutate;
+  useEffect(() => {
+    batchMutateRef.current = batchReportViews.mutate;
+  });
 
   useEffect(() => {
     const post = posts[currentIndex];

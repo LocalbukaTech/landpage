@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Users, ArrowUpRight, Info, AlertCircle, MapPin } from 'lucide-react';
 import type {
   InsightsAudienceData,
@@ -38,21 +38,20 @@ function GrowthChart({
   peakLabel: string;
   peakValue: string;
 }) {
-  const [activeIdx, setActiveIdx] = useState<number>(() => {
-    const hi = points.findIndex((p) => p.isHighlight);
-    return hi >= 0 ? hi : points.length - 1;
-  });
-
-  // Reset active index whenever points array changes (e.g. time-range filter switch)
-  useEffect(() => {
-    const hi = points.findIndex((p) => p.isHighlight);
-    setActiveIdx(hi >= 0 ? hi : points.length - 1);
-  }, [points]);
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   if (!points.length) return null;
 
+  const defaultIdx = () => {
+    const hi = points.findIndex((p) => p.isHighlight);
+    return hi >= 0 ? hi : points.length - 1;
+  };
+
   // Clamp to valid range — guards against stale state during the transition render
-  const safeIdx = Math.min(activeIdx, points.length - 1);
+  const safeIdx = Math.min(
+    activeIdx !== null && activeIdx >= 0 && activeIdx < points.length ? activeIdx : defaultIdx(),
+    points.length - 1
+  );
 
   // Subsample x-axis ticks so we never render more than 8 labels (avoids crowding)
   const MAX_X_TICKS = 8;

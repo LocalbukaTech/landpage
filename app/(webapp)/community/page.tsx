@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense, useEffect } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CreatorCommunityCarousel } from '@/components/community/CreatorCommunityCarousel';
@@ -22,10 +22,9 @@ function CommunityContent() {
 
   const isForceEmpty = stateParam === 'empty' || emptyParam === 'true';
 
-  const [activeTab, setActiveTab] = useState<CommunityTab>(() => {
-    if (tabParam) return tabParam;
-    return 'recommended';
-  });
+  const [userTab, setUserTab] = useState<CommunityTab | null>(null);
+  const activeTab: CommunityTab = userTab ?? tabParam ?? 'recommended';
+  const setActiveTab = (tab: CommunityTab) => setUserTab(tab);
 
   const [creatorStep, setCreatorStep] = useState<'form' | 'payment' | 'created'>('form');
   const [creatorData, setCreatorData] = useState<{
@@ -39,14 +38,6 @@ function CommunityContent() {
     avatar: '/images/community/avatar-1.png',
     category: 'paid',
   });
-
-  useEffect(() => {
-    if (tabParam) {
-      setActiveTab(tabParam);
-    } else if (isForceEmpty) {
-      setActiveTab('recommended');
-    }
-  }, [tabParam, isForceEmpty]);
 
   const handleSelectPaidPlan = (data: {
     name: string;

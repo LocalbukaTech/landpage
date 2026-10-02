@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   BarChart3,
@@ -83,21 +83,20 @@ function PerformanceChart({
   peakLabel: string;
   peakValue: string;
 }) {
-  const [activeIdx, setActiveIdx] = useState<number>(() => {
-    const hi = data.findIndex((p) => p.isHighlight);
-    return hi >= 0 ? hi : data.length - 1;
-  });
-
-  // Reset active index whenever the data array changes (e.g. time-range filter switch)
-  useEffect(() => {
-    const hi = data.findIndex((p) => p.isHighlight);
-    setActiveIdx(hi >= 0 ? hi : data.length - 1);
-  }, [data]);
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
 
   if (!data.length) return null;
 
+  const defaultIdx = () => {
+    const hi = data.findIndex((p) => p.isHighlight);
+    return hi >= 0 ? hi : data.length - 1;
+  };
+
   // Clamp to valid range — guards against stale state during the transition render
-  const safeIdx = Math.min(activeIdx, data.length - 1);
+  const safeIdx = Math.min(
+    activeIdx !== null && activeIdx >= 0 && activeIdx < data.length ? activeIdx : defaultIdx(),
+    data.length - 1
+  );
 
   // Subsample x-axis ticks so we never render more than 8 labels (avoids crowding)
   const MAX_X_TICKS = 8;

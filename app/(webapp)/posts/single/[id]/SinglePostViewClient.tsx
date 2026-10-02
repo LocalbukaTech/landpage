@@ -1,6 +1,6 @@
 'use client';
 
-import {useRef, useEffect} from 'react';
+import {useEffect} from 'react';
 import {VideoFeed} from '@/components/video/VideoFeed';
 import {usePost} from '@/lib/api/services/posts.hooks';
 import {useBatchReportViews} from '@/lib/api/services/insights.hooks';
@@ -31,14 +31,12 @@ export function SinglePostViewClient({id, initialPost}: SinglePostViewClientProp
   const router = useRouter();
 
   // Report the single-post view after 2 seconds on screen
-  const batchReportViews = useBatchReportViews();
-  const batchMutateRef = useRef(batchReportViews.mutate);
-  batchMutateRef.current = batchReportViews.mutate;
+  const { mutate: reportViews } = useBatchReportViews();
   useEffect(() => {
     if (!id) return;
-    const timer = setTimeout(() => batchMutateRef.current([id]), 2000);
+    const timer = setTimeout(() => reportViews([id]), 2000);
     return () => clearTimeout(timer);
-  }, [id]);
+  }, [id, reportViews]);
 
   return (
     <div className='relative w-full h-full bg-black'>

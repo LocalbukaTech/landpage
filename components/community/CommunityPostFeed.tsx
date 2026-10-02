@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { BackCircleButton } from '@/components/ui/BackCircleButton';
@@ -311,12 +311,6 @@ export function CommunityPostFeed({
   const { toast } = useToast();
   const [posts, setPosts] = useState<CommunityPost[]>(mockPosts);
   const [currentViewState, setCurrentViewState] = useState<'feed' | 'empty' | 'expired'>(initialViewState);
-
-  useEffect(() => {
-    if (initialViewState) {
-      setCurrentViewState(initialViewState);
-    }
-  }, [initialViewState]);
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [savedPosts, setSavedPosts] = useState<Record<string, boolean>>({});
   const [currentIndex, setCurrentIndex] = useState(0);

@@ -34,11 +34,23 @@ const initialMemberships: MembershipItem[] = [
   },
 ];
 
-export function CommunityMembershipsList() {
+interface CommunityMembershipsListProps {
+  onBack?: () => void;
+}
+
+export function CommunityMembershipsList({ onBack }: CommunityMembershipsListProps = {}) {
   const router = useRouter();
   const { toast } = useToast();
   const [memberships, setMemberships] = useState<MembershipItem[]>(initialMemberships);
   const [cancellingItem, setCancellingItem] = useState<MembershipItem | null>(null);
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      router.push('/community');
+    }
+  };
 
   const handleConfirmCancel = () => {
     if (!cancellingItem) return;
@@ -68,7 +80,7 @@ export function CommunityMembershipsList() {
     <div className='w-full max-w-5xl space-y-6 text-white'>
       {/* Header */}
       <div className='pb-4 border-b border-white/10 flex items-center gap-3.5'>
-        <BackCircleButton onClick={() => router.back()} size={26} />
+        <BackCircleButton onClick={handleBack} size={26} />
         <h1 className='text-2xl sm:text-3xl font-extrabold tracking-tight'>
           Your membership
         </h1>
@@ -86,7 +98,10 @@ export function CommunityMembershipsList() {
             >
               {/* Top Row: Avatar, Title, Price & Status Badge */}
               <div className='flex items-start justify-between gap-3'>
-                <div className='flex items-center gap-3.5'>
+                <div
+                  onClick={() => router.push(`/community/${item.id}/feed`)}
+                  className='flex items-center gap-3.5 cursor-pointer hover:opacity-85 transition-opacity'
+                >
                   <div className='relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/10 shrink-0'>
                     <Image
                       src={item.avatar}
@@ -96,7 +111,7 @@ export function CommunityMembershipsList() {
                     />
                   </div>
                   <div>
-                    <h3 className='font-bold text-white text-base leading-snug'>
+                    <h3 className='font-bold text-white text-base leading-snug hover:underline'>
                       {item.name}
                     </h3>
                     <p className='text-xs text-gray-400 mt-0.5'>{item.price}</p>

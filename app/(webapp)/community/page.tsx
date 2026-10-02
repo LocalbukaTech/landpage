@@ -208,7 +208,7 @@ function CommunityContent() {
       {/* Tab Content */}
       {activeTab === 'memberships' ? (
         <div className='py-2'>
-          <CommunityMembershipsList />
+          <CommunityMembershipsList onBack={() => setActiveTab('recommended')} />
         </div>
       ) : activeTab === 'creator' ? (
         <div className='py-2'>

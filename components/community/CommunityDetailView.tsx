@@ -77,8 +77,10 @@ export function CommunityDetailView({
   const handleBack = () => {
     if (onBack) {
       onBack();
-    } else {
+    } else if (typeof window !== 'undefined' && window.history.length > 2) {
       router.back();
+    } else {
+      router.push('/community');
     }
   };
 

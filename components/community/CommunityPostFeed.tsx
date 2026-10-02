@@ -2,8 +2,10 @@
 
 import { useState, useRef } from 'react';
 import Image from 'next/image';
+import { Flag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BackCircleButton } from '@/components/ui/BackCircleButton';
+import { UgcReportModal } from '@/components/modals/UgcReportModal';
 
 /* ─────────────────────── Types ─────────────────────── */
 interface CommentItem {
@@ -317,6 +319,7 @@ export function CommunityPostFeed({
   const [openCommentsPost, setOpenCommentsPost] = useState<CommunityPost | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPostText, setNewPostText] = useState('');
+  const [reportingPost, setReportingPost] = useState<CommunityPost | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
 
   const handleBack = () => {
@@ -501,14 +504,25 @@ export function CommunityPostFeed({
                 return (
                   <div key={post.id} id={`community-post-${index}`} className='bg-transparent'>
                     {/* Author Row */}
-                    <div className='flex items-center gap-3 mb-3'>
-                      <div className='relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/10 shrink-0'>
-                        <Image src={post.avatar} alt={post.username} fill className='object-cover' />
+                    <div className='flex items-center justify-between mb-3'>
+                      <div className='flex items-center gap-3'>
+                        <div className='relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/10 shrink-0'>
+                          <Image src={post.avatar} alt={post.username} fill className='object-cover' />
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <span className='text-white font-semibold text-sm'>{post.username}</span>
+                          <span className='text-gray-400 text-sm'>· {post.timeAgo}</span>
+                        </div>
                       </div>
-                      <div className='flex items-center gap-2'>
-                        <span className='text-white font-semibold text-sm'>{post.username}</span>
-                        <span className='text-gray-400 text-sm'>· {post.timeAgo}</span>
-                      </div>
+                      <button
+                        type='button'
+                        onClick={() => setReportingPost(post)}
+                        className='text-gray-500 hover:text-red-400 p-1 rounded-lg transition-colors cursor-pointer'
+                        title='Report content'
+                        aria-label='Report content'
+                      >
+                        <Flag className='w-4 h-4' />
+                      </button>
                     </div>
 
                     {/* Post Text */}
@@ -668,6 +682,15 @@ export function CommunityPostFeed({
       {openCommentsPost && (
         <CommentsPanel post={openCommentsPost} onClose={() => setOpenCommentsPost(null)} />
       )}
+
+      {/* UGC Report Modal */}
+      <UgcReportModal
+        isOpen={!!reportingPost}
+        onClose={() => setReportingPost(null)}
+        targetId={reportingPost?.id}
+        targetType='post'
+        targetTitle={reportingPost?.username}
+      />
     </>
   );
 }

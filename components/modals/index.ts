@@ -4,3 +4,4 @@ export { AuthModal } from './auth-modal';
 export { PasswordPromptModal } from './PasswordPromptModal';
 export { ImageCaptionModal } from './ImageCaptionModal';
 export { ImageUploadingOverlay } from './ImageUploadingOverlay';
+export { UgcReportModal } from './UgcReportModal';

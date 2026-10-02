@@ -370,14 +370,14 @@ const SignUpContent = () => {
 
             <p className='text-sm text-gray-500 dark:text-gray-400'>
               By signing up you agree with our{' '}
-              <Link href='/privacy' className='text-primary hover:underline'>
+              <Link href='/privacy#terms-of-service' className='text-primary hover:underline'>
                 Terms of Use
               </Link>{' '}
               and{' '}
-              <Link href='/privacy' className='text-primary hover:underline'>
+              <Link href='/privacy#website-app-privacy' className='text-primary hover:underline'>
                 Privacy Policy
               </Link>
-              .
+              , and confirm you are at least 13 years of age.
             </p>
 
             <button

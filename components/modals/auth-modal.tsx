@@ -561,17 +561,17 @@ export function AuthModal() {
               <p className='text-xs text-zinc-500'>
                 By signing up you agree with our{' '}
                 <a
-                  href='https://www.localbuka.com/privacy'
+                  href='/privacy#terms-of-service'
                   className='text-[#fbbe15] hover:underline'>
                   Terms of Use
                 </a>{' '}
                 and{' '}
                 <a
-                  href='https://www.localbuka.com/privacy'
+                  href='/privacy#website-app-privacy'
                   className='text-[#fbbe15] hover:underline'>
                   Privacy Policy
                 </a>
-                .
+                , and confirm you are at least 13 years of age.
               </p>
               <button
                 type='submit'

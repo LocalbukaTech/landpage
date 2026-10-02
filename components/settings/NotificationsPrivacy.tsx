@@ -20,18 +20,24 @@ const pushNotificationSettings = [
   {
     key: 'newNearbyBuka',
     label: 'New Nearby Buka',
-    description: 'Alerts when new local restaur ants are available.',
+    description: 'Alerts when new local restaurants are available.',
     defaultOn: true,
   },
   {
     key: 'specialOffers',
-    label: 'Special Offers / Discounts',
-    description: 'Receive promotions and deals.',
+    label: 'Special Offers & Promotions',
+    description: 'Receive promotions, discounts, and deal announcements.',
+    defaultOn: false,
+  },
+  {
+    key: 'marketingEmails',
+    label: 'Marketing & Newsletter Emails',
+    description: 'Receive non-essential updates and newsletters. (Essential account notices will always be sent).',
     defaultOn: false,
   },
   {
     key: 'personalizedMeal',
-    label: 'Personalized Meal',
+    label: 'Personalized Meal Suggestions',
     description: 'Suggestions based on your taste and preferences.',
     defaultOn: false,
   },
@@ -65,6 +71,12 @@ const dataSharingSettings = [
     key: 'bukaRecommendations',
     label: 'Allow Buka Recommendations',
     description: 'Let us suggest dishes and places based on your preferences.',
+    defaultOn: true,
+  },
+  {
+    key: 'aiTrainingOptOut',
+    label: 'AI Recommendation & Model Improvement',
+    description: 'Allow anonymized search and recipe queries to help improve AI recommendations.',
     defaultOn: true,
   },
   {

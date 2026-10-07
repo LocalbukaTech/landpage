@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy, Archive, RotateCcw, Loader2 } from 'lucide-react';
+import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy, Archive, RotateCcw, Loader2, Flag, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Post } from '@/types/post';
 import { VideoOverlay } from '@/components/video/VideoOverlay';
@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { UgcReportModal } from '@/components/modals/UgcReportModal';
 
 interface VideoPlayerProps {
   post: Post;
@@ -79,6 +80,8 @@ export function VideoPlayer({
 
   // Top bar options menu & auth state
   const [showMenu, setShowMenu] = useState(false);
+  const [showReportPost, setShowReportPost] = useState(false);
+  const [showReportUser, setShowReportUser] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -555,7 +558,7 @@ export function VideoPlayer({
                         router.push(`/studio?edit=${post.id}`);
                       }}
                       className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
-                      <Pencil size={15} className='text-[#fbbe15]' />
+                      <img src='/icons/Vector-8.png' alt='Edit' className='w-4 h-4 object-contain' />
                       <span>Edit Post</span>
                     </button>
                     <button
@@ -565,7 +568,7 @@ export function VideoPlayer({
                         setShowDeleteConfirm(true);
                       }}
                       className='w-full px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
-                      <Trash2 size={15} className='text-red-500' />
+                      <img src='/icons/Vector-9.png' alt='Delete' className='w-4 h-4 object-contain' />
                       <span>Delete Post</span>
                     </button>
                     <button
@@ -611,27 +614,53 @@ export function VideoPlayer({
                         }
                       }}
                       className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
-                      {post.isArchived ? <RotateCcw size={15} className='text-blue-400' /> : <Archive size={15} className='text-green-500' />}
+                      {post.isArchived ? <RotateCcw size={15} className='text-blue-400' /> : <img src='/icons/Vector-10.png' alt='Archive' className='w-4 h-4 object-contain' />}
                       <span>{post.isArchived ? 'Restore Post' : 'Archive Post'}</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowReportPost(true);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <img src='/icons/Vector-11.png' alt='Report Post' className='w-4 h-4 object-contain' />
+                      <span>Report Post</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowReportUser(true);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <img src='/icons/Vector-12.png' alt='Report User' className='w-4 h-4 object-contain' />
+                      <span>Report User</span>
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowMenu(false);
-                      if (navigator.clipboard) {
-                        navigator.clipboard.writeText(`${window.location.origin}/posts/${post.id}`);
-                        toast({
-                          title: 'Link copied',
-                          description: 'Post link copied to clipboard.',
-                        });
-                      }
-                    }}
-                    className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
-                    <Copy size={15} />
-                    <span>Copy Link</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowReportPost(true);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <img src='/icons/Vector-11.png' alt='Report Post' className='w-4 h-4 object-contain' />
+                      <span>Report Post</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowReportUser(true);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <img src='/icons/Vector-12.png' alt='Report User' className='w-4 h-4 object-contain' />
+                      <span>Report User</span>
+                    </button>
+                  </>
                 )}
               </div>
             </>
@@ -699,6 +728,24 @@ export function VideoPlayer({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Report Post Modal */}
+      <UgcReportModal
+        isOpen={showReportPost}
+        onClose={() => setShowReportPost(false)}
+        targetId={post.id}
+        targetType='post'
+        targetTitle={post.user?.username}
+      />
+
+      {/* Report User Modal */}
+      <UgcReportModal
+        isOpen={showReportUser}
+        onClose={() => setShowReportUser(false)}
+        targetId={post.user?.id}
+        targetType='user'
+        targetTitle={post.user?.username}
+      />
     </div>
   );
 }

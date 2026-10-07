@@ -10,6 +10,7 @@ export interface Admin {
   first_name: string;
   last_name: string;
   email: string;
+  role?: 'super_admin' | 'content_moderation';
   created_at: string;
   updated_at: string;
 }

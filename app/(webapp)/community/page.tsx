@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useMemo, Suspense } from "react";
 import Image from "next/image";
-import { Check, Lock, Sparkles } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Check, Lock, Sparkles, LayoutDashboard, Compass } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { CreatorDashboard } from "@/components/community/CreatorDashboard";
+import { DashboardTab } from "@/components/community/types";
 import { cn } from "@/lib/utils";
 
 type CommunityTab =
@@ -139,9 +142,28 @@ const COMMUNITY_COPY = {
   ],
 };
 
-export default function CommunityPage() {
+function CommunityPageContent() {
+  const searchParams = useSearchParams();
+  const initialMode =
+    searchParams.get("view") === "explore" ? "explore" : "creator";
+  const [viewMode, setViewMode] = useState<"creator" | "explore">(initialMode);
+
+  // Tab from URL if specified
+  const tabParam = searchParams.get("tab");
+  const initialDashboardTab: DashboardTab =
+    tabParam === "content"
+      ? "Content and feed management"
+      : tabParam === "members"
+      ? "Members"
+      : tabParam === "monetization"
+      ? "Monetization"
+      : tabParam === "overview"
+      ? "Overview"
+      : "Settings";
+
+  // Explore view state
   const [activeTab, setActiveTab] = useState<CommunityTab>("Recommended");
-  const [showModal, setShowModal] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
   const visibleCommunities = useMemo(() => {
     if (activeTab === "Free") {
@@ -161,153 +183,211 @@ export default function CommunityPage() {
 
   return (
     <MainLayout>
-      <div className="w-full max-w-[1180px] mx-auto px-3 md:px-6 lg:px-8 py-4 md:py-6 text-white">
-        <div className="mb-6">
-          <h1 className="text-3xl md:text-[2.1rem] font-bold tracking-tight text-white">
-            Community
-          </h1>
-        </div>
-
-        <div className="border-b border-white/10 pb-4">
-          <div className="flex flex-wrap gap-3">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={cn(
-                  "rounded-full border border-white/10 px-4 py-2 text-sm font-medium transition-all duration-200",
-                  activeTab === tab
-                    ? "bg-[#f5c94d] text-[#111111] shadow-[0_0_0_1px_rgba(245,201,77,0.4)]"
-                    : "bg-[#2b2b2b] text-white/70 hover:bg-[#303030] hover:text-white",
-                )}
-              >
-                {tab}
-              </button>
-            ))}
+      <div className="w-full max-w-[1100px] mx-auto px-4 md:px-8 py-3 md:py-6 text-white">
+        {/* Top View Mode Switcher */}
+        <div className="mb-4 flex items-center justify-end">
+          <div className="inline-flex items-center gap-1 rounded-full bg-[#202020] p-1 border border-white/5">
+            <button
+              type="button"
+              onClick={() => setViewMode("creator")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all",
+                viewMode === "creator"
+                  ? "bg-[#f5c94d] text-black shadow-sm"
+                  : "text-white/60 hover:text-white"
+              )}
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              <span>Creator Dashboard</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("explore")}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all",
+                viewMode === "explore"
+                  ? "bg-[#f5c94d] text-black shadow-sm"
+                  : "text-white/60 hover:text-white"
+              )}
+            >
+              <Compass className="h-3.5 w-3.5" />
+              <span>Explore Communities</span>
+            </button>
           </div>
         </div>
 
-        <div className="mt-8">
-          <h2 className="mb-6 text-[2rem] md:text-[2.4rem] font-bold tracking-tight">
-            {activeTab === "Trending"
-              ? "Trending this week"
-              : "Recommended for you"}
-          </h2>
+        {/* View Mode 1: Creator Management Dashboard (The requested screens) */}
+        {viewMode === "creator" && (
+          <CreatorDashboard initialTab={initialDashboardTab} />
+        )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 md:gap-6">
-            {visibleCommunities.map((community) => (
-              <article
-                key={community.id}
-                className="group relative overflow-hidden rounded-[18px] border border-white/8 bg-[#1c1c1d] shadow-[0_10px_35px_rgba(0,0,0,0.18)]"
-              >
-                <div className="relative h-64 w-full overflow-hidden">
-                  <Image
-                    src={community.image}
-                    alt={community.name}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#111214]/90 via-[#111214]/15 to-transparent" />
+        {/* View Mode 2: Explore Member Feed */}
+        {viewMode === "explore" && (
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl md:text-[2.1rem] font-bold tracking-tight text-white">
+                Community
+              </h1>
+            </div>
 
-                  <div className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
-                    {community.creator}
-                  </div>
-                </div>
-
-                <div className="space-y-3 p-4 pb-5">
-                  <h3 className="text-[1.55rem] md:text-[1.8rem] font-bold leading-tight text-white">
-                    {community.name}
-                  </h3>
-
-                  <div className="flex items-center justify-between gap-2 text-sm text-white/70">
-                    <span>{community.members}</span>
-                    <span>{community.posts}</span>
-                  </div>
-
-                  <div className="pt-1">
-                    <span
-                      className={cn(
-                        "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                        community.isFree
-                          ? "bg-[#22c55e]/15 text-[#74e3a4] ring-1 ring-[#22c55e]/30"
-                          : "bg-[#f5c94d]/15 text-[#f5c94d] ring-1 ring-[#f5c94d]/30",
-                      )}
-                    >
-                      {community.price}
-                    </span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-
-        {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
-            <div className="relative w-full max-w-[540px] rounded-[22px] border border-white/8 bg-[#171717] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.55)]">
-              <button
-                type="button"
-                onClick={() => setShowModal(false)}
-                className="absolute right-4 top-4 text-sm font-medium text-white/50 transition-colors hover:text-white"
-              >
-                ✕
-              </button>
-
-              <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-[#f5c94d]/50 bg-[#f5c94d] text-[#111111] shadow-[0_0_0_8px_rgba(245,201,77,0.12)]">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/10">
-                  <Sparkles className="h-7 w-7" />
-                </div>
-              </div>
-
-              <div className="space-y-5 text-center">
-                <div>
-                  <p className="text-[1.7rem] font-bold tracking-tight text-white">
-                    Chef Amaka&apos;s kitchen
-                  </p>
-                </div>
-
-                <div className="space-y-3 rounded-2xl border border-white/8 bg-[#f2f2f2] px-4 py-5 text-left text-[#1b1b1b]">
-                  <div className="flex items-center gap-2">
-                    <Lock className="h-4 w-4 text-[#111111]" />
-                    <p className="text-lg font-semibold">
-                      Members-only content
-                    </p>
-                  </div>
-
-                  <p className="text-sm text-[#4d4d4d]">
-                    Subscribe to see this post
-                  </p>
-                </div>
-
-                <div className="space-y-3 text-left">
-                  <p className="text-[0.95rem] text-white/80">
-                    Unlock everything in this community.
-                  </p>
-                  <ul className="space-y-2 text-sm text-white/70">
-                    {COMMUNITY_COPY.plus.map((item) => (
-                      <li key={item} className="flex items-start gap-2">
-                        <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#f5c94d] text-[10px] text-[#111111]">
-                          <Check className="h-3 w-3" />
-                        </span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <button
-                  type="button"
-                  className="w-full rounded-full bg-[#f5c94d] px-5 py-3 text-base font-semibold text-[#111111] transition-colors hover:bg-[#efbe29]"
-                >
-                  Subscribe to unlock N2,500/mo
-                </button>
+            <div className="border-b border-white/10 pb-4">
+              <div className="flex flex-wrap gap-3">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    className={cn(
+                      "rounded-full border border-white/10 px-4 py-2 text-sm font-medium transition-all duration-200",
+                      activeTab === tab
+                        ? "bg-[#f5c94d] text-[#111111] shadow-[0_0_0_1px_rgba(245,201,77,0.4)]"
+                        : "bg-[#2b2b2b] text-white/70 hover:bg-[#303030] hover:text-white"
+                    )}
+                  >
+                    {tab}
+                  </button>
+                ))}
               </div>
             </div>
+
+            <div className="mt-8">
+              <h2 className="mb-6 text-[2rem] md:text-[2.4rem] font-bold tracking-tight">
+                {activeTab === "Trending"
+                  ? "Trending this week"
+                  : "Recommended for you"}
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 md:gap-6">
+                {visibleCommunities.map((community) => (
+                  <article
+                    key={community.id}
+                    onClick={() => setShowModal(true)}
+                    className="group relative cursor-pointer overflow-hidden rounded-[18px] border border-white/8 bg-[#1c1c1d] shadow-[0_10px_35px_rgba(0,0,0,0.18)]"
+                  >
+                    <div className="relative h-64 w-full overflow-hidden">
+                      <Image
+                        src={community.image}
+                        alt={community.name}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#111214]/90 via-[#111214]/15 to-transparent" />
+
+                      <div className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+                        {community.creator}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 p-4 pb-5">
+                      <h3 className="text-[1.55rem] md:text-[1.8rem] font-bold leading-tight text-white">
+                        {community.name}
+                      </h3>
+
+                      <div className="flex items-center justify-between gap-2 text-sm text-white/70">
+                        <span>{community.members}</span>
+                        <span>{community.posts}</span>
+                      </div>
+
+                      <div className="pt-1">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
+                            community.isFree
+                              ? "bg-[#22c55e]/15 text-[#74e3a4] ring-1 ring-[#22c55e]/30"
+                              : "bg-[#f5c94d]/15 text-[#f5c94d] ring-1 ring-[#f5c94d]/30"
+                          )}
+                        >
+                          {community.price}
+                        </span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            {/* Explore Unlock Modal */}
+            {showModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
+                <div className="relative w-full max-w-[540px] rounded-[22px] border border-white/8 bg-[#171717] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.55)]">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="absolute right-4 top-4 text-sm font-medium text-white/50 transition-colors hover:text-white"
+                  >
+                    ✕
+                  </button>
+
+                  <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-[#f5c94d]/50 bg-[#f5c94d] text-[#111111] shadow-[0_0_0_8px_rgba(245,201,77,0.12)]">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/10">
+                      <Sparkles className="h-7 w-7" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-5 text-center">
+                    <div>
+                      <p className="text-[1.7rem] font-bold tracking-tight text-white">
+                        Chef Amaka&apos;s kitchen
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 rounded-2xl border border-white/8 bg-[#f2f2f2] px-4 py-5 text-left text-[#1b1b1b]">
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-[#111111]" />
+                        <p className="text-lg font-semibold">
+                          Members-only content
+                        </p>
+                      </div>
+
+                      <p className="text-sm text-[#4d4d4d]">
+                        Subscribe to see this post
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 text-left">
+                      <p className="text-[0.95rem] text-white/80">
+                        Unlock everything in this community.
+                      </p>
+                      <ul className="space-y-2 text-sm text-white/70">
+                        {COMMUNITY_COPY.plus.map((item) => (
+                          <li key={item} className="flex items-start gap-2">
+                            <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#f5c94d] text-[10px] text-[#111111]">
+                              <Check className="h-3 w-3" />
+                            </span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="w-full rounded-full bg-[#f5c94d] px-5 py-3 text-base font-semibold text-[#111111] transition-colors hover:bg-[#efbe29]"
+                    >
+                      Subscribe to unlock N2,500/mo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
     </MainLayout>
+  );
+}
+
+export default function CommunityPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#141414] text-white flex items-center justify-center">
+          Loading Community...
+        </div>
+      }
+    >
+      <CommunityPageContent />
+    </Suspense>
   );
 }

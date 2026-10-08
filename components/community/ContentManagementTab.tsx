@@ -131,7 +131,7 @@ export function ContentManagementTab({
     }
 
     const newPost: CommunityPost = {
-      id: `post-${Date.now()}`,
+      id: `post-${crypto.randomUUID()}`,
       communityName,
       communityAvatar:
         "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",

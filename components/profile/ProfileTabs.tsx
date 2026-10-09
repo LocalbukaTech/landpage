@@ -7,16 +7,17 @@ import {
   Bookmark,
   Tag,
   Archive,
+  Plus,
   Pencil,
   X,
 } from 'lucide-react';
+import {useRouter} from 'next/navigation';
 import type {Post} from '@/types/post';
 import {ProfileVideoGrid} from './ProfileVideoGrid';
 import {useTranslation} from '@/context/LanguageContext';
 
 const myProfileTabs = [
   {id: 'videos', labelKey: 'nav.videos', defaultLabel: 'Videos', icon: VideoIcon},
-  {id: 'repost', labelKey: 'nav.repost', defaultLabel: 'Repost', icon: Repeat2},
   {id: 'saved', labelKey: 'nav.saved', defaultLabel: 'Saved', icon: Bookmark},
   {id: 'tagged', labelKey: 'nav.tagged', defaultLabel: 'Tagged', icon: Tag},
   {id: 'archive', labelKey: 'nav.archive', defaultLabel: 'Archive', icon: Archive},
@@ -44,6 +45,7 @@ export function ProfileTabs({
   isEditable,
   isOtherProfile,
 }: ProfileTabsProps) {
+  const router = useRouter();
   const {t} = useTranslation();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isEditing, setIsEditing] = useState(false);
@@ -57,10 +59,20 @@ export function ProfileTabs({
   const canEdit = !!isEditable && !isOtherProfile;
 
   return (
-    <div className='w-full mt-6'>
+    <div className='w-full mt-4 sm:mt-6'>
       {/* Tab Headers */}
-      <div className='flex items-center justify-between border-b border-white/10'>
-        <div className='flex overflow-x-auto scrollbar-hide'>
+      <div className='flex items-center justify-between border-b border-white/10 pb-0'>
+        <div className='flex items-center w-full justify-between sm:justify-start gap-2 sm:gap-6 overflow-x-auto scrollbar-hide'>
+          {/* Plus / Upload button for own profile */}
+          {!isOtherProfile && (
+            <button
+              onClick={() => router.push('/studio')}
+              title='Create / Upload Post'
+              className='p-1.5 sm:p-2 hover:text-[#FBBE15] text-zinc-400 hover:bg-white/5 rounded-full transition-colors cursor-pointer border-none bg-transparent flex items-center justify-center shrink-0'>
+              <Plus className='w-4 h-4 sm:w-[18px] sm:h-[18px]' />
+            </button>
+          )}
+
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -70,13 +82,13 @@ export function ProfileTabs({
                   setActiveTab(tab.id);
                   onTabChange?.(tab.id);
                 }}
-                className={`flex items-center gap-2 px-3 md:px-6 py-3 text-sm font-medium transition-all border-b-2 cursor-pointer bg-transparent whitespace-nowrap shrink-0 ${
+                className={`flex items-center justify-center gap-1.5 px-1.5 sm:px-4 md:px-6 py-2.5 sm:py-3 text-xs sm:text-sm font-medium transition-all border-b-2 cursor-pointer bg-transparent whitespace-nowrap shrink-0 ${
                   isActive
-                    ? 'border-[#FBBE15] text-white'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                    ? 'border-[#FBBE15] text-white font-semibold'
+                    : 'border-transparent text-zinc-400 hover:text-zinc-200'
                 }`}>
-                <tab.icon size={16} />
-                <span>{t(tab.labelKey, tab.defaultLabel)}</span>
+                <tab.icon className='w-3.5 h-3.5 sm:w-4 sm:h-4' />
+                <span className='whitespace-nowrap'>{t(tab.labelKey, tab.defaultLabel)}</span>
               </button>
             );
           })}
@@ -85,11 +97,11 @@ export function ProfileTabs({
         {canEdit && (
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={`p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer mr-2 border-none bg-transparent ${
-              isEditing ? 'text-[#FBBE15]' : 'text-zinc-500'
+            className={`hidden sm:flex p-1.5 sm:p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer ml-1 border-none bg-transparent shrink-0 ${
+              isEditing ? 'text-[#FBBE15]' : 'text-zinc-500 hover:text-zinc-300'
             }`}
             title={isEditing ? 'Cancel editing' : 'Edit posts'}>
-            {isEditing ? <X size={20} /> : <Pencil size={18} />}
+            {isEditing ? <X className='w-4 h-4 sm:w-[18px] sm:h-[18px]' /> : <Pencil className='w-3.5 h-3.5 sm:w-4 sm:h-4' />}
           </button>
         )}
       </div>

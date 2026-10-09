@@ -200,11 +200,11 @@ export function ProfileVideoGrid({
 
   if (isLoading) {
     return (
-      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3'>
-        {[...Array(6)].map((_, i) => (
+      <div className='grid grid-cols-4 gap-2 sm:gap-3 md:gap-4'>
+        {[...Array(8)].map((_, i) => (
           <div
             key={i}
-            className='aspect-3/4 rounded-lg bg-[#2a2a2a] animate-pulse'
+            className='aspect-[4/5] rounded-[10px] bg-[#2a2a2a] animate-pulse'
           />
         ))}
       </div>
@@ -213,14 +213,14 @@ export function ProfileVideoGrid({
 
   if (!posts || posts.length === 0) {
     return (
-      <div className='flex items-center justify-center py-16 text-zinc-500 text-sm'>
-        {activeTab === 'archive' ? 'No archived posts yet' : 'No posts yet'}
+      <div className='flex items-center justify-center py-20 text-zinc-400 text-sm font-medium'>
+        {activeTab === 'archive' ? 'No archived posts' : 'No posts yet'}
       </div>
     );
   }
 
   return (
-    <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3'>
+    <div className='grid grid-cols-4 gap-2 sm:gap-3 md:gap-4'>
       {posts.map((post) => (
         <div key={post.id} className='relative group'>
           <button
@@ -230,7 +230,7 @@ export function ProfileVideoGrid({
             onMouseLeave={handlePressEnd}
             onTouchStart={handlePressStart}
             onTouchEnd={handlePressEnd}
-            className={`relative w-full aspect-3/4 rounded-lg overflow-hidden group cursor-pointer bg-[#2a2a2a] border-0 ${
+            className={`relative w-full aspect-[4/5] rounded-[10px] overflow-hidden group cursor-pointer bg-[#2a2a2a] border-0 block p-0 ${
               canEdit && isEditing ? "cursor-default" : ""
             }`}
           >
@@ -245,15 +245,15 @@ export function ProfileVideoGrid({
             />
 
             {/* Play count overlay */}
-            <div className='absolute bottom-2 left-2 flex items-center gap-1 text-white text-xs font-semibold z-10'>
-              <Play size={14} fill='white' />
+            <div className='absolute bottom-1.5 left-1.5 flex items-center gap-1 text-white text-[10px] sm:text-xs font-semibold z-10 drop-shadow-md'>
+              <Play size={11} fill='white' className='shrink-0' />
               <span>{formatCount(post.likeCount || post.likesCount || 0)}</span>
             </div>
           </button>
 
           {/* Edit, Archive & Delete Action Overlays (Only on own editable profile) */}
           {canEdit && (isEditing || activeTab === 'archive') && (
-            <div className='absolute top-2 right-2 flex items-center gap-1.5 z-10'>
+            <div className='absolute top-1.5 right-1.5 flex items-center gap-1 z-10'>
               {activeTab === 'archive' ? (
                 <button
                   onClick={(e) => {
@@ -262,8 +262,8 @@ export function ProfileVideoGrid({
                     handleUnarchive(post.id);
                   }}
                   title='Restore / Unarchive Post'
-                  className='p-1.5 bg-[#001F3F] text-white rounded-full shadow-lg hover:bg-blue-900 transition-colors border-none cursor-pointer'>
-                  <RotateCcw size={15} />
+                  className='p-1 bg-[#001F3F] text-white rounded-full shadow-lg hover:bg-blue-900 transition-colors border-none cursor-pointer'>
+                  <RotateCcw size={12} />
                 </button>
               ) : (
                 <button
@@ -273,8 +273,8 @@ export function ProfileVideoGrid({
                     handleArchive(post.id);
                   }}
                   title='Archive Post'
-                  className='p-1.5 bg-[#001F3F] text-white rounded-full shadow-lg hover:bg-blue-900 transition-colors border-none cursor-pointer'>
-                  <Archive size={15} />
+                  className='p-1 bg-[#001F3F] text-white rounded-full shadow-lg hover:bg-blue-900 transition-colors border-none cursor-pointer'>
+                  <Archive size={12} />
                 </button>
               )}
               <button
@@ -284,8 +284,8 @@ export function ProfileVideoGrid({
                   router.push(`/studio?edit=${post.id}`);
                 }}
                 title='Edit Post in Localbuka Studio'
-                className='p-1.5 bg-[#fbbe15] text-[#141414] rounded-full shadow-lg hover:bg-amber-400 transition-colors border-none cursor-pointer'>
-                <Pencil size={15} />
+                className='p-1 bg-[#fbbe15] text-[#141414] rounded-full shadow-lg hover:bg-amber-400 transition-colors border-none cursor-pointer'>
+                <Pencil size={12} />
               </button>
               <button
                 onClick={(e) => {
@@ -294,8 +294,8 @@ export function ProfileVideoGrid({
                   setPostToDelete(post);
                 }}
                 title='Delete Post'
-                className='p-1.5 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-700 transition-colors border-none cursor-pointer'>
-                <Trash2 size={15} />
+                className='p-1 bg-red-600 rounded-full text-white shadow-lg hover:bg-red-700 transition-colors border-none cursor-pointer'>
+                <Trash2 size={12} />
               </button>
             </div>
           )}

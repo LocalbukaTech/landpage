@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy, Archive, RotateCcw, Loader2, Flag, User } from 'lucide-react';
+import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy, Archive, RotateCcw, Loader2, Flag, User, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Post } from '@/types/post';
 import { VideoOverlay } from '@/components/video/VideoOverlay';
@@ -547,8 +547,16 @@ export function VideoPlayer({
                 }}
               />
               <div
-                className='absolute right-0 top-10 z-50 w-44 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-150'
+                className='absolute right-0 top-10 z-50 w-48 bg-[#18181b] border border-white/15 rounded-xl shadow-2xl py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150'
                 onClick={(e) => e.stopPropagation()}>
+                <div className='flex items-center justify-end px-3 py-1 border-b border-white/5'>
+                  <button
+                    onClick={() => setShowMenu(false)}
+                    className='text-zinc-400 hover:text-white bg-transparent border-none p-1 cursor-pointer rounded-full hover:bg-white/10 transition-colors'
+                    title='Close menu'>
+                    <X size={14} />
+                  </button>
+                </div>
                 {isOwner ? (
                   <>
                     <button

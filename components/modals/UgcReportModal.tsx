@@ -64,7 +64,7 @@ export function UgcReportModal({
     submitUserReport.isPending ||
     submitReport.isPending;
   const reasons = targetType === 'post' ? POST_REPORT_REASONS : USER_REPORT_REASONS;
-  const isOther = selectedReason === 'Other';
+  const showDetailsForm = Boolean(selectedReason);
 
   if (!isOpen || !mounted) return null;
 
@@ -141,17 +141,29 @@ export function UgcReportModal({
     >
       {/* Outer Card */}
       <div
-        className='relative w-full text-white shadow-2xl overflow-hidden font-plus-jakarta-sans transition-all duration-200'
+        className='relative w-full text-white shadow-2xl overflow-y-auto font-plus-jakarta-sans transition-all duration-200 scrollbar-hide'
         style={{
           width: '100%',
           maxWidth: isSubmitted || isRateLimited ? '435px' : '415px',
+          maxHeight: '90vh',
           backgroundColor: '#1E1E1E',
           borderRadius: '20px',
-          padding: isSubmitted || isRateLimited ? '44px 36px 36px 36px' : '28px 36px 26px 36px',
+          padding: isSubmitted || isRateLimited ? '44px 36px 36px 36px' : '28px 28px 24px 28px',
           fontFamily: "var(--font-plus-jakarta-sans), 'Plus Jakarta Sans', sans-serif",
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Close Button */}
+        <button
+          onClick={handleResetAndClose}
+          type='button'
+          className='absolute top-4 right-4 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 p-1.5 rounded-full transition-colors cursor-pointer border-none z-10'
+          title='Close modal'>
+          <svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2.5' strokeLinecap='round' strokeLinejoin='round'>
+            <line x1='18' y1='6' x2='6' y2='18'></line>
+            <line x1='6' y1='6' x2='18' y2='18'></line>
+          </svg>
+        </button>
         {isRateLimited ? (
           /* ── Rate Limit Screen ── */
           <div className='flex flex-col items-center justify-center text-center animate-in fade-in duration-200'>
@@ -294,8 +306,8 @@ export function UgcReportModal({
               })}
             </div>
 
-            {/* ── "Other" expanded fields ── */}
-            {isOther && (
+            {/* ── Expanded details and proof upload fields for all reasons ── */}
+            {showDetailsForm && (
               <div className='flex flex-col gap-3 mt-4 animate-in fade-in duration-150'>
 
                 {/* Textarea */}
@@ -314,10 +326,10 @@ export function UgcReportModal({
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder=''
+                    placeholder='Describe the issue or add details (optional)...'
                     rows={4}
                     maxLength={500}
-                    className='w-full h-full bg-transparent text-white focus:outline-none resize-none placeholder-transparent'
+                    className='w-full h-full bg-transparent text-white focus:outline-none resize-none placeholder:text-zinc-600'
                     style={{
                       fontFamily: "var(--font-plus-jakarta-sans), 'Plus Jakarta Sans', sans-serif",
                       fontWeight: 500,

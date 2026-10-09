@@ -18,6 +18,7 @@ export const moderationKeys = {
   auditLogs: (filters?: AuditLogFilters) =>
     [...moderationKeys.all, 'audit-logs', filters] as const,
   staff: () => [...moderationKeys.all, 'staff'] as const,
+  admins: () => [...moderationKeys.all, 'admins'] as const,
 };
 
 // ── User-facing Hooks ─────────────────────────────────────────────────────────
@@ -118,17 +119,48 @@ export const useModerationStaff = () => {
   });
 };
 
-// ── Admin Management ──────────────────────────────────────────────────────────
+// ── Admin Management ──────────────────────────────────────────
+export const useAdminsList = () => {
+  return useQuery({
+    queryKey: moderationKeys.admins(),
+    queryFn: async () => {
+      const res = await moderationService.getAdmins();
+      return res.data;
+    },
+    staleTime: 60 * 1000,
+  });
+};
 
 export const useCreateAdmin = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateAdminPayload) => moderationService.createAdmin(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.admins() });
+      queryClient.invalidateQueries({ queryKey: moderationKeys.staff() });
+    },
   });
 };
 
 export const useUpdateAdminRole = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, role }: { id: string; role: AdminRole }) =>
       moderationService.updateAdminRole(id, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.admins() });
+      queryClient.invalidateQueries({ queryKey: moderationKeys.staff() });
+    },
+  });
+};
+
+export const useDeleteAdmin = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => moderationService.deleteAdmin(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.admins() });
+      queryClient.invalidateQueries({ queryKey: moderationKeys.staff() });
+    },
   });
 };

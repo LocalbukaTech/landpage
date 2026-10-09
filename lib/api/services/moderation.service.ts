@@ -322,9 +322,15 @@ export const moderationService = {
     api.get<ApiResponse<AdminStaffMember[]>>('/admin/moderation/staff'),
 
   // ── Admin Management ───────────────────────────────────────────────
+  getAdmins: () =>
+    api.get<ApiResponse<AdminMember[]>>('/admin'),
+
   createAdmin: (data: CreateAdminPayload) =>
     api.post<ApiResponse<CreateAdminResponse>>('/admin', data),
 
   updateAdminRole: (id: string, role: AdminRole) =>
     api.patch<ApiResponse<AdminMember>>(`/admin/${id}/role`, { role }),
+
+  deleteAdmin: (id: string) =>
+    api.delete<ApiResponse<{ message: string }>>(`/admin/${id}`),
 };

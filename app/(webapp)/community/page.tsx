@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CreatorCommunityCarousel } from '@/components/community/CreatorCommunityCarousel';
 import { CreatorCommunityForm } from '@/components/community/CreatorCommunityForm';
 import { CreatorPaymentPortal } from '@/components/community/CreatorPaymentPortal';
 import { CommunityExploreList } from '@/components/community/CommunityExploreList';
-import { CreatorManagementDashboard } from '@/components/community/CreatorManagementDashboard';
 import { CommunityMembershipsList } from '@/components/community/CommunityMembershipsList';
+import { CreatorDashboard } from '@/components/community/CreatorDashboard';
+import { DashboardTab } from '@/components/community/types';
 import { useToast } from '@/hooks/use-toast';
 
 type CommunityTab = 'recommended' | 'trending' | 'free' | 'paid' | 'creator' | 'memberships';
@@ -18,15 +19,36 @@ function CommunityContent() {
   const searchParams = useSearchParams();
   const stateParam = searchParams.get('state');
   const emptyParam = searchParams.get('empty');
-  const tabParam = searchParams.get('tab') as CommunityTab | null;
+  const tabParam = searchParams.get('tab')?.toLowerCase();
+  const viewParam = searchParams.get('view')?.toLowerCase();
 
   const isForceEmpty = stateParam === 'empty' || emptyParam === 'true';
 
+  // Map subtab query param to CreatorDashboard tab
+  const initialDashboardTab = useMemo<DashboardTab>(() => {
+    if (tabParam === 'content' || tabParam === 'content and feed management') return 'Content and feed management';
+    if (tabParam === 'members') return 'Members';
+    if (tabParam === 'monetization') return 'Monetization';
+    if (tabParam === 'overview') return 'Overview';
+    return 'Settings';
+  }, [tabParam]);
+
+  // Determine initial active community tab
+  const initialTab: CommunityTab = useMemo(() => {
+    if (viewParam === 'creator' || tabParam === 'creator' || ['content', 'members', 'monetization', 'overview', 'settings'].includes(tabParam || '')) {
+      return 'creator';
+    }
+    if (tabParam && ['recommended', 'trending', 'free', 'paid', 'memberships'].includes(tabParam)) {
+      return tabParam as CommunityTab;
+    }
+    return 'recommended';
+  }, [tabParam, viewParam]);
+
   const [userTab, setUserTab] = useState<CommunityTab | null>(null);
-  const activeTab: CommunityTab = userTab ?? tabParam ?? 'recommended';
+  const activeTab: CommunityTab = userTab ?? initialTab;
   const setActiveTab = (tab: CommunityTab) => setUserTab(tab);
 
-  const [creatorStep, setCreatorStep] = useState<'form' | 'payment' | 'created'>('form');
+  const [creatorStep, setCreatorStep] = useState<'dashboard' | 'form' | 'payment'>('dashboard');
   const [creatorData, setCreatorData] = useState<{
     name: string;
     bio: string;
@@ -60,11 +82,11 @@ function CommunityContent() {
       title: 'Community Created! 🎉',
       description: 'Your free LocalBuka community has been registered successfully.',
     });
-    setCreatorStep('created');
+    setCreatorStep('dashboard');
   };
 
   const handlePaymentSuccess = () => {
-    setCreatorStep('created');
+    setCreatorStep('dashboard');
   };
 
   if (isForceEmpty) {
@@ -167,10 +189,18 @@ function CommunityContent() {
   return (
     <div className='w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 space-y-6'>
       {/* Page Header */}
-      <div className='pb-4 border-b border-white/10'>
+      <div className='pb-4 border-b border-white/10 flex items-center justify-between'>
         <h1 className='text-2xl sm:text-3xl font-extrabold text-white tracking-tight'>
           Community
         </h1>
+        {activeTab === 'creator' && creatorStep === 'dashboard' && (
+          <button
+            onClick={() => setCreatorStep('form')}
+            className='px-4 py-2 bg-[#FFC533] text-black font-semibold text-xs sm:text-sm rounded-xl hover:bg-[#e5ab13] transition-all'
+          >
+            + Create New Community
+          </button>
+        )}
       </div>
 
       {/* Sub-tabs Navigation */}
@@ -189,9 +219,6 @@ function CommunityContent() {
               key={tab.id}
               onClick={() => {
                 setActiveTab(tab.id as CommunityTab);
-                if (tab.id === 'creator' && creatorStep === 'created') {
-                  setCreatorStep('form');
-                }
               }}
               className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
                 isActive
@@ -239,7 +266,9 @@ function CommunityContent() {
             </div>
           )}
 
-          {creatorStep === 'created' && <CreatorManagementDashboard />}
+          {creatorStep === 'dashboard' && (
+            <CreatorDashboard initialTab={initialDashboardTab} />
+          )}
         </div>
       ) : (
         <CommunityExploreList
@@ -258,7 +287,7 @@ function CommunityContent() {
 export default function CommunityPage() {
   return (
     <MainLayout>
-      <Suspense fallback={<div className='p-8 text-white'>Loading...</div>}>
+      <Suspense fallback={<div className='p-8 text-white'>Loading Community...</div>}>
         <CommunityContent />
       </Suspense>
     </MainLayout>

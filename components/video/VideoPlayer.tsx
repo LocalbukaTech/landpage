@@ -719,20 +719,38 @@ export function VideoPlayer({
             <AlertDialogCancel className='bg-transparent border-white/10 text-white hover:bg-white/10 rounded-xl font-semibold cursor-pointer'>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
+            <button
+              disabled={deletePostMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
                 deletePostMutation.mutate(post.id, {
                   onSuccess: () => {
                     toast({
                       title: 'Post deleted',
                       description: 'Your post has been removed.',
                     });
+                    setShowDeleteConfirm(false);
+                    router.push('/feed');
+                  },
+                  onError: (error: any) => {
+                    console.error('Delete post failed:', error);
+                    const message = error?.response?.data?.message || error?.message || 'Could not delete post. Please try again.';
+                    toast({
+                      title: 'Delete failed',
+                      description: message,
+                      variant: 'destructive',
+                    });
+                    setShowDeleteConfirm(false);
                   },
                 });
               }}
-              className='bg-red-600 text-white hover:bg-red-700 font-bold rounded-xl cursor-pointer'>
-              Delete Post
-            </AlertDialogAction>
+              className='bg-red-600 text-white hover:bg-red-700 font-bold rounded-xl cursor-pointer disabled:opacity-50 px-4 py-2 text-sm inline-flex items-center justify-center'>
+              {deletePostMutation.isPending ? (
+                <span className='flex items-center gap-2'><Loader2 className='w-4 h-4 animate-spin' /> Deleting…</span>
+              ) : (
+                'Delete Post'
+              )}
+            </button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

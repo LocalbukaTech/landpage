@@ -32,18 +32,19 @@ export default function SocialModal({
   const {user: authUser} = useAuth();
   const isMe = authUser?.id === userId;
 
-  // Requests
+  // Requests - only fetch when modal is open
   const {data: followingResp, isLoading: isLoadingFollowing} = useFollowing(
-    userId,
+    open ? userId : '',
     {page: 1, limit: 50},
   );
   const {data: followersResp, isLoading: isLoadingFollowers} = useFollowers(
-    userId,
+    open ? userId : '',
     {page: 1, limit: 50},
   );
-  const {data: suggestedResp, isLoading: isLoadingSuggested} = useUsers({
-    limit: 20,
-  });
+  const {data: suggestedResp, isLoading: isLoadingSuggested} = useUsers(
+    {limit: 20},
+    {enabled: open && activeTab === 'suggested'},
+  );
 
   const following =
     (followingResp as any)?.data?.data || (followingResp as any)?.data || [];

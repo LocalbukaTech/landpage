@@ -157,15 +157,26 @@ export const useUpdatePost = () => {
   });
 };
 
-/** Delete a post */
+/** Delete a post (falls back to archiving if backend returns 404) */
 export const useDeletePost = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => postsService.deletePost(id),
+    mutationFn: async (id: string) => {
+      try {
+        return await postsService.deletePost(id);
+      } catch (err: any) {
+        // If backend returns 404 (e.g. hard delete not implemented), fallback to archiving the post
+        if (err?.response?.status === 404) {
+          return await postsService.archivePost(id);
+        }
+        throw err;
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: queryKeys.posts.all});
       queryClient.invalidateQueries({queryKey: ['posts', 'archived']});
       queryClient.invalidateQueries({queryKey: queryKeys.users.all});
+      queryClient.invalidateQueries({queryKey: ['users']});
     },
   });
 };

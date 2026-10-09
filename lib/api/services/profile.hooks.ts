@@ -96,14 +96,19 @@ export const useUnfollowUser = () => {
   });
 };
 
-export const useUsers = (params?: {
-  search?: string;
-  page?: number;
-  limit?: number;
-}) => {
+export const useUsers = (
+  params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  },
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: ['users', 'list', params],
     queryFn: () => profileService.getUsers(params),
+    enabled: options?.enabled ?? true,
+    retry: false,
   });
 };
 

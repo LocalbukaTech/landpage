@@ -357,7 +357,7 @@ export function Sidebar() {
         {isFeedPage ? (
           <div className='flex items-center gap-5 select-none'>
             <button
-              onClick={() => alert('Community feed coming soon!')}
+              onClick={() => router.push('/community')}
               className='text-[15px] font-bold text-white/50 hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none relative py-1'>
               {t('nav.community', 'Community')}
             </button>

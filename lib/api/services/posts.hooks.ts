@@ -157,7 +157,7 @@ export const useUpdatePost = () => {
   });
 };
 
-/** Delete a post (falls back to archiving if backend returns 404) */
+/** Delete a post */
 export const useDeletePost = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -165,14 +165,63 @@ export const useDeletePost = () => {
       try {
         return await postsService.deletePost(id);
       } catch (err: any) {
-        // If backend returns 404 (e.g. hard delete not implemented), fallback to archiving the post
+        // If backend returns 404, it might be an archived post where the backend query
+        // filters out archived posts. Try unarchiving first, then deleting.
         if (err?.response?.status === 404) {
-          return await postsService.archivePost(id);
+          try {
+            await postsService.unarchivePost(id);
+            return await postsService.deletePost(id);
+          } catch {
+            // Rethrow the original error if it still fails
+            throw err;
+          }
         }
         throw err;
       }
     },
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({queryKey: queryKeys.posts.all});
+      await queryClient.cancelQueries({queryKey: ['posts', 'archived']});
+      await queryClient.cancelQueries({queryKey: ['users']});
+
+      // Helper to remove post from standard responses
+      const removePostFilter = (old: any) => {
+        if (!old) return old;
+        if (Array.isArray(old)) return old.filter((p: any) => (p?.id || p?.post?.id) !== id);
+        if (Array.isArray(old.data)) {
+          return {
+            ...old,
+            data: old.data.filter((p: any) => (p?.id || p?.post?.id) !== id),
+            total: typeof old.total === 'number' ? Math.max(0, old.total - 1) : old.total,
+          };
+        }
+        if (old.data?.data && Array.isArray(old.data.data)) {
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              data: old.data.data.filter((p: any) => (p?.id || p?.post?.id) !== id),
+              total: typeof old.data.total === 'number' ? Math.max(0, old.data.total - 1) : old.data.total,
+            },
+          };
+        }
+        return old;
+      };
+
+      // Optimistically remove from archived queries
+      queryClient.setQueriesData({queryKey: ['posts', 'archived']}, removePostFilter);
+
+      // Optimistically remove from user posts / profile lists
+      queryClient.setQueriesData({queryKey: ['users']}, removePostFilter);
+
+      // Optimistically remove from feeds / general posts
+      queryClient.setQueriesData({queryKey: queryKeys.posts.all}, removePostFilter);
+    },
+    onSettled: (_, __, id) => {
+      if (id) {
+        queryClient.removeQueries({queryKey: queryKeys.posts.detail(id)});
+      }
       queryClient.invalidateQueries({queryKey: queryKeys.posts.all});
       queryClient.invalidateQueries({queryKey: ['posts', 'archived']});
       queryClient.invalidateQueries({queryKey: queryKeys.users.all});

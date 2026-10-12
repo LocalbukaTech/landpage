@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Play, Trash2, Pencil, Archive, RotateCcw } from "lucide-react";
+import { Play, Trash2, Pencil, Archive, RotateCcw, Loader2 } from "lucide-react";
 import type { Post } from "@/types/post";
 import { formatCount } from "@/constants/mockVideos";
 import {
@@ -13,7 +13,6 @@ import {
 } from "@/lib/api/services/posts.hooks";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -169,12 +168,14 @@ export function ProfileVideoGrid({
           });
           setPostToDelete(null);
         },
-        onError: () => {
+        onError: (err: any) => {
+          const message = err?.response?.data?.message || err?.message || 'Could not remove from saved. Please try again.';
           toast({
             title: 'Error',
-            description: 'Could not remove from saved. Please try again.',
+            description: message,
             variant: 'destructive',
           });
+          setPostToDelete(null);
         },
       });
     } else {
@@ -187,12 +188,14 @@ export function ProfileVideoGrid({
           });
           setPostToDelete(null);
         },
-        onError: () => {
+        onError: (err: any) => {
+          const message = err?.response?.data?.message || err?.message || 'Could not delete post. Please try again.';
           toast({
             title: 'Error',
-            description: 'Could not delete post. Please try again.',
+            description: message,
             variant: 'destructive',
           });
+          setPostToDelete(null);
         },
       });
     }
@@ -318,14 +321,28 @@ export function ProfileVideoGrid({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className='bg-transparent border-zinc-700 text-white hover:bg-zinc-800'>
+            <AlertDialogCancel
+              disabled={deletePostMutation.isPending || toggleSaveMutation.isPending}
+              className='bg-transparent border-zinc-700 text-white hover:bg-zinc-800 disabled:opacity-50'>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleAction}
-              className='bg-red-600 text-white hover:bg-red-700 font-bold'>
-              {activeTab === 'saved' ? 'Remove' : 'Delete'}
-            </AlertDialogAction>
+            <button
+              disabled={deletePostMutation.isPending || toggleSaveMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                handleAction();
+              }}
+              className='bg-red-600 text-white hover:bg-red-700 font-bold px-4 py-2 rounded-md text-sm inline-flex items-center justify-center disabled:opacity-50 cursor-pointer'>
+              {deletePostMutation.isPending || toggleSaveMutation.isPending ? (
+                <span className='flex items-center gap-2'>
+                  <Loader2 className='w-4 h-4 animate-spin' /> Deleting…
+                </span>
+              ) : activeTab === 'saved' ? (
+                'Remove'
+              ) : (
+                'Delete'
+              )}
+            </button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

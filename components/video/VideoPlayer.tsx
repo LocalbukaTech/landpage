@@ -88,7 +88,13 @@ export function VideoPlayer({
   const deletePostMutation = useDeletePost();
   const archivePostMutation = useArchivePost();
   const unarchivePostMutation = useUnarchivePost();
-  const isOwner = Boolean(user?.id && post?.user?.id === user.id);
+  const isOwner = Boolean(
+    user?.id && (
+      (post?.user?.id && String(post.user.id) === String(user.id)) ||
+      ((post as any)?.userId && String((post as any).userId) === String(user.id)) ||
+      ((post as any)?.user?._id && String((post as any).user._id) === String(user.id))
+    )
+  );
 
   const isVideo = post.mediaType === 'video';
   const mediaUrls = post.mediaUrls || [];

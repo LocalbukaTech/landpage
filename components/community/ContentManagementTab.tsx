@@ -15,8 +15,9 @@ import {
   X,
   Edit2,
   Trash2,
-  Pin,
+  MessageSquareOff,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 import { CommunityPost } from "./types";
 
@@ -69,15 +70,18 @@ const INITIAL_POSTS: CommunityPost[] = [
   },
 ];
 
-// Sample uploaded grilled chicken dish from Image 3
+// Sample uploaded grilled chicken dish from Image 3 & 5
 const SAMPLE_UPLOADED_IMAGE =
   "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=1200&q=80";
+
+const ONE_GB_BYTES = 1024 * 1024 * 1024;
 
 export function ContentManagementTab({
   communityName = "Chef Tolu's kitchen",
 }: ContentManagementTabProps) {
-  // File upload state
+  // File upload states
   const [uploadedMedia, setUploadedMedia] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [location, setLocation] = useState("Island, Lekki");
   const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -91,6 +95,9 @@ export function ContentManagementTab({
   // Posts state
   const [posts, setPosts] = useState<CommunityPost[]>(INITIAL_POSTS);
   const [activeMenuPostId, setActiveMenuPostId] = useState<string | null>(null);
+  const [disabledCommentsPostIds, setDisabledCommentsPostIds] = useState<
+    string[]
+  >([]);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +117,12 @@ export function ContentManagementTab({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > ONE_GB_BYTES) {
+        setUploadError("Files larger than 1GB can't be uploaded");
+        setUploadedMedia(null);
+        return;
+      }
+      setUploadError(null);
       const url = URL.createObjectURL(file);
       setUploadedMedia(url);
     }
@@ -119,6 +132,12 @@ export function ContentManagementTab({
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) {
+      if (file.size > ONE_GB_BYTES) {
+        setUploadError("Files larger than 1GB can't be uploaded");
+        setUploadedMedia(null);
+        return;
+      }
+      setUploadError(null);
       const url = URL.createObjectURL(file);
       setUploadedMedia(url);
     }
@@ -131,7 +150,7 @@ export function ContentManagementTab({
     }
 
     const newPost: CommunityPost = {
-      id: `post-${crypto.randomUUID()}`,
+      id: `post-${Date.now()}`,
       communityName,
       communityAvatar:
         "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
@@ -152,6 +171,7 @@ export function ContentManagementTab({
 
     setPosts([newPost, ...posts]);
     setUploadedMedia(null);
+    setUploadError(null);
     setCaption("");
     showToast("Post published successfully to community feed!");
   };
@@ -162,6 +182,7 @@ export function ContentManagementTab({
 
   const handleDiscard = () => {
     setUploadedMedia(null);
+    setUploadError(null);
     setCaption("");
     setTags([]);
     setHashtags([]);
@@ -205,25 +226,32 @@ export function ContentManagementTab({
     showToast("Post deleted from feed.");
   };
 
-  const handlePinPost = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          return { ...p, isPinned: !p.isPinned };
-        }
-        return p;
-      })
+  const toggleTurnOffComments = (postId: string) => {
+    setDisabledCommentsPostIds((prev) =>
+      prev.includes(postId)
+        ? prev.filter((id) => id !== postId)
+        : [...prev, postId]
     );
     setActiveMenuPostId(null);
-    showToast("Post pinned state updated.");
+    showToast("Post comments setting updated.");
   };
 
-  // Toggle sample preset to easily switch between Empty Upload (Image 2) and Preloaded Upload (Image 3)
-  const loadMockPreview = () => {
-    setUploadedMedia(SAMPLE_UPLOADED_IMAGE);
-    setCaption(
-      "Cooked some good food tonight, tap the link on my bio for the recepies"
-    );
+  // Demo switcher for developer testing of all states in user screenshots
+  const setDemoState = (type: "empty" | "error" | "preview") => {
+    if (type === "empty") {
+      setUploadedMedia(null);
+      setUploadError(null);
+      setCaption("");
+    } else if (type === "error") {
+      setUploadedMedia(null);
+      setUploadError("Files larger than 1GB can't be uploaded");
+    } else {
+      setUploadError(null);
+      setUploadedMedia(SAMPLE_UPLOADED_IMAGE);
+      setCaption(
+        "Cooked some good food tonight, tap the link on my bio for the recepies"
+      );
+    }
   };
 
   return (
@@ -242,32 +270,84 @@ export function ContentManagementTab({
           <h2 className="text-base md:text-lg font-semibold text-white">
             Upload File
           </h2>
-          {/* Quick toggle to help reviewer see Image 2 vs Image 3 state */}
-          <button
-            type="button"
-            onClick={uploadedMedia ? handleDiscard : loadMockPreview}
-            className="text-xs text-white/50 hover:text-[#f5c94d] transition-colors underline"
-          >
-            {uploadedMedia ? "Reset to empty dropzone" : "Load demo filled state"}
-          </button>
+          {/* Quick toggle to cycle between Screenshot 2, 4, and 5 */}
+          <div className="flex items-center gap-2 text-xs text-white/50">
+            <span>Demo state:</span>
+            <button
+              type="button"
+              onClick={() => setDemoState("empty")}
+              className={`hover:text-[#f5c94d] transition-colors underline ${
+                !uploadedMedia && !uploadError ? "text-[#f5c94d] font-semibold" : ""
+              }`}
+            >
+              Default
+            </button>
+            <span>·</span>
+            <button
+              type="button"
+              onClick={() => setDemoState("error")}
+              className={`hover:text-[#f5c94d] transition-colors underline ${
+                uploadError ? "text-red-400 font-semibold" : ""
+              }`}
+            >
+              &gt;1GB Error
+            </button>
+            <span>·</span>
+            <button
+              type="button"
+              onClick={() => setDemoState("preview")}
+              className={`hover:text-[#f5c94d] transition-colors underline ${
+                uploadedMedia ? "text-[#f5c94d] font-semibold" : ""
+              }`}
+            >
+              Uploaded
+            </button>
+          </div>
         </div>
 
-        {/* Upload Container */}
-        {!uploadedMedia ? (
-          /* Empty state (Screenshot 2) */
+        {/* Hidden File Input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*,audio/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+
+        {/* Upload Container States */}
+        {uploadError ? (
+          /* Error State (>1GB, Matching Screenshot 4) */
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            className="w-full rounded-[24px] bg-[#1a1a1a] border border-red-500/80 py-12 md:py-16 px-6 flex flex-col items-center justify-center text-center shadow-lg transition-all"
+          >
+            {/* Red Alert Triangle Icon */}
+            <div className="mb-4 text-red-500">
+              <AlertTriangle className="h-16 w-16 fill-red-500 stroke-red-500 stroke-1" />
+            </div>
+
+            {/* Error text */}
+            <p className="text-sm md:text-base font-medium text-white mb-6">
+              {uploadError}
+            </p>
+
+            {/* Browse File Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-full bg-[#f5c94d] px-8 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md"
+            >
+              Browse File
+            </button>
+          </div>
+        ) : !uploadedMedia ? (
+          /* Empty state (Matching Screenshot 2) */
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
             className="w-full rounded-[24px] bg-[#1a1a1a] border border-white/5 py-12 md:py-16 px-6 flex flex-col items-center justify-center text-center shadow-lg transition-all"
           >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*,audio/*"
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-
             {/* Upload Icon */}
             <div className="mb-4 text-white">
               <Upload className="h-10 w-10 stroke-[1.7]" />
@@ -288,7 +368,7 @@ export function ContentManagementTab({
             </button>
           </div>
         ) : (
-          /* Uploaded Preview state (Screenshot 3) */
+          /* Uploaded Preview state (Matching Screenshot 5) */
           <div className="relative w-full rounded-[24px] overflow-hidden bg-[#1a1a1a] border border-white/5 shadow-lg group">
             <div className="relative h-64 md:h-80 w-full">
               <Image
@@ -333,12 +413,16 @@ export function ContentManagementTab({
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   onBlur={() => setIsEditingLocation(false)}
-                  onKeyDown={(e) => e.key === "Enter" && setIsEditingLocation(false)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && setIsEditingLocation(false)
+                  }
                   autoFocus
                   className="rounded bg-[#252525] px-2 py-0.5 text-xs text-white focus:outline-none"
                 />
               ) : (
-                <span onClick={() => setIsEditingLocation(true)}>{location}</span>
+                <span onClick={() => setIsEditingLocation(true)}>
+                  {location}
+                </span>
               )}
             </div>
 
@@ -398,26 +482,26 @@ export function ContentManagementTab({
           </div>
         </div>
 
-        {/* Action Buttons Row */}
+        {/* Action Buttons Row (Draft, Post, Discard) */}
         <div className="flex items-center gap-3 pt-1">
           <button
             type="button"
             onClick={handleDraft}
-            className="flex-1 sm:flex-none rounded-full bg-[#f5c94d] px-8 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all text-center shadow-md"
+            className="flex-1 sm:flex-none rounded-full bg-[#f5c94d] px-8 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all text-center shadow-md cursor-pointer"
           >
             Draft
           </button>
           <button
             type="button"
             onClick={handlePost}
-            className="flex-1 sm:flex-none rounded-full bg-[#f5c94d] px-10 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all text-center shadow-md"
+            className="flex-1 sm:flex-none rounded-full bg-[#f5c94d] px-10 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all text-center shadow-md cursor-pointer"
           >
             Post
           </button>
           <button
             type="button"
             onClick={handleDiscard}
-            className="flex-1 sm:flex-none rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-black hover:bg-neutral-200 active:scale-95 transition-all text-center shadow-md"
+            className="flex-1 sm:flex-none rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-black hover:bg-neutral-200 active:scale-95 transition-all text-center shadow-md cursor-pointer"
           >
             Discard
           </button>
@@ -450,6 +534,8 @@ export function ContentManagementTab({
         <div className="space-y-8">
           {posts.map((post) => {
             const isMenuOpen = activeMenuPostId === post.id;
+            const commentsDisabled = disabledCommentsPostIds.includes(post.id);
+
             return (
               <article key={post.id} className="space-y-3">
                 {/* Author Info */}
@@ -467,11 +553,6 @@ export function ContentManagementTab({
                     <span className="font-semibold">{post.authorHandle}</span>
                     <span className="text-white/40">·</span>
                     <span className="text-white/60">{post.timestamp}</span>
-                    {post.isPinned && (
-                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#f5c94d]/15 px-2 py-0.5 text-[10px] font-medium text-[#f5c94d]">
-                        <Pin className="h-2.5 w-2.5" /> Pinned
-                      </span>
-                    )}
                   </div>
                 </div>
 
@@ -492,52 +573,62 @@ export function ContentManagementTab({
                     />
                   </div>
 
-                  {/* Options Menu Button (Three dots) */}
+                  {/* Options Menu Button (Three dots - Matching Screenshot 5) */}
                   <div className="absolute top-3.5 right-3.5 z-10">
                     <button
                       type="button"
                       onClick={() =>
                         setActiveMenuPostId(isMenuOpen ? null : post.id)
                       }
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white/90 hover:text-white hover:bg-black/75 transition-all backdrop-blur-sm"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white/90 hover:text-white hover:bg-black/85 transition-all backdrop-blur-sm cursor-pointer"
                       title="Post options"
                     >
                       <MoreHorizontal className="h-5 w-5" />
                     </button>
 
-                    {/* Popover Menu (Matching Screenshot 3) */}
+                    {/* Popover Menu (Matching Screenshot 5) */}
                     {isMenuOpen && (
                       <div
                         ref={menuRef}
-                        className="absolute right-0 top-10 w-40 rounded-2xl border border-white/10 bg-[#1e1e1e] p-1.5 shadow-2xl backdrop-blur-md z-30 animate-in fade-in zoom-in-95 duration-150"
+                        className="absolute right-0 top-10 w-44 rounded-2xl border border-white/10 bg-[#1e1e1e] p-1.5 shadow-2xl backdrop-blur-md z-30 animate-in fade-in zoom-in-95 duration-150"
                       >
+                        {/* Edit post */}
                         <button
                           type="button"
                           onClick={() => {
                             setActiveMenuPostId(null);
                             setCaption(post.caption);
-                            showToast("Loaded caption into editor.");
+                            setUploadedMedia(post.mediaUrl);
+                            showToast("Loaded post into editor.");
                           }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-white/90 hover:bg-white/10 rounded-xl transition-colors text-left"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-white/90 hover:bg-white/10 rounded-xl transition-colors text-left cursor-pointer"
                         >
                           <Edit2 className="h-3.5 w-3.5" />
-                          <span>Edit Post</span>
+                          <span>Edit post</span>
                         </button>
+
+                        {/* Turn off comments */}
+                        <button
+                          type="button"
+                          onClick={() => toggleTurnOffComments(post.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-white/90 hover:bg-white/10 rounded-xl transition-colors text-left cursor-pointer"
+                        >
+                          <MessageSquareOff className="h-3.5 w-3.5" />
+                          <span>
+                            {commentsDisabled
+                              ? "Turn on comments"
+                              : "Turn off comments"}
+                          </span>
+                        </button>
+
+                        {/* Delete */}
                         <button
                           type="button"
                           onClick={() => handleDeletePost(post.id)}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 rounded-xl transition-colors text-left"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 rounded-xl transition-colors text-left cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                          <span>Delete Post</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePinPost(post.id)}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-white/90 hover:bg-white/10 rounded-xl transition-colors text-left"
-                        >
-                          <Pin className="h-3.5 w-3.5" />
-                          <span>{post.isPinned ? "Unpin Post" : "Pin Post"}</span>
+                          <span>Delete</span>
                         </button>
                       </div>
                     )}
@@ -550,7 +641,7 @@ export function ContentManagementTab({
                   <button
                     type="button"
                     onClick={() => toggleLike(post.id)}
-                    className="flex items-center gap-2 hover:text-[#f5c94d] transition-colors group"
+                    className="flex items-center gap-2 hover:text-[#f5c94d] transition-colors group cursor-pointer"
                   >
                     <Heart
                       className={`h-4 w-4 transition-colors ${
@@ -565,18 +656,31 @@ export function ContentManagementTab({
                   {/* Comment */}
                   <button
                     type="button"
-                    onClick={() => showToast("Comments section toggled.")}
-                    className="flex items-center gap-2 hover:text-white transition-colors"
+                    disabled={commentsDisabled}
+                    onClick={() =>
+                      showToast(
+                        commentsDisabled
+                          ? "Comments are turned off for this post."
+                          : "Comments view opened."
+                      )
+                    }
+                    className={`flex items-center gap-2 transition-colors ${
+                      commentsDisabled
+                        ? "opacity-40 cursor-not-allowed"
+                        : "hover:text-white cursor-pointer"
+                    }`}
                   >
                     <MessageCircle className="h-4 w-4 text-white/80" />
-                    <span className="text-xs font-medium">{post.comments}</span>
+                    <span className="text-xs font-medium">
+                      {commentsDisabled ? "Off" : post.comments}
+                    </span>
                   </button>
 
                   {/* Bookmark */}
                   <button
                     type="button"
                     onClick={() => toggleBookmark(post.id)}
-                    className="flex items-center gap-2 hover:text-[#f5c94d] transition-colors group"
+                    className="flex items-center gap-2 hover:text-[#f5c94d] transition-colors group cursor-pointer"
                   >
                     <Bookmark
                       className={`h-4 w-4 transition-colors ${
@@ -585,17 +689,21 @@ export function ContentManagementTab({
                           : "text-white/80 group-hover:text-[#f5c94d]"
                       }`}
                     />
-                    <span className="text-xs font-medium">{post.bookmarks}</span>
+                    <span className="text-xs font-medium">
+                      {post.bookmarks}
+                    </span>
                   </button>
 
                   {/* Share */}
                   <button
                     type="button"
                     onClick={() => {
-                      navigator.clipboard?.writeText(window.location.href);
+                      if (typeof window !== "undefined") {
+                        navigator.clipboard?.writeText(window.location.href);
+                      }
                       showToast("Post link copied to clipboard!");
                     }}
-                    className="flex items-center gap-2 hover:text-white transition-colors"
+                    className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer"
                   >
                     <Share2 className="h-4 w-4 text-white/80" />
                     <span className="text-xs font-medium">{post.shares}</span>

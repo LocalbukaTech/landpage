@@ -3,18 +3,14 @@
 import { useState, useMemo, Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { Check, Lock, Sparkles, LayoutDashboard, Compass } from "lucide-react";
+import { Check, Lock, Sparkles, LayoutDashboard, Compass, ArrowLeft } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { CreatorDashboard } from "@/components/community/CreatorDashboard";
+import { PaymentCheckoutCard } from "@/components/community/PaymentCheckoutCard";
 import { DashboardTab } from "@/components/community/types";
 import { cn } from "@/lib/utils";
 
-type CommunityTab =
-  | "Recommended"
-  | "Trending"
-  | "Free"
-  | "Paid"
-  | "Creator community";
+type CommunityTab = "Recommended" | "Trending" | "Free" | "Paid";
 
 type CommunityItem = {
   id: string;
@@ -23,6 +19,7 @@ type CommunityItem = {
   members: string;
   posts: string;
   price: string;
+  priceAmount: number;
   isFree: boolean;
   image: string;
   accent: "yellow" | "blue" | "green" | "rose";
@@ -33,7 +30,6 @@ const tabs: CommunityTab[] = [
   "Trending",
   "Free",
   "Paid",
-  "Creator community",
 ];
 
 const featuredCommunities: CommunityItem[] = [
@@ -44,6 +40,7 @@ const featuredCommunities: CommunityItem[] = [
     members: "12.4k members",
     posts: "340 posts",
     price: "Free",
+    priceAmount: 0,
     isFree: true,
     image:
       "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
@@ -56,6 +53,7 @@ const featuredCommunities: CommunityItem[] = [
     members: "2.1k members",
     posts: "210 posts",
     price: "Paid · N2,500/mo",
+    priceAmount: 2500,
     isFree: false,
     image:
       "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=80",
@@ -68,6 +66,7 @@ const featuredCommunities: CommunityItem[] = [
     members: "8.7k members",
     posts: "210 posts",
     price: "Free",
+    priceAmount: 0,
     isFree: true,
     image:
       "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
@@ -80,6 +79,7 @@ const featuredCommunities: CommunityItem[] = [
     members: "3.7k members",
     posts: "90 posts",
     price: "Free",
+    priceAmount: 0,
     isFree: true,
     image:
       "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=1200&q=80",
@@ -92,6 +92,7 @@ const featuredCommunities: CommunityItem[] = [
     members: "5.3k members",
     posts: "96 posts",
     price: "Free",
+    priceAmount: 0,
     isFree: true,
     image:
       "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80",
@@ -104,6 +105,7 @@ const featuredCommunities: CommunityItem[] = [
     members: "2.1k members",
     posts: "58 posts",
     price: "Paid · N1,200/mo",
+    priceAmount: 1200,
     isFree: false,
     image:
       "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
@@ -116,6 +118,7 @@ const featuredCommunities: CommunityItem[] = [
     members: "3.7k members",
     posts: "170 posts",
     price: "Free",
+    priceAmount: 0,
     isFree: true,
     image:
       "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80",
@@ -128,6 +131,7 @@ const featuredCommunities: CommunityItem[] = [
     members: "1.3k members",
     posts: "78 posts",
     price: "Paid · N1,200/mo",
+    priceAmount: 1200,
     isFree: false,
     image:
       "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80",
@@ -159,11 +163,17 @@ function CommunityPageContent() {
       ? "Monetization"
       : tabParam === "overview"
       ? "Overview"
-      : "Settings";
+      : "Content and feed management";
 
   // Explore view state
   const [activeTab, setActiveTab] = useState<CommunityTab>("Recommended");
   const [showModal, setShowModal] = useState(false);
+  const [selectedCommunity, setSelectedCommunity] = useState<CommunityItem | null>(
+    featuredCommunities[1] // Chef Amaka's kitchen
+  );
+  const [isCheckingOut, setIsCheckingOut] = useState(
+    searchParams.get("checkout") === "true"
+  );
 
   const visibleCommunities = useMemo(() => {
     if (activeTab === "Free") {
@@ -175,11 +185,22 @@ function CommunityPageContent() {
     if (activeTab === "Trending") {
       return featuredCommunities.slice(4);
     }
-    if (activeTab === "Creator community") {
-      return featuredCommunities.slice(0, 4);
-    }
     return featuredCommunities;
   }, [activeTab]);
+
+  const handleCardClick = (community: CommunityItem) => {
+    setSelectedCommunity(community);
+    if (!community.isFree) {
+      setShowModal(true);
+    } else {
+      setViewMode("creator");
+    }
+  };
+
+  const handleStartCheckout = () => {
+    setShowModal(false);
+    setIsCheckingOut(true);
+  };
 
   return (
     <MainLayout>
@@ -191,7 +212,7 @@ function CommunityPageContent() {
               type="button"
               onClick={() => setViewMode("creator")}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all",
+                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer",
                 viewMode === "creator"
                   ? "bg-[#f5c94d] text-black shadow-sm"
                   : "text-white/60 hover:text-white"
@@ -202,9 +223,12 @@ function CommunityPageContent() {
             </button>
             <button
               type="button"
-              onClick={() => setViewMode("explore")}
+              onClick={() => {
+                setViewMode("explore");
+                setIsCheckingOut(false);
+              }}
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all",
+                "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer",
                 viewMode === "explore"
                   ? "bg-[#f5c94d] text-black shadow-sm"
                   : "text-white/60 hover:text-white"
@@ -216,12 +240,12 @@ function CommunityPageContent() {
           </div>
         </div>
 
-        {/* View Mode 1: Creator Management Dashboard (The requested screens) */}
+        {/* View Mode 1: Creator Management Dashboard (Screenshots 1, 2, 4, 5) */}
         {viewMode === "creator" && (
           <CreatorDashboard initialTab={initialDashboardTab} />
         )}
 
-        {/* View Mode 2: Explore Member Feed */}
+        {/* View Mode 2: Explore Member Feed & Checkout (Screenshot 3) */}
         {viewMode === "explore" && (
           <div className="space-y-6">
             <div>
@@ -230,91 +254,146 @@ function CommunityPageContent() {
               </h1>
             </div>
 
+            {/* Navigation Tabs Bar with "Create community" Yellow Button (Matching Screenshot 3) */}
             <div className="border-b border-white/10 pb-4">
-              <div className="flex flex-wrap gap-3">
-                {tabs.map((tab) => (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab(tab);
+                        setIsCheckingOut(false);
+                      }}
+                      className={cn(
+                        "rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer",
+                        !isCheckingOut && activeTab === tab
+                          ? "bg-[#f5c94d] text-[#111111] font-semibold shadow-[0_0_0_1px_rgba(245,201,77,0.4)]"
+                          : "bg-[#2b2b2b] text-white/70 hover:bg-[#323232] hover:text-white"
+                      )}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Yellow "Create community" Pill Button */}
+                <button
+                  type="button"
+                  onClick={() => setViewMode("creator")}
+                  className="rounded-full bg-[#f5c94d] px-5 sm:px-6 py-2 text-xs sm:text-sm font-bold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md cursor-pointer"
+                >
+                  Create community
+                </button>
+              </div>
+            </div>
+
+            {/* Payment Checkout View (Exact Match to Screenshot 3 / 16.49.00.png) */}
+            {isCheckingOut ? (
+              <div className="space-y-6 pt-2">
+                <div className="flex items-center justify-between">
                   <button
-                    key={tab}
                     type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={cn(
-                      "rounded-full border border-white/10 px-4 py-2 text-sm font-medium transition-all duration-200",
-                      activeTab === tab
-                        ? "bg-[#f5c94d] text-[#111111] shadow-[0_0_0_1px_rgba(245,201,77,0.4)]"
-                        : "bg-[#2b2b2b] text-white/70 hover:bg-[#303030] hover:text-white"
-                    )}
+                    onClick={() => setIsCheckingOut(false)}
+                    className="inline-flex items-center gap-2 text-xs text-white/60 hover:text-white transition-colors"
                   >
-                    {tab}
+                    <ArrowLeft className="h-4 w-4" />
+                    <span>Back to all communities</span>
                   </button>
-                ))}
+                </div>
+
+                <PaymentCheckoutCard
+                  communityName={selectedCommunity?.name || "Chef Amaka's kitchen"}
+                  amount={selectedCommunity?.priceAmount || 2500}
+                  onCancel={() => setIsCheckingOut(false)}
+                  onSuccess={() => {
+                    setTimeout(() => {
+                      setIsCheckingOut(false);
+                      setViewMode("creator");
+                    }, 1200);
+                  }}
+                />
               </div>
-            </div>
-
-            <div className="mt-8">
-              <h2 className="mb-6 text-[2rem] md:text-[2.4rem] font-bold tracking-tight">
-                {activeTab === "Trending"
-                  ? "Trending this week"
-                  : "Recommended for you"}
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 md:gap-6">
-                {visibleCommunities.map((community) => (
-                  <article
-                    key={community.id}
-                    onClick={() => setShowModal(true)}
-                    className="group relative cursor-pointer overflow-hidden rounded-[18px] border border-white/8 bg-[#1c1c1d] shadow-[0_10px_35px_rgba(0,0,0,0.18)]"
+            ) : (
+              /* Communities Grid */
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-[2rem] md:text-[2.4rem] font-bold tracking-tight">
+                    {activeTab === "Trending"
+                      ? "Trending this week"
+                      : activeTab === "Paid"
+                      ? "Exclusive Creator Communities"
+                      : "Recommended for you"}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setIsCheckingOut(true)}
+                    className="text-xs text-white/50 hover:text-[#f5c94d] transition-colors underline"
                   >
-                    <div className="relative h-64 w-full overflow-hidden">
-                      <Image
-                        src={community.image}
-                        alt={community.name}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#111214]/90 via-[#111214]/15 to-transparent" />
+                    Preview payment checkout card
+                  </button>
+                </div>
 
-                      <div className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
-                        {community.creator}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 md:gap-6">
+                  {visibleCommunities.map((community) => (
+                    <article
+                      key={community.id}
+                      onClick={() => handleCardClick(community)}
+                      className="group relative cursor-pointer overflow-hidden rounded-[18px] border border-white/8 bg-[#1c1c1d] shadow-[0_10px_35px_rgba(0,0,0,0.18)] hover:border-white/20 transition-all"
+                    >
+                      <div className="relative h-64 w-full overflow-hidden">
+                        <Image
+                          src={community.image}
+                          alt={community.name}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#111214]/90 via-[#111214]/15 to-transparent" />
+
+                        <div className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
+                          {community.creator}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-3 p-4 pb-5">
-                      <h3 className="text-[1.55rem] md:text-[1.8rem] font-bold leading-tight text-white">
-                        {community.name}
-                      </h3>
+                      <div className="space-y-3 p-4 pb-5">
+                        <h3 className="text-[1.55rem] md:text-[1.8rem] font-bold leading-tight text-white">
+                          {community.name}
+                        </h3>
 
-                      <div className="flex items-center justify-between gap-2 text-sm text-white/70">
-                        <span>{community.members}</span>
-                        <span>{community.posts}</span>
+                        <div className="flex items-center justify-between gap-2 text-sm text-white/70">
+                          <span>{community.members}</span>
+                          <span>{community.posts}</span>
+                        </div>
+
+                        <div className="pt-1">
+                          <span
+                            className={cn(
+                              "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
+                              community.isFree
+                                ? "bg-[#22c55e]/15 text-[#74e3a4] ring-1 ring-[#22c55e]/30"
+                                : "bg-[#f5c94d]/15 text-[#f5c94d] ring-1 ring-[#f5c94d]/30"
+                            )}
+                          >
+                            {community.price}
+                          </span>
+                        </div>
                       </div>
-
-                      <div className="pt-1">
-                        <span
-                          className={cn(
-                            "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                            community.isFree
-                              ? "bg-[#22c55e]/15 text-[#74e3a4] ring-1 ring-[#22c55e]/30"
-                              : "bg-[#f5c94d]/15 text-[#f5c94d] ring-1 ring-[#f5c94d]/30"
-                          )}
-                        >
-                          {community.price}
-                        </span>
-                      </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Explore Unlock Modal */}
-            {showModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
-                <div className="relative w-full max-w-[540px] rounded-[22px] border border-white/8 bg-[#171717] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.55)]">
+            {showModal && selectedCommunity && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px] px-4">
+                <div className="relative w-full max-w-[540px] rounded-[22px] border border-white/8 bg-[#171717] p-5 sm:p-6 shadow-[0_30px_90px_rgba(0,0,0,0.55)]">
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="absolute right-4 top-4 text-sm font-medium text-white/50 transition-colors hover:text-white"
+                    className="absolute right-4 top-4 text-sm font-medium text-white/50 transition-colors hover:text-white cursor-pointer"
                   >
                     ✕
                   </button>
@@ -328,7 +407,7 @@ function CommunityPageContent() {
                   <div className="space-y-5 text-center">
                     <div>
                       <p className="text-[1.7rem] font-bold tracking-tight text-white">
-                        Chef Amaka&apos;s kitchen
+                        {selectedCommunity.name}
                       </p>
                     </div>
 
@@ -341,7 +420,7 @@ function CommunityPageContent() {
                       </div>
 
                       <p className="text-sm text-[#4d4d4d]">
-                        Subscribe to see this post
+                        Subscribe to see exclusive dishes, tutorials and recipes
                       </p>
                     </div>
 
@@ -363,9 +442,10 @@ function CommunityPageContent() {
 
                     <button
                       type="button"
-                      className="w-full rounded-full bg-[#f5c94d] px-5 py-3 text-base font-semibold text-[#111111] transition-colors hover:bg-[#efbe29]"
+                      onClick={handleStartCheckout}
+                      className="w-full rounded-full bg-[#f5c94d] px-5 py-3 text-base font-semibold text-[#111111] transition-colors hover:bg-[#efbe29] cursor-pointer shadow-lg active:scale-95"
                     >
-                      Subscribe to unlock N2,500/mo
+                      Subscribe to unlock N{selectedCommunity.priceAmount.toLocaleString("en-NG")}/mo
                     </button>
                   </div>
                 </div>

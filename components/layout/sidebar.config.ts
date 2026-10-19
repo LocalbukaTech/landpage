@@ -9,7 +9,7 @@ import {
   Store,
   Gift,
   type LucideIcon,
-} from 'lucide-react';
+} from "lucide-react";
 
 /**
  * Auth Requirement options for Navigation Items:
@@ -18,7 +18,11 @@ import {
  * - 'auth-only': Only visible when user is logged in (hidden from guests).
  * - 'guest-only': Only visible when user is logged out (e.g. Sign In / Sign Up).
  */
-export type AuthRequirement = 'public' | 'auth-prompt' | 'auth-only' | 'guest-only';
+export type AuthRequirement =
+  | "public"
+  | "auth-prompt"
+  | "auth-only"
+  | "guest-only";
 
 export interface NavItemConfig {
   id: string;
@@ -58,7 +62,11 @@ export interface NavItemConfig {
    * - 'search-overlay': toggles search overlay
    * - 'upload-button': renders the styled action icon (e.g. yellow plus in bottom bar)
    */
-  actionType?: 'link' | 'notification-overlay' | 'search-overlay' | 'upload-button';
+  actionType?:
+    | "link"
+    | "notification-overlay"
+    | "search-overlay"
+    | "upload-button";
 }
 
 /**
@@ -67,96 +75,96 @@ export interface NavItemConfig {
  */
 export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
   {
-    id: 'home',
-    label: 'Home',
-    href: '/',
+    id: "home",
+    label: "Home",
+    href: "/",
     icon: Home,
-    authRequirement: 'public',
+    authRequirement: "public",
     showInDesktop: true,
     showInMobileBottom: true,
     showInMobileDrawer: true,
   },
   {
-    id: 'buka',
-    label: 'Buka',
-    href: '/buka',
+    id: "buka",
+    label: "Buka",
+    href: "/buka",
     icon: UtensilsCrossed,
-    authRequirement: 'public',
+    authRequirement: "public",
     showInDesktop: true,
     showInMobileBottom: true,
     showInMobileDrawer: true,
   },
   {
-    id: 'list-restaurant',
-    label: 'List Restaurant',
-    href: '/buka/my-restaurant',
+    id: "list-restaurant",
+    label: "List Restaurant",
+    href: "/buka/my-restaurant",
     icon: Store,
     // Clicking when logged out prompts Auth Modal before routing
-    authRequirement: 'auth-prompt',
+    authRequirement: "auth-prompt",
     showInDesktop: true,
     showInMobileBottom: false,
     showInMobileDrawer: true,
   },
   {
-    id: 'upload',
-    label: 'Upload',
-    href: '/studio',
+    id: "upload",
+    label: "Upload",
+    href: "/studio",
     icon: PlusCircle,
     // Can be 'auth-prompt' (guests see button, click asks to login) or 'auth-only' (hidden from guests)
-    authRequirement: 'auth-prompt',
+    authRequirement: "auth-prompt",
     showInDesktop: true,
     showInMobileBottom: true,
     showInMobileDrawer: true,
-    actionType: 'upload-button',
+    actionType: "upload-button",
   },
   {
-    id: 'notifications',
-    label: 'Notification',
-    href: '/notifications',
+    id: "notifications",
+    label: "Notification",
+    href: "/notifications",
     icon: Bell,
-    authRequirement: 'auth-prompt',
+    authRequirement: "auth-prompt",
     showInDesktop: true,
     showInMobileBottom: true,
-    mobileBottomLabel: 'Inbox',
+    mobileBottomLabel: "Inbox",
     showInMobileDrawer: true,
-    actionType: 'notification-overlay',
+    actionType: "notification-overlay",
   },
   {
-    id: 'saved',
-    label: 'Saved',
-    href: '/profile?tab=saved',
+    id: "saved",
+    label: "Saved",
+    href: "/profile?tab=saved",
     icon: Bookmark,
-    authRequirement: 'auth-prompt',
+    authRequirement: "auth-prompt",
     showInDesktop: true,
     showInMobileBottom: false,
     showInMobileDrawer: true,
   },
   {
-    id: 'community',
-    label: 'Community',
-    href: '#',
+    id: "community",
+    label: "Community",
+    href: "/community",
     icon: Users,
-    authRequirement: 'public',
+    authRequirement: "public",
     showInDesktop: true,
     showInMobileBottom: false,
     showInMobileDrawer: true,
   },
   {
-    id: 'rewards',
-    label: 'Refer & Earn',
-    href: '/rewards',
+    id: "rewards",
+    label: "Refer & Earn",
+    href: "/rewards",
     icon: Gift,
-    authRequirement: 'auth-prompt',
+    authRequirement: "auth-prompt",
     showInDesktop: true,
     showInMobileBottom: false,
     showInMobileDrawer: true,
   },
   {
-    id: 'profile',
-    label: 'Profile',
-    href: '/profile',
+    id: "profile",
+    label: "Profile",
+    href: "/profile",
     icon: User,
-    authRequirement: 'auth-prompt',
+    authRequirement: "auth-prompt",
     showInDesktop: true,
     showInMobileBottom: true,
     showInMobileDrawer: true,
@@ -164,9 +172,9 @@ export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
 ];
 
 export const FOOTER_LINKS = [
-  { label: 'Company', href: '/company' },
-  { label: 'Blogs', href: '/blog' },
-  { label: 'Terms & Policies', href: '/privacy' },
+  { label: "Company", href: "/company" },
+  { label: "Blogs", href: "/blog" },
+  { label: "Terms & Policies", href: "/privacy" },
 ];
 
 /**
@@ -175,8 +183,8 @@ export const FOOTER_LINKS = [
 export function getDesktopNavItems(isAuthenticated: boolean): NavItemConfig[] {
   return SIDEBAR_NAV_ITEMS.filter((item) => {
     if (item.showInDesktop === false) return false;
-    if (item.authRequirement === 'auth-only' && !isAuthenticated) return false;
-    if (item.authRequirement === 'guest-only' && isAuthenticated) return false;
+    if (item.authRequirement === "auth-only" && !isAuthenticated) return false;
+    if (item.authRequirement === "guest-only" && isAuthenticated) return false;
     return true;
   });
 }
@@ -184,11 +192,13 @@ export function getDesktopNavItems(isAuthenticated: boolean): NavItemConfig[] {
 /**
  * Filter items for Mobile Bottom Bar based on authentication state
  */
-export function getMobileBottomNavItems(isAuthenticated: boolean): NavItemConfig[] {
+export function getMobileBottomNavItems(
+  isAuthenticated: boolean,
+): NavItemConfig[] {
   return SIDEBAR_NAV_ITEMS.filter((item) => {
     if (item.showInMobileBottom !== true) return false;
-    if (item.authRequirement === 'auth-only' && !isAuthenticated) return false;
-    if (item.authRequirement === 'guest-only' && isAuthenticated) return false;
+    if (item.authRequirement === "auth-only" && !isAuthenticated) return false;
+    if (item.authRequirement === "guest-only" && isAuthenticated) return false;
     return true;
   });
 }
@@ -196,11 +206,13 @@ export function getMobileBottomNavItems(isAuthenticated: boolean): NavItemConfig
 /**
  * Filter items for Mobile Left Drawer based on authentication state
  */
-export function getMobileDrawerNavItems(isAuthenticated: boolean): NavItemConfig[] {
+export function getMobileDrawerNavItems(
+  isAuthenticated: boolean,
+): NavItemConfig[] {
   return SIDEBAR_NAV_ITEMS.filter((item) => {
     if (item.showInMobileDrawer === false) return false;
-    if (item.authRequirement === 'auth-only' && !isAuthenticated) return false;
-    if (item.authRequirement === 'guest-only' && isAuthenticated) return false;
+    if (item.authRequirement === "auth-only" && !isAuthenticated) return false;
+    if (item.authRequirement === "guest-only" && isAuthenticated) return false;
     return true;
   });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, Check, ShieldCheck, Loader2 } from "lucide-react";
+import { CreditCard, Check, Loader2 } from "lucide-react";
 
 interface PaymentCheckoutCardProps {
   communityName?: string;
@@ -16,7 +16,6 @@ export function PaymentCheckoutCard({
   onSuccess,
   onCancel,
 }: PaymentCheckoutCardProps) {
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "paypal">("card");
   const [cardholderName, setCardholderName] = useState(
     "Jabril Babatunde Mudashiru"
   );

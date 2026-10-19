@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Search, UserCheck, Filter } from "lucide-react";
+import { Search } from "lucide-react";
 import { CommunityMember } from "./types";
 
 const MEMBERS_DATA: CommunityMember[] = [

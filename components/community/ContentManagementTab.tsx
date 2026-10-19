@@ -143,14 +143,17 @@ export function ContentManagementTab({
     }
   };
 
+  const nextPostIdRef = useRef(3);
+
   const handlePost = () => {
     if (!uploadedMedia && !caption.trim()) {
       showToast("Please upload an image or write a caption before posting.");
       return;
     }
 
+    const nextId = nextPostIdRef.current++;
     const newPost: CommunityPost = {
-      id: `post-${Date.now()}`,
+      id: `post-${nextId}`,
       communityName,
       communityAvatar:
         "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",

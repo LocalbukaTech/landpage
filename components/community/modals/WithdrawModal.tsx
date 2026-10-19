@@ -37,9 +37,9 @@ export function WithdrawModal({
 }: WithdrawModalProps) {
   const [selectedBank, setSelectedBank] = useState("zenith");
   const [accountNumber, setAccountNumber] = useState("2083948192");
-  const [accountName, setAccountName] = useState("Tolu Olawale");
+  const accountName = "Tolu Olawale";
   const [amount, setAmount] = useState<string>("500000");
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [txRef, setTxRef] = useState("LBK-TX-849201");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +74,7 @@ export function WithdrawModal({
     }
 
     setIsSubmitting(true);
+    setTxRef(`LBK-TX-${Date.now().toString().slice(-6)}`);
     setTimeout(() => {
       setIsSubmitting(false);
       setIsCompleted(true);
@@ -281,7 +282,7 @@ export function WithdrawModal({
             <div className="rounded-2xl bg-[#222222] border border-white/5 p-4 text-xs text-white/70 text-left space-y-2">
               <div className="flex justify-between">
                 <span>Transaction Ref</span>
-                <span className="font-mono text-white">LBK-TX-{Math.floor(100000 + Math.random() * 900000)}</span>
+                <span className="font-mono text-white">{txRef}</span>
               </div>
               <div className="flex justify-between">
                 <span>Estimated Arrival</span>

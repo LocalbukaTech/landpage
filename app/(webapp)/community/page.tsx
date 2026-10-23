@@ -40,30 +40,46 @@ function CommunityContent() {
 
   // Determine initial active community tab
   const initialTab: CommunityTab = useMemo(() => {
-    if (viewParam === 'creator' || tabParam === 'creator' || ['content', 'members', 'monetization', 'overview', 'settings'].includes(tabParam || '')) {
+    if (
+      viewParam === 'creator' ||
+      tabParam === 'creator' ||
+      Boolean(statusParam) ||
+      ['content', 'members', 'monetization', 'overview', 'settings'].includes(tabParam || '')
+    ) {
       return 'creator';
     }
     if (tabParam && ['recommended', 'trending', 'free', 'paid', 'memberships'].includes(tabParam)) {
       return tabParam as CommunityTab;
     }
     return 'recommended';
-  }, [tabParam, viewParam]);
+  }, [tabParam, viewParam, statusParam]);
 
-  const [userTab, setUserTab] = useState<CommunityTab | null>(null);
-  const activeTab: CommunityTab = userTab ?? initialTab;
-  const setActiveTab = (tab: CommunityTab) => setUserTab(tab);
+  const tabParamKey = `${tabParam ?? ''}_${viewParam ?? ''}_${statusParam ?? ''}`;
+  const [userTab, setUserTab] = useState<{ key: string; tab: CommunityTab } | null>(null);
+  const activeTab: CommunityTab = userTab && userTab.key === tabParamKey ? userTab.tab : initialTab;
+  const setActiveTab = (tab: CommunityTab) => setUserTab({ key: tabParamKey, tab });
 
   const initialCreatorStep = useMemo<'approved' | 'rejected' | 'dashboard' | 'form' | 'payment'>(() => {
-    if (stepParam === 'form') return 'form';
-    if (stepParam === 'payment') return 'payment';
-    if (statusParam === 'rejected' || stepParam === 'rejected') return 'rejected';
+    if (stepParam === 'form' || statusParam === 'form') return 'form';
+    if (stepParam === 'payment' || statusParam === 'payment') return 'payment';
+    if (statusParam === 'approved' || stepParam === 'approved' || statusParam === 'live') return 'approved';
+    if (statusParam === 'rejected' || stepParam === 'rejected' || statusParam === 'not-approved' || statusParam === 'not_approved') return 'rejected';
     if (stepParam === 'dashboard' || ['content', 'members', 'monetization', 'overview', 'settings'].includes(tabParam || '')) {
       return 'dashboard';
     }
-    return 'rejected';
+    return 'approved';
   }, [stepParam, statusParam, tabParam]);
 
-  const [creatorStep, setCreatorStep] = useState<'approved' | 'rejected' | 'dashboard' | 'form' | 'payment'>(initialCreatorStep);
+  const creatorParamKey = `${stepParam ?? ''}_${statusParam ?? ''}_${tabParam ?? ''}`;
+  const [userCreatorStep, setUserCreatorStep] = useState<{
+    key: string;
+    step: 'approved' | 'rejected' | 'dashboard' | 'form' | 'payment';
+  } | null>(null);
+  const creatorStep =
+    userCreatorStep && userCreatorStep.key === creatorParamKey ? userCreatorStep.step : initialCreatorStep;
+  const setCreatorStep = (step: 'approved' | 'rejected' | 'dashboard' | 'form' | 'payment') => {
+    setUserCreatorStep({ key: creatorParamKey, step });
+  };
   const [creatorData, setCreatorData] = useState<{
     name: string;
     bio: string;

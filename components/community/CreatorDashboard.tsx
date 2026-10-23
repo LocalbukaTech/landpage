@@ -28,6 +28,7 @@ export function CreatorDashboard({
 
   useEffect(() => {
     if (initialTab) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveTab(initialTab);
     }
   }, [initialTab]);

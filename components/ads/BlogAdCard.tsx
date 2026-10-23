@@ -3,6 +3,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {Sparkles} from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface BlogAdCardProps {
   slot?: string;
@@ -26,6 +27,7 @@ export function BlogAdCard({slot = '4012538754'}: BlogAdCardProps) {
         window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1' ||
         window.location.hostname.endsWith('.local');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLocalhost(isLocal);
     }
   }, []);
@@ -100,7 +102,7 @@ export function BlogAdCard({slot = '4012538754'}: BlogAdCardProps) {
           className={`transition-opacity duration-500 ${
             isGoogleFilled ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'
           }`}>
-          <a
+          <Link
             href='/buka'
             className='block cursor-pointer'>
             {/* Image matching blog card aspect ratio */}
@@ -146,7 +148,7 @@ export function BlogAdCard({slot = '4012538754'}: BlogAdCardProps) {
                 Find top-rated local food spots, chef specials, and verified reviews from foodies in your neighborhood.
               </p>
             </div>
-          </a>
+          </Link>
         </div>
 
         {/* Google AdSense — transitions in when filled */}

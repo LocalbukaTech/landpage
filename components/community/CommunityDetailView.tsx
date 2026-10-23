@@ -68,6 +68,7 @@ export function CommunityDetailView({
 
   useEffect(() => {
     if (searchParams && (searchParams.get('modal') === 'members-only' || searchParams.get('locked') === 'true')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsMembersModalOpen(true);
     }
   }, [searchParams]);

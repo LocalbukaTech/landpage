@@ -43,7 +43,7 @@ export function MembersOnlyModal({
           maxWidth: '100%',
           height: '581px',
           maxHeight: '90vh',
-          borderRadius: '24px',
+          borderRadius: '20px',
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -111,12 +111,12 @@ export function MembersOnlyModal({
               width: '368px',
               height: '175px',
               borderRadius: '10px',
-              backgroundColor: '#FAF6EB',
+              backgroundColor: '#FFF9E8',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
+              gap: '8px',
             }}
             className='shadow-inner'
           >
@@ -160,51 +160,69 @@ export function MembersOnlyModal({
             </p>
           </div>
 
-          {/* 3. Unlock description */}
-          <div className='space-y-1.5 px-2 flex flex-col items-center'>
-            <h4
+          {/* 3 & 4. Text and Button container (368px x 138px, gap: 20px) */}
+          <div
+            style={{
+              width: '368px',
+              minHeight: '138px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '20px',
+            }}
+          >
+            <div className="flex flex-col items-center px-1" style={{ gap: '9px' }}>
+              <h4
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '18px',
+                  lineHeight: '140%',
+                  letterSpacing: '0%',
+                  textAlign: 'center',
+                  color: '#ffffff',
+                  margin: 0,
+                }}
+              >
+                Unlock everything in this community
+              </h4>
+              <p
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  lineHeight: '140%',
+                  letterSpacing: '0%',
+                  textAlign: 'center',
+                  color: '#A1A1AA',
+                  margin: 0,
+                  maxWidth: '350px',
+                }}
+              >
+                Get full access to posts, recipes, and live cook-alongs from {ownerName}.
+              </p>
+            </div>
+
+            {/* Subscribe Button (width: 269px, height: 39px, radius: 9.65px, pad: 32.16px, bg: #FBBE15) */}
+            <button
+              onClick={handleSubscribe}
               style={{
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontWeight: 700,
-                fontSize: '18px',
-                lineHeight: '140%',
-                letterSpacing: '0%',
-                textAlign: 'center',
-                color: '#ffffff',
-                margin: 0,
+                fontSize: '14px',
+                width: '269px',
+                height: '39px',
+                borderRadius: '9.65px',
+                paddingLeft: '32.16px',
+                paddingRight: '32.16px',
+                backgroundColor: '#FBBE15',
               }}
+              className="text-[#121212] hover:brightness-105 active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center whitespace-nowrap"
             >
-              Unlock everything in this community
-            </h4>
-            <p
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 400,
-                fontSize: '16px',
-                lineHeight: '140%',
-                letterSpacing: '0%',
-                textAlign: 'center',
-                color: '#A1A1AA',
-                margin: 0,
-                maxWidth: '360px',
-              }}
-            >
-              Get full access to posts, recipes, and live cook-alongs from {ownerName}.
-            </p>
+              Subscribe to unlock . {price}
+            </button>
           </div>
-
-          {/* 4. Subscribe Button */}
-          <button
-            onClick={handleSubscribe}
-            style={{
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: 700,
-              fontSize: '15px',
-            }}
-            className='w-full py-3.5 px-6 rounded-[12px] bg-[#FFC533] hover:bg-[#eeb628] text-black transition-all shadow-md active:scale-95 cursor-pointer'
-          >
-            Subscribe to unlock . {price}
-          </button>
         </div>
       </div>
     </div>

@@ -9,6 +9,8 @@ import { CreatorPaymentPortal } from '@/components/community/CreatorPaymentPorta
 import { CommunityExploreList } from '@/components/community/CommunityExploreList';
 import { CommunityMembershipsList } from '@/components/community/CommunityMembershipsList';
 import { CreatorDashboard } from '@/components/community/CreatorDashboard';
+import { CreatorCommunityApprovedCard } from '@/components/community/CreatorCommunityApprovedCard';
+import { CreatorCommunityRejectedCard } from '@/components/community/CreatorCommunityRejectedCard';
 import { DashboardTab } from '@/components/community/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +23,8 @@ function CommunityContent() {
   const emptyParam = searchParams.get('empty');
   const tabParam = searchParams.get('tab')?.toLowerCase();
   const viewParam = searchParams.get('view')?.toLowerCase();
+  const stepParam = searchParams.get('step')?.toLowerCase();
+  const statusParam = searchParams.get('status')?.toLowerCase();
 
   const isForceEmpty = stateParam === 'empty' || emptyParam === 'true';
 
@@ -30,7 +34,8 @@ function CommunityContent() {
     if (tabParam === 'members') return 'Members';
     if (tabParam === 'monetization') return 'Monetization';
     if (tabParam === 'overview') return 'Overview';
-    return 'Settings';
+    if (tabParam === 'settings') return 'Settings';
+    return 'Members';
   }, [tabParam]);
 
   // Determine initial active community tab
@@ -48,7 +53,17 @@ function CommunityContent() {
   const activeTab: CommunityTab = userTab ?? initialTab;
   const setActiveTab = (tab: CommunityTab) => setUserTab(tab);
 
-  const [creatorStep, setCreatorStep] = useState<'dashboard' | 'form' | 'payment'>('dashboard');
+  const initialCreatorStep = useMemo<'approved' | 'rejected' | 'dashboard' | 'form' | 'payment'>(() => {
+    if (stepParam === 'form') return 'form';
+    if (stepParam === 'payment') return 'payment';
+    if (statusParam === 'rejected' || stepParam === 'rejected') return 'rejected';
+    if (stepParam === 'dashboard' || ['content', 'members', 'monetization', 'overview', 'settings'].includes(tabParam || '')) {
+      return 'dashboard';
+    }
+    return 'rejected';
+  }, [stepParam, statusParam, tabParam]);
+
+  const [creatorStep, setCreatorStep] = useState<'approved' | 'rejected' | 'dashboard' | 'form' | 'payment'>(initialCreatorStep);
   const [creatorData, setCreatorData] = useState<{
     name: string;
     bio: string;
@@ -193,13 +208,50 @@ function CommunityContent() {
         <h1 className='text-2xl sm:text-3xl font-extrabold text-white tracking-tight'>
           Community
         </h1>
-        {activeTab === 'creator' && creatorStep === 'dashboard' && (
-          <button
-            onClick={() => setCreatorStep('form')}
-            className='px-4 py-2 bg-[#FFC533] text-black font-semibold text-xs sm:text-sm rounded-xl hover:bg-[#e5ab13] transition-all'
-          >
-            + Create New Community
-          </button>
+        {activeTab === 'creator' && (
+          <div className='flex items-center gap-3'>
+            {/* Dev / Reviewer Switcher */}
+            <div className='flex items-center gap-2 text-xs text-white/50 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10'>
+              <span className='text-white/40'>State:</span>
+              <button
+                type='button'
+                onClick={() => setCreatorStep('rejected')}
+                className={`hover:text-[#FFC533] cursor-pointer transition-colors ${
+                  creatorStep === 'rejected' ? 'text-[#FFC533] font-semibold underline' : ''
+                }`}
+              >
+                Not approved
+              </button>
+              <span>|</span>
+              <button
+                type='button'
+                onClick={() => setCreatorStep('approved')}
+                className={`hover:text-[#FFC533] cursor-pointer transition-colors ${
+                  creatorStep === 'approved' ? 'text-[#FFC533] font-semibold underline' : ''
+                }`}
+              >
+                Approved
+              </button>
+              <span>|</span>
+              <button
+                type='button'
+                onClick={() => setCreatorStep('dashboard')}
+                className={`hover:text-[#FFC533] cursor-pointer transition-colors ${
+                  creatorStep === 'dashboard' ? 'text-[#FFC533] font-semibold underline' : ''
+                }`}
+              >
+                Dashboard
+              </button>
+            </div>
+            {creatorStep === 'dashboard' && (
+              <button
+                onClick={() => setCreatorStep('form')}
+                className='px-3.5 py-1.5 bg-white/10 hover:bg-white/15 text-white/80 hover:text-white font-medium text-xs rounded-lg transition-all'
+              >
+                + Create New Community
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -239,6 +291,27 @@ function CommunityContent() {
         </div>
       ) : activeTab === 'creator' ? (
         <div className='py-2'>
+          {creatorStep === 'rejected' && (
+            <CreatorCommunityRejectedCard
+              reviewDate='1 day ago'
+              caseId='CR-1041'
+              rejectionReason="This community didn't meet our requirements and can't be published."
+              feedbackMessage="Pricing described does not match LocalBuka's membership guidelines. This community cannot be published."
+              actionMessage="Pricing described does not match LocalBuka's membership guidelines. This community cannot be published."
+              onCreateNewCommunity={() => setCreatorStep('form')}
+              onContactSupport={() => {}}
+            />
+          )}
+
+          {creatorStep === 'approved' && (
+            <CreatorCommunityApprovedCard
+              communityName='Smoothie Lab Lagos'
+              liveSince='Sept 24'
+              price='₦1,800/mo'
+              onGoToCommunity={() => setCreatorStep('dashboard')}
+            />
+          )}
+
           {creatorStep === 'form' && (
             <div className='flex flex-col lg:flex-row w-full max-w-[970px] lg:h-[1010px] mx-auto bg-[#1a1a1a] rounded-[25px] overflow-hidden shadow-2xl border border-white/5'>
               {/* Left Side - Image Carousel — fills full height */}

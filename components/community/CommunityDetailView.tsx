@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, Check, Share2, Utensils, MessageSquare, Image as ImageIcon } from 'lucide-react';
@@ -65,6 +65,12 @@ export function CommunityDetailView({
 
   const shouldOpenInitially = searchParams ? (searchParams.get('modal') === 'members-only' || searchParams.get('locked') === 'true') : false;
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(shouldOpenInitially);
+
+  useEffect(() => {
+    if (searchParams && (searchParams.get('modal') === 'members-only' || searchParams.get('locked') === 'true')) {
+      setIsMembersModalOpen(true);
+    }
+  }, [searchParams]);
 
   const handlePostClick = (image: string) => {
     if (!isFree) {

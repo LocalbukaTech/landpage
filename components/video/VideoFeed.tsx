@@ -1,6 +1,6 @@
 'use client';
 
-import {useState, useCallback, useEffect, useRef} from 'react';
+import {useState, useCallback, useEffect, useRef, useMemo} from 'react';
 import {motion, AnimatePresence} from 'framer-motion';
 import {Loader2} from 'lucide-react';
 import type {Post} from '@/types/post';
@@ -14,8 +14,15 @@ import {useToggleLike, useToggleSave} from '@/lib/api/services/posts.hooks';
 import {useBatchReportViews} from '@/lib/api/services/insights.hooks';
 import {useRequireAuth} from '@/hooks/useRequireAuth';
 import {ensureHttps} from '@/lib/utils';
+import {AdFeedCard} from '@/components/video/AdFeedCard';
+import {AdActionBar} from '@/components/video/AdActionBar';
 
 const FEED_MUTED_SESSION_KEY = 'localbuka:feed-muted';
+const AD_INTERVAL = 5; // Insert an In-Feed Ad card every 5 posts
+
+export type FeedItem =
+  | { type: 'post'; post: Post }
+  | { type: 'ad'; id: string };
 
 interface VideoFeedProps {
   posts: Post[];
@@ -42,7 +49,37 @@ export function VideoFeed({
   hasMore,
   isLoadingMore,
 }: VideoFeedProps) {
-  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  // Interleave ads every AD_INTERVAL posts (or immediately after post 1 if ?testAd is passed)
+  const effectiveAdInterval = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      const search = new URLSearchParams(window.location.search);
+      if (search.has('testAd') || search.has('adTest')) return 1;
+    }
+    return AD_INTERVAL;
+  }, []);
+
+  const feedItems = useMemo<FeedItem[]>(() => {
+    if (!posts || posts.length === 0) return [];
+    const items: FeedItem[] = [];
+    posts.forEach((post, index) => {
+      items.push({ type: 'post', post });
+      if ((index + 1) % effectiveAdInterval === 0) {
+        items.push({ type: 'ad', id: `feed-ad-${index + 1}` });
+      }
+    });
+    return items;
+  }, [posts, effectiveAdInterval]);
+
+  // Map post-based initialIndex to feedItems index
+  const mappedInitialIndex = useMemo(() => {
+    if (!initialIndex || initialIndex === 0) return 0;
+    const adsBefore = Math.floor(initialIndex / effectiveAdInterval);
+    return initialIndex + adsBefore;
+  }, [initialIndex, effectiveAdInterval]);
+
+  const [currentIndex, setCurrentIndex] = useState(mappedInitialIndex);
+  const currentItem = feedItems && feedItems.length > 0 ? feedItems[Math.min(currentIndex, feedItems.length - 1)] : null;
+  const currentPost = currentItem?.type === 'post' ? currentItem.post : null;
   const [isGlobalMuted, setIsGlobalMuted] = useState(() => {
     if (typeof window === 'undefined') return initialMuted;
 
@@ -69,7 +106,7 @@ export function VideoFeed({
   });
 
   useEffect(() => {
-    const post = posts[currentIndex];
+    const post = currentPost;
     if (!post?.id) return;
     if (viewTimerRef.current) clearTimeout(viewTimerRef.current);
     viewTimerRef.current = setTimeout(() => {
@@ -84,7 +121,7 @@ export function VideoFeed({
     return () => {
       if (viewTimerRef.current) clearTimeout(viewTimerRef.current);
     };
-  }, [currentIndex, posts]);
+  }, [currentPost]);
 
   // Flush any remaining pending views when the feed unmounts
   useEffect(() => {
@@ -123,7 +160,7 @@ export function VideoFeed({
   }, [currentIndex]);
 
   const handleNext = useCallback(() => {
-    if (currentIndex < posts.length - 1 && !isTransitioningRef.current) {
+    if (currentIndex < feedItems.length - 1 && !isTransitioningRef.current) {
       isTransitioningRef.current = true;
       setDirection(1);
       setCurrentIndex((prev) => prev + 1);
@@ -133,7 +170,7 @@ export function VideoFeed({
         isTransitioningRef.current = false;
       }, 400);
     }
-  }, [currentIndex, posts.length]);
+  }, [currentIndex, feedItems.length]);
 
   useEffect(() => {
     return () => {
@@ -149,21 +186,29 @@ export function VideoFeed({
     );
   }, [isGlobalMuted]);
 
+  // Count how many regular posts remain after currentIndex
+  const remainingPosts = useMemo(() => {
+    let count = 0;
+    for (let i = currentIndex + 1; i < feedItems.length; i++) {
+      if (feedItems[i].type === 'post') count++;
+    }
+    return count;
+  }, [currentIndex, feedItems]);
+
   // Load more posts when approaching the end of the current list (e.g. 3 posts left)
   useEffect(() => {
-    if (posts.length - currentIndex <= 3 && hasMore && !isLoadingMore && onLoadMore) {
+    if (remainingPosts <= 3 && hasMore && !isLoadingMore && onLoadMore) {
       onLoadMore();
     }
-  }, [currentIndex, posts.length, hasMore, isLoadingMore, onLoadMore]);
+  }, [remainingPosts, hasMore, isLoadingMore, onLoadMore]);
 
   // Persist the current video position and mark post as seen for feed ranking
   useEffect(() => {
-    const post = posts[currentIndex];
-    if (post?.id) {
-      feedStore.save(post.id, feedType);
-      markPostAsSeen(post.id);
+    if (currentPost?.id) {
+      feedStore.save(currentPost.id, feedType);
+      markPostAsSeen(currentPost.id);
     }
-  }, [currentIndex, posts, feedType]);
+  }, [currentPost, feedType]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -220,8 +265,6 @@ export function VideoFeed({
 
   const {requireAuth} = useRequireAuth();
 
-  const currentPost = posts && posts.length > 0 ? posts[Math.min(currentIndex, posts.length - 1)] : null;
-
   const handleLikeToggle = useCallback(() => {
     requireAuth(() => {
       if (currentPost?.id) {
@@ -230,7 +273,7 @@ export function VideoFeed({
     });
   }, [requireAuth, currentPost, toggleLikeMutation]);
 
-  if (!posts || posts.length === 0) {
+  if (!feedItems || feedItems.length === 0) {
     return (
       <div className='flex items-center justify-center h-full w-full text-zinc-500 text-base'>
         <p>No posts available</p>
@@ -247,13 +290,13 @@ export function VideoFeed({
   return (
     <div className='fixed top-14 bottom-16 left-0 right-0 flex items-center justify-center md:static md:top-auto md:bottom-auto md:left-auto md:right-auto md:w-full md:h-[calc(100vh-3rem)] md:gap-4 md:max-h-[850px] overscroll-none'>
       <div className='flex gap-3 items-end h-full w-full md:w-auto relative'>
-        {currentPost && (
+        {currentItem && (
           <div
             className='relative h-full w-full md:w-[420px] md:min-w-[420px] flex-shrink-0 md:rounded-2xl overflow-hidden bg-black flex items-center justify-center'
             style={{width: '420px', maxWidth: '100%'}}>
             <AnimatePresence initial={false}>
               <motion.div
-                key={currentPost.id}
+                key={currentItem.type === 'post' ? currentItem.post.id : currentItem.id}
                 variants={fadeVariants}
                 initial='enter'
                 animate='center'
@@ -263,22 +306,29 @@ export function VideoFeed({
                   ease: [0.25, 1, 0.5, 1],
                 }}
                 className='absolute inset-0 w-full h-full flex items-center justify-center overflow-hidden'>
-                <VideoPlayer
-                  post={currentPost}
-                  isActive={true}
-                  onSwipeUp={handleNext}
-                  onSwipeDown={handlePrevious}
-                  isMuted={isGlobalMuted}
-                  onMuteChange={handleMuteChange}
-                  showTimestamp={showTimestamp}
-                  onLikeToggle={handleLikeToggle}
-                />
+                {currentItem.type === 'post' ? (
+                  <VideoPlayer
+                    post={currentItem.post}
+                    isActive={true}
+                    onSwipeUp={handleNext}
+                    onSwipeDown={handlePrevious}
+                    isMuted={isGlobalMuted}
+                    onMuteChange={handleMuteChange}
+                    showTimestamp={showTimestamp}
+                    onLikeToggle={handleLikeToggle}
+                  />
+                ) : (
+                  <AdFeedCard
+                    onSwipeUp={handleNext}
+                    onSwipeDown={handlePrevious}
+                  />
+                )}
               </motion.div>
             </AnimatePresence>
           </div>
         )}
 
-        {currentPost && (
+        {currentPost ? (
           <div className='absolute right-2 bottom-20 md:static md:right-auto md:bottom-auto z-10'>
             <ActionBar
               post={currentPost}
@@ -287,6 +337,10 @@ export function VideoFeed({
               onSaveToggle={() => toggleSaveMutation.mutate(currentPost.id)}
               hideFollowButton={hideFollowButton}
             />
+          </div>
+        ) : (
+          <div className='absolute right-2 bottom-20 md:static md:right-auto md:bottom-auto z-10'>
+            <AdActionBar />
           </div>
         )}
 
@@ -311,32 +365,35 @@ export function VideoFeed({
           onPrevious={handlePrevious}
           onNext={handleNext}
           canGoPrevious={currentIndex > 0}
-          canGoNext={currentIndex < posts.length - 1}
+          canGoNext={currentIndex < feedItems.length - 1}
         />
       </div>
 
       {/* Background Preloader for Upcoming Videos & Thumbnails */}
       <div className='hidden' aria-hidden='true'>
-        {posts.slice(currentIndex + 1, currentIndex + 3).map((nextPost) => (
-          <div key={`preload-${nextPost.id}`}>
-            {nextPost.thumbnailUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={ensureHttps(nextPost.thumbnailUrl)}
-                alt=''
-                loading='eager'
-              />
-            )}
-            {nextPost.mediaType === 'video' && nextPost.mediaUrl && (
-              <video
-                src={ensureHttps(nextPost.mediaUrl)}
-                preload='auto'
-                muted
-                playsInline
-              />
-            )}
-          </div>
-        ))}
+        {feedItems
+          .slice(currentIndex + 1, currentIndex + 4)
+          .filter((item): item is { type: 'post'; post: Post } => item.type === 'post')
+          .map(({ post: nextPost }) => (
+            <div key={`preload-${nextPost.id}`}>
+              {nextPost.thumbnailUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={ensureHttps(nextPost.thumbnailUrl)}
+                  alt=''
+                  loading='eager'
+                />
+              )}
+              {nextPost.mediaType === 'video' && nextPost.mediaUrl && (
+                <video
+                  src={ensureHttps(nextPost.mediaUrl)}
+                  preload='auto'
+                  muted
+                  playsInline
+                />
+              )}
+            </div>
+          ))}
       </div>
     </div>
   );

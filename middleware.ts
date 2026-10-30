@@ -19,6 +19,13 @@ export function middleware(request: NextRequest) {
   const normalizedSlashes = pathname.replace(/\/+/g, '/');
   const lowerPath = normalizedSlashes.toLowerCase();
 
+  // Temporarily disable community feature until both backend & frontend are completed
+  if (lowerPath === '/community' || lowerPath.startsWith('/community/')) {
+    if (request.nextUrl.searchParams.get('preview') !== 'true') {
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
+
   // If path targets the secure admin area
   if (lowerPath.startsWith('/secure-admin')) {
     // 1. Force lowercase & canonical URL normalization if casing or slashes differ

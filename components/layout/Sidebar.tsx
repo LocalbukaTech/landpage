@@ -44,7 +44,6 @@ export function Sidebar() {
   const { user, isAuthenticated } = useAuth();
 
   const isFeedPage = pathname === '/' || pathname === '/feeds';
-  const isFeedOrCommunityPage = isFeedPage || pathname === '/community';
   const typeParam = searchParams.get('type');
   const feedType: FeedType = typeParam === 'following' ? 'following' : 'foryou';
 
@@ -355,21 +354,8 @@ export function Sidebar() {
           <Menu size={22} />
         </button>
 
-        {isFeedOrCommunityPage ? (
+        {isFeedPage ? (
           <div className='flex items-center gap-5 select-none'>
-            <Link
-              href='/community'
-              className={cn(
-                'text-[15px] font-bold transition-all cursor-pointer bg-transparent border-none outline-none relative py-1',
-                pathname === '/community'
-                  ? 'text-white'
-                  : 'text-white/50 hover:text-white',
-              )}>
-              {t('nav.community', 'Community')}
-              {pathname === '/community' && (
-                <div className='absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-[#fbbe15] rounded-full shadow-xs' />
-              )}
-            </Link>
             <button
               onClick={() => {
                 requireAuth(() => {
@@ -378,12 +364,12 @@ export function Sidebar() {
               }}
               className={cn(
                 'text-[15px] font-bold transition-all bg-transparent border-none outline-none relative py-1 cursor-pointer',
-                pathname !== '/community' && feedType === 'following'
+                feedType === 'following'
                   ? 'text-white'
                   : 'text-white/50 hover:text-white',
               )}>
               {t('nav.following', 'Following')}
-              {pathname !== '/community' && feedType === 'following' && (
+              {feedType === 'following' && (
                 <div className='absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-xs' />
               )}
             </button>
@@ -391,12 +377,12 @@ export function Sidebar() {
               onClick={() => setFeedType('foryou')}
               className={cn(
                 'text-[15px] font-bold transition-all bg-transparent border-none outline-none relative py-1 cursor-pointer',
-                pathname !== '/community' && feedType === 'foryou'
+                feedType === 'foryou'
                   ? 'text-white'
                   : 'text-white/50 hover:text-white',
               )}>
               {t('nav.forYou', 'For You')}
-              {pathname !== '/community' && feedType === 'foryou' && (
+              {feedType === 'foryou' && (
                 <div className='absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-white rounded-full shadow-xs' />
               )}
             </button>

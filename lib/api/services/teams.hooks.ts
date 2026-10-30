@@ -44,6 +44,17 @@ export function useTeamsQuery(
   });
 }
 
+export function useAdminTeamsQuery(
+  params?: TeamsQueryParams,
+  options?: UseQueryOptions<TeamsListResponse, AxiosError<ApiError>>
+) {
+  return useQuery<TeamsListResponse, AxiosError<ApiError>>({
+    queryKey: queryKeys.teams.admin(params),
+    queryFn: () => teamsService.getAll(params),
+    ...options,
+  });
+}
+
 export function useTeamQuery(
   id: string,
   options?: UseQueryOptions<TeamResponse, AxiosError<ApiError>>

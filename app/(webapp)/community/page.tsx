@@ -1,533 +1,425 @@
-"use client";
+'use client';
 
-import { useState, useMemo, Suspense } from "react";
-import Image from "next/image";
-import { useSearchParams } from "next/navigation";
-import {
-  Check,
-  Lock,
-  Sparkles,
-  LayoutDashboard,
-  Compass,
-  ArrowLeft,
-  Smartphone,
-} from "lucide-react";
-import { MainLayout } from "@/components/layout/MainLayout";
-import { CreatorDashboard } from "@/components/community/CreatorDashboard";
-import { PaymentCheckoutCard } from "@/components/community/PaymentCheckoutCard";
-import { DashboardTab } from "@/components/community/types";
-import { MobileCommunityFlow } from "@/components/community/mobile/MobileCommunityFlow";
-import { CommunityMobileShowcase } from "@/components/community/mobile/CommunityMobileShowcase";
-import { MobileCommunityScreen } from "@/components/community/mobile/types";
-import { cn } from "@/lib/utils";
+import { useState, Suspense, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { CreatorCommunityCarousel } from '@/components/community/CreatorCommunityCarousel';
+import { CreatorCommunityForm } from '@/components/community/CreatorCommunityForm';
+import { CreatorPaymentPortal } from '@/components/community/CreatorPaymentPortal';
+import { CommunityExploreList } from '@/components/community/CommunityExploreList';
+import { CommunityMembershipsList } from '@/components/community/CommunityMembershipsList';
+import { CreatorDashboard } from '@/components/community/CreatorDashboard';
+import { CreatorCommunityApprovedCard } from '@/components/community/CreatorCommunityApprovedCard';
+import { CreatorCommunityRejectedCard } from '@/components/community/CreatorCommunityRejectedCard';
+import { CreatorCommunityChangesRequestedCard } from '@/components/community/CreatorCommunityChangesRequestedCard';
+import { CommunityMobileShowcase } from '@/components/community/mobile/CommunityMobileShowcase';
+import { DashboardTab } from '@/components/community/types';
+import { useToast } from '@/hooks/use-toast';
 
-type CommunityTab = "Recommended" | "Trending" | "Free" | "Paid";
+type CommunityTab = 'recommended' | 'trending' | 'free' | 'paid' | 'creator' | 'memberships' | 'mobile';
 
-type CommunityItem = {
-  id: string;
-  name: string;
-  creator: string;
-  members: string;
-  posts: string;
-  price: string;
-  priceAmount: number;
-  isFree: boolean;
-  image: string;
-  accent: "yellow" | "blue" | "green" | "rose";
-};
-
-const tabs: CommunityTab[] = [
-  "Recommended",
-  "Trending",
-  "Free",
-  "Paid",
-];
-
-const featuredCommunities: CommunityItem[] = [
-  {
-    id: "nigeria-food",
-    name: "Nigeria food and culture",
-    creator: "Localbuka owned",
-    members: "12.4k members",
-    posts: "340 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
-    accent: "green",
-  },
-  {
-    id: "chef-amaka",
-    name: "Chef Amaka's kitchen",
-    creator: "By Amaka Obi",
-    members: "2.1k members",
-    posts: "210 posts",
-    price: "Paid · N2,500/mo",
-    priceAmount: 2500,
-    isFree: false,
-    image:
-      "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=80",
-    accent: "yellow",
-  },
-  {
-    id: "street-food",
-    name: "Street food lovers",
-    creator: "Localbuka owned",
-    members: "8.7k members",
-    posts: "210 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-    accent: "rose",
-  },
-  {
-    id: "taste-hunters",
-    name: "Taste Hunters",
-    creator: "By Wilson",
-    members: "3.7k members",
-    posts: "90 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=1200&q=80",
-    accent: "blue",
-  },
-  {
-    id: "budget-bites",
-    name: "Budget bites",
-    creator: "Localbuka owned",
-    members: "5.3k members",
-    posts: "96 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80",
-    accent: "yellow",
-  },
-  {
-    id: "food-travel",
-    name: "Food and travel",
-    creator: "By Blessing",
-    members: "2.1k members",
-    posts: "58 posts",
-    price: "Paid · N1,200/mo",
-    priceAmount: 1200,
-    isFree: false,
-    image:
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
-    accent: "blue",
-  },
-  {
-    id: "grill-masters",
-    name: "Grill masters NG",
-    creator: "By Grill Masters",
-    members: "3.7k members",
-    posts: "170 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80",
-    accent: "green",
-  },
-  {
-    id: "food-room",
-    name: "The food room",
-    creator: "By Festus Ojo",
-    members: "1.3k members",
-    posts: "78 posts",
-    price: "Paid · N1,200/mo",
-    priceAmount: 1200,
-    isFree: false,
-    image:
-      "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80",
-    accent: "rose",
-  },
-];
-
-const COMMUNITY_COPY = {
-  plus: [
-    "Recipes and cook-alongs from Chef Amaka.",
-    "Private food spot recommendations.",
-  ],
-};
-
-function CommunityPageContent() {
+function CommunityContent() {
+  const { toast } = useToast();
   const searchParams = useSearchParams();
-  const screenParam = searchParams.get("screen") as MobileCommunityScreen | null;
-  const initialMode =
-    searchParams.get("view") === "mobile"
-      ? "mobile"
-      : searchParams.get("view") === "explore"
-      ? "explore"
-      : "creator";
-  const [viewMode, setViewMode] = useState<"creator" | "explore" | "mobile">(initialMode);
+  const stateParam = searchParams.get('state');
+  const emptyParam = searchParams.get('empty');
+  const tabParam = searchParams.get('tab')?.toLowerCase();
+  const viewParam = searchParams.get('view')?.toLowerCase();
+  const stepParam = searchParams.get('step')?.toLowerCase();
+  const statusParam = searchParams.get('status')?.toLowerCase();
 
-  // Tab from URL if specified
-  const tabParam = searchParams.get("tab");
-  const initialDashboardTab: DashboardTab =
-    tabParam === "content"
-      ? "Content and feed management"
-      : tabParam === "members"
-      ? "Members"
-      : tabParam === "monetization"
-      ? "Monetization"
-      : tabParam === "overview"
-      ? "Overview"
-      : "Content and feed management";
+  const isForceEmpty = stateParam === 'empty' || emptyParam === 'true';
 
-  // Explore view state
-  const [activeTab, setActiveTab] = useState<CommunityTab>("Recommended");
-  const [showModal, setShowModal] = useState(false);
-  const [selectedCommunity, setSelectedCommunity] = useState<CommunityItem | null>(
-    featuredCommunities[1] // Chef Amaka's kitchen
-  );
-  const [isCheckingOut, setIsCheckingOut] = useState(
-    searchParams.get("checkout") === "true"
-  );
+  // Map subtab query param to CreatorDashboard tab
+  const initialDashboardTab = useMemo<DashboardTab>(() => {
+    if (tabParam === 'content' || tabParam === 'content and feed management') return 'Content and feed management';
+    if (tabParam === 'members') return 'Members';
+    if (tabParam === 'monetization') return 'Monetization';
+    if (tabParam === 'overview') return 'Overview';
+    if (tabParam === 'settings') return 'Settings';
+    return 'Members';
+  }, [tabParam]);
 
-  const visibleCommunities = useMemo(() => {
-    if (activeTab === "Free") {
-      return featuredCommunities.filter((item) => item.isFree);
+  // Determine initial active community tab
+  const initialTab: CommunityTab = useMemo(() => {
+    if (viewParam === 'mobile' || tabParam === 'mobile') {
+      return 'mobile';
     }
-    if (activeTab === "Paid") {
-      return featuredCommunities.filter((item) => !item.isFree);
+    if (
+      viewParam === 'creator' ||
+      tabParam === 'creator' ||
+      Boolean(statusParam) ||
+      ['content', 'members', 'monetization', 'overview', 'settings'].includes(tabParam || '')
+    ) {
+      return 'creator';
     }
-    if (activeTab === "Trending") {
-      return featuredCommunities.slice(4);
+    if (tabParam && ['recommended', 'trending', 'free', 'paid', 'memberships', 'mobile'].includes(tabParam)) {
+      return tabParam as CommunityTab;
     }
-    return featuredCommunities;
-  }, [activeTab]);
+    return 'recommended';
+  }, [tabParam, viewParam, statusParam]);
 
-  const handleCardClick = (community: CommunityItem) => {
-    setSelectedCommunity(community);
-    if (!community.isFree) {
-      setShowModal(true);
-    } else {
-      setViewMode("creator");
+  const tabParamKey = `${tabParam ?? ''}_${viewParam ?? ''}_${statusParam ?? ''}`;
+  const [userTab, setUserTab] = useState<{ key: string; tab: CommunityTab } | null>(null);
+  const activeTab: CommunityTab = userTab && userTab.key === tabParamKey ? userTab.tab : initialTab;
+  const setActiveTab = (tab: CommunityTab) => setUserTab({ key: tabParamKey, tab });
+
+  const initialCreatorStep = useMemo<'approved' | 'rejected' | 'changes-requested' | 'dashboard' | 'form' | 'payment'>(() => {
+    if (stepParam === 'form' || statusParam === 'form') return 'form';
+    if (stepParam === 'payment' || statusParam === 'payment') return 'payment';
+    if (statusParam === 'approved' || stepParam === 'approved' || statusParam === 'live') return 'approved';
+    if (statusParam === 'changes-requested' || stepParam === 'changes-requested' || statusParam === 'changes_requested') return 'changes-requested';
+    if (statusParam === 'rejected' || stepParam === 'rejected' || statusParam === 'not-approved' || statusParam === 'not_approved') return 'rejected';
+    if (stepParam === 'dashboard' || ['content', 'members', 'monetization', 'overview', 'settings'].includes(tabParam || '')) {
+      return 'dashboard';
     }
+    return 'approved';
+  }, [stepParam, statusParam, tabParam]);
+
+  const creatorParamKey = `${stepParam ?? ''}_${statusParam ?? ''}_${tabParam ?? ''}`;
+  const [userCreatorStep, setUserCreatorStep] = useState<{
+    key: string;
+    step: 'approved' | 'rejected' | 'changes-requested' | 'dashboard' | 'form' | 'payment';
+  } | null>(null);
+  const creatorStep =
+    userCreatorStep && userCreatorStep.key === creatorParamKey ? userCreatorStep.step : initialCreatorStep;
+  const setCreatorStep = (step: 'approved' | 'rejected' | 'changes-requested' | 'dashboard' | 'form' | 'payment') => {
+    setUserCreatorStep({ key: creatorParamKey, step });
+  };
+  const [creatorData, setCreatorData] = useState<{
+    name: string;
+    bio: string;
+    avatar: string;
+    category: 'free' | 'paid';
+  }>({
+    name: '',
+    bio: '',
+    avatar: '/images/community/avatar-1.png',
+    category: 'paid',
+  });
+
+  const handleSelectPaidPlan = (data: {
+    name: string;
+    bio: string;
+    category: 'free' | 'paid';
+    avatar: string;
+  }) => {
+    setCreatorData(data);
+    setCreatorStep('payment');
   };
 
-  const handleStartCheckout = () => {
-    setShowModal(false);
-    setIsCheckingOut(true);
+  const handleSelectFreePlan = (data: {
+    name: string;
+    bio: string;
+    category: 'free' | 'paid';
+    avatar: string;
+  }) => {
+    setCreatorData(data);
+    toast({
+      title: 'Community Created! 🎉',
+      description: 'Your free LocalBuka community has been registered successfully.',
+    });
+    setCreatorStep('dashboard');
   };
 
-  return (
-    <>
-      {/* ─── Mobile View (< md): Native Mobile Flow ─── */}
-      <div className="block md:hidden fixed inset-0 z-50 bg-[#141414] overflow-hidden">
-        <MobileCommunityFlow
-          initialScreen={screenParam || "explore"}
-          initialCommunityId="chef-amaka"
-          onSwitchToCreator={() => setViewMode("creator")}
-          showStatusBar={true}
-        />
-      </div>
+  const handlePaymentSuccess = () => {
+    setCreatorStep('dashboard');
+  };
 
-      {/* ─── Desktop View (≥ md): MainLayout with Full Experience & Mobile Suite ─── */}
-      <div className="hidden md:block w-full">
-        <MainLayout>
-          <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 py-3 md:py-6 text-white">
-            {/* Top View Mode Switcher */}
-            <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-0.5">
-                <h1 className="text-2xl font-bold tracking-tight text-white">
-                  Community Center
-                </h1>
-                <p className="text-xs text-zinc-400">
-                  Manage your creator community or test the mobile screens
-                </p>
-              </div>
+  if (isForceEmpty) {
+    return (
+      <div className='w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 flex flex-col min-h-[calc(100vh-140px)] space-y-6'>
+        {/* Page Header */}
+        <div className='pb-4 border-b border-white/10'>
+          <h1 className='text-2xl sm:text-3xl font-extrabold text-white tracking-tight'>
+            Community
+          </h1>
+        </div>
 
-              <div className="inline-flex items-center gap-1 rounded-full bg-[#202020] p-1 border border-white/5">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("creator")}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer",
-                    viewMode === "creator"
-                      ? "bg-[#f5c94d] text-black shadow-sm font-bold"
-                      : "text-white/60 hover:text-white"
-                  )}
-                >
-                  <LayoutDashboard className="h-3.5 w-3.5" />
-                  <span>Creator Dashboard</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode("explore");
-                    setIsCheckingOut(false);
-                  }}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer",
-                    viewMode === "explore"
-                      ? "bg-[#f5c94d] text-black shadow-sm font-bold"
-                      : "text-white/60 hover:text-white"
-                  )}
-                >
-                  <Compass className="h-3.5 w-3.5" />
-                  <span>Explore Desktop</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode("mobile")}
-                  className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer",
-                    viewMode === "mobile"
-                      ? "bg-[#f5c94d] text-black shadow-sm font-bold"
-                      : "text-white/60 hover:text-white"
-                  )}
-                >
-                  <Smartphone className="h-3.5 w-3.5" />
-                  <span>Mobile Screens</span>
-                </button>
-              </div>
+        {/* Exact Centered Empty State matching Figma */}
+        <div className='flex-1 flex flex-col items-center justify-center py-12'>
+          <div
+            className='flex flex-col items-center justify-center text-center mx-auto'
+            style={{
+              maxWidth: '430px',
+              width: '100%',
+              gap: '24px',
+            }}
+          >
+            {/* Exact Figma Vector-11 icon (Community silhouettes) */}
+            <div className='flex items-center justify-center shrink-0'>
+              <svg
+                width='70'
+                height='45'
+                viewBox='0 0 70 45'
+                fill='none'
+                xmlns='http://www.w3.org/2000/svg'
+                style={{ width: '70px', height: '45px' }}
+              >
+                <path
+                  d='M33.9543 30.8962C36.7025 28.5862 38.6737 25.4869 39.6007 22.0186C40.5277 18.5502 40.3655 14.8807 39.1362 11.5077C37.9069 8.13462 35.6699 5.22127 32.7287 3.16271C29.7874 1.10415 26.2842 0 22.6941 0C19.1041 0 15.6008 1.10415 12.6596 3.16271C9.71834 5.22127 7.48137 8.13462 6.25206 11.5077C5.02275 14.8807 4.86058 18.5502 5.78756 22.0186C6.71453 25.4869 8.68578 28.5862 11.434 30.8962C7.1426 32.8366 3.42367 35.8502 0.635934 39.6462C0.121041 40.3479 -0.0940409 41.2253 0.0380037 42.0855C0.170048 42.9457 0.638403 43.7182 1.34004 44.2331C2.04167 44.748 2.9191 44.9631 3.77932 44.8311C4.63953 44.699 5.41206 44.2307 5.92695 43.529C7.85671 40.8935 10.3806 38.7499 13.2938 37.2723C16.2071 35.7947 19.4276 35.0247 22.6941 35.0247C25.9607 35.0247 29.1812 35.7947 32.0944 37.2723C35.0077 38.7499 37.5316 40.8935 39.4613 43.529C39.9762 44.231 40.7489 44.6997 41.6094 44.832C42.4698 44.9643 43.3476 44.7494 44.0496 44.2345C44.7516 43.7196 45.2203 42.9469 45.3526 42.0865C45.4849 41.226 45.27 40.3482 44.7551 39.6462C41.9657 35.8507 38.246 32.8373 33.9543 30.8962ZM11.7566 17.5142C11.7566 15.351 12.3981 13.2363 13.5999 11.4376C14.8018 9.63898 16.51 8.2371 18.5085 7.40926C20.5071 6.58143 22.7063 6.36483 24.8279 6.78686C26.9496 7.20888 28.8985 8.25058 30.4281 9.78021C31.9578 11.3099 32.9995 13.2587 33.4215 15.3804C33.8435 17.5021 33.6269 19.7012 32.7991 21.6998C31.9712 23.6984 30.5693 25.4066 28.7707 26.6084C26.972 27.8102 24.8574 28.4517 22.6941 28.4517C19.7933 28.4517 17.0113 27.2994 14.9602 25.2482C12.909 23.197 11.7566 20.415 11.7566 17.5142ZM68.1121 44.2208C67.7647 44.4761 67.3705 44.6604 66.9519 44.7632C66.5332 44.8661 66.0985 44.8854 65.6724 44.8201C65.2463 44.7549 64.8372 44.6063 64.4685 44.3829C64.0999 44.1595 63.7789 43.8656 63.5238 43.5181C61.5893 40.8876 59.0644 38.7477 56.1522 37.2708C53.2401 35.0209 46.7566 35.0142C45.8864 35.0142 45.0518 34.6685 44.4364 34.0531C43.8211 33.4378 43.4754 32.6032 43.4754 31.7329C43.4754 30.8627 43.8211 30.0281 44.4364 29.4128C45.0518 28.7974 45.8864 28.4517 46.7566 28.4517C48.3112 28.4489 49.8474 28.1148 51.2627 27.4715C52.6779 26.8283 53.9398 25.8908 54.9642 24.7214C55.9886 23.5521 56.752 22.1778 57.2034 20.6901C57.6548 19.2025 57.7839 17.6358 57.5821 16.0943C57.3803 14.5529 56.8522 13.0722 56.033 11.7509C55.2138 10.4296 54.1224 9.29817 52.8315 8.43195C51.5406 7.56573 50.0799 6.98465 48.5467 6.72744C47.0135 6.47024 45.4431 6.54283 43.9402 6.94037C43.5205 7.06181 43.0807 7.09818 42.6467 7.04735C42.2127 6.99653 41.7932 6.85953 41.4129 6.64439C41.0325 6.42926 40.699 6.14032 40.4318 5.79454C40.1647 5.44875 39.9692 5.05309 39.8571 4.63077C39.7449 4.20844 39.7182 3.76797 39.7785 3.33518C39.8389 2.9024 39.9851 2.48603 40.2085 2.11051C40.432 1.73499 40.7282 1.40788 41.0797 1.14839C41.4313 0.888887 41.8312 0.702224 42.2559 0.599351C46.0989 -0.418931 50.1741 -0.0983023 53.8107 1.50845C57.4472 3.11521 60.4282 5.91231 62.263 9.43928C64.0978 12.9662 64.677 17.0128 63.9052 20.9129C63.1334 24.8129 61.0566 28.3339 58.0168 30.8962C62.3082 32.8366 66.0271 35.8502 68.8148 39.6462C69.326 40.3468 69.5391 41.2213 69.4074 42.0785C69.2757 42.9358 68.81 43.706 68.1121 44.2208Z'
+                  fill='#5C5C5C'
+                />
+              </svg>
             </div>
 
-            {/* View Mode 1: Mobile Community Suite Showcase */}
-            {viewMode === "mobile" && (
-              <CommunityMobileShowcase
-                onSwitchToCreator={() => setViewMode("creator")}
-              />
-            )}
+            {/* Texts container */}
+            <div className='flex flex-col items-center gap-2 max-w-[360px]'>
+              <h3
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '20px',
+                  lineHeight: '140%',
+                  color: 'white',
+                  margin: 0,
+                }}
+              >
+                No communities yet
+              </h3>
 
-            {/* View Mode 2: Creator Management Dashboard */}
-            {viewMode === "creator" && (
-              <CreatorDashboard initialTab={initialDashboardTab} />
-            )}
+              <p
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  lineHeight: '140%',
+                  color: '#9ca3af',
+                  margin: 0,
+                }}
+              >
+                There&apos;s nothing here right now. Check back soon, or start your own community around the food you love.
+              </p>
+            </div>
 
-            {/* View Mode 3: Explore Member Feed & Checkout */}
-            {viewMode === "explore" && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-3xl md:text-[2.1rem] font-bold tracking-tight text-white">
-                    Community
-                  </h1>
-                </div>
+            {/* Action button */}
+            <button
+              onClick={() => {
+                setActiveTab('creator');
+                setCreatorStep('form');
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '12px 32px',
+                borderRadius: '12px',
+                background: '#FFC533',
+                color: '#111',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontWeight: 700,
+                fontSize: '14px',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s',
+              }}
+              className='hover:opacity-90 active:scale-95'
+            >
+              Create a community
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-                {/* Navigation Tabs Bar with "Create community" Yellow Button */}
-                <div className="border-b border-white/10 pb-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
-                      {tabs.map((tab) => (
-                        <button
-                          key={tab}
-                          type="button"
-                          onClick={() => {
-                            setActiveTab(tab);
-                            setIsCheckingOut(false);
-                          }}
-                          className={cn(
-                            "rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer",
-                            !isCheckingOut && activeTab === tab
-                              ? "bg-[#f5c94d] text-[#111111] font-semibold shadow-[0_0_0_1px_rgba(245,201,77,0.4)]"
-                              : "bg-[#2b2b2b] text-white/70 hover:bg-[#323232] hover:text-white"
-                          )}
-                        >
-                          {tab}
-                        </button>
-                      ))}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setViewMode("creator")}
-                      className="rounded-full bg-[#f5c94d] px-5 sm:px-6 py-2 text-xs sm:text-sm font-bold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md cursor-pointer"
-                    >
-                      Create community
-                    </button>
-                  </div>
-                </div>
-
-                {/* Payment Checkout View */}
-                {isCheckingOut ? (
-                  <div className="space-y-6 pt-2">
-                    <div className="flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() => setIsCheckingOut(false)}
-                        className="inline-flex items-center gap-2 text-xs text-white/60 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                        <span>Back to all communities</span>
-                      </button>
-                    </div>
-
-                    <PaymentCheckoutCard
-                      communityName={selectedCommunity?.name || "Chef Amaka's kitchen"}
-                      amount={selectedCommunity?.priceAmount || 2500}
-                      onCancel={() => setIsCheckingOut(false)}
-                      onSuccess={() => {
-                        setTimeout(() => {
-                          setIsCheckingOut(false);
-                          setViewMode("creator");
-                        }, 1200);
-                      }}
-                    />
-                  </div>
-                ) : (
-                  /* Communities Grid */
-                  <div className="mt-8">
-                    <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-[2rem] md:text-[2.4rem] font-bold tracking-tight">
-                        {activeTab === "Trending"
-                          ? "Trending this week"
-                          : activeTab === "Paid"
-                          ? "Exclusive Creator Communities"
-                          : "Recommended for you"}
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => setViewMode("mobile")}
-                        className="text-xs text-[#f5c94d] hover:underline transition-colors flex items-center gap-1 cursor-pointer"
-                      >
-                        <Smartphone size={13} />
-                        <span>Preview in Mobile Mockup</span>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 md:gap-6">
-                      {visibleCommunities.map((community) => (
-                        <article
-                          key={community.id}
-                          onClick={() => handleCardClick(community)}
-                          className="group relative cursor-pointer overflow-hidden rounded-[18px] border border-white/8 bg-[#1c1c1d] shadow-[0_10px_35px_rgba(0,0,0,0.18)] hover:border-white/20 transition-all"
-                        >
-                          <div className="relative h-64 w-full overflow-hidden">
-                            <Image
-                              src={community.image}
-                              alt={community.name}
-                              fill
-                              className="object-cover transition-transform duration-300 group-hover:scale-105"
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-[#111214]/90 via-[#111214]/15 to-transparent" />
-
-                            <div className="absolute left-3 top-3 rounded-full border border-white/15 bg-black/25 px-2 py-1 text-[10px] font-medium text-white/90 backdrop-blur-sm">
-                              {community.creator}
-                            </div>
-                          </div>
-
-                          <div className="space-y-3 p-4 pb-5">
-                            <h3 className="text-[1.55rem] md:text-[1.8rem] font-bold leading-tight text-white">
-                              {community.name}
-                            </h3>
-
-                            <div className="flex items-center justify-between gap-2 text-sm text-white/70">
-                              <span>{community.members}</span>
-                              <span>{community.posts}</span>
-                            </div>
-
-                            <div className="pt-1">
-                              <span
-                                className={cn(
-                                  "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                                  community.isFree
-                                    ? "bg-[#22c55e]/15 text-[#74e3a4] ring-1 ring-[#22c55e]/30"
-                                    : "bg-[#f5c94d]/15 text-[#f5c94d] ring-1 ring-[#f5c94d]/30"
-                                )}
-                              >
-                                {community.price}
-                              </span>
-                            </div>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Explore Unlock Modal */}
-                {showModal && selectedCommunity && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-[2px] px-4">
-                    <div className="relative w-full max-w-[540px] rounded-[22px] border border-white/8 bg-[#171717] p-5 sm:p-6 shadow-[0_30px_90px_rgba(0,0,0,0.55)]">
-                      <button
-                        type="button"
-                        onClick={() => setShowModal(false)}
-                        className="absolute right-4 top-4 text-sm font-medium text-white/50 transition-colors hover:text-white cursor-pointer"
-                      >
-                        ✕
-                      </button>
-
-                      <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-[#f5c94d]/50 bg-[#f5c94d] text-[#111111] shadow-[0_0_0_8px_rgba(245,201,77,0.12)]">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/10">
-                          <Sparkles className="h-7 w-7" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-5 text-center">
-                        <div>
-                          <p className="text-[1.7rem] font-bold tracking-tight text-white">
-                            {selectedCommunity.name}
-                          </p>
-                        </div>
-
-                        <div className="space-y-3 rounded-2xl border border-white/8 bg-[#f2f2f2] px-4 py-5 text-left text-[#1b1b1b]">
-                          <div className="flex items-center gap-2">
-                            <Lock className="h-4 w-4 text-[#111111]" />
-                            <p className="text-lg font-semibold">
-                              Members-only content
-                            </p>
-                          </div>
-
-                          <p className="text-sm text-[#4d4d4d]">
-                            Subscribe to see exclusive dishes, tutorials and recipes
-                          </p>
-                        </div>
-
-                        <div className="space-y-3 text-left">
-                          <p className="text-[0.95rem] text-white/80">
-                            Unlock everything in this community.
-                          </p>
-                          <ul className="space-y-2 text-sm text-white/70">
-                            {COMMUNITY_COPY.plus.map((item) => (
-                              <li key={item} className="flex items-start gap-2">
-                                <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#f5c94d] text-[10px] text-[#111111]">
-                                  <Check className="h-3 w-3" />
-                                </span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={handleStartCheckout}
-                          className="w-full rounded-full bg-[#f5c94d] px-5 py-3 text-base font-semibold text-[#111111] transition-colors hover:bg-[#efbe29] cursor-pointer shadow-lg active:scale-95"
-                        >
-                          Subscribe to unlock N{selectedCommunity.priceAmount.toLocaleString("en-NG")}/mo
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+  return (
+    <div className='w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 space-y-6'>
+      {/* Page Header */}
+      <div className='pb-4 border-b border-white/10 flex items-center justify-between'>
+        <h1 className='text-2xl sm:text-3xl font-extrabold text-white tracking-tight'>
+          Community
+        </h1>
+        {activeTab === 'creator' && (
+          <div className='flex items-center gap-3'>
+            {/* Dev / Reviewer Switcher */}
+            <div className='flex items-center gap-2 text-xs text-white/50 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10'>
+              <span className='text-white/40'>State:</span>
+              <button
+                type='button'
+                onClick={() => setCreatorStep('rejected')}
+                className={`hover:text-[#FFC533] cursor-pointer transition-colors ${
+                  creatorStep === 'rejected' ? 'text-[#FFC533] font-semibold underline' : ''
+                }`}
+              >
+                Not approved
+              </button>
+              <span>|</span>
+              <button
+                type='button'
+                onClick={() => setCreatorStep('changes-requested')}
+                className={`hover:text-[#FFC533] cursor-pointer transition-colors ${
+                  creatorStep === 'changes-requested' ? 'text-[#FFC533] font-semibold underline' : ''
+                }`}
+              >
+                Changes requested
+              </button>
+              <span>|</span>
+              <button
+                type='button'
+                onClick={() => setCreatorStep('approved')}
+                className={`hover:text-[#FFC533] cursor-pointer transition-colors ${
+                  creatorStep === 'approved' ? 'text-[#FFC533] font-semibold underline' : ''
+                }`}
+              >
+                Approved
+              </button>
+              <span>|</span>
+              <button
+                type='button'
+                onClick={() => setCreatorStep('dashboard')}
+                className={`hover:text-[#FFC533] cursor-pointer transition-colors ${
+                  creatorStep === 'dashboard' ? 'text-[#FFC533] font-semibold underline' : ''
+                }`}
+              >
+                Dashboard
+              </button>
+            </div>
+            {creatorStep === 'dashboard' && (
+              <button
+                onClick={() => setCreatorStep('form')}
+                className='px-3.5 py-1.5 bg-white/10 hover:bg-white/15 text-white/80 hover:text-white font-medium text-xs rounded-lg transition-all'
+              >
+                + Create New Community
+              </button>
             )}
           </div>
-        </MainLayout>
+        )}
       </div>
-    </>
+
+      {/* Sub-tabs Navigation */}
+      <div className='flex items-center gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-none'>
+        {[
+          { id: 'recommended', label: 'Recommended' },
+          { id: 'trending', label: 'Trending' },
+          { id: 'free', label: 'Free' },
+          { id: 'paid', label: 'Paid' },
+          { id: 'creator', label: 'Creator community' },
+          { id: 'memberships', label: 'My memberships' },
+          { id: 'mobile', label: '📱 Mobile Screens' },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id as CommunityTab);
+              }}
+              className={`px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                isActive
+                  ? 'bg-[#FFC533] text-black shadow-md'
+                  : 'bg-[#262626] text-gray-300 hover:bg-[#333333] hover:text-white border border-white/5'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'mobile' ? (
+        <div className='py-2'>
+          <CommunityMobileShowcase
+            onSwitchToCreator={() => {
+              setActiveTab('creator');
+              setCreatorStep('dashboard');
+            }}
+          />
+        </div>
+      ) : activeTab === 'memberships' ? (
+        <div className='py-2'>
+          <CommunityMembershipsList onBack={() => setActiveTab('recommended')} />
+        </div>
+      ) : activeTab === 'creator' ? (
+        <div className='py-2'>
+          {creatorStep === 'rejected' && (
+            <CreatorCommunityRejectedCard
+              reviewDate='1 day ago'
+              caseId='CR-1041'
+              rejectionReason="This community didn't meet our requirements and can't be published."
+              feedbackMessage="Pricing described does not match LocalBuka's membership guidelines. This community cannot be published."
+              actionMessage="Pricing described does not match LocalBuka's membership guidelines. This community cannot be published."
+              onCreateNewCommunity={() => setCreatorStep('form')}
+              onContactSupport={() => {}}
+            />
+          )}
+
+          {creatorStep === 'changes-requested' && (
+            <CreatorCommunityChangesRequestedCard
+              reviewDate='1 day ago'
+              caseId='CR-1041'
+              summaryMessage='Your community is almost ready. Update the items below and resubmit for another review.'
+              feedbackMessage="Your pricing section doesn't clearly state the billing cadence. Please specify monthly vs. annual before resubmitting."
+              changeItems={[
+                { label: 'Pricing and billing cadence', status: 'pending' },
+                { label: 'Name, bio and category', status: 'none' },
+                { label: 'Member benefits', status: 'none' },
+              ]}
+              onEditAndResubmit={() => setCreatorStep('form')}
+            />
+          )}
+
+          {creatorStep === 'approved' && (
+            <CreatorCommunityApprovedCard
+              communityName='Smoothie Lab Lagos'
+              liveSince='Sept 24'
+              price='₦1,800/mo'
+              onGoToCommunity={() => setCreatorStep('dashboard')}
+            />
+          )}
+
+          {creatorStep === 'form' && (
+            <div className='flex flex-col lg:flex-row w-full max-w-[970px] lg:h-[1010px] mx-auto bg-[#1a1a1a] rounded-[25px] overflow-hidden shadow-2xl border border-white/5'>
+              {/* Left Side - Image Carousel — fills full height */}
+              <div className='w-full lg:w-[485px] lg:h-full lg:flex-shrink-0 h-[450px]'>
+                <CreatorCommunityCarousel />
+              </div>
+
+              {/* Right Side — form */}
+              <div className='flex-1 lg:h-full overflow-y-auto'>
+                <CreatorCommunityForm
+                  onSelectPaidPlan={handleSelectPaidPlan}
+                  onSelectFreePlan={handleSelectFreePlan}
+                />
+              </div>
+            </div>
+          )}
+
+          {creatorStep === 'payment' && (
+            <div className='py-4'>
+              <CreatorPaymentPortal
+                creatorDetails={creatorData}
+                onBack={() => setCreatorStep('form')}
+                onSuccess={handlePaymentSuccess}
+              />
+            </div>
+          )}
+
+          {creatorStep === 'dashboard' && (
+            <CreatorDashboard initialTab={initialDashboardTab} />
+          )}
+        </div>
+      ) : (
+        <CommunityExploreList
+          filterType={activeTab}
+          forceEmpty={isForceEmpty}
+          onOpenCreatorFlow={() => {
+            setActiveTab('creator');
+            setCreatorStep('form');
+          }}
+        />
+      )}
+    </div>
   );
 }
 
 export default function CommunityPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#141414] text-white flex items-center justify-center">
-          Loading Community...
-        </div>
-      }
-    >
-      <CommunityPageContent />
-    </Suspense>
+    <MainLayout>
+      <Suspense fallback={<div className='p-8 text-white'>Loading Community...</div>}>
+        <CommunityContent />
+      </Suspense>
+    </MainLayout>
   );
 }

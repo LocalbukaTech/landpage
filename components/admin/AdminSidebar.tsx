@@ -4,10 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { 
-  LogOut, 
-  ChevronsLeft 
-} from "lucide-react";
+import { LogOut, ChevronsLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ADMIN_NAV_ITEMS } from "@/components/admin/admin.config";
 import { getAdminUser } from "@/lib/auth";
@@ -38,19 +35,24 @@ export function AdminSidebar({
       className={cn(
         "bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col justify-between h-screen shrink-0 z-40 select-none transition-all duration-300 ease-in-out",
         isCollapsed ? "w-16" : "w-60",
-        className
+        className,
       )}
     >
       {/* ── Top Section: Logo & Modern Collapse Toggle ── */}
       <div
         className={cn(
           "shrink-0 flex items-center border-b border-gray-200 dark:border-gray-800 transition-all duration-300",
-          isCollapsed ? "h-16 justify-center px-2" : "h-16 justify-between px-4"
+          isCollapsed
+            ? "h-16 justify-center px-2"
+            : "h-16 justify-between px-4",
         )}
       >
         {!isCollapsed ? (
           <>
-            <Link href="/secure-admin/dashboard" className="flex items-center gap-2.5 min-w-0">
+            <Link
+              href="/secure-admin/dashboard"
+              className="flex items-center gap-2.5 min-w-0"
+            >
               <Image
                 src="/images/localBuka_logo.png"
                 alt="LocalBuka"
@@ -100,7 +102,7 @@ export function AdminSidebar({
       <nav
         className={cn(
           "flex-1 overflow-y-auto space-y-1 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 py-3",
-          isCollapsed ? "px-2" : "px-3"
+          isCollapsed ? "px-2" : "px-3",
         )}
       >
         {ADMIN_NAV_ITEMS.map((item) => {
@@ -122,10 +124,12 @@ export function AdminSidebar({
                   : "gap-2.5 px-3 py-2.5",
                 isActive
                   ? "bg-[#fbbe15] text-[#1a1a1a] font-bold shadow-xs"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100",
               )}
             >
-              <Icon className={cn("shrink-0", isCollapsed ? "w-5 h-5" : "w-4 h-4")} />
+              <Icon
+                className={cn("shrink-0", isCollapsed ? "w-5 h-5" : "w-4 h-4")}
+              />
               {!isCollapsed && <span className="truncate">{item.name}</span>}
 
               {/* Floating Tooltip in Collapsed Mode */}
@@ -145,17 +149,19 @@ export function AdminSidebar({
           "shrink-0 border-t border-gray-200 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/60 transition-all duration-300",
           isCollapsed
             ? "p-2 flex flex-col items-center gap-2"
-            : "p-3 flex items-center justify-between gap-2"
+            : "p-3 flex items-center justify-between gap-2",
         )}
       >
         {!isCollapsed ? (
           <>
             <div className="flex-1 min-w-0 px-2.5 py-1.5 bg-white dark:bg-gray-800/90 rounded-lg border border-gray-200/70 dark:border-gray-700/70">
               <p className="text-xs font-semibold text-gray-900 dark:text-white capitalize truncate">
-                {admin ? `${admin.first_name} ${admin.last_name}` : "Administrator"}
+                {admin
+                  ? `${admin.first_name} ${admin.last_name}`
+                  : "Administrator"}
               </p>
               <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                {admin?.email ?? "admin@localbuka.com"}
+                {admin?.email ?? "admin@admin.com"}
               </p>
             </div>
             {onLogoutClick && (
@@ -172,7 +178,11 @@ export function AdminSidebar({
           <>
             <div
               className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-xs flex items-center justify-center border border-amber-300/40"
-              title={admin ? `${admin.first_name} ${admin.last_name}` : "Administrator"}
+              title={
+                admin
+                  ? `${admin.first_name} ${admin.last_name}`
+                  : "Administrator"
+              }
             >
               {adminInitials}
             </div>

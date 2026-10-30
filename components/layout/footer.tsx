@@ -4,9 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {Button} from '@/components/ui/button';
 import {SOCIAL_LINKS} from '@/lib/constants';
+import {useTranslation} from '@/context/LanguageContext';
 // import AdSenseUnit from '@/components/AdSenseUnit';
 
 export function Footer() {
+  const {t} = useTranslation();
+
   return (
     <footer className='bg-secondary dark:bg-black text-secondary-foreground py-20'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -87,7 +90,7 @@ export function Footer() {
           <Link
             href='/privacy'
             className='hover:text-[#FBBE15] transition-colors'>
-            Privacy Policy
+            {t('nav.termsAndPolicies', 'Privacy Policy')}
           </Link>
         </div>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy, Archive, RotateCcw } from 'lucide-react';
+import { Volume2, VolumeX, MoreHorizontal, Play, Pause, ChevronLeft, ChevronRight, Pencil, Trash2, Copy, Archive, RotateCcw, Loader2, Flag, User, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Post } from '@/types/post';
 import { VideoOverlay } from '@/components/video/VideoOverlay';
@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { UgcReportModal } from '@/components/modals/UgcReportModal';
 
 interface VideoPlayerProps {
   post: Post;
@@ -53,6 +54,7 @@ export function VideoPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [prevPostId, setPrevPostId] = useState(post.id);
+  const [isBuffering, setIsBuffering] = useState(true);
   const touchStartY = useRef<number | null>(null);
   const touchEndY = useRef<number | null>(null);
   const touchStartX = useRef<number | null>(null);
@@ -63,6 +65,7 @@ export function VideoPlayer({
   if (prevPostId !== post.id) {
     setPrevPostId(post.id);
     setActiveImageIndex(0);
+    setIsBuffering(true);
   }
 
   // Scrubber state
@@ -77,31 +80,48 @@ export function VideoPlayer({
 
   // Top bar options menu & auth state
   const [showMenu, setShowMenu] = useState(false);
+  const [showReportPost, setShowReportPost] = useState(false);
+  const [showReportUser, setShowReportUser] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
   const deletePostMutation = useDeletePost();
   const archivePostMutation = useArchivePost();
   const unarchivePostMutation = useUnarchivePost();
-  const isOwner = Boolean(user?.id && post?.user?.id === user.id);
+  const isOwner = Boolean(
+    user?.id && (
+      (post?.user?.id && String(post.user.id) === String(user.id)) ||
+      ((post as any)?.userId && String((post as any).userId) === String(user.id)) ||
+      ((post as any)?.user?._id && String((post as any).user._id) === String(user.id))
+    )
+  );
 
   const isVideo = post.mediaType === 'video';
   const mediaUrls = post.mediaUrls || [];
 
   // Play/pause based on active state and video changes
   useEffect(() => {
-    if (videoRef.current && isVideo) {
+    const video = videoRef.current;
+    if (video && isVideo) {
       if (isActive) {
-        // Reset video to beginning when switching
-        videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(() => {
+        if (video.readyState >= 1) {
+          video.currentTime = 0;
+        }
+        video.play().catch(() => {
           // Autoplay might be blocked
         });
       } else {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
+        video.pause();
+        if (video.readyState >= 1) {
+          video.currentTime = 0;
+        }
       }
     }
+    return () => {
+      if (video) {
+        video.pause();
+      }
+    };
   }, [isActive, post.id, isVideo]);
 
   // Double-tap heart particles state
@@ -296,7 +316,7 @@ export function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      className={`relative w-[420px] h-full bg-black rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
+      className={`relative w-full max-w-[420px] h-full bg-black md:rounded-2xl overflow-hidden ${isVideo ? 'cursor-pointer' : ''}`}
       onClick={handleContainerClick}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -375,6 +395,13 @@ export function VideoPlayer({
           preload='auto'
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
+          onWaiting={() => setIsBuffering(true)}
+          onPlaying={() => {
+            setIsBuffering(false);
+            setIsPlaying(true);
+          }}
+          onCanPlay={() => setIsBuffering(false)}
+          onLoadedData={() => setIsBuffering(false)}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
         />
@@ -483,7 +510,7 @@ export function VideoPlayer({
 
       {/* Paused state — persistent subtle icon */}
       {isVideo && !isPlaying && !showPlayPauseIcon && (
-        <div className='absolute inset-0 flex items-center justify-center z-20 pointer-events-none'>
+         <div className='absolute inset-0 flex items-center justify-center z-20 pointer-events-none'>
           <div className='w-20 h-20 rounded-full bg-black/40 flex items-center justify-center backdrop-blur-sm opacity-70'>
             <Play size={40} className='text-white ml-1' fill='white' />
           </div>
@@ -526,8 +553,16 @@ export function VideoPlayer({
                 }}
               />
               <div
-                className='absolute right-0 top-10 z-50 w-44 bg-[#1e1e1e] border border-white/10 rounded-xl shadow-2xl py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-150'
+                className='absolute right-0 top-10 z-50 w-48 bg-[#18181b] border border-white/15 rounded-xl shadow-2xl py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-150'
                 onClick={(e) => e.stopPropagation()}>
+                <div className='flex items-center justify-end px-3 py-1 border-b border-white/5'>
+                  <button
+                    onClick={() => setShowMenu(false)}
+                    className='text-zinc-400 hover:text-white bg-transparent border-none p-1 cursor-pointer rounded-full hover:bg-white/10 transition-colors'
+                    title='Close menu'>
+                    <X size={14} />
+                  </button>
+                </div>
                 {isOwner ? (
                   <>
                     <button
@@ -537,7 +572,7 @@ export function VideoPlayer({
                         router.push(`/studio?edit=${post.id}`);
                       }}
                       className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
-                      <Pencil size={15} className='text-[#fbbe15]' />
+                      <img src='/icons/Vector-8.png' alt='Edit' className='w-4 h-4 object-contain' />
                       <span>Edit Post</span>
                     </button>
                     <button
@@ -547,7 +582,7 @@ export function VideoPlayer({
                         setShowDeleteConfirm(true);
                       }}
                       className='w-full px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-500/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
-                      <Trash2 size={15} className='text-red-500' />
+                      <img src='/icons/Vector-9.png' alt='Delete' className='w-4 h-4 object-contain' />
                       <span>Delete Post</span>
                     </button>
                     <button
@@ -593,27 +628,53 @@ export function VideoPlayer({
                         }
                       }}
                       className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
-                      {post.isArchived ? <RotateCcw size={15} className='text-blue-400' /> : <Archive size={15} className='text-green-500' />}
+                      {post.isArchived ? <RotateCcw size={15} className='text-blue-400' /> : <img src='/icons/Vector-10.png' alt='Archive' className='w-4 h-4 object-contain' />}
                       <span>{post.isArchived ? 'Restore Post' : 'Archive Post'}</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowReportPost(true);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <img src='/icons/Vector-11.png' alt='Report Post' className='w-4 h-4 object-contain' />
+                      <span>Report Post</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowReportUser(true);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <img src='/icons/Vector-12.png' alt='Report User' className='w-4 h-4 object-contain' />
+                      <span>Report User</span>
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowMenu(false);
-                      if (navigator.clipboard) {
-                        navigator.clipboard.writeText(`${window.location.origin}/posts/${post.id}`);
-                        toast({
-                          title: 'Link copied',
-                          description: 'Post link copied to clipboard.',
-                        });
-                      }
-                    }}
-                    className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
-                    <Copy size={15} />
-                    <span>Copy Link</span>
-                  </button>
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowReportPost(true);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <img src='/icons/Vector-11.png' alt='Report Post' className='w-4 h-4 object-contain' />
+                      <span>Report Post</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowReportUser(true);
+                      }}
+                      className='w-full px-4 py-2.5 text-left text-sm text-white hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer border-none bg-transparent font-medium'>
+                      <img src='/icons/Vector-12.png' alt='Report User' className='w-4 h-4 object-contain' />
+                      <span>Report User</span>
+                    </button>
+                  </>
                 )}
               </div>
             </>
@@ -664,23 +725,59 @@ export function VideoPlayer({
             <AlertDialogCancel className='bg-transparent border-white/10 text-white hover:bg-white/10 rounded-xl font-semibold cursor-pointer'>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
+            <button
+              disabled={deletePostMutation.isPending}
+              onClick={(e) => {
+                e.preventDefault();
                 deletePostMutation.mutate(post.id, {
                   onSuccess: () => {
                     toast({
                       title: 'Post deleted',
                       description: 'Your post has been removed.',
                     });
+                    setShowDeleteConfirm(false);
+                    router.push('/feed');
+                  },
+                  onError: (error: any) => {
+                    console.error('Delete post failed:', error);
+                    const message = error?.response?.data?.message || error?.message || 'Could not delete post. Please try again.';
+                    toast({
+                      title: 'Delete failed',
+                      description: message,
+                      variant: 'destructive',
+                    });
+                    setShowDeleteConfirm(false);
                   },
                 });
               }}
-              className='bg-red-600 text-white hover:bg-red-700 font-bold rounded-xl cursor-pointer'>
-              Delete Post
-            </AlertDialogAction>
+              className='bg-red-600 text-white hover:bg-red-700 font-bold rounded-xl cursor-pointer disabled:opacity-50 px-4 py-2 text-sm inline-flex items-center justify-center'>
+              {deletePostMutation.isPending ? (
+                <span className='flex items-center gap-2'><Loader2 className='w-4 h-4 animate-spin' /> Deleting…</span>
+              ) : (
+                'Delete Post'
+              )}
+            </button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Report Post Modal */}
+      <UgcReportModal
+        isOpen={showReportPost}
+        onClose={() => setShowReportPost(false)}
+        targetId={post.id}
+        targetType='post'
+        targetTitle={post.user?.username}
+      />
+
+      {/* Report User Modal */}
+      <UgcReportModal
+        isOpen={showReportUser}
+        onClose={() => setShowReportUser(false)}
+        targetId={post.user?.id}
+        targetType='user'
+        targetTitle={post.user?.username}
+      />
     </div>
   );
 }

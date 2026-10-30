@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito_Sans } from "next/font/google";
+import { Nunito_Sans, Plus_Jakarta_Sans } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/components/providers";
@@ -11,6 +11,12 @@ const nunitoSans = Nunito_Sans({
   variable: "--font-nunito-sans",
   subsets: ["latin"],
   weight: ["300", "400", "600", "700", "800", "900"],
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const hakuna = localFont({
@@ -175,7 +181,7 @@ export default async function RootLayout({
       </head>
       {/* Body start here */}
       <body
-        className={`${nunitoSans.variable} ${hakuna.variable} font-sans antialiased`}
+        className={`${nunitoSans.variable} ${plusJakartaSans.variable} ${hakuna.variable} font-sans antialiased`}
       >
         <Script
           async

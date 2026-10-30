@@ -17,6 +17,7 @@ import {useDynamicBack} from '@/hooks/useDynamicBack';
 import {useAuth} from '@/context/AuthContext';
 import {useToast} from '@/hooks/use-toast';
 import {useBlockedUsers} from '@/hooks/useBlockedUsers';
+import {BackCircleButton} from '@/components/ui/BackCircleButton';
 
 function OtherProfileContent() {
   const searchParams = useSearchParams();
@@ -30,7 +31,6 @@ function OtherProfileContent() {
   const {openAuthModal, isAuthenticated} = useAuth();
   const {toast} = useToast();
   const {isUserBlocked} = useBlockedUsers();
-  const isBlocked = isUserBlocked(userId);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -176,51 +176,61 @@ function OtherProfileContent() {
   return (
     <MainLayout>
       <div className='w-full max-w-4xl mx-auto px-4 py-6 overflow-y-auto h-[calc(100vh-3.5rem)] md:h-auto'>
-        <button
-          onClick={() => goBack('/')}
-          className='mb-4 flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors'
-          aria-label='Go back'>
-          <svg
-            xmlns='http://www.w3.org/2000/svg'
-            width='16'
-            height='16'
-            viewBox='0 0 24 24'
-            fill='none'
-            stroke='currentColor'
-            strokeWidth='2'
-            strokeLinecap='round'
-            strokeLinejoin='round'>
-            <path d='M19 12H5' />
-            <path d='m12 19-7-7 7-7' />
-          </svg>
-          Back
-        </button>
+        <div className='mb-4 flex items-center gap-3'>
+          <BackCircleButton onClick={() => goBack('/')} size={26} />
+          <span className='text-sm font-semibold text-zinc-300'>Back</span>
+        </div>
         <ProfileHeader
           userData={userData}
           postsCount={postsCount}
           likesGivenCount={likesGivenCount}
         />
-        {isBlocked ? (
-          <div className='my-12 p-8 rounded-2xl border border-white/10 bg-zinc-900/40 flex flex-col items-center justify-center text-center max-w-sm mx-auto select-none animate-in fade-in'>
-            <div className='w-10 h-10 rounded-full border border-zinc-500 flex items-center justify-center mb-3 text-zinc-400'>
-              <Ban size={18} />
-            </div>
-            <h3 className='text-sm font-bold text-white mb-1'>
-              You&apos;ve blocked this user
-            </h3>
-            <p className='text-xs text-zinc-400 leading-relaxed max-w-xs m-0'>
-              You won&apos;t see each other&apos;s posts or activity until you unblock them.
-            </p>
-          </div>
-        ) : (
-          <ProfileTabs
-            posts={displayPosts}
-            initialTab={activeTab}
-            onTabChange={handleTabChange}
-            isLoading={isLoadingData}
-            isOtherProfile
-          />
-        )}
+        {(() => {
+          const hasBlocked = Boolean(profileData?.blockStatus?.hasBlocked ?? isUserBlocked(userId));
+          const isBlockedBy = Boolean(profileData?.blockStatus?.isBlockedBy);
+
+          if (hasBlocked) {
+            return (
+              <div className='my-12 p-8 rounded-2xl border border-white/10 bg-zinc-900/40 flex flex-col items-center justify-center text-center max-w-sm mx-auto select-none animate-in fade-in'>
+                <div className='w-10 h-10 rounded-full border border-zinc-500 flex items-center justify-center mb-3 text-zinc-400'>
+                  <Ban size={18} />
+                </div>
+                <h3 className='text-sm font-bold text-white mb-1'>
+                  You&apos;ve blocked this user
+                </h3>
+                <p className='text-xs text-zinc-400 leading-relaxed max-w-xs m-0'>
+                  You won&apos;t see each other&apos;s posts or activity until you unblock them.
+                </p>
+              </div>
+            );
+          }
+
+          if (isBlockedBy) {
+            return (
+              <div className='my-12 p-8 rounded-2xl border border-white/10 bg-zinc-900/40 flex flex-col items-center justify-center text-center max-w-sm mx-auto select-none animate-in fade-in'>
+                <div className='w-10 h-10 rounded-full border border-zinc-500 flex items-center justify-center mb-3 text-zinc-400'>
+                  <Ban size={18} />
+                </div>
+                <h3 className='text-sm font-bold text-white mb-1'>
+                  Profile Unavailable
+                </h3>
+                <p className='text-xs text-zinc-400 leading-relaxed max-w-xs m-0'>
+                  You cannot view this profile due to privacy settings.
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <ProfileTabs
+              posts={displayPosts}
+              initialTab={activeTab}
+              onTabChange={handleTabChange}
+              isLoading={isLoadingData}
+              isOtherProfile
+            />
+          );
+        })()}
       </div>
     </MainLayout>
   );

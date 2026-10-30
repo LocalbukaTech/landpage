@@ -272,7 +272,7 @@ export function ActionBar({
             }}
           />
         </div>
-        {!isFollowing && !hideFollowButton && post?.user?.id !== user?.id && (
+        {!isFollowing && !hideFollowButton && post?.user?.id !== user?.id && !profileData?.blockStatus?.isBlocked && (
           <div
             onClick={handleFollow}
             className='absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-5 h-5 bg-[#fbbe15] rounded-full flex items-center justify-center border border-white'>

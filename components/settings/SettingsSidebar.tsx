@@ -18,7 +18,7 @@ export function SettingsSidebar({
   const sidebarItems = [
     {id: 'account', label: t('settings.account', 'Account Information'), icon: User},
     {id: 'notifications', label: t('settings.notifications', 'Notifications & Privacy'), icon: Lock},
-    {id: 'support', label: t('settings.rewardsSupport', 'Rewards & Support'), icon: RotateCcw},
+    {id: 'support', label: t('settings.support', 'Support'), icon: RotateCcw},
   ];
 
   const footerLinks = [

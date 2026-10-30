@@ -100,6 +100,15 @@ export function ContentManagementTab({
   >([]);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPosting, setIsPosting] = useState(false);
+
+  // Simulate data loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1800);
+    return () => clearTimeout(timer);
+  }, []);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -172,11 +181,17 @@ export function ContentManagementTab({
       isBookmarked: false,
     };
 
-    setPosts([newPost, ...posts]);
-    setUploadedMedia(null);
-    setUploadError(null);
-    setCaption("");
-    showToast("Post published successfully to community feed!");
+    // Show spinner overlay
+    setIsPosting(true);
+
+    setTimeout(() => {
+      setPosts([newPost, ...posts]);
+      setUploadedMedia(null);
+      setUploadError(null);
+      setCaption("");
+      setIsPosting(false);
+      showToast("Post published successfully to community feed!");
+    }, 2000);
   };
 
   const handleDraft = () => {
@@ -257,8 +272,106 @@ export function ContentManagementTab({
     }
   };
 
+  // ─────────────────────────────────────────────────────────
+  // LOADING / SKELETON STATE (Figma Content Management Loading)
+  // ─────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="w-full text-white pt-2">
+        {/* Toggle for reviewer */}
+        <div className="flex justify-end mb-4" style={{ maxWidth: '882px' }}>
+          <button
+            type="button"
+            onClick={() => setIsLoading(false)}
+            className="text-xs text-white/50 hover:text-[#FBBE15] transition-colors underline cursor-pointer"
+          >
+            Skip to filled state
+          </button>
+        </div>
+
+        <div className="space-y-0">
+          {/* Skeleton Box 1: Upload area (882x424, r:40) */}
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '882px',
+              height: '424px',
+              borderRadius: '40px',
+              backgroundColor: '#1E1E22',
+              border: '1px solid rgba(255, 255, 255, 0.04)',
+            }}
+            className="flex flex-col items-center justify-center shadow-lg relative"
+          >
+            {/* Pill inside Box 1 (207x43, r:100) */}
+            <div
+              style={{
+                width: '207px',
+                height: '43px',
+                borderRadius: '100px',
+                backgroundColor: '#2A2A2E',
+              }}
+              className="animate-pulse"
+            />
+          </div>
+
+          {/* Skeleton Box 2: Caption area (882x205, r:20, mt:28px) */}
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '882px',
+              height: '205px',
+              borderRadius: '20px',
+              backgroundColor: '#1E1E22',
+              border: '1px solid rgba(255, 255, 255, 0.04)',
+              marginTop: '28px',
+            }}
+            className="shadow-lg animate-pulse"
+          />
+
+          {/* 3 Action Pill Skeletons (244x48 each, r:100, gap:22px) */}
+          <div
+            className="flex items-center"
+            style={{
+              maxWidth: '776px',
+              gap: '22px',
+              marginTop: '24px',
+            }}
+          >
+            {[1, 2, 3].map((pill) => (
+              <div
+                key={pill}
+                style={{
+                  width: '244px',
+                  height: '48px',
+                  borderRadius: '100px',
+                  backgroundColor: '#1E1E22',
+                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                }}
+                className="animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-[680px] text-white space-y-7 pt-2">
+      {/* Posting Spinner Overlay (339x339 SpinnerGap, blurred backdrop) */}
+      {isPosting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}>
+          <div
+            className="animate-spin"
+            style={{ width: '339px', height: '339px', animationDuration: '1.2s' }}
+          >
+            <svg width="339" height="339" viewBox="0 0 339 339" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M177.445 42.375V84.75C177.445 86.8572 176.608 88.8781 175.118 90.3682C173.628 91.8582 171.607 92.6953 169.5 92.6953C167.393 92.6953 165.372 91.8582 163.882 90.3682C162.392 88.8781 161.555 86.8572 161.555 84.75V42.375C161.555 40.2678 162.392 38.2468 163.882 36.7568C165.372 35.2668 167.393 34.4297 169.5 34.4297C171.607 34.4297 173.628 35.2668 175.118 36.7568C176.608 38.2468 177.445 40.2678 177.445 42.375ZM296.625 161.555H254.25C252.143 161.555 250.122 162.392 248.632 163.882C247.142 165.372 246.305 167.393 246.305 169.5C246.305 171.607 247.142 173.628 248.632 175.118C250.122 176.608 252.143 177.445 254.25 177.445H296.625C298.732 177.445 300.753 176.608 302.243 175.118C303.733 173.628 304.57 171.607 304.57 169.5C304.57 167.393 303.733 165.372 302.243 163.882C300.753 162.392 298.732 161.555 296.625 161.555ZM235.049 223.793C233.556 222.3 231.532 221.462 229.421 221.462C227.31 221.462 225.286 222.3 223.793 223.793C222.3 225.286 221.462 227.31 221.462 229.421C221.462 231.532 222.3 233.556 223.793 235.049L253.76 265.003C255.266 266.406 257.258 267.17 259.317 267.134C261.375 267.098 263.339 266.264 264.795 264.808C266.25 263.352 267.084 261.388 267.121 259.33C267.157 257.272 266.393 255.279 264.989 253.773L235.049 223.793ZM169.5 246.305C167.393 246.305 165.372 247.142 163.882 248.632C162.392 250.122 161.555 252.143 161.555 254.25V296.625C161.555 298.732 162.392 300.753 163.882 302.243C165.372 303.733 167.393 304.57 169.5 304.57C171.607 304.57 173.628 303.733 175.118 302.243C176.608 300.753 177.445 298.732 177.445 296.625V254.25C177.445 252.143 176.608 250.122 175.118 248.632C173.628 247.142 171.607 246.305 169.5 246.305ZM103.951 223.793L73.9973 253.773C73.2167 254.501 72.5906 255.378 72.1564 256.352C71.7221 257.327 71.4886 258.379 71.4698 259.446C71.4509 260.513 71.6472 261.572 72.0468 262.562C72.4464 263.551 73.0412 264.45 73.7957 265.204C74.5501 265.959 75.4488 266.554 76.4382 266.953C77.4275 267.353 78.4872 267.549 79.554 267.53C80.6208 267.511 81.6729 267.278 82.6475 266.844C83.6222 266.409 84.4993 265.783 85.2267 265.003L115.207 235.049C115.946 234.31 116.532 233.432 116.932 232.467C117.332 231.501 117.538 230.466 117.538 229.421C117.538 228.376 117.332 227.341 116.932 226.375C116.532 225.409 115.946 224.532 115.207 223.793C114.468 223.054 113.591 222.468 112.625 222.068C111.659 221.668 110.624 221.462 109.579 221.462C108.534 221.462 107.499 221.668 106.533 222.068C105.568 222.468 104.69 223.054 103.951 223.793ZM92.6953 169.5C92.6953 167.393 91.8582 165.372 90.3682 163.882C88.8781 162.392 86.8572 161.555 84.75 161.555H42.375C40.2678 161.555 38.2468 162.392 36.7568 163.882C35.2668 165.372 34.4297 167.393 34.4297 169.5C34.4297 171.607 35.2668 173.628 36.7568 175.118C38.2468 176.608 40.2678 177.445 42.375 177.445H84.75C86.8572 177.445 88.8781 176.608 90.3682 175.118C91.8582 173.628 92.6953 171.607 92.6953 169.5ZM85.2267 73.9973C83.7206 72.5939 81.7284 71.8298 79.6701 71.8661C77.6117 71.9025 75.6478 72.7363 74.192 74.192C72.7363 75.6478 71.9025 77.6117 71.8661 79.6701C71.8298 81.7284 72.5939 83.7206 73.9973 85.2267L103.951 115.207C105.444 116.7 107.468 117.538 109.579 117.538C111.69 117.538 113.714 116.7 115.207 115.207C116.7 113.714 117.538 111.69 117.538 109.579C117.538 107.468 116.7 105.444 115.207 103.951L85.2267 73.9973Z" fill="#FBBE15"/>
+            </svg>
+          </div>
+        </div>
+      )}
+
       {/* Toast alert */}
       {feedbackMessage && (
         <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-[#f5c94d] px-5 py-3 text-sm font-semibold text-black shadow-xl animate-in slide-in-from-top duration-200">

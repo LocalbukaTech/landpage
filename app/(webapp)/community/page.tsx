@@ -11,10 +11,12 @@ import { CommunityMembershipsList } from '@/components/community/CommunityMember
 import { CreatorDashboard } from '@/components/community/CreatorDashboard';
 import { CreatorCommunityApprovedCard } from '@/components/community/CreatorCommunityApprovedCard';
 import { CreatorCommunityRejectedCard } from '@/components/community/CreatorCommunityRejectedCard';
+import { CreatorCommunityChangesRequestedCard } from '@/components/community/CreatorCommunityChangesRequestedCard';
+import { CommunityMobileShowcase } from '@/components/community/mobile/CommunityMobileShowcase';
 import { DashboardTab } from '@/components/community/types';
 import { useToast } from '@/hooks/use-toast';
 
-type CommunityTab = 'recommended' | 'trending' | 'free' | 'paid' | 'creator' | 'memberships';
+type CommunityTab = 'recommended' | 'trending' | 'free' | 'paid' | 'creator' | 'memberships' | 'mobile';
 
 function CommunityContent() {
   const { toast } = useToast();
@@ -40,6 +42,9 @@ function CommunityContent() {
 
   // Determine initial active community tab
   const initialTab: CommunityTab = useMemo(() => {
+    if (viewParam === 'mobile' || tabParam === 'mobile') {
+      return 'mobile';
+    }
     if (
       viewParam === 'creator' ||
       tabParam === 'creator' ||
@@ -48,7 +53,7 @@ function CommunityContent() {
     ) {
       return 'creator';
     }
-    if (tabParam && ['recommended', 'trending', 'free', 'paid', 'memberships'].includes(tabParam)) {
+    if (tabParam && ['recommended', 'trending', 'free', 'paid', 'memberships', 'mobile'].includes(tabParam)) {
       return tabParam as CommunityTab;
     }
     return 'recommended';
@@ -59,10 +64,11 @@ function CommunityContent() {
   const activeTab: CommunityTab = userTab && userTab.key === tabParamKey ? userTab.tab : initialTab;
   const setActiveTab = (tab: CommunityTab) => setUserTab({ key: tabParamKey, tab });
 
-  const initialCreatorStep = useMemo<'approved' | 'rejected' | 'dashboard' | 'form' | 'payment'>(() => {
+  const initialCreatorStep = useMemo<'approved' | 'rejected' | 'changes-requested' | 'dashboard' | 'form' | 'payment'>(() => {
     if (stepParam === 'form' || statusParam === 'form') return 'form';
     if (stepParam === 'payment' || statusParam === 'payment') return 'payment';
     if (statusParam === 'approved' || stepParam === 'approved' || statusParam === 'live') return 'approved';
+    if (statusParam === 'changes-requested' || stepParam === 'changes-requested' || statusParam === 'changes_requested') return 'changes-requested';
     if (statusParam === 'rejected' || stepParam === 'rejected' || statusParam === 'not-approved' || statusParam === 'not_approved') return 'rejected';
     if (stepParam === 'dashboard' || ['content', 'members', 'monetization', 'overview', 'settings'].includes(tabParam || '')) {
       return 'dashboard';
@@ -73,11 +79,11 @@ function CommunityContent() {
   const creatorParamKey = `${stepParam ?? ''}_${statusParam ?? ''}_${tabParam ?? ''}`;
   const [userCreatorStep, setUserCreatorStep] = useState<{
     key: string;
-    step: 'approved' | 'rejected' | 'dashboard' | 'form' | 'payment';
+    step: 'approved' | 'rejected' | 'changes-requested' | 'dashboard' | 'form' | 'payment';
   } | null>(null);
   const creatorStep =
     userCreatorStep && userCreatorStep.key === creatorParamKey ? userCreatorStep.step : initialCreatorStep;
-  const setCreatorStep = (step: 'approved' | 'rejected' | 'dashboard' | 'form' | 'payment') => {
+  const setCreatorStep = (step: 'approved' | 'rejected' | 'changes-requested' | 'dashboard' | 'form' | 'payment') => {
     setUserCreatorStep({ key: creatorParamKey, step });
   };
   const [creatorData, setCreatorData] = useState<{
@@ -241,6 +247,16 @@ function CommunityContent() {
               <span>|</span>
               <button
                 type='button'
+                onClick={() => setCreatorStep('changes-requested')}
+                className={`hover:text-[#FFC533] cursor-pointer transition-colors ${
+                  creatorStep === 'changes-requested' ? 'text-[#FFC533] font-semibold underline' : ''
+                }`}
+              >
+                Changes requested
+              </button>
+              <span>|</span>
+              <button
+                type='button'
                 onClick={() => setCreatorStep('approved')}
                 className={`hover:text-[#FFC533] cursor-pointer transition-colors ${
                   creatorStep === 'approved' ? 'text-[#FFC533] font-semibold underline' : ''
@@ -280,6 +296,7 @@ function CommunityContent() {
           { id: 'paid', label: 'Paid' },
           { id: 'creator', label: 'Creator community' },
           { id: 'memberships', label: 'My memberships' },
+          { id: 'mobile', label: '📱 Mobile Screens' },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -301,7 +318,16 @@ function CommunityContent() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'memberships' ? (
+      {activeTab === 'mobile' ? (
+        <div className='py-2'>
+          <CommunityMobileShowcase
+            onSwitchToCreator={() => {
+              setActiveTab('creator');
+              setCreatorStep('dashboard');
+            }}
+          />
+        </div>
+      ) : activeTab === 'memberships' ? (
         <div className='py-2'>
           <CommunityMembershipsList onBack={() => setActiveTab('recommended')} />
         </div>
@@ -316,6 +342,21 @@ function CommunityContent() {
               actionMessage="Pricing described does not match LocalBuka's membership guidelines. This community cannot be published."
               onCreateNewCommunity={() => setCreatorStep('form')}
               onContactSupport={() => {}}
+            />
+          )}
+
+          {creatorStep === 'changes-requested' && (
+            <CreatorCommunityChangesRequestedCard
+              reviewDate='1 day ago'
+              caseId='CR-1041'
+              summaryMessage='Your community is almost ready. Update the items below and resubmit for another review.'
+              feedbackMessage="Your pricing section doesn't clearly state the billing cadence. Please specify monthly vs. annual before resubmitting."
+              changeItems={[
+                { label: 'Pricing and billing cadence', status: 'pending' },
+                { label: 'Name, bio and category', status: 'none' },
+                { label: 'Member benefits', status: 'none' },
+              ]}
+              onEditAndResubmit={() => setCreatorStep('form')}
             />
           )}
 

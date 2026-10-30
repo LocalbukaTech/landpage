@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { CommunityMember } from "./types";
+import { CommunityMember } from './types';
 
 const MEMBERS_DATA: CommunityMember[] = [
   {

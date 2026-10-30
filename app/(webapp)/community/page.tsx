@@ -12,10 +12,11 @@ import { CreatorDashboard } from '@/components/community/CreatorDashboard';
 import { CreatorCommunityApprovedCard } from '@/components/community/CreatorCommunityApprovedCard';
 import { CreatorCommunityRejectedCard } from '@/components/community/CreatorCommunityRejectedCard';
 import { CreatorCommunityChangesRequestedCard } from '@/components/community/CreatorCommunityChangesRequestedCard';
+import { CommunityMobileShowcase } from '@/components/community/mobile/CommunityMobileShowcase';
 import { DashboardTab } from '@/components/community/types';
 import { useToast } from '@/hooks/use-toast';
 
-type CommunityTab = 'recommended' | 'trending' | 'free' | 'paid' | 'creator' | 'memberships';
+type CommunityTab = 'recommended' | 'trending' | 'free' | 'paid' | 'creator' | 'memberships' | 'mobile';
 
 function CommunityContent() {
   const { toast } = useToast();
@@ -41,6 +42,9 @@ function CommunityContent() {
 
   // Determine initial active community tab
   const initialTab: CommunityTab = useMemo(() => {
+    if (viewParam === 'mobile' || tabParam === 'mobile') {
+      return 'mobile';
+    }
     if (
       viewParam === 'creator' ||
       tabParam === 'creator' ||
@@ -49,7 +53,7 @@ function CommunityContent() {
     ) {
       return 'creator';
     }
-    if (tabParam && ['recommended', 'trending', 'free', 'paid', 'memberships'].includes(tabParam)) {
+    if (tabParam && ['recommended', 'trending', 'free', 'paid', 'memberships', 'mobile'].includes(tabParam)) {
       return tabParam as CommunityTab;
     }
     return 'recommended';
@@ -292,6 +296,7 @@ function CommunityContent() {
           { id: 'paid', label: 'Paid' },
           { id: 'creator', label: 'Creator community' },
           { id: 'memberships', label: 'My memberships' },
+          { id: 'mobile', label: '📱 Mobile Screens' },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           return (
@@ -313,7 +318,16 @@ function CommunityContent() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'memberships' ? (
+      {activeTab === 'mobile' ? (
+        <div className='py-2'>
+          <CommunityMobileShowcase
+            onSwitchToCreator={() => {
+              setActiveTab('creator');
+              setCreatorStep('dashboard');
+            }}
+          />
+        </div>
+      ) : activeTab === 'memberships' ? (
         <div className='py-2'>
           <CommunityMembershipsList onBack={() => setActiveTab('recommended')} />
         </div>

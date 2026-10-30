@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect, useRef, useState} from 'react';
+import Link from 'next/link';
 import {BadgeCheck, ExternalLink, Sparkles} from 'lucide-react';
 
 interface InFeedAdProps {
@@ -164,10 +165,8 @@ export function InFeedAd({
           </div>
 
           {/* Call to Action Button */}
-          <a
-            href='https://localbuka.com'
-            target='_blank'
-            rel='noopener noreferrer'
+          <Link
+            href='/buka'
             className='mt-1 w-full py-3 px-4 rounded-xl bg-[#FFC727] hover:bg-yellow-400 active:scale-[0.98] transition-all text-black font-extrabold text-xs flex items-center justify-between shadow-xl cursor-pointer border border-yellow-300/30'>
             <span className='flex items-center gap-2'>
               <Sparkles className='w-4 h-4' />
@@ -177,7 +176,7 @@ export function InFeedAd({
               <span>Order Now</span>
               <ExternalLink className='w-3.5 h-3.5' />
             </span>
-          </a>
+          </Link>
         </div>
       </div>
 

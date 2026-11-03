@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useEffect } from "react";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
   Lock,
@@ -518,6 +518,25 @@ function CommunityPageContent() {
   );
 }
 
+function CommunityProductionGuard() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isProd = process.env.NODE_ENV === "production";
+  const isPreview = searchParams.get("preview") === "true";
+
+  useEffect(() => {
+    if (isProd && !isPreview) {
+      router.replace("/");
+    }
+  }, [isProd, isPreview, router]);
+
+  if (isProd && !isPreview) {
+    return null;
+  }
+
+  return <CommunityPageContent />;
+}
+
 export default function CommunityPage() {
   return (
     <Suspense
@@ -527,7 +546,7 @@ export default function CommunityPage() {
         </div>
       }
     >
-      <CommunityPageContent />
+      <CommunityProductionGuard />
     </Suspense>
   );
 }

@@ -138,9 +138,9 @@ export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
     href: '/community',
     icon: Users,
     authRequirement: 'public',
-    showInDesktop: false,
+    showInDesktop: true,
     showInMobileBottom: false,
-    showInMobileDrawer: false,
+    showInMobileDrawer: true,
   },
   {
     id: 'rewards',

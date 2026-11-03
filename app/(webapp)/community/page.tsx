@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, Suspense, useMemo, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, Suspense, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CreatorCommunityCarousel } from '@/components/community/CreatorCommunityCarousel';
 import { CreatorCommunityForm } from '@/components/community/CreatorCommunityForm';
@@ -56,7 +56,7 @@ function CommunityContent() {
     if (tabParam && ['recommended', 'trending', 'free', 'paid', 'memberships', 'mobile'].includes(tabParam)) {
       return tabParam as CommunityTab;
     }
-    return 'recommended';
+    return 'mobile';
   }, [tabParam, viewParam, statusParam]);
 
   const tabParamKey = `${tabParam ?? ''}_${viewParam ?? ''}_${statusParam ?? ''}`;
@@ -414,30 +414,11 @@ function CommunityContent() {
   );
 }
 
-function CommunityPreviewGuard() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const previewParam = searchParams.get('preview');
-
-  // Community feature is hidden from production until backend & frontend are fully completed
-  useEffect(() => {
-    if (previewParam !== 'true') {
-      router.replace('/');
-    }
-  }, [previewParam, router]);
-
-  if (previewParam !== 'true') {
-    return null;
-  }
-
-  return <CommunityContent />;
-}
-
 export default function CommunityPage() {
   return (
     <MainLayout>
       <Suspense fallback={<div className='p-8 text-white'>Loading Community...</div>}>
-        <CommunityPreviewGuard />
+        <CommunityContent />
       </Suspense>
     </MainLayout>
   );

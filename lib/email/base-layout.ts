@@ -78,19 +78,41 @@ export function renderBaseEmail({
     a { color: #FBBE15; text-decoration: none; }
     a:hover { text-decoration: underline; }
 
+    .header-pad { padding: 14px 24px; }
+    .header-logo { width: 32px; height: 32px; margin-right: 10px; }
+    .header-title { font-size: 24px; line-height: 32px; }
+    .header-reward { font-size: 14px; line-height: 20px; }
     .zigzag-col-left { width: 36px !important; min-width: 36px !important; max-width: 36px !important; background-position: left top !important; background-size: 36px 86px !important; }
     .zigzag-col-right { width: 36px !important; min-width: 36px !important; max-width: 36px !important; background-position: right top !important; background-size: 36px 86px !important; }
+    .hero-pad { padding: 36px 14px; }
+    .hero-food-wrap { width: 124px; height: 124px; border-radius: 62px; }
+    .hero-food-img { width: 124px; height: 124px; }
+    .hero-circle { width: 124px; height: 124px; border-radius: 62px; }
+    .hero-circle-num { font-size: 32px; line-height: 36px; }
+    .hero-circle-lbl { font-size: 11px; line-height: 14px; }
+    .hero-h1 { font-size: 24px; line-height: 32px; }
+    .hero-sub { font-size: 11px; line-height: 15px; }
     
     @media only screen and (max-width: 620px) {
-      .email-container { width: 100% !important; max-width: 100% !important; }
+      .email-container { width: 100% !important; max-width: 100% !important; min-width: 100% !important; }
+      .header-pad { padding: 14px 18px !important; }
+      .header-logo { width: 26px !important; height: 26px !important; margin-right: 8px !important; }
+      .header-title { font-size: 19px !important; line-height: 24px !important; }
+      .header-reward { font-size: 11px !important; line-height: 16px !important; text-align: right !important; white-space: nowrap !important; }
       .zigzag-col-left { width: 36px !important; min-width: 36px !important; max-width: 36px !important; background-position: left top !important; background-size: 36px 86px !important; }
       .zigzag-col-right { width: 36px !important; min-width: 36px !important; max-width: 36px !important; background-position: right top !important; background-size: 36px 86px !important; }
-      .mobile-stack { display: block !important; width: 100% !important; text-align: center !important; }
-      .mobile-center { text-align: center !important; }
-      .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
-      .hero-image-wrap { margin: 16px auto 0 !important; }
+      .hero-pad { padding: 24px 0 24px 10px !important; }
+      .hero-sub { font-size: 11px !important; line-height: 15px !important; margin-bottom: 8px !important; }
+      .hero-h1 { font-size: 16px !important; line-height: 22px !important; font-weight: 800 !important; }
+      .hero-circle-td { width: 106px !important; padding-left: 4px !important; }
+      .hero-food-wrap { width: 98px !important; height: 98px !important; border-radius: 49px !important; }
+      .hero-food-img { width: 98px !important; height: 98px !important; }
+      .hero-circle { width: 98px !important; height: 98px !important; border-radius: 49px !important; }
+      .hero-circle-num { font-size: 26px !important; line-height: 28px !important; }
+      .hero-circle-lbl { font-size: 10px !important; line-height: 12px !important; }
+      .body-pad { padding: 32px 14px 28px 14px !important; }
+      .mobile-padding { padding-left: 14px !important; padding-right: 14px !important; }
       .mobile-btn { width: 100% !important; display: block !important; }
-      .mobile-gap { height: 16px !important; }
     }
   </style>
 </head>
@@ -125,31 +147,17 @@ export function renderBaseEmail({
 
           <!-- ─── BRAND HEADER BAR ─── -->
           <tr>
-            <td bgcolor="#FFFFFF" style="background-color: #FFFFFF; padding: 18px 28px; border-bottom: 1px solid #F3F4F6;">
-              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+            <td class="header-pad" bgcolor="#FFFFFF" style="background-color: #FFFFFF; padding: 14px 24px; border-bottom: 1px solid #FBF3DC;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width: 100% !important; min-width: 100% !important;">
                 <tr>
-                  <!-- Logo Lockup -->
-                  <td align="left" valign="middle">
-                    <a href="${appUrl}" target="_blank" style="text-decoration: none; display: inline-flex; align-items: center;">
-                      <table role="presentation" border="0" cellpadding="0" cellspacing="0">
-                        <tr>
-                          <td valign="middle" style="padding-right: 8px;">
-                            <img src="${appUrl}/images/localbuka-pot-logo.png" alt="LocalBuka Pot" width="28" height="28" style="display: block; border-radius: 6px;" />
-                          </td>
-                          <td valign="middle">
-                            <span style="font-size: 20px; font-weight: 800; color: #111827; letter-spacing: -0.5px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
-                              Local<span style="color: #FBBE15;">Buka</span>
-                            </span>
-                          </td>
-                        </tr>
-                      </table>
+                  <td align="left" valign="middle" style="white-space: nowrap; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
+                    <a href="${appUrl}" target="_blank" style="text-decoration: none; color: inherit;">
+                      <img class="header-logo" src="${assetBaseUrl}/images/localbuka-pot-logo.png" alt="LocalBuka" width="32" height="32" style="display: inline-block; vertical-align: middle; margin-right: 10px; width: 32px; height: 32px;" />
+                      <span class="header-title" style="font-size: 24px; line-height: 32px; font-weight: 700; color: #111111; vertical-align: middle; letter-spacing: -0.3px;">LocalBuka</span>
                     </a>
                   </td>
-                  <!-- Category Pill -->
-                  <td align="right" valign="middle">
-                    <span style="font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #6B7280; text-transform: uppercase; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
-                      ${escapeHtml(categoryTitle)}
-                    </span>
+                  <td class="header-reward" align="right" valign="middle" style="font-size: 14px; line-height: 20px; font-weight: 700; color: #757575; text-transform: uppercase; text-align: right; white-space: nowrap; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
+                    ${escapeHtml(categoryTitle)}
                   </td>
                 </tr>
               </table>
@@ -162,7 +170,7 @@ export function renderBaseEmail({
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; width: 100%;">
                 <tr>
                   <td class="zigzag-col-left" width="36" background="${assetBaseUrl}/images/email/zigzag-left.png" bgcolor="#0A182F" style="width: 36px; min-width: 36px; max-width: 36px; background-color: #0A182F; background-image: url('${assetBaseUrl}/images/email/zigzag-left.png'); background-repeat: repeat-y; background-position: left top; background-size: 36px 86px; font-size: 1px; line-height: 1px;">&nbsp;</td>
-                  <td valign="middle" style="padding: 36px 18px;">
+                  <td class="hero-pad" valign="middle" style="padding: 36px 14px;">
                     ${heroContent}
                   </td>
                   <td class="zigzag-col-right" width="36" align="right" background="${assetBaseUrl}/images/email/zigzag-right.png" bgcolor="#0A182F" style="width: 36px; min-width: 36px; max-width: 36px; background-color: #0A182F; background-image: url('${assetBaseUrl}/images/email/zigzag-right.png'); background-repeat: repeat-y; background-position: right top; background-size: 36px 86px; font-size: 1px; line-height: 1px;">&nbsp;</td>
@@ -179,7 +187,7 @@ export function renderBaseEmail({
                   <!-- Left zigzag edge stripe -->
                   <td class="zigzag-col-left" width="36" background="${assetBaseUrl}/images/email/zigzag-left.png" bgcolor="#FFFFFF" style="width: 36px; min-width: 36px; max-width: 36px; background-color: #FFFFFF; background-image: url('${assetBaseUrl}/images/email/zigzag-left.png'); background-repeat: repeat-y; background-position: left top; background-size: 36px 86px; font-size: 1px; line-height: 1px;">&nbsp;</td>
                   <!-- Main body content -->
-                  <td style="padding: 40px 18px; vertical-align: top; background-color: #FFFFFF;">
+                  <td class="body-pad" style="padding: 40px 18px; vertical-align: top; background-color: #FFFFFF;">
                     ${bodyContent}
                   </td>
                   <!-- Right zigzag edge stripe -->

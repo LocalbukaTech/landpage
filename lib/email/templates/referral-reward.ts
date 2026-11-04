@@ -45,7 +45,7 @@ export function renderReferralRewardsEmail(options: ReferralEmailOptions = {}): 
         </td>
         <!-- Right Hero Points Badge -->
         <td align="right" valign="middle" class="mobile-stack" style="width: 140px;">
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="124" height="124" bgcolor="#FBBE15" class="hero-image-wrap" style="background-color: #FBBE15; border-radius: 50%; text-align: center; margin-left: auto; box-shadow: 0 8px 24px rgba(251, 190, 21, 0.35);">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="124" height="124" bgcolor="#FBBE15" class="hero-image-wrap" style="background-color: #FBBE15; background-image: linear-gradient(#FBBE15, #FBBE15); border-radius: 50%; text-align: center; margin-left: auto; box-shadow: 0 8px 24px rgba(251, 190, 21, 0.35);">
             <tr>
               <td align="center" valign="middle" style="padding: 12px 6px;">
                 <div style="font-size: 32px; font-weight: 800; line-height: 1; color: #0A182F; font-family: 'Plus Jakarta Sans', Arial, sans-serif; letter-spacing: -0.5px;">
@@ -121,7 +121,7 @@ export function renderReferralRewardsEmail(options: ReferralEmailOptions = {}): 
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 14px;">
               <tr>
                 <td valign="top" style="width: 28px;">
-                  <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #FBBE15; color: #0A182F; font-size: 12px; font-weight: 800; line-height: 24px; text-align: center; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
+                  <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #FBBE15; background-image: linear-gradient(#FBBE15, #FBBE15); color: #0A182F; font-size: 12px; font-weight: 800; line-height: 24px; text-align: center; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                     1
                   </div>
                 </td>
@@ -135,7 +135,7 @@ export function renderReferralRewardsEmail(options: ReferralEmailOptions = {}): 
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 14px;">
               <tr>
                 <td valign="top" style="width: 28px;">
-                  <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #FBBE15; color: #0A182F; font-size: 12px; font-weight: 800; line-height: 24px; text-align: center; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
+                  <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #FBBE15; background-image: linear-gradient(#FBBE15, #FBBE15); color: #0A182F; font-size: 12px; font-weight: 800; line-height: 24px; text-align: center; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                     2
                   </div>
                 </td>
@@ -149,7 +149,7 @@ export function renderReferralRewardsEmail(options: ReferralEmailOptions = {}): 
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
               <tr>
                 <td valign="top" style="width: 28px;">
-                  <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #FBBE15; color: #0A182F; font-size: 12px; font-weight: 800; line-height: 24px; text-align: center; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
+                  <div style="width: 24px; height: 24px; border-radius: 50%; background-color: #FBBE15; background-image: linear-gradient(#FBBE15, #FBBE15); color: #0A182F; font-size: 12px; font-weight: 800; line-height: 24px; text-align: center; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                     3
                   </div>
                 </td>
@@ -177,7 +177,7 @@ export function renderReferralRewardsEmail(options: ReferralEmailOptions = {}): 
             <!-- Primary Button -->
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 12px;">
               <tr>
-                <td align="center" bgcolor="#FBBE15" style="border-radius: 8px; background-color: #FBBE15;">
+                <td align="center" bgcolor="#FBBE15" style="border-radius: 8px; background-color: #FBBE15; background-image: linear-gradient(#FBBE15, #FBBE15);">
                   <a href="${rewardsUrl}" target="_blank" style="display: block; width: 100%; padding: 14px 20px; font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: #0A182F; text-transform: uppercase; text-decoration: none; border-radius: 8px; box-sizing: border-box; text-align: center; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                     VIEW MY REWARDS
                   </a>
@@ -270,7 +270,7 @@ export function renderReferralRewardsEmail(options: ReferralEmailOptions = {}): 
           <td>
             <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
               <tr>
-                <td align="center" bgcolor="#FBBE15" style="border-radius: 8px; background-color: #FBBE15;">
+                <td align="center" bgcolor="#FBBE15" style="border-radius: 8px; background-color: #FBBE15; background-image: linear-gradient(#FBBE15, #FBBE15);">
                   <a href="${exploreUrl}" target="_blank" style="display: block; width: 100%; padding: 14px 20px; font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: #0A182F; text-transform: uppercase; text-decoration: none; border-radius: 8px; box-sizing: border-box; text-align: center; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                     START EXPLORING
                   </a>

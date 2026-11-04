@@ -18,6 +18,8 @@ export function renderWelcomeVisualEmail(data: EmailDynamicData = {}): EmailRend
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="x-apple-disable-message-reformatting" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="supported-color-schemes" content="light only" />
   <title>${escapeHtml(subject)}</title>
   <style type="text/css">
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -71,7 +73,7 @@ export function renderWelcomeVisualEmail(data: EmailDynamicData = {}): EmailRend
               <!-- Pill Badge -->
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center">
                 <tr>
-                  <td align="center" bgcolor="#FBBE15" style="border-radius: 20px; background-color: #FBBE15; padding: 7px 18px;">
+                  <td align="center" bgcolor="#FBBE15" style="border-radius: 20px; background-color: #FBBE15; background-image: linear-gradient(#FBBE15, #FBBE15); padding: 7px 18px;">
                     <span style="font-size: 11.5px; font-weight: 800; color: #32140E; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                       Good food starts here!
                     </span>
@@ -107,7 +109,7 @@ export function renderWelcomeVisualEmail(data: EmailDynamicData = {}): EmailRend
               <!-- Pill CTA Button -->
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin-bottom: 24px;">
                 <tr>
-                  <td align="center" bgcolor="#FBBE15" style="border-radius: 24px; background-color: #FBBE15;">
+                  <td align="center" bgcolor="#FBBE15" style="border-radius: 24px; background-color: #FBBE15; background-image: linear-gradient(#FBBE15, #FBBE15);">
                     <a href="${exploreUrl}" target="_blank" style="display: inline-block; padding: 12px 28px; font-size: 13px; font-weight: 800; color: #32140E; text-decoration: none; border-radius: 24px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                       Explore LocalBuka!
                     </a>

@@ -6,6 +6,8 @@ export interface BaseEmailOptions {
   preheader: string;
   heroContent: string;
   bodyContent: string;
+  polygonLeftSrc?: string;
+  polygonRightSrc?: string;
   data?: EmailDynamicData;
 }
 
@@ -24,10 +26,13 @@ export function renderBaseEmail({
   preheader,
   heroContent,
   bodyContent,
+  polygonLeftSrc: _polygonLeftSrc,
+  polygonRightSrc: _polygonRightSrc,
   data = {},
 }: BaseEmailOptions): string {
+  const assetBaseUrl = 'https://www.localbuka.com';
   const year = data.year || new Date().getFullYear();
-  const appUrl = data.appUrl || 'https://localbuka.com';
+  const appUrl = data.appUrl || 'https://www.localbuka.com';
   const unsubscribeUrl = data.unsubscribeUrl || `${appUrl}/settings/notifications`;
   const preferencesUrl = data.preferencesUrl || `${appUrl}/settings`;
 
@@ -41,6 +46,8 @@ export function renderBaseEmail({
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="x-apple-disable-message-reformatting" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="supported-color-schemes" content="light only" />
   <title>${escapeHtml(subject)}</title>
   <!--[if mso]>
   <noscript>
@@ -70,9 +77,14 @@ export function renderBaseEmail({
     
     a { color: #FBBE15; text-decoration: none; }
     a:hover { text-decoration: underline; }
+
+    .zigzag-col-left { width: 36px !important; min-width: 36px !important; max-width: 36px !important; background-position: left top !important; background-size: 36px 86px !important; }
+    .zigzag-col-right { width: 36px !important; min-width: 36px !important; max-width: 36px !important; background-position: right top !important; background-size: 36px 86px !important; }
     
     @media only screen and (max-width: 620px) {
       .email-container { width: 100% !important; max-width: 100% !important; }
+      .zigzag-col-left { width: 36px !important; min-width: 36px !important; max-width: 36px !important; background-position: left top !important; background-size: 36px 86px !important; }
+      .zigzag-col-right { width: 36px !important; min-width: 36px !important; max-width: 36px !important; background-position: right top !important; background-size: 36px 86px !important; }
       .mobile-stack { display: block !important; width: 100% !important; text-align: center !important; }
       .mobile-center { text-align: center !important; }
       .mobile-padding { padding-left: 20px !important; padding-right: 20px !important; }
@@ -104,7 +116,7 @@ export function renderBaseEmail({
           
           <!-- ─── TOP BAR ─── -->
           <tr>
-            <td bgcolor="#17191C" style="background-color: #17191C; padding: 10px 16px; text-align: center;">
+            <td bgcolor="#17191C" style="background-color: #17191C; background-image: linear-gradient(#17191C, #17191C); padding: 10px 16px; text-align: center;">
               <span style="font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; color: #FFFFFF; text-transform: uppercase; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                 YOUR FOOD DISCOVERY PLATFORM
               </span>
@@ -146,24 +158,43 @@ export function renderBaseEmail({
 
           <!-- ─── HERO SECTION ─── -->
           <tr>
-            <td bgcolor="#0A182F" style="background-color: #0A182F; background-image: radial-gradient(circle at 90% 20%, #162C4E 0%, #0A182F 70%); padding: 32px 28px;">
-              ${heroContent}
+            <td bgcolor="#0A182F" style="background-color: #0A182F; background-image: linear-gradient(#0A182F, #0A182F); padding: 0;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; width: 100%;">
+                <tr>
+                  <td class="zigzag-col-left" width="36" background="${assetBaseUrl}/images/email/zigzag-left.png" bgcolor="#0A182F" style="width: 36px; min-width: 36px; max-width: 36px; background-color: #0A182F; background-image: url('${assetBaseUrl}/images/email/zigzag-left.png'); background-repeat: repeat-y; background-position: left top; background-size: 36px 86px; font-size: 1px; line-height: 1px;">&nbsp;</td>
+                  <td valign="middle" style="padding: 36px 18px;">
+                    ${heroContent}
+                  </td>
+                  <td class="zigzag-col-right" width="36" align="right" background="${assetBaseUrl}/images/email/zigzag-right.png" bgcolor="#0A182F" style="width: 36px; min-width: 36px; max-width: 36px; background-color: #0A182F; background-image: url('${assetBaseUrl}/images/email/zigzag-right.png'); background-repeat: repeat-y; background-position: right top; background-size: 36px 86px; font-size: 1px; line-height: 1px;">&nbsp;</td>
+                </tr>
+              </table>
             </td>
           </tr>
 
-          <!-- ─── BODY CONTENT SECTION ─── -->
+          <!-- ─── BODY CONTENT SECTION with zigzag edges ─── -->
           <tr>
-            <td bgcolor="#FCFBF7" style="background-color: #FCFBF7; background-image: radial-gradient(#F3EDE0 0.8px, transparent 0.8px); background-size: 16px 16px; padding: 36px 32px;" class="mobile-padding">
-              ${bodyContent}
+            <td bgcolor="#FFFFFF" style="background-color: #FFFFFF; padding: 0;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; width: 100%;">
+                <tr>
+                  <!-- Left zigzag edge stripe -->
+                  <td class="zigzag-col-left" width="36" background="${assetBaseUrl}/images/email/zigzag-left.png" bgcolor="#FFFFFF" style="width: 36px; min-width: 36px; max-width: 36px; background-color: #FFFFFF; background-image: url('${assetBaseUrl}/images/email/zigzag-left.png'); background-repeat: repeat-y; background-position: left top; background-size: 36px 86px; font-size: 1px; line-height: 1px;">&nbsp;</td>
+                  <!-- Main body content -->
+                  <td style="padding: 40px 18px; vertical-align: top; background-color: #FFFFFF;">
+                    ${bodyContent}
+                  </td>
+                  <!-- Right zigzag edge stripe -->
+                  <td class="zigzag-col-right" width="36" align="right" background="${assetBaseUrl}/images/email/zigzag-right.png" bgcolor="#FFFFFF" style="width: 36px; min-width: 36px; max-width: 36px; background-color: #FFFFFF; background-image: url('${assetBaseUrl}/images/email/zigzag-right.png'); background-repeat: repeat-y; background-position: right top; background-size: 36px 86px; font-size: 1px; line-height: 1px;">&nbsp;</td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- ─── FOOTER SECTION ─── -->
           <tr>
-            <td bgcolor="#00071A" style="background-color: #00071A; padding: 36px 28px; text-align: center;">
+            <td bgcolor="#00071A" style="background-color: #00071A; background-image: linear-gradient(#00071A, #00071A); padding: 36px 28px; text-align: center;">
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
                 
-                <!-- Social Media Icons (Solid Grey Circles #5C5C5C with White SVG Icons) -->
+                <!-- Social Media Icons (36x36 Circles with White PNG Icons) -->
                 <tr>
                   <td align="center" style="padding-bottom: 24px;">
                     <table role="presentation" border="0" cellpadding="0" cellspacing="0">
@@ -171,62 +202,28 @@ export function renderBaseEmail({
                         <!-- Twitter / X -->
                         <td style="padding: 0 7px;">
                           <a href="https://twitter.com/localbuka" target="_blank" style="text-decoration: none; display: inline-block;">
-                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="36" height="36" bgcolor="#5C5C5C" style="background-color: #5C5C5C; border-radius: 50%; text-align: center; width: 36px; height: 36px;">
-                              <tr>
-                                <td align="center" valign="middle" style="width: 36px; height: 36px; text-align: center; vertical-align: middle;">
-                                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto;">
-                                    <path d="M5.032 14.3999C11.0696 14.3999 14.372 9.47478 14.372 5.20423C14.372 5.06403 14.372 4.92489 14.3624 4.78626C15.0048 4.32943 15.5592 3.76222 16 3.11321C15.4016 3.37471 14.7656 3.5462 14.1152 3.62181C14.8 3.21775 15.3128 2.58296 15.5584 1.83392C14.9136 2.21041 14.2088 2.47612 13.4736 2.61868C12.2304 1.31751 10.1512 1.25447 8.8288 2.47845C7.9768 3.26766 7.6144 4.44435 7.8792 5.56673C5.24 5.43599 2.7808 4.20887 1.1136 2.19017C0.2424 3.66698 0.688 5.55553 2.1304 6.50384C1.608 6.48887 1.0968 6.3504 0.64 6.09993V6.14095C0.6408 7.67921 1.7424 9.00372 3.2736 9.30853C2.7904 9.43849 2.2832 9.45733 1.792 9.36361C2.2216 10.6805 3.4544 11.5825 4.8584 11.6085C3.696 12.508 2.26 12.9964 0.7816 12.9949C0.5208 12.9941 0.26 12.9791 0 12.9484C1.5016 13.8967 3.248 14.4 5.032 14.3976" fill-rule="evenodd" clip-rule="evenodd" fill="#F9F9F9"/>
-                                  </svg>
-                                </td>
-                              </tr>
-                            </table>
+                            <img src="${assetBaseUrl}/images/email/icons/social-twitter.png" alt="Twitter" width="36" height="36" style="display: block; width: 36px; height: 36px; border: 0; border-radius: 50%;" />
                           </a>
                         </td>
 
                         <!-- Instagram -->
                         <td style="padding: 0 7px;">
                           <a href="https://instagram.com/localbuka" target="_blank" style="text-decoration: none; display: inline-block;">
-                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="36" height="36" bgcolor="#5C5C5C" style="background-color: #5C5C5C; border-radius: 50%; text-align: center; width: 36px; height: 36px;">
-                              <tr>
-                                <td align="center" valign="middle" style="width: 36px; height: 36px; text-align: center; vertical-align: middle;">
-                                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto;">
-                                    <path d="M12.4004 4.3999H7.60039C5.83308 4.3999 4.40039 5.83259 4.40039 7.5999V12.3999C4.40039 14.1672 5.83308 15.5999 7.60039 15.5999H12.4004C14.1677 15.5999 15.6004 14.1672 15.6004 12.3999V7.5999C15.6004 5.83259 14.1677 4.3999 12.4004 4.3999Z" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" stroke="#F9F9F9"/>
-                                    <path d="M9.99961 12.4001C8.67409 12.4001 7.59961 11.3256 7.59961 10.0001C7.59961 8.67458 8.67409 7.6001 9.99961 7.6001C11.3251 7.6001 12.3996 8.67458 12.3996 10.0001C12.3996 10.6366 12.1467 11.2471 11.6966 11.6971C11.2466 12.1472 10.6361 12.4001 9.99961 12.4001Z" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" stroke="#F9F9F9"/>
-                                    <path d="M13.2004 6.0001C12.7586 6.0001 12.4004 6.35827 12.4004 6.8001C12.4004 7.24193 12.7586 7.6001 13.2004 7.6001C13.6422 7.6001 14.0004 7.24193 14.0004 6.8001C14.0004 6.35827 13.6422 6.0001 13.2004 6.0001Z" fill="#F9F9F9"/>
-                                  </svg>
-                                </td>
-                              </tr>
-                            </table>
+                            <img src="${assetBaseUrl}/images/email/icons/social-instagram.png" alt="Instagram" width="36" height="36" style="display: block; width: 36px; height: 36px; border: 0; border-radius: 50%;" />
                           </a>
                         </td>
 
                         <!-- YouTube -->
                         <td style="padding: 0 7px;">
                           <a href="https://youtube.com/@localbuka" target="_blank" style="text-decoration: none; display: inline-block;">
-                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="36" height="36" bgcolor="#5C5C5C" style="background-color: #5C5C5C; border-radius: 50%; text-align: center; width: 36px; height: 36px;">
-                              <tr>
-                                <td align="center" valign="middle" style="width: 36px; height: 36px; text-align: center; vertical-align: middle;">
-                                  <svg width="17" height="13" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto;">
-                                    <path d="M6.39075 7.66889V3.17944C7.98452 3.92938 9.21887 4.65384 10.6788 5.43491C9.47467 6.10268 7.98452 6.85193 6.39075 7.66889ZM15.2728 0.946627C14.9979 0.584419 14.5293 0.302471 14.0305 0.209127C12.5642 -0.0693129 3.41679 -0.0701049 1.95132 0.209127C1.55129 0.284119 1.19507 0.465386 0.889066 0.747018C-0.40029 1.94374 0.00373294 8.36136 0.314518 9.40092C0.445206 9.85089 0.614152 10.1754 0.82692 10.3884C1.10105 10.67 1.47637 10.864 1.90749 10.9509C3.11476 11.2006 9.33443 11.3403 14.005 10.9884C14.4353 10.9134 14.8162 10.7133 15.1166 10.4197C16.3087 9.22774 16.2275 2.44971 15.2728 0.946627Z" fill-rule="evenodd" clip-rule="evenodd" fill="#F9F9F9"/>
-                                  </svg>
-                                </td>
-                              </tr>
-                            </table>
+                            <img src="${assetBaseUrl}/images/email/icons/social-youtube.png" alt="YouTube" width="36" height="36" style="display: block; width: 36px; height: 36px; border: 0; border-radius: 50%;" />
                           </a>
                         </td>
 
                         <!-- Facebook -->
                         <td style="padding: 0 7px;">
                           <a href="https://facebook.com/localbuka" target="_blank" style="text-decoration: none; display: inline-block;">
-                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="36" height="36" bgcolor="#5C5C5C" style="background-color: #5C5C5C; border-radius: 50%; text-align: center; width: 36px; height: 36px;">
-                              <tr>
-                                <td align="center" valign="middle" style="width: 36px; height: 36px; text-align: center; vertical-align: middle;">
-                                  <svg width="9" height="17" viewBox="0 0 8 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; margin: 0 auto;">
-                                    <path d="M5.45703 16V8.8H7.64294L8 5.6H5.45703V4.04141C5.45703 3.21741 5.47808 2.4 6.62952 2.4H7.79575V0.112109C7.79575 0.0777094 6.79399 0 5.78054 0C3.664 0 2.33872 1.32576 2.33872 3.76016V5.6H0V8.8H2.33872V16H5.45703Z" fill-rule="evenodd" clip-rule="evenodd" fill="#F9F9F9"/>
-                                  </svg>
-                                </td>
-                              </tr>
-                            </table>
+                            <img src="${assetBaseUrl}/images/email/icons/social-facebook.png" alt="Facebook" width="36" height="36" style="display: block; width: 36px; height: 36px; border: 0; border-radius: 50%;" />
                           </a>
                         </td>
                       </tr>

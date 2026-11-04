@@ -66,7 +66,7 @@ export function renderWelcomeEmail(data: EmailDynamicData = {}): EmailRenderResu
           </p>
           <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="mobile-btn">
             <tr>
-              <td align="center" bgcolor="#FBBE15" style="border-radius: 8px; background-color: #FBBE15;">
+              <td align="center" bgcolor="#FBBE15" style="border-radius: 8px; background-color: #FBBE15; background-image: linear-gradient(#FBBE15, #FBBE15);">
                 <a href="${exploreUrl}" target="_blank" style="display: inline-block; padding: 14px 28px; font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: #0A182F; text-transform: uppercase; text-decoration: none; border-radius: 8px; font-family: 'Plus Jakarta Sans', Arial, sans-serif;">
                   EXPLORE FOOD SPOTS
                 </a>

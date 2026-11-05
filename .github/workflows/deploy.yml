@@ -10,17 +10,28 @@ jobs:
   validate-actor:
     runs-on: ubuntu-latest
     steps:
-      - name: Check user permissions for main branch
-        if: github.ref_name == 'main'
+      - name: Check user permissions
         run: |
-          ALLOWED_USERS="codydematth TobiAkinkuotu LocalbukaTech"
-          ACTOR="${{ github.actor }}"
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            ALLOWED_USERS="codydematth TobiAkinkuotu LocalbukaTech tobiakinkuotu github-actions[bot]"
+            ACTOR="${{ github.actor }}"
 
-          if [[ ! " $ALLOWED_USERS " =~ " $ACTOR " ]]; then
-            echo "❌ Error: User '$ACTOR' is not permitted to push directly to the main branch."
-            exit 1
+            matched=false
+            for u in $ALLOWED_USERS; do
+              if [ "$(echo "$u" | tr '[:upper:]' '[:lower:]')" = "$(echo "$ACTOR" | tr '[:upper:]' '[:lower:]')" ]; then
+                matched=true
+                break
+              fi
+            done
+
+            if [ "$matched" = false ]; then
+              echo "❌ Error: User '$ACTOR' is not permitted to push directly to the main branch."
+              exit 1
+            fi
+            echo "✅ Authorization successful for user '$ACTOR' on main."
+          else
+            echo "✅ Branch '${{ github.ref_name }}' does not require main-branch restriction."
           fi
-          echo "✅ Authorization successful for user '$ACTOR'."
 
   deploy:
     needs: validate-actor

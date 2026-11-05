@@ -9,8 +9,10 @@ import {useRouter} from 'next/navigation';
 import {getUser, isUserAuthenticated, logoutUser} from '@/lib/auth';
 import {setAnalyticsUser} from '@/lib/analytics';
 import {LogOut, User as UserIcon} from 'lucide-react';
+import {useTranslation} from '@/context/LanguageContext';
 
 export function Navbar() {
+  const {t} = useTranslation();
   const [user, setUser] = useState<{fullName?: string} | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
@@ -122,12 +124,12 @@ export function Navbar() {
                       onClick={() => router.push('/signin')}
                       variant='ghost'
                       className='text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 cursor-pointer'>
-                      Login
+                      {t('auth.login', 'Login')}
                     </Button>
                     <Button
                       onClick={() => router.push('/signup')}
                       className='bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm px-5 py-2 cursor-pointer'>
-                      Sign Up
+                      {t('auth.signUp', 'Sign Up')}
                     </Button>
                   </>
                 )}

@@ -2,13 +2,13 @@
 
 import {useMemo} from 'react';
 import {BarChart3, Users, ListCheck, FileText, Loader2} from 'lucide-react';
-import {useTeamsQuery} from '@/lib/api/services/teams.hooks';
+import {useAdminTeamsQuery} from '@/lib/api/services/teams.hooks';
 import {useWaitlistQuery} from '@/lib/api/services/waitlist.hooks';
 import {useBlogsQuery} from '@/lib/api/services/blog.hooks';
 
 const Dashboard = () => {
   // Fetch all teams to count departments (using a large size to get all)
-  const {data: teamsData, isLoading: teamsLoading} = useTeamsQuery({
+  const {data: teamsData, isLoading: teamsLoading} = useAdminTeamsQuery({
     page: 1,
     size: 100,
   });

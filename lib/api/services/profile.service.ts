@@ -62,4 +62,50 @@ export const profileService = {
   getFollowers: (id: string, params?: {page?: number; limit?: number}) => {
     return api.get<ApiResponse<any>>(`/users/${id}/followers`, {params});
   },
+
+  /** POST /users/:id/block — Block a user */
+  blockUser: (id: string) => {
+    return api.post<ApiResponse<{
+      isBlocked: boolean;
+      blockerId: string;
+      blockedId: string;
+      message: string;
+    }>>(`/users/${id}/block`);
+  },
+
+  /** DELETE /users/:id/block — Unblock a user */
+  unblockUser: (id: string) => {
+    return api.delete<ApiResponse<{
+      isBlocked: boolean;
+      blockerId: string;
+      blockedId: string;
+      message: string;
+    }>>(`/users/${id}/block`);
+  },
+
+  /** GET /users/me/blocked — Get list of blocked users */
+  getBlockedUsers: (params?: { page?: number; pageSize?: number }) => {
+    return api.get<ApiResponse<{
+      data: Array<{
+        id: string;
+        fullName: string;
+        username?: string;
+        avatar?: string | null;
+        blockedAt: string;
+      }>;
+      total: number;
+      page: number;
+      pageSize: number;
+      totalPages: number;
+    }>>('/users/me/blocked', { params });
+  },
+
+  /** GET /users/:id/block-status — Get block status relative to target user */
+  getBlockStatus: (id: string) => {
+    return api.get<ApiResponse<{
+      hasBlocked: boolean;
+      isBlockedBy: boolean;
+      isBlocked: boolean;
+    }>>(`/users/${id}/block-status`);
+  },
 };

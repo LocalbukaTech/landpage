@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import {
-  useTeamsQuery,
+  useAdminTeamsQuery,
   useDeleteTeamMutation,
   useUpdateTeamMutation,
   useUpdateTeamStatusMutation,
@@ -95,7 +95,7 @@ const TeamsPage = () => {
     return params;
   };
 
-  const {data, isLoading, isError} = useTeamsQuery(getQueryParams());
+  const {data, isLoading, isError} = useAdminTeamsQuery(getQueryParams());
   const teams: Team[] = data?.data.docs ?? [];
   const totalPages = data?.data.total_pages ?? 1;
   const totalDocs = data?.data.total_docs ?? 0;

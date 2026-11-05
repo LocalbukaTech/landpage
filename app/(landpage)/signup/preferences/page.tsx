@@ -8,9 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSavePreferencesMutation } from '@/lib/api/services/auth.hooks';
 import confetti from 'canvas-confetti';
 import { getSafeRedirectUrl } from '@/lib/utils';
+import { useTranslation, SupportedLanguage } from '@/context/LanguageContext';
 
 // Steps list
-type OnboardingStep = 'preferences' | 'slide1' | 'slide2' | 'slide3' | 'welcome';
+type OnboardingStep = 'preferences' | 'slide1' | 'slide2' | 'slide3' | 'language' | 'welcome';
 
 // Grid of 4 options for food preferences step
 const preferenceOptions = [
@@ -48,6 +49,8 @@ const PreferencesContent = () => {
   });
   const [direction, setDirection] = useState<number>(1); // For slide transitions direction
   const [selectedPrefs, setSelectedPrefs] = useState<string[]>([]);
+  const { setLanguage } = useTranslation();
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage | ''>('');
 
   const savePreferencesMutation = useSavePreferencesMutation();
 
@@ -343,10 +346,9 @@ const PreferencesContent = () => {
                   Post your meal, tag the spot, and help others discover it.
                 </p>
 
-                {/* Finish button & Skip subtext */}
                 <div className="w-[70%] px-6 flex flex-col items-center">
                   <button
-                    onClick={() => goToStep('welcome')}
+                    onClick={() => goToStep('language')}
                     className="w-full py-3 bg-[#fbbe15] hover:opacity-90 active:scale-[0.99] text-[#0A1F44] font-bold rounded-xl transition-all text-sm sm:text-base shadow-sm cursor-pointer"
                   >
                     Finish
@@ -365,6 +367,76 @@ const PreferencesContent = () => {
                   <span className="w-2 h-2 rounded-full bg-[#fbbe15]" />
                   <span className="w-2 h-2 rounded-full bg-[#fbbe15]" />
                   <span className="w-2 h-2 rounded-full bg-[#fbbe15]" />
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 4.5: LANGUAGE SELECTION */}
+            {step === 'language' && (
+              <motion.div
+                key="language"
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                className="w-full max-w-xl flex flex-col items-center justify-center"
+              >
+                <div className="w-full max-w-sm bg-white dark:bg-[#1a1a1a] rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.1)] dark:shadow-none dark:border dark:border-gray-800 p-8 flex flex-col items-center">
+                  <h2 className="text-xl font-bold text-[#0A1F44] dark:text-white mb-6">
+                    Select Language
+                  </h2>
+                  
+                  <div className="w-full flex flex-col gap-4 mb-8">
+                    {[
+                      { id: 'en', label: 'English', flag: '🇬🇧' },
+                      { id: 'pcm', label: 'Pidgin', flag: '🇳🇬' },
+                      { id: 'fr', label: 'French', flag: '🇫🇷' },
+                      { id: 'es', label: 'Spanish', flag: '🇪🇸' },
+                      { id: 'de', label: 'German', flag: '🇩🇪' },
+                      { id: 'pt', label: 'Portuguese', flag: '🇵🇹' },
+                    ].map((lang) => (
+                      <label
+                        key={lang.id}
+                        className="flex items-center justify-between w-full cursor-pointer group px-2"
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="text-2xl">{lang.flag}</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {lang.label}
+                          </span>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedLanguage === lang.id ? 'border-[#fbbe15]' : 'border-gray-300 dark:border-gray-600'}`}>
+                          {selectedLanguage === lang.id && (
+                            <div className="w-2.5 h-2.5 rounded-full bg-[#fbbe15]" />
+                          )}
+                        </div>
+                        <input
+                          type="radio"
+                          name="language"
+                          value={lang.id}
+                          checked={selectedLanguage === lang.id}
+                          onChange={() => setSelectedLanguage(lang.id as SupportedLanguage)}
+                          className="hidden"
+                        />
+                      </label>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (selectedLanguage) setLanguage(selectedLanguage);
+                      goToStep('welcome');
+                    }}
+                    disabled={!selectedLanguage}
+                    className={`w-full py-3.5 font-bold rounded-xl transition-all text-sm shadow-sm flex items-center justify-center ${
+                      selectedLanguage
+                        ? 'bg-[#fbbe15] hover:opacity-90 active:scale-[0.99] text-[#0A1F44] cursor-pointer'
+                        : 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Continue
+                  </button>
                 </div>
               </motion.div>
             )}

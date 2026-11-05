@@ -7,6 +7,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-nunito-sans);
+  --font-plus-jakarta-sans: var(--font-plus-jakarta-sans);
   --font-display: var(--font-display);
   --font-poppins: var(--font-poppins);
   --color-sidebar-ring: var(--sidebar-ring);

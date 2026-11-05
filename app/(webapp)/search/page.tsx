@@ -15,6 +15,7 @@ import {
   Play,
   ArrowLeft,
 } from 'lucide-react';
+import {BackCircleButton} from '@/components/ui/BackCircleButton';
 import Image from 'next/image';
 import Link from 'next/link';
 import {MainLayout} from '@/components/layout/MainLayout';
@@ -220,12 +221,7 @@ function SearchContent({
       <div className='w-full max-w-2xl mx-auto px-4 pt-2 pb-6 flex flex-col gap-5'>
         {/* Mobile back button row */}
         <div className='flex items-center gap-3 md:hidden'>
-          <button
-            onClick={() => router.back()}
-            className='w-9 h-9 flex items-center justify-center rounded-full border border-white/20 text-white shrink-0 bg-transparent'
-            aria-label='Go back'>
-            <ArrowLeft size={18} />
-          </button>
+          <BackCircleButton onClick={() => router.back()} size={24} />
           <span className='text-white font-semibold text-base'>Search</span>
         </div>
 

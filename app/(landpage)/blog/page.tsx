@@ -10,6 +10,7 @@ import {ChevronLeft, ChevronRight, Loader2, FileText} from 'lucide-react';
 import {useBlogsQuery} from '@/lib/api/services/blog.hooks';
 import {format} from 'date-fns';
 import {stripHtmlContent} from '@/lib/utils';
+import {BlogAdCard} from '@/components/ads/BlogAdCard';
 
 const POSTS_PER_PAGE = 9;
 
@@ -100,9 +101,55 @@ const BlogPage = () => {
             <div className='max-w-7xl mx-auto'>
               {blogs.length > 0 ? (
                 <>
-                  {/* Blog Grid */}
+                  {/* Blog Cards Grid with Inline Native Ad */}
                   <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10'>
-                    {blogs.map((post) => (
+                    {blogs.slice(0, 3).map((post) => (
+                      <Link
+                        key={post.id}
+                        href={`/blog/${post.slug}`}
+                        className='group'>
+                        <article>
+                          {/* Image */}
+                          <div className='relative aspect-4/3 rounded-2xl overflow-hidden mb-4 bg-gray-100 dark:bg-gray-800'>
+                            {post.image_url ? (
+                              <Image
+                                src={post.image_url}
+                                alt={post.title}
+                                fill
+                                className='object-cover transition-transform duration-300 group-hover:scale-105'
+                              />
+                            ) : (
+                              <div className='flex items-center justify-center w-full h-full text-gray-400'>
+                                <FileText className='w-12 h-12' />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Content */}
+                          <div className='space-y-2'>
+                            <div className='flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400'>
+                              <span>{formatDate(post.created_at)}</span>
+                              <span>•</span>
+                              <span className='bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded'>
+                                {post.category || 'General'}
+                              </span>
+                            </div>
+                            <h2 className='text-lg md:text-xl font-bold text-[#0A1F44] dark:text-white leading-tight group-hover:text-primary transition-colors line-clamp-2'>
+                              {post.title}
+                            </h2>
+                            <p className='text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3'>
+                              {stripHtmlContent(post.content)}
+                            </p>
+                          </div>
+                        </article>
+                      </Link>
+                    ))}
+
+                    {/* Inline Ad Card */}
+                    <BlogAdCard slot='4012538754' />
+
+                    {/* Remaining Blog Cards */}
+                    {blogs.slice(3).map((post) => (
                       <Link
                         key={post.id}
                         href={`/blog/${post.slug}`}

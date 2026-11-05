@@ -27,4 +27,8 @@ export { AdminSidebar } from "@/components/admin/AdminSidebar";
 export { AdminHeader } from "@/components/admin/AdminHeader";
 export { UserManagementPage } from "@/components/admin/user-management/UserManagementPage";
 
+// Ad Components
+export { InFeedAd } from "@/components/ads/InFeedAd";
+export { AdFeedCard } from "@/components/video/AdFeedCard";
+
 

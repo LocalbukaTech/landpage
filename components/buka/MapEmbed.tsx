@@ -546,10 +546,24 @@ export function MapEmbed({
         scrollWheelZoom={false} // We handle this with a custom handler for Cmd/Ctrl
       >
         <MapZoomHandler />
-        <TileLayer
-          attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url='https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-        />
+        {(() => {
+          const cartoKey = process.env.NEXT_PUBLIC_CARTO_API_KEY;
+          const tileUrl = cartoKey
+            ? `https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`
+            : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+          const attribution = cartoKey
+            ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+          return (
+            <TileLayer
+              attribution={attribution}
+              url={tileUrl}
+              subdomains={cartoKey ? 'abcd' : 'abc'}
+              maxZoom={20}
+            />
+          );
+        })()}
 
         {/* Destination Marker — LocalBuka Logo */}
         <Marker position={destination} icon={restaurantIcon!} />

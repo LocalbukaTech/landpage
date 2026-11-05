@@ -1,0 +1,835 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
+import {
+  Upload,
+  MapPin,
+  Tag,
+  Hash,
+  Heart,
+  MessageCircle,
+  Bookmark,
+  Share2,
+  MoreHorizontal,
+  X,
+  Edit2,
+  Trash2,
+  MessageSquareOff,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
+import { CommunityPost } from "./types";
+
+interface ContentManagementTabProps {
+  communityName?: string;
+}
+
+const INITIAL_POSTS: CommunityPost[] = [
+  {
+    id: "post-1",
+    communityName: "Chef Tolu's kitchen",
+    communityAvatar:
+      "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
+    authorName: "Chef Tolu",
+    authorHandle: "@chef_tolu",
+    authorAvatar:
+      "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
+    timestamp: "3h",
+    caption:
+      "Tried jollof with smoked paprika this time, unexpectedly good. Anyone else experiment with theirs?",
+    mediaUrl:
+      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
+    likes: "24k",
+    comments: "4k",
+    bookmarks: "4k",
+    shares: "Share",
+    isLiked: false,
+    isBookmarked: false,
+  },
+  {
+    id: "post-2",
+    communityName: "Chef Tolu's kitchen",
+    communityAvatar:
+      "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
+    authorName: "Chef Tolu",
+    authorHandle: "@chef_tolu",
+    authorAvatar:
+      "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
+    timestamp: "2d",
+    caption:
+      "Cooked myself a treat, double bacon cheeseburger! What are you making today!",
+    mediaUrl:
+      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80",
+    likes: "18k",
+    comments: "3.2k",
+    bookmarks: "2.8k",
+    shares: "Share",
+    isLiked: false,
+    isBookmarked: false,
+  },
+];
+
+// Sample uploaded grilled chicken dish from Image 3 & 5
+const SAMPLE_UPLOADED_IMAGE =
+  "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=1200&q=80";
+
+const ONE_GB_BYTES = 1024 * 1024 * 1024;
+
+export function ContentManagementTab({
+  communityName = "Chef Tolu's kitchen",
+}: ContentManagementTabProps) {
+  // File upload states
+  const [uploadedMedia, setUploadedMedia] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [caption, setCaption] = useState("");
+  const [location, setLocation] = useState("Island, Lekki");
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [showTagInput, setShowTagInput] = useState(false);
+  const [hashtagInput, setHashtagInput] = useState("");
+  const [hashtags, setHashtags] = useState<string[]>([]);
+  const [showHashtagInput, setShowHashtagInput] = useState(false);
+
+  // Posts state
+  const [posts, setPosts] = useState<CommunityPost[]>(INITIAL_POSTS);
+  const [activeMenuPostId, setActiveMenuPostId] = useState<string | null>(null);
+  const [disabledCommentsPostIds, setDisabledCommentsPostIds] = useState<
+    string[]
+  >([]);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPosting, setIsPosting] = useState(false);
+
+  // Simulate data loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close context menu on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setActiveMenuPostId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > ONE_GB_BYTES) {
+        setUploadError("Files larger than 1GB can't be uploaded");
+        setUploadedMedia(null);
+        return;
+      }
+      setUploadError(null);
+      const url = URL.createObjectURL(file);
+      setUploadedMedia(url);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (file.size > ONE_GB_BYTES) {
+        setUploadError("Files larger than 1GB can't be uploaded");
+        setUploadedMedia(null);
+        return;
+      }
+      setUploadError(null);
+      const url = URL.createObjectURL(file);
+      setUploadedMedia(url);
+    }
+  };
+
+  const nextPostIdRef = useRef(3);
+
+  const handlePost = () => {
+    if (!uploadedMedia && !caption.trim()) {
+      showToast("Please upload an image or write a caption before posting.");
+      return;
+    }
+
+    const nextId = nextPostIdRef.current++;
+    const newPost: CommunityPost = {
+      id: `post-${nextId}`,
+      communityName,
+      communityAvatar:
+        "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
+      authorName: "Chef Tolu",
+      authorHandle: "@chef_tolu",
+      authorAvatar:
+        "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
+      timestamp: "Just now",
+      caption: caption || "Cooked some good food tonight!",
+      mediaUrl: uploadedMedia || SAMPLE_UPLOADED_IMAGE,
+      likes: "0",
+      comments: "0",
+      bookmarks: "0",
+      shares: "Share",
+      isLiked: false,
+      isBookmarked: false,
+    };
+
+    // Show spinner overlay
+    setIsPosting(true);
+
+    setTimeout(() => {
+      setPosts([newPost, ...posts]);
+      setUploadedMedia(null);
+      setUploadError(null);
+      setCaption("");
+      setIsPosting(false);
+      showToast("Post published successfully to community feed!");
+    }, 2000);
+  };
+
+  const handleDraft = () => {
+    showToast("Draft saved successfully!");
+  };
+
+  const handleDiscard = () => {
+    setUploadedMedia(null);
+    setUploadError(null);
+    setCaption("");
+    setTags([]);
+    setHashtags([]);
+    showToast("Upload and caption discarded.");
+  };
+
+  const showToast = (msg: string) => {
+    setFeedbackMessage(msg);
+    setTimeout(() => {
+      setFeedbackMessage(null);
+    }, 3500);
+  };
+
+  const toggleLike = (postId: string) => {
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        return {
+          ...p,
+          isLiked: !p.isLiked,
+        };
+      })
+    );
+  };
+
+  const toggleBookmark = (postId: string) => {
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id !== postId) return p;
+        return {
+          ...p,
+          isBookmarked: !p.isBookmarked,
+        };
+      })
+    );
+  };
+
+  const handleDeletePost = (postId: string) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    setActiveMenuPostId(null);
+    showToast("Post deleted from feed.");
+  };
+
+  const toggleTurnOffComments = (postId: string) => {
+    setDisabledCommentsPostIds((prev) =>
+      prev.includes(postId)
+        ? prev.filter((id) => id !== postId)
+        : [...prev, postId]
+    );
+    setActiveMenuPostId(null);
+    showToast("Post comments setting updated.");
+  };
+
+  // Demo switcher for developer testing of all states in user screenshots
+  const setDemoState = (type: "empty" | "error" | "preview") => {
+    if (type === "empty") {
+      setUploadedMedia(null);
+      setUploadError(null);
+      setCaption("");
+    } else if (type === "error") {
+      setUploadedMedia(null);
+      setUploadError("Files larger than 1GB can't be uploaded");
+    } else {
+      setUploadError(null);
+      setUploadedMedia(SAMPLE_UPLOADED_IMAGE);
+      setCaption(
+        "Cooked some good food tonight, tap the link on my bio for the recepies"
+      );
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────
+  // LOADING / SKELETON STATE (Figma Content Management Loading)
+  // ─────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="w-full text-white pt-2">
+        {/* Toggle for reviewer */}
+        <div className="flex justify-end mb-4" style={{ maxWidth: '882px' }}>
+          <button
+            type="button"
+            onClick={() => setIsLoading(false)}
+            className="text-xs text-white/50 hover:text-[#FBBE15] transition-colors underline cursor-pointer"
+          >
+            Skip to filled state
+          </button>
+        </div>
+
+        <div className="space-y-0">
+          {/* Skeleton Box 1: Upload area (882x424, r:40) */}
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '882px',
+              height: '424px',
+              borderRadius: '40px',
+              backgroundColor: '#1E1E22',
+              border: '1px solid rgba(255, 255, 255, 0.04)',
+            }}
+            className="flex flex-col items-center justify-center shadow-lg relative"
+          >
+            {/* Pill inside Box 1 (207x43, r:100) */}
+            <div
+              style={{
+                width: '207px',
+                height: '43px',
+                borderRadius: '100px',
+                backgroundColor: '#2A2A2E',
+              }}
+              className="animate-pulse"
+            />
+          </div>
+
+          {/* Skeleton Box 2: Caption area (882x205, r:20, mt:28px) */}
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '882px',
+              height: '205px',
+              borderRadius: '20px',
+              backgroundColor: '#1E1E22',
+              border: '1px solid rgba(255, 255, 255, 0.04)',
+              marginTop: '28px',
+            }}
+            className="shadow-lg animate-pulse"
+          />
+
+          {/* 3 Action Pill Skeletons (244x48 each, r:100, gap:22px) */}
+          <div
+            className="flex items-center"
+            style={{
+              maxWidth: '776px',
+              gap: '22px',
+              marginTop: '24px',
+            }}
+          >
+            {[1, 2, 3].map((pill) => (
+              <div
+                key={pill}
+                style={{
+                  width: '244px',
+                  height: '48px',
+                  borderRadius: '100px',
+                  backgroundColor: '#1E1E22',
+                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                }}
+                className="animate-pulse"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-[680px] text-white space-y-7 pt-2">
+      {/* Posting Spinner Overlay (339x339 SpinnerGap, blurred backdrop) */}
+      {isPosting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}>
+          <div
+            className="animate-spin"
+            style={{ width: '339px', height: '339px', animationDuration: '1.2s' }}
+          >
+            <svg width="339" height="339" viewBox="0 0 339 339" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M177.445 42.375V84.75C177.445 86.8572 176.608 88.8781 175.118 90.3682C173.628 91.8582 171.607 92.6953 169.5 92.6953C167.393 92.6953 165.372 91.8582 163.882 90.3682C162.392 88.8781 161.555 86.8572 161.555 84.75V42.375C161.555 40.2678 162.392 38.2468 163.882 36.7568C165.372 35.2668 167.393 34.4297 169.5 34.4297C171.607 34.4297 173.628 35.2668 175.118 36.7568C176.608 38.2468 177.445 40.2678 177.445 42.375ZM296.625 161.555H254.25C252.143 161.555 250.122 162.392 248.632 163.882C247.142 165.372 246.305 167.393 246.305 169.5C246.305 171.607 247.142 173.628 248.632 175.118C250.122 176.608 252.143 177.445 254.25 177.445H296.625C298.732 177.445 300.753 176.608 302.243 175.118C303.733 173.628 304.57 171.607 304.57 169.5C304.57 167.393 303.733 165.372 302.243 163.882C300.753 162.392 298.732 161.555 296.625 161.555ZM235.049 223.793C233.556 222.3 231.532 221.462 229.421 221.462C227.31 221.462 225.286 222.3 223.793 223.793C222.3 225.286 221.462 227.31 221.462 229.421C221.462 231.532 222.3 233.556 223.793 235.049L253.76 265.003C255.266 266.406 257.258 267.17 259.317 267.134C261.375 267.098 263.339 266.264 264.795 264.808C266.25 263.352 267.084 261.388 267.121 259.33C267.157 257.272 266.393 255.279 264.989 253.773L235.049 223.793ZM169.5 246.305C167.393 246.305 165.372 247.142 163.882 248.632C162.392 250.122 161.555 252.143 161.555 254.25V296.625C161.555 298.732 162.392 300.753 163.882 302.243C165.372 303.733 167.393 304.57 169.5 304.57C171.607 304.57 173.628 303.733 175.118 302.243C176.608 300.753 177.445 298.732 177.445 296.625V254.25C177.445 252.143 176.608 250.122 175.118 248.632C173.628 247.142 171.607 246.305 169.5 246.305ZM103.951 223.793L73.9973 253.773C73.2167 254.501 72.5906 255.378 72.1564 256.352C71.7221 257.327 71.4886 258.379 71.4698 259.446C71.4509 260.513 71.6472 261.572 72.0468 262.562C72.4464 263.551 73.0412 264.45 73.7957 265.204C74.5501 265.959 75.4488 266.554 76.4382 266.953C77.4275 267.353 78.4872 267.549 79.554 267.53C80.6208 267.511 81.6729 267.278 82.6475 266.844C83.6222 266.409 84.4993 265.783 85.2267 265.003L115.207 235.049C115.946 234.31 116.532 233.432 116.932 232.467C117.332 231.501 117.538 230.466 117.538 229.421C117.538 228.376 117.332 227.341 116.932 226.375C116.532 225.409 115.946 224.532 115.207 223.793C114.468 223.054 113.591 222.468 112.625 222.068C111.659 221.668 110.624 221.462 109.579 221.462C108.534 221.462 107.499 221.668 106.533 222.068C105.568 222.468 104.69 223.054 103.951 223.793ZM92.6953 169.5C92.6953 167.393 91.8582 165.372 90.3682 163.882C88.8781 162.392 86.8572 161.555 84.75 161.555H42.375C40.2678 161.555 38.2468 162.392 36.7568 163.882C35.2668 165.372 34.4297 167.393 34.4297 169.5C34.4297 171.607 35.2668 173.628 36.7568 175.118C38.2468 176.608 40.2678 177.445 42.375 177.445H84.75C86.8572 177.445 88.8781 176.608 90.3682 175.118C91.8582 173.628 92.6953 171.607 92.6953 169.5ZM85.2267 73.9973C83.7206 72.5939 81.7284 71.8298 79.6701 71.8661C77.6117 71.9025 75.6478 72.7363 74.192 74.192C72.7363 75.6478 71.9025 77.6117 71.8661 79.6701C71.8298 81.7284 72.5939 83.7206 73.9973 85.2267L103.951 115.207C105.444 116.7 107.468 117.538 109.579 117.538C111.69 117.538 113.714 116.7 115.207 115.207C116.7 113.714 117.538 111.69 117.538 109.579C117.538 107.468 116.7 105.444 115.207 103.951L85.2267 73.9973Z" fill="#FBBE15"/>
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* Toast alert */}
+      {feedbackMessage && (
+        <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-[#f5c94d] px-5 py-3 text-sm font-semibold text-black shadow-xl animate-in slide-in-from-top duration-200">
+          <Check className="h-4 w-4" />
+          <span>{feedbackMessage}</span>
+        </div>
+      )}
+
+      {/* Upload File Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base md:text-lg font-semibold text-white">
+            Upload File
+          </h2>
+          {/* Quick toggle to cycle between Screenshot 2, 4, and 5 */}
+          <div className="flex items-center gap-2 text-xs text-white/50">
+            <span>Demo state:</span>
+            <button
+              type="button"
+              onClick={() => setDemoState("empty")}
+              className={`hover:text-[#f5c94d] transition-colors underline ${
+                !uploadedMedia && !uploadError ? "text-[#f5c94d] font-semibold" : ""
+              }`}
+            >
+              Default
+            </button>
+            <span>·</span>
+            <button
+              type="button"
+              onClick={() => setDemoState("error")}
+              className={`hover:text-[#f5c94d] transition-colors underline ${
+                uploadError ? "text-red-400 font-semibold" : ""
+              }`}
+            >
+              &gt;1GB Error
+            </button>
+            <span>·</span>
+            <button
+              type="button"
+              onClick={() => setDemoState("preview")}
+              className={`hover:text-[#f5c94d] transition-colors underline ${
+                uploadedMedia ? "text-[#f5c94d] font-semibold" : ""
+              }`}
+            >
+              Uploaded
+            </button>
+          </div>
+        </div>
+
+        {/* Hidden File Input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,video/*,audio/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+
+        {/* Upload Container States */}
+        {uploadError ? (
+          /* Error State (>1GB, Matching Screenshot 4) */
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            className="w-full rounded-[24px] bg-[#1a1a1a] border border-red-500/80 py-12 md:py-16 px-6 flex flex-col items-center justify-center text-center shadow-lg transition-all"
+          >
+            {/* Red Alert Triangle Icon */}
+            <div className="mb-4 text-red-500">
+              <AlertTriangle className="h-16 w-16 fill-red-500 stroke-red-500 stroke-1" />
+            </div>
+
+            {/* Error text */}
+            <p className="text-sm md:text-base font-medium text-white mb-6">
+              {uploadError}
+            </p>
+
+            {/* Browse File Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-full bg-[#f5c94d] px-8 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md"
+            >
+              Browse File
+            </button>
+          </div>
+        ) : !uploadedMedia ? (
+          /* Empty state (Matching Screenshot 2) */
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+            className="w-full rounded-[24px] bg-[#1a1a1a] border border-white/5 py-12 md:py-16 px-6 flex flex-col items-center justify-center text-center shadow-lg transition-all"
+          >
+            {/* Upload Icon */}
+            <div className="mb-4 text-white">
+              <Upload className="h-10 w-10 stroke-[1.7]" />
+            </div>
+
+            {/* Helper Text */}
+            <p className="text-sm md:text-base font-medium text-white mb-6">
+              Max 1GB, PNG, JPEG, MP3 and MP4
+            </p>
+
+            {/* Browse File Button */}
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="rounded-full bg-[#f5c94d] px-8 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md"
+            >
+              Browse File
+            </button>
+          </div>
+        ) : (
+          /* Uploaded Preview state (Matching Screenshot 5) */
+          <div className="relative w-full rounded-[24px] overflow-hidden bg-[#1a1a1a] border border-white/5 shadow-lg group">
+            <div className="relative h-64 md:h-80 w-full">
+              <Image
+                src={uploadedMedia}
+                alt="Uploaded food media"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 680px"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setUploadedMedia(null)}
+              className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/90 transition-colors backdrop-blur-sm"
+              title="Remove image"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Caption Container */}
+        <div className="rounded-[24px] bg-[#1a1a1a] border border-white/5 p-4 md:p-5 shadow-lg space-y-4">
+          <textarea
+            rows={3}
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            placeholder="Create caption"
+            className="w-full bg-transparent text-sm md:text-[15px] text-white placeholder-white/30 focus:outline-none resize-none leading-relaxed"
+          />
+
+          {/* Tags / Location chips row inside caption card */}
+          <div className="flex flex-wrap items-center gap-3 pt-2 text-xs md:text-sm text-white/90">
+            {/* Location */}
+            <div className="flex items-center gap-1.5 cursor-pointer hover:text-[#f5c94d] transition-colors">
+              <MapPin className="h-4 w-4 text-[#f5c94d]" />
+              {isEditingLocation ? (
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  onBlur={() => setIsEditingLocation(false)}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && setIsEditingLocation(false)
+                  }
+                  autoFocus
+                  className="rounded bg-[#252525] px-2 py-0.5 text-xs text-white focus:outline-none"
+                />
+              ) : (
+                <span onClick={() => setIsEditingLocation(true)}>
+                  {location}
+                </span>
+              )}
+            </div>
+
+            {/* Tag User */}
+            <div className="flex items-center gap-1.5 cursor-pointer hover:text-[#f5c94d] transition-colors">
+              <Tag className="h-4 w-4 text-[#f5c94d]" />
+              {showTagInput ? (
+                <input
+                  type="text"
+                  placeholder="@username"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && tagInput.trim()) {
+                      setTags([...tags, tagInput.trim()]);
+                      setTagInput("");
+                      setShowTagInput(false);
+                    }
+                  }}
+                  onBlur={() => setShowTagInput(false)}
+                  autoFocus
+                  className="rounded bg-[#252525] px-2 py-0.5 text-xs text-white focus:outline-none"
+                />
+              ) : (
+                <span onClick={() => setShowTagInput(true)}>
+                  {tags.length > 0 ? tags.join(", ") : "Add @Tag"}
+                </span>
+              )}
+            </div>
+
+            {/* Hashtags */}
+            <div className="flex items-center gap-1.5 cursor-pointer hover:text-[#f5c94d] transition-colors">
+              <Hash className="h-4 w-4 text-[#f5c94d]" />
+              {showHashtagInput ? (
+                <input
+                  type="text"
+                  placeholder="#foodie"
+                  value={hashtagInput}
+                  onChange={(e) => setHashtagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && hashtagInput.trim()) {
+                      setHashtags([...hashtags, hashtagInput.trim()]);
+                      setHashtagInput("");
+                      setShowHashtagInput(false);
+                    }
+                  }}
+                  onBlur={() => setShowHashtagInput(false)}
+                  autoFocus
+                  className="rounded bg-[#252525] px-2 py-0.5 text-xs text-white focus:outline-none"
+                />
+              ) : (
+                <span onClick={() => setShowHashtagInput(true)}>
+                  {hashtags.length > 0 ? hashtags.join(" ") : "Hashtags"}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons Row (Draft, Post, Discard) */}
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            type="button"
+            onClick={handleDraft}
+            className="flex-1 sm:flex-none rounded-full bg-[#f5c94d] px-8 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all text-center shadow-md cursor-pointer"
+          >
+            Draft
+          </button>
+          <button
+            type="button"
+            onClick={handlePost}
+            className="flex-1 sm:flex-none rounded-full bg-[#f5c94d] px-10 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all text-center shadow-md cursor-pointer"
+          >
+            Post
+          </button>
+          <button
+            type="button"
+            onClick={handleDiscard}
+            className="flex-1 sm:flex-none rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-black hover:bg-neutral-200 active:scale-95 transition-all text-center shadow-md cursor-pointer"
+          >
+            Discard
+          </button>
+        </div>
+      </div>
+
+      {/* Posted Content Section */}
+      <div className="space-y-6 pt-4">
+        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+          Posted Content
+        </h2>
+
+        {/* Community Branding Header for Feed */}
+        <div className="flex items-center gap-3 pb-1">
+          <div className="relative h-9 w-9 rounded-full overflow-hidden">
+            <Image
+              src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80"
+              alt="Chef Tolu's Kitchen"
+              fill
+              className="object-cover"
+              sizes="36px"
+            />
+          </div>
+          <h3 className="text-lg md:text-xl font-bold text-white">
+            Chef Tolu&apos;s kitchen
+          </h3>
+        </div>
+
+        {/* Post Items */}
+        <div className="space-y-8">
+          {posts.map((post) => {
+            const isMenuOpen = activeMenuPostId === post.id;
+            const commentsDisabled = disabledCommentsPostIds.includes(post.id);
+
+            return (
+              <article key={post.id} className="space-y-3">
+                {/* Author Info */}
+                <div className="flex items-center gap-2.5">
+                  <div className="relative h-7 w-7 rounded-full overflow-hidden">
+                    <Image
+                      src={post.authorAvatar}
+                      alt={post.authorName}
+                      fill
+                      className="object-cover"
+                      sizes="28px"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-white/90">
+                    <span className="font-semibold">{post.authorHandle}</span>
+                    <span className="text-white/40">·</span>
+                    <span className="text-white/60">{post.timestamp}</span>
+                  </div>
+                </div>
+
+                {/* Caption */}
+                <p className="text-sm md:text-[15px] text-white/90 leading-relaxed">
+                  {post.caption}
+                </p>
+
+                {/* Media Image Container with `...` Menu */}
+                <div className="relative rounded-[22px] overflow-hidden bg-[#181818] shadow-lg">
+                  <div className="relative h-64 sm:h-72 md:h-80 w-full">
+                    <Image
+                      src={post.mediaUrl}
+                      alt="Post food photo"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 680px"
+                    />
+                  </div>
+
+                  {/* Options Menu Button (Three dots - Matching Screenshot 5) */}
+                  <div className="absolute top-3.5 right-3.5 z-10">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setActiveMenuPostId(isMenuOpen ? null : post.id)
+                      }
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white/90 hover:text-white hover:bg-black/85 transition-all backdrop-blur-sm cursor-pointer"
+                      title="Post options"
+                    >
+                      <MoreHorizontal className="h-5 w-5" />
+                    </button>
+
+                    {/* Popover Menu (Matching Screenshot 5) */}
+                    {isMenuOpen && (
+                      <div
+                        ref={menuRef}
+                        className="absolute right-0 top-10 w-44 rounded-2xl border border-white/10 bg-[#1e1e1e] p-1.5 shadow-2xl backdrop-blur-md z-30 animate-in fade-in zoom-in-95 duration-150"
+                      >
+                        {/* Edit post */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveMenuPostId(null);
+                            setCaption(post.caption);
+                            setUploadedMedia(post.mediaUrl);
+                            showToast("Loaded post into editor.");
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-white/90 hover:bg-white/10 rounded-xl transition-colors text-left cursor-pointer"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          <span>Edit post</span>
+                        </button>
+
+                        {/* Turn off comments */}
+                        <button
+                          type="button"
+                          onClick={() => toggleTurnOffComments(post.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-white/90 hover:bg-white/10 rounded-xl transition-colors text-left cursor-pointer"
+                        >
+                          <MessageSquareOff className="h-3.5 w-3.5" />
+                          <span>
+                            {commentsDisabled
+                              ? "Turn on comments"
+                              : "Turn off comments"}
+                          </span>
+                        </button>
+
+                        {/* Delete */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePost(post.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-400 hover:bg-red-500/10 rounded-xl transition-colors text-left cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Interaction Row (Likes, Comments, Bookmarks, Share) */}
+                <div className="flex items-center gap-6 pt-1 text-sm text-white/80">
+                  {/* Like */}
+                  <button
+                    type="button"
+                    onClick={() => toggleLike(post.id)}
+                    className="flex items-center gap-2 hover:text-[#f5c94d] transition-colors group cursor-pointer"
+                  >
+                    <Heart
+                      className={`h-4 w-4 transition-colors ${
+                        post.isLiked
+                          ? "fill-[#f5c94d] text-[#f5c94d]"
+                          : "text-white/80 group-hover:text-[#f5c94d]"
+                      }`}
+                    />
+                    <span className="text-xs font-medium">{post.likes}</span>
+                  </button>
+
+                  {/* Comment */}
+                  <button
+                    type="button"
+                    disabled={commentsDisabled}
+                    onClick={() =>
+                      showToast(
+                        commentsDisabled
+                          ? "Comments are turned off for this post."
+                          : "Comments view opened."
+                      )
+                    }
+                    className={`flex items-center gap-2 transition-colors ${
+                      commentsDisabled
+                        ? "opacity-40 cursor-not-allowed"
+                        : "hover:text-white cursor-pointer"
+                    }`}
+                  >
+                    <MessageCircle className="h-4 w-4 text-white/80" />
+                    <span className="text-xs font-medium">
+                      {commentsDisabled ? "Off" : post.comments}
+                    </span>
+                  </button>
+
+                  {/* Bookmark */}
+                  <button
+                    type="button"
+                    onClick={() => toggleBookmark(post.id)}
+                    className="flex items-center gap-2 hover:text-[#f5c94d] transition-colors group cursor-pointer"
+                  >
+                    <Bookmark
+                      className={`h-4 w-4 transition-colors ${
+                        post.isBookmarked
+                          ? "fill-[#f5c94d] text-[#f5c94d]"
+                          : "text-white/80 group-hover:text-[#f5c94d]"
+                      }`}
+                    />
+                    <span className="text-xs font-medium">
+                      {post.bookmarks}
+                    </span>
+                  </button>
+
+                  {/* Share */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        navigator.clipboard?.writeText(window.location.href);
+                      }
+                      showToast("Post link copied to clipboard!");
+                    }}
+                    className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer"
+                  >
+                    <Share2 className="h-4 w-4 text-white/80" />
+                    <span className="text-xs font-medium">{post.shares}</span>
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

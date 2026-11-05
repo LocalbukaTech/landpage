@@ -35,6 +35,7 @@ export function AccountInformation({
   const subTabs = [
     {id: 'account', label: t('settings.tabs.account', 'Account')},
     {id: 'password', label: t('settings.tabs.password', 'Password & Security')},
+    {id: 'delete', label: t('settings.tabs.delete', 'Delete Account')},
     {id: 'blocked', label: t('settings.tabs.blocked', 'Blocked Users')},
     {id: 'languages', label: t('settings.tabs.languages', 'Languages')},
     {id: 'logout', label: t('settings.tabs.logout', 'Logout')},
@@ -542,7 +543,7 @@ function DeleteTab() {
   };
 
   return (
-    <div className='flex flex-col justify-between h-full'>
+    <div className='flex flex-col'>
       <div className='max-w-2xl'>
         <p className='text-zinc-300 text-sm leading-relaxed'>
           <span className='text-red-500 font-semibold'>Deleting</span> your
@@ -879,16 +880,30 @@ function LanguagesTab() {
 }
 
 function BlockedUsersTab() {
-  const { blockedUsers, unblockUser } = useBlockedUsers();
+  const { blockedUsers, unblockUser, isLoading } = useBlockedUsers();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleUnblock = (user: BlockedUser) => {
-    unblockUser(user.id);
-    setToastMessage(`${user.fullName} is unblocked 🚫`);
+  const handleUnblock = async (user: BlockedUser) => {
+    try {
+      await unblockUser(user.id);
+      setToastMessage(`${user.fullName} is unblocked 🚫`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to unblock user';
+      setToastMessage(msg);
+    }
     setTimeout(() => {
       setToastMessage(null);
     }, 3000);
   };
+
+  if (isLoading) {
+    return (
+      <div className='flex flex-col items-center justify-center py-28 text-center'>
+        <Loader2 className='w-6 h-6 animate-spin text-[#FFC727] mb-2' />
+        <p className='text-zinc-400 text-xs'>Loading blocked accounts...</p>
+      </div>
+    );
+  }
 
   if (!blockedUsers || blockedUsers.length === 0) {
     return (

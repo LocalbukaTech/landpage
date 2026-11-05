@@ -1,7 +1,7 @@
 'use client';
 
 import {useState} from 'react';
-import {Loader2, X} from 'lucide-react';
+import {Loader2, X, ArrowLeft} from 'lucide-react';
 import Image from 'next/image';
 import {useRouter} from 'next/navigation';
 import {cn} from '@/lib/utils';
@@ -266,13 +266,12 @@ function NotificationItem({
 
 // ─── Page ───────────────────────────────────────────────────────────────────────
 export default function NotificationsPage() {
+  const router = useRouter();
   const {data: notificationsEntry, isLoading} = useNotifications({
     page: 1,
     pageSize: 50,
   });
   const markAllAsRead = useMarkAllAsRead();
-
-
 
   const notifications: Notification[] =
     (notificationsEntry as any)?.data?.data || [];
@@ -280,13 +279,34 @@ export default function NotificationsPage() {
   return (
     <MainLayout>
       <div className='w-full max-w-2xl mx-auto flex flex-col min-h-dvh md:min-h-0'>
-        {/* Header */}
-        <button
-          onClick={() => markAllAsRead.mutate()}
-          disabled={markAllAsRead.isPending || notifications.length === 0}
-          className='text-xs font-semibold text-[#fbbe15] hover:text-[#e5ac10] transition-colors disabled:text-zinc-600 disabled:cursor-not-allowed bg-transparent border-none cursor-pointer flex m-4 justify-end'>
-          Mark all read
-        </button>
+        {/* Mobile Header matching design */}
+        <div className='flex md:hidden items-center justify-between px-4 py-3 border-b border-white/5'>
+          <div className='flex items-center gap-3'>
+            <button
+              onClick={() => router.back()}
+              className='w-8 h-8 -ml-1 flex items-center justify-center rounded-full text-zinc-300 hover:text-white cursor-pointer border-none bg-transparent'
+              aria-label='Go back'>
+              <ArrowLeft size={20} />
+            </button>
+            <h1 className='text-base font-bold text-white'>Notifications</h1>
+          </div>
+          <button
+            onClick={() => markAllAsRead.mutate()}
+            disabled={markAllAsRead.isPending || notifications.length === 0}
+            className='text-xs font-semibold text-[#fbbe15] hover:text-[#e5ac10] disabled:text-zinc-600 disabled:cursor-not-allowed bg-transparent border-none cursor-pointer'>
+            Mark all read
+          </button>
+        </div>
+
+        {/* Desktop Header */}
+        <div className='hidden md:flex justify-end p-4'>
+          <button
+            onClick={() => markAllAsRead.mutate()}
+            disabled={markAllAsRead.isPending || notifications.length === 0}
+            className='text-xs font-semibold text-[#fbbe15] hover:text-[#e5ac10] transition-colors disabled:text-zinc-600 disabled:cursor-not-allowed bg-transparent border-none cursor-pointer'>
+            Mark all read
+          </button>
+        </div>
 
         {/* List */}
         <div className='flex flex-col px-2 py-2'>

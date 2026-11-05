@@ -14,7 +14,7 @@ function SettingsContent() {
   const initialSub = searchParams.get('tab') || searchParams.get('sub') || 'account';
   const initialSection =
     searchParams.get('section') ||
-    (['help', 'refer', 'terms'].includes(initialSub) ? 'support' : 'account');
+    (['help', 'terms'].includes(initialSub) ? 'support' : 'account');
 
   const [activeSection, setActiveSection] = useState(initialSection);
   const [activeSubTab, setActiveSubTab] = useState(initialSub);
@@ -50,7 +50,7 @@ function SettingsContent() {
         {[
           {id: 'account', label: 'Account Information'},
           {id: 'notifications', label: 'Notifications & Privacy'},
-          {id: 'support', label: 'Rewards & Support'},
+          {id: 'support', label: 'Support'},
         ].map((item) => (
           <button
             key={item.id}
@@ -81,12 +81,12 @@ function SettingsContent() {
                 setActiveSubTab('logout');
               } else if (section === 'support') {
                 setActiveSection('support');
-                setActiveSubTab('refer');
+                setActiveSubTab('help');
               } else {
                 setActiveSection(section);
                 if (section === 'account' && activeSubTab === 'logout') {
                   setActiveSubTab('account');
-                } else if (section === 'account' && ['refer', 'help', 'terms'].includes(activeSubTab)) {
+                } else if (section === 'account' && ['help', 'terms'].includes(activeSubTab)) {
                   setActiveSubTab('account');
                 }
               }

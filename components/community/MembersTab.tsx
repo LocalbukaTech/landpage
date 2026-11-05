@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { CommunityMember } from './types';
+import { CommunityMember } from "./types";
 
 const MEMBERS_DATA: CommunityMember[] = [
   {
@@ -67,7 +67,9 @@ export function MembersTab() {
           onClick={() => setIsEmpty(!isEmpty)}
           className="text-xs text-white/50 hover:text-[#FBBE15] transition-colors underline cursor-pointer"
         >
-          {isEmpty ? "Switch to filled state (1,200)" : "Switch to empty state (0)"}
+          {isEmpty
+            ? "Switch to filled state (1,200)"
+            : "Switch to empty state (0)"}
         </button>
       </div>
 

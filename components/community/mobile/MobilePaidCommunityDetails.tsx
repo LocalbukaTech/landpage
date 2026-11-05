@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { ArrowLeft, Lock, Check } from "lucide-react";
 import { MobileCommunityItem } from "./types";
 
@@ -22,20 +23,42 @@ export function MobilePaidCommunityDetails({
 
   return (
     <div className="flex flex-col w-full min-h-full bg-[#141414] text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-30 flex items-center px-4 h-13 bg-[#141414]/95 backdrop-blur-md">
+      {/* Hero Banner with Food Collage */}
+      <div className="relative w-full h-44 bg-zinc-900 shrink-0">
+        <Image
+          src={community.coverImage || community.image || "/images/community/chef-amaka-hero.jpg"}
+          alt={community.name}
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20" />
+
+        {/* Back button overlay */}
         <button
           type="button"
           onClick={onBack}
-          className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full text-zinc-300 hover:text-white hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+          className="absolute top-3 left-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white/90 hover:text-white transition-all cursor-pointer border border-white/10 active:scale-95 z-20"
           aria-label="Go back"
         >
-          <ArrowLeft size={21} />
+          <ArrowLeft size={18} />
         </button>
-      </header>
+      </div>
 
       {/* Main Body */}
-      <div className="flex-1 overflow-y-auto px-5 pt-2 pb-8 space-y-6">
+      <div className="flex-1 overflow-y-auto px-5 pt-0 pb-8 space-y-6">
+        {/* Creator Avatar overlapping hero */}
+        <div className="-mt-9 mb-2 relative z-10">
+          <div className="relative w-18 h-18 rounded-full border-[3px] border-[#141414] overflow-hidden shadow-xl bg-zinc-800">
+            <Image
+              src={community.avatar || "/images/community/chef-amaka-avatar.jpg"}
+              alt={community.name}
+              fill
+              className="object-cover"
+            />
+          </div>
+        </div>
+
         {/* Title & Description */}
         <div className="space-y-3">
           <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight">

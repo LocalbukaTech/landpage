@@ -14,6 +14,8 @@ export const MOCK_COMMUNITIES: MobileCommunityItem[] = [
     isFree: true,
     image:
       "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
+    coverImage: "/images/community/cover-1.jpg",
+    avatar: "/images/community/avatar-1.png",
     accent: "green",
     description:
       "A space to explore Nigerian dishes, cooking traditions, and the stories behind the food. Share recipes, ask questions, and connect with fellow food lovers across the country.",
@@ -38,6 +40,8 @@ export const MOCK_COMMUNITIES: MobileCommunityItem[] = [
     isFree: false,
     image:
       "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=80",
+    coverImage: "/images/community/chef-amaka-hero.jpg",
+    avatar: "/images/community/chef-amaka-avatar.jpg",
     accent: "yellow",
     description:
       "Weekly private recipes, live cook-alongs, and direct feedback from Chef Amaka for members serious about leveling up their cooking.",

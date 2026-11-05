@@ -23,6 +23,8 @@ export interface MobileCommunityItem {
   yearlyPriceAmount: number;
   isFree: boolean;
   image: string;
+  coverImage?: string;
+  avatar?: string;
   accent: "yellow" | "green" | "blue" | "rose";
   description: string;
   benefits?: string[];

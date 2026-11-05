@@ -14,7 +14,7 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
   const { id } = use(params);
 
   const isChefAmaka = id === 'chef-amaka' || id === '2';
-  const isNigeriaCulture = !id || id === 'nigeria-food-and-culture' || id === '1';
+  const isNigeriaCulture = !id || id === 'nigeria-food-and-culture' || id === 'nigeria-food' || id === '1';
 
   if (isChefAmaka) {
     return (

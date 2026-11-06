@@ -22,6 +22,8 @@ export function SettingsSidebar({
   ];
 
   const footerLinks = [
+    {label: t('nav.aboutUs', 'About Us'), href: '/about'},
+    {label: t('nav.contactUs', 'Contact Us'), href: '/contact'},
     {label: t('nav.company', 'Company'), href: '/company'},
     {label: t('nav.program', 'Program'), href: '/rewards'},
     {label: t('nav.termsAndPolicies', 'Terms & Policies'), href: '/privacy'},

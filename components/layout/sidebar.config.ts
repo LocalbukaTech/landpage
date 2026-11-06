@@ -175,9 +175,9 @@ export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
 ];
 
 export const FOOTER_LINKS = [
+  { label: 'Company', href: '/company' },
   { label: 'About Us', href: '/about' },
   { label: 'Contact Us', href: '/contact' },
-  { label: 'Company', href: '/company' },
   { label: 'Blogs', href: '/blog' },
   { label: 'Terms & Policies', href: '/privacy' },
 ];

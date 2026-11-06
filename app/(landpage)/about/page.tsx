@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import SectionHeader from '@/components/SectionHeader';
@@ -48,9 +49,11 @@ export default function AboutPage() {
               the best local dining experience across Africa.
             </Reveal>
             <Reveal direction='up' delay={0.2} duration={0.7} className='mt-8 flex justify-center'>
-              <button className='px-16 py-4 flex items-center justify-center rounded-2xl bg-[#FBBE15] text-[#111827] hover:bg-[#E5AD13] font-bold text-lg transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap'>
-                Get Started
-              </button>
+              <Link href="/feeds">
+                <button className='px-16 py-4 flex items-center justify-center rounded-2xl bg-[#FBBE15] text-[#111827] hover:bg-[#E5AD13] font-bold text-lg transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap'>
+                  Get Started
+                </button>
+              </Link>
             </Reveal>
           </div>
         </div>

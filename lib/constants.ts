@@ -11,6 +11,7 @@ import {
 // Navigation links configuration
 export const NAV_LINKS = [
   { href: '/about', label: 'About Us' },
+  { href: '/contact', label: 'Contact Us' },
   { href: '/blog', label: 'Blog' },
 ] as const;
 

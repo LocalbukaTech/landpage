@@ -53,15 +53,25 @@ export function Footer() {
           </div>
 
           {/* Quick links */}
-          <div className='md:col-span-2 flex flex-col gap-6 md:items-start'>
+          <div className='md:col-span-2 flex flex-col gap-5 md:items-start'>
+            <Link
+              href='/about'
+              className='text-base hover:text-primary transition-colors'>
+              About Us
+            </Link>
+            <Link
+              href='/contact'
+              className='text-base hover:text-primary transition-colors'>
+              Contact Us
+            </Link>
             <Link
               href='/blog'
-              className='text-lg hover:text-primary transition-colors'>
+              className='text-base hover:text-primary transition-colors'>
               Blog
             </Link>
             <Link
               href='/faqs'
-              className='text-lg hover:text-primary transition-colors'>
+              className='text-base hover:text-primary transition-colors'>
               FAQs
             </Link>
           </div>

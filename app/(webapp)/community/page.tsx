@@ -729,7 +729,6 @@ function CommunityPageContent() {
           </div>
         )}
       </div>
-      </div>
     </MainLayout>
   );
 }

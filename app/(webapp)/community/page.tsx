@@ -16,6 +16,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { CreatorDashboard } from "@/components/community/CreatorDashboard";
 import { PaymentCheckoutCard } from "@/components/community/PaymentCheckoutCard";
 import { DashboardTab } from "@/components/community/types";
+import { MobileCommunityFlow } from "@/components/community/mobile/MobileCommunityFlow";
 import { cn } from "@/lib/utils";
 
 type CommunityTab = "Recommended" | "Trending" | "Free" | "Paid";
@@ -230,7 +231,18 @@ function CommunityPageContent() {
 
   return (
     <MainLayout>
-      <div className="w-full max-w-[1240px] mx-auto px-3 sm:px-6 md:px-8 py-3 sm:py-6 text-white min-h-[calc(100vh-120px)]">
+      {/* ── MOBILE VIEW (< md): Full Qudus mobile community flow ── */}
+      <div className="block md:hidden min-h-screen bg-[#1a1a1a]">
+        <MobileCommunityFlow
+          initialScreen="explore"
+          onSwitchToCreator={() => setViewMode("creator")}
+          showStatusBar={false}
+          className="w-full"
+        />
+      </div>
+
+      {/* ── DESKTOP VIEW (≥ md): Original desktop layout ── */}
+      <div className="hidden md:block w-full max-w-[1240px] mx-auto px-3 sm:px-6 md:px-8 py-3 sm:py-6 text-white min-h-[calc(100vh-120px)]">
         {/* ── Top Header with Responsive View Mode Switcher ── */}
         <div className="mb-5 sm:mb-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 border-b border-white/8 pb-4 sm:pb-5">
           <div className="space-y-0.5">
@@ -716,6 +728,7 @@ function CommunityPageContent() {
             )}
           </div>
         )}
+      </div>
       </div>
     </MainLayout>
   );

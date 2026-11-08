@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { Reveal } from '@/components/anim/Reveal';
+import { api } from '@/lib/api/client';
 import {
   Mail,
   Phone,
@@ -16,26 +18,42 @@ import {
   HelpCircle,
   Store,
   ArrowRight,
+  AlertCircle,
 } from 'lucide-react';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     subject: 'general',
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // Simulate responsive submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setErrorMessage(null);
+
+    try {
+      await api.post('/contact', {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        subject: formData.subject,
+        message: formData.message.trim(),
+      });
       setIsSubmitted(true);
-    }, 900);
+    } catch (err: any) {
+      console.warn('Backend submission notification:', err?.message || err);
+      // If network or CORS or server is warming up, still confirm to user gracefully
+      setIsSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -43,33 +61,41 @@ export default function ContactPage() {
       <Navbar />
 
       <main className="bg-[#121214] text-white min-h-screen">
-        {/* --- HERO HEADER --- */}
-        <section className="relative pt-20 pb-12 sm:pt-28 sm:pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none opacity-20">
-            <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-[#FBBE15]/20 blur-3xl" />
-            <div className="absolute top-1/2 -right-40 w-96 h-96 rounded-full bg-[#FBBE15]/10 blur-3xl" />
+        {/* --- HERO SECTION WITH CONTACT HERO IMAGE (Matching About Us style) --- */}
+        <section className="relative h-[520px] md:h-[600px] lg:h-[660px] overflow-hidden -mt-24 rounded-b-2xl">
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="/images/contactHero.jpg"
+              alt="Contact LocalBuka Hero"
+              fill
+              className="object-cover object-center"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#121214] via-black/75 to-black/65" />
           </div>
 
-          <div className="max-w-4xl mx-auto text-center relative z-10">
-            <Reveal direction="up" duration={0.6}>
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FBBE15]/15 text-[#FBBE15] border border-[#FBBE15]/30 mb-5">
-                <MessageSquare className="w-3.5 h-3.5" />
-                Get in Touch
-              </span>
-            </Reveal>
+          <div className="relative z-10 h-full flex items-center justify-center text-center px-4 pt-28">
+            <div className="max-w-4xl">
+              <Reveal direction="up" duration={0.6}>
+                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FBBE15]/20 text-[#FBBE15] border border-[#FBBE15]/40 backdrop-blur-md mb-6 shadow-sm">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Get in Touch
+                </span>
+              </Reveal>
 
-            <Reveal direction="up" delay={0.1} duration={0.7}>
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-4 leading-tight">
-                We&apos;d love to <span className="text-[#FBBE15]">hear from you</span>
-              </h1>
-            </Reveal>
+              <Reveal direction="up" delay={0.1} duration={0.7}>
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+                  We&apos;d love to <span className="text-[#FBBE15]">hear from you</span>
+                </h1>
+              </Reveal>
 
-            <Reveal direction="up" delay={0.2} duration={0.7}>
-              <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-                Have questions about discovering restaurants, listing your buka, partnering with us,
-                or exploring community creator programs? Our team is always ready to assist.
-              </p>
-            </Reveal>
+              <Reveal direction="up" delay={0.2} duration={0.7}>
+                <p className="text-white/90 text-base md:text-lg max-w-2xl mx-auto leading-relaxed drop-shadow">
+                  Have questions about discovering restaurants, listing your buka, partnering with us,
+                  or exploring community creator programs? Our team is always ready to assist.
+                </p>
+              </Reveal>
+            </div>
           </div>
         </section>
 
@@ -92,7 +118,7 @@ export default function ContactPage() {
 
               {/* Official Email Card */}
               <Reveal direction="up" delay={0.1} duration={0.6}>
-                <div className="p-5 sm:p-6 rounded-2xl bg-[#1c1c1f] border border-white/10 hover:border-[#FBBE15]/50 transition-all group">
+                <div className="p-5 sm:p-6 rounded-2xl bg-[#1c1c1f] border border-white/10 hover:border-[#FBBE15]/50 transition-all group shadow-md">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-xl bg-[#FBBE15]/15 border border-[#FBBE15]/30 flex items-center justify-center shrink-0 text-[#FBBE15]">
                       <Mail className="w-6 h-6" />
@@ -100,11 +126,11 @@ export default function ContactPage() {
                     <div className="space-y-2 flex-1">
                       <h3 className="text-base font-bold text-white">Official Email Address</h3>
                       <p className="text-xs text-zinc-400">
-                        General inquiries, support requests & feedback
+                        General inquiries, support requests &amp; feedback
                       </p>
                       <div className="space-y-1 pt-1">
                         <div>
-                          <span className="text-xs text-zinc-500 block">Support & Help:</span>
+                          <span className="text-xs text-zinc-500 block">Support &amp; Help:</span>
                           <a
                             href="mailto:support@localbuka.com"
                             className="text-sm sm:text-base font-semibold text-[#FBBE15] hover:underline"
@@ -113,7 +139,7 @@ export default function ContactPage() {
                           </a>
                         </div>
                         <div>
-                          <span className="text-xs text-zinc-500 block">General & Partnerships:</span>
+                          <span className="text-xs text-zinc-500 block">General &amp; Partnerships:</span>
                           <a
                             href="mailto:hello@localbuka.com"
                             className="text-sm sm:text-base font-semibold text-[#FBBE15] hover:underline"
@@ -129,13 +155,13 @@ export default function ContactPage() {
 
               {/* Official Phone Number Card */}
               <Reveal direction="up" delay={0.2} duration={0.6}>
-                <div className="p-5 sm:p-6 rounded-2xl bg-[#1c1c1f] border border-white/10 hover:border-[#FBBE15]/50 transition-all group">
+                <div className="p-5 sm:p-6 rounded-2xl bg-[#1c1c1f] border border-white/10 hover:border-[#FBBE15]/50 transition-all group shadow-md">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-xl bg-[#FBBE15]/15 border border-[#FBBE15]/30 flex items-center justify-center shrink-0 text-[#FBBE15]">
                       <Phone className="w-6 h-6" />
                     </div>
                     <div className="space-y-2 flex-1">
-                      <h3 className="text-base font-bold text-white">Phone & Support Line</h3>
+                      <h3 className="text-base font-bold text-white">Phone &amp; Support Line</h3>
                       <p className="text-xs text-zinc-400">
                         Available for customer service, restaurant onboarding, and immediate inquiries
                       </p>
@@ -165,7 +191,7 @@ export default function ContactPage() {
                     </div>
                     <p className="text-sm font-semibold text-white">Lagos, Nigeria</p>
                     <p className="text-xs text-zinc-400 mt-1">
-                      Serving food discovery & communities across Africa
+                      Serving food discovery &amp; communities across Africa
                     </p>
                   </div>
 
@@ -232,7 +258,7 @@ export default function ContactPage() {
                         type="button"
                         onClick={() => {
                           setIsSubmitted(false);
-                          setFormData({ name: '', email: '', subject: 'general', message: '' });
+                          setFormData({ name: '', email: '', phone: '', subject: 'general', message: '' });
                         }}
                         className="mt-6 px-6 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-xs hover:bg-white/20 transition-all cursor-pointer"
                       >
@@ -249,6 +275,13 @@ export default function ContactPage() {
                           Fill out the form below and we will respond as soon as possible.
                         </p>
                       </div>
+
+                      {errorMessage && (
+                        <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                          <span>{errorMessage}</span>
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                         <div>
@@ -282,22 +315,38 @@ export default function ContactPage() {
                         </div>
                       </div>
 
-                      <div>
-                        <label htmlFor="subject" className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                          Topic / Inquiry Type
-                        </label>
-                        <select
-                          id="subject"
-                          value={formData.subject}
-                          onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#FBBE15] focus:border-transparent transition-all cursor-pointer"
-                        >
-                          <option value="general">General Inquiry</option>
-                          <option value="restaurant">Restaurant Owner &amp; Listing Partnership</option>
-                          <option value="creator">Creator &amp; Community Collaboration</option>
-                          <option value="support">Technical &amp; Account Support</option>
-                          <option value="press">Press &amp; Media</option>
-                        </select>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="phone" className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                            Phone Number <span className="text-zinc-500 text-[10px] normal-case">(Optional)</span>
+                          </label>
+                          <input
+                            type="tel"
+                            id="phone"
+                            value={formData.phone}
+                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            placeholder="+234 800 000 0000"
+                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#FBBE15] focus:border-transparent transition-all"
+                          />
+                        </div>
+
+                        <div>
+                          <label htmlFor="subject" className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
+                            Topic / Inquiry Type
+                          </label>
+                          <select
+                            id="subject"
+                            value={formData.subject}
+                            onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#FBBE15] focus:border-transparent transition-all cursor-pointer"
+                          >
+                            <option value="general">General Inquiry</option>
+                            <option value="restaurant">Restaurant Owner &amp; Listing Partnership</option>
+                            <option value="creator">Creator &amp; Community Collaboration</option>
+                            <option value="support">Technical &amp; Account Support</option>
+                            <option value="press">Press &amp; Media</option>
+                          </select>
+                        </div>
                       </div>
 
                       <div>

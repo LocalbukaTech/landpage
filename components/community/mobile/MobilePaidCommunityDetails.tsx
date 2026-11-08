@@ -108,6 +108,46 @@ export function MobilePaidCommunityDetails({
           </p>
         </div>
 
+        {/* Recent Locked Posts Preview */}
+        <div className="space-y-3 pt-1">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-white tracking-tight">
+              Recent posts
+            </h2>
+            <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+              <Lock size={11} className="text-[#fbbe15]" />
+              <span>Members only</span>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-none pb-1">
+            {[
+              { id: "1", title: "Loaded Burgers", image: "/images/community/recent-post-burger.jpg" },
+              { id: "2", title: "Outdoor BBQ", image: "/images/community/recent-post-bbq.jpg" },
+              { id: "3", title: "Grand Banquet", image: "/images/community/recent-post-feast.jpg" },
+            ].map((post) => (
+              <div
+                key={post.id}
+                onClick={onSubscribe}
+                className="group relative w-32 h-24 rounded-xl overflow-hidden border border-white/10 bg-zinc-800 shrink-0 cursor-pointer active:scale-95 transition-all"
+              >
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  fill
+                  className="object-cover blur-[2px] brightness-75 group-hover:scale-105 transition-transform duration-300"
+                  sizes="130px"
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-[#fbbe15]">
+                    <Lock size={14} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* CTA Button */}
         <div className="pt-2">
           <button

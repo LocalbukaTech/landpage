@@ -1,15 +1,18 @@
 'use client';
 
 import { use, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CommunityPostFeed } from '@/components/community/CommunityPostFeed';
+import { MobileCommunityFeed } from '@/components/community/mobile/MobileCommunityFeed';
+import { MOCK_COMMUNITIES } from '@/components/community/mobile/mockData';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 function FeedContent({ id }: { id: string }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const stateParam = searchParams.get('state');
 
@@ -22,16 +25,31 @@ function FeedContent({ id }: { id: string }) {
     viewState = 'expired';
   }
 
+  const mobileCommunity =
+    MOCK_COMMUNITIES.find((c) => c.id === id) ||
+    (isAmaka ? MOCK_COMMUNITIES[1] : MOCK_COMMUNITIES[0]);
+
   return (
-    <div className='w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-6'>
-      <CommunityPostFeed
-        communityId={id}
-        communityName={isAmaka ? "Chef Amaka's kitchen" : 'Nigeria food and culture'}
-        communityLogo='/images/community/community-logo.svg'
-        communityAvatar={isAmaka ? '/images/community/chef-amaka-avatar.jpg' : '/images/community/avatar-1.png'}
-        viewState={viewState}
-      />
-    </div>
+    <>
+      {/* ── Mobile View (< md): Native Mobile Community Feed ── */}
+      <div className='block md:hidden min-h-screen bg-[#141414]'>
+        <MobileCommunityFeed
+          community={mobileCommunity}
+          onBack={() => router.push(`/community/${id}`)}
+        />
+      </div>
+
+      {/* ── Desktop View (≥ md): Exact Existing Desktop Layout (Untouched) ── */}
+      <div className='hidden md:block w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-6'>
+        <CommunityPostFeed
+          communityId={id}
+          communityName={isAmaka ? "Chef Amaka's kitchen" : 'Nigeria food and culture'}
+          communityLogo='/images/community/community-logo.svg'
+          communityAvatar={isAmaka ? '/images/community/chef-amaka-avatar.jpg' : '/images/community/avatar-1.png'}
+          viewState={viewState}
+        />
+      </div>
+    </>
   );
 }
 

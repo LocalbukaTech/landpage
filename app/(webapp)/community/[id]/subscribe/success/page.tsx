@@ -2,18 +2,34 @@
 
 import { use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { MobilePaymentSuccess } from '@/components/community/mobile/MobilePaymentSuccess';
+import { MOCK_COMMUNITIES } from '@/components/community/mobile/mockData';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 export default function SubscriptionSuccessPage({ params }: Props) {
+  const router = useRouter();
   const { id } = use(params);
+
+  const mobileCommunity =
+    MOCK_COMMUNITIES.find((c) => c.id === id) || MOCK_COMMUNITIES[1];
 
   return (
     <MainLayout>
-      <div className='w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col min-h-[calc(100vh-140px)]'>
+      {/* ── Mobile View (< md): Native Mobile Payment Success ── */}
+      <div className='block md:hidden min-h-screen bg-[#141414]'>
+        <MobilePaymentSuccess
+          community={mobileCommunity}
+          onGoToCommunity={() => router.push(`/community/${id}/feed`)}
+        />
+      </div>
+
+      {/* ── Desktop View (≥ md): Exact Existing Desktop Layout (Untouched) ── */}
+      <div className='hidden md:flex w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 flex-col min-h-[calc(100vh-140px)]'>
         {/* Header */}
         <div className='pb-4 border-b border-white/10'>
           <h1 className='text-2xl sm:text-3xl font-extrabold text-white tracking-tight'>

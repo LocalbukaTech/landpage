@@ -35,11 +35,25 @@ export function MobileCommunityExplore({
     "Paid",
   ];
 
-  // Recommended row: first two or free/paid
-  const recommendedItems = communities.slice(0, 4);
+  const filteredCommunities = communities.filter((item) => {
+    if (activeCategory === "Free") return item.isFree;
+    if (activeCategory === "Paid") return !item.isFree;
+    return true;
+  });
 
-  // Trending list: next communities
-  const trendingItems = communities.slice(4).concat(communities.slice(2, 4));
+  // Recommended row
+  const recommendedItems =
+    activeCategory === "Trending"
+      ? communities.slice(4)
+      : filteredCommunities.slice(0, 4);
+
+  // Trending list
+  const trendingItems =
+    activeCategory === "Trending"
+      ? communities.slice(2)
+      : filteredCommunities.slice(2).length > 0
+      ? filteredCommunities.slice(2)
+      : filteredCommunities;
 
   return (
     <div className="flex flex-col w-full min-h-full bg-[#141414] text-white">
@@ -199,19 +213,17 @@ export function MobileCommunityExplore({
                 onClick={() => onSelectCommunity(item)}
                 className="group flex items-center justify-between gap-3 p-3 rounded-2xl bg-[#1e1e1e] border border-white/6 hover:border-white/15 cursor-pointer active:scale-[0.99] transition-all"
               >
-                {/* Left Side: Thumbnail for certain items (like Grill masters) or info */}
+                {/* Left Side: Thumbnail & Info */}
                 <div className="flex items-center gap-3 min-w-0">
-                  {idx === 2 ? (
-                    <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-white/10 bg-zinc-800">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                        sizes="60px"
-                      />
-                    </div>
-                  ) : null}
+                  <div className="relative w-13 h-13 rounded-xl overflow-hidden shrink-0 border border-white/10 bg-zinc-800">
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="52px"
+                    />
+                  </div>
 
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2">

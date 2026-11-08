@@ -1,8 +1,12 @@
 'use client';
 
 import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CommunityDetailView } from '@/components/community/CommunityDetailView';
+import { MobilePaidCommunityDetails } from '@/components/community/mobile/MobilePaidCommunityDetails';
+import { MobileFreeCommunityDetails } from '@/components/community/mobile/MobileFreeCommunityDetails';
+import { MOCK_COMMUNITIES } from '@/components/community/mobile/mockData';
 
 interface CommunityDetailPageProps {
   params: Promise<{
@@ -11,15 +15,30 @@ interface CommunityDetailPageProps {
 }
 
 export default function CommunityDetailPage({ params }: CommunityDetailPageProps) {
+  const router = useRouter();
   const { id } = use(params);
 
   const isChefAmaka = id === 'chef-amaka' || id === '2';
   const isNigeriaCulture = !id || id === 'nigeria-food-and-culture' || id === 'nigeria-food' || id === '1';
 
+  const mobileCommunity =
+    MOCK_COMMUNITIES.find((c) => c.id === id) ||
+    (isChefAmaka ? MOCK_COMMUNITIES[1] : MOCK_COMMUNITIES[0]);
+
   if (isChefAmaka) {
     return (
       <MainLayout>
-        <div className='w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-4'>
+        {/* ── Mobile View (< md): Native Mobile Paid Community Detail ── */}
+        <div className='block md:hidden min-h-screen bg-[#141414]'>
+          <MobilePaidCommunityDetails
+            community={mobileCommunity}
+            onBack={() => router.push('/community')}
+            onSubscribe={() => router.push(`/community/${id}/subscribe`)}
+          />
+        </div>
+
+        {/* ── Desktop View (≥ md): Exact Existing Desktop Layout (Untouched) ── */}
+        <div className='hidden md:block w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-4'>
           <CommunityDetailView
             id='chef-amaka'
             name="Chef Amaka's kitchen"
@@ -56,7 +75,18 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
 
   return (
     <MainLayout>
-      <div className='w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-4'>
+      {/* ── Mobile View (< md): Native Mobile Free Community Detail ── */}
+      <div className='block md:hidden min-h-screen bg-[#141414]'>
+        <MobileFreeCommunityDetails
+          community={mobileCommunity}
+          onBack={() => router.push('/community')}
+          onJoin={() => router.push(`/community/${id}/feed`)}
+          onSelectPost={() => router.push(`/community/${id}/feed`)}
+        />
+      </div>
+
+      {/* ── Desktop View (≥ md): Exact Existing Desktop Layout (Untouched) ── */}
+      <div className='hidden md:block w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-4'>
         <CommunityDetailView
           id={id}
           name={isNigeriaCulture ? 'Nigeria food and culture' : 'Lagos Street Food Explorers'}

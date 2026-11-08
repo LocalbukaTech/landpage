@@ -2,18 +2,29 @@
 
 import { use } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { MobilePaymentFailed } from '@/components/community/mobile/MobilePaymentFailed';
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 export default function SubscriptionFailedPage({ params }: Props) {
+  const router = useRouter();
   const { id } = use(params);
 
   return (
     <MainLayout>
-      <div className='w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 flex flex-col min-h-[calc(100vh-140px)]'>
+      {/* ── Mobile View (< md): Native Mobile Payment Failed ── */}
+      <div className='block md:hidden min-h-screen bg-[#141414]'>
+        <MobilePaymentFailed
+          onTryAgain={() => router.push(`/community/${id}/subscribe`)}
+        />
+      </div>
+
+      {/* ── Desktop View (≥ md): Exact Existing Desktop Layout (Untouched) ── */}
+      <div className='hidden md:flex w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 flex-col min-h-[calc(100vh-140px)]'>
         {/* Header */}
         <div className='pb-4 border-b border-white/10'>
           <h1 className='text-2xl sm:text-3xl font-extrabold text-white tracking-tight'>

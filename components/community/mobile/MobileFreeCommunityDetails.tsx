@@ -25,20 +25,32 @@ export function MobileFreeCommunityDetails({
 
   return (
     <div className="flex flex-col w-full min-h-full bg-[#141414] text-white">
-      {/* Header */}
-      <header className="sticky top-0 z-30 flex items-center px-4 h-13 bg-[#141414]/95 backdrop-blur-md">
+      {/* Cover Hero Image */}
+      <div className="relative w-full h-48 sm:h-64 bg-zinc-800 shrink-0">
+        <Image
+          src={community.coverImage || community.image}
+          alt={community.name}
+          fill
+          className="object-cover"
+          sizes="100vw"
+          priority
+        />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/30 to-transparent" />
+
+        {/* Back button overlaid on image */}
         <button
           type="button"
           onClick={onBack}
-          className="w-9 h-9 -ml-1 flex items-center justify-center rounded-full text-zinc-300 hover:text-white hover:bg-white/5 active:scale-95 transition-all cursor-pointer"
+          className="absolute top-3 left-3 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white active:scale-90 transition-transform"
           aria-label="Go back"
         >
-          <ArrowLeft size={21} />
+          <ArrowLeft size={20} />
         </button>
-      </header>
+      </div>
 
       {/* Main Body */}
-      <div className="flex-1 overflow-y-auto px-5 pt-2 pb-8 space-y-5">
+      <div className="flex-1 overflow-y-auto px-5 pt-4 pb-8 space-y-5">
         {/* Title & Description */}
         <div className="space-y-3">
           <h1 className="text-2xl font-extrabold tracking-tight text-white leading-tight">

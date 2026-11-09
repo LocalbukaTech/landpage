@@ -6,6 +6,7 @@ import {
   RiTwitterXFill,
   RiTiktokFill,
   RiFacebookFill,
+  RiYoutubeFill,
 } from 'react-icons/ri';
 
 // Navigation links configuration
@@ -204,7 +205,7 @@ export const SOCIAL_LINKS: ReadonlyArray<SocialLink> = [
     Icon: RiLinkedinFill,
   },
   {
-    href: 'https://www.instagram.com/localbuka_app/',
+    href: 'https://www.instagram.com/localbuka_app',
     label: 'Instagram',
     Icon: RiInstagramFill,
   },
@@ -213,8 +214,9 @@ export const SOCIAL_LINKS: ReadonlyArray<SocialLink> = [
     label: 'Tiktok',
     Icon: RiTiktokFill,
   },
-  { href: 'https://x.com/LocalBuka_app/', label: 'Twitter/X', Icon: RiTwitterXFill },
-  { href: 'https://web.facebook.com/profile.php?id=61567778991994', label: 'Facebook', Icon: RiFacebookFill },
+  { href: 'https://x.com/LocalBuka_app', label: 'Twitter/X', Icon: RiTwitterXFill },
+  { href: 'https://web.facebook.com/people/Local-Buka/61569877310017/', label: 'Facebook', Icon: RiFacebookFill },
+  { href: 'https://www.youtube.com/@LocalBuka__App', label: 'YouTube', Icon: RiYoutubeFill },
 ];
 
 // Multilingual Hero Content for Buka Discovery Page

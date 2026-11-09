@@ -209,28 +209,28 @@ export function renderBaseEmail({
                       <tr>
                         <!-- Twitter / X -->
                         <td style="padding: 0 7px;">
-                          <a href="https://twitter.com/localbuka" target="_blank" style="text-decoration: none; display: inline-block;">
+                          <a href="https://x.com/LocalBuka_app" target="_blank" style="text-decoration: none; display: inline-block;">
                             <img src="${assetBaseUrl}/images/email/icons/social-twitter.png" alt="Twitter" width="36" height="36" style="display: block; width: 36px; height: 36px; border: 0; border-radius: 50%;" />
                           </a>
                         </td>
 
                         <!-- Instagram -->
                         <td style="padding: 0 7px;">
-                          <a href="https://instagram.com/localbuka" target="_blank" style="text-decoration: none; display: inline-block;">
+                          <a href="https://www.instagram.com/localbuka_app" target="_blank" style="text-decoration: none; display: inline-block;">
                             <img src="${assetBaseUrl}/images/email/icons/social-instagram.png" alt="Instagram" width="36" height="36" style="display: block; width: 36px; height: 36px; border: 0; border-radius: 50%;" />
                           </a>
                         </td>
 
                         <!-- YouTube -->
                         <td style="padding: 0 7px;">
-                          <a href="https://youtube.com/@localbuka" target="_blank" style="text-decoration: none; display: inline-block;">
+                          <a href="https://www.youtube.com/@LocalBuka__App" target="_blank" style="text-decoration: none; display: inline-block;">
                             <img src="${assetBaseUrl}/images/email/icons/social-youtube.png" alt="YouTube" width="36" height="36" style="display: block; width: 36px; height: 36px; border: 0; border-radius: 50%;" />
                           </a>
                         </td>
 
                         <!-- Facebook -->
                         <td style="padding: 0 7px;">
-                          <a href="https://facebook.com/localbuka" target="_blank" style="text-decoration: none; display: inline-block;">
+                          <a href="https://web.facebook.com/people/Local-Buka/61569877310017/" target="_blank" style="text-decoration: none; display: inline-block;">
                             <img src="${assetBaseUrl}/images/email/icons/social-facebook.png" alt="Facebook" width="36" height="36" style="display: block; width: 36px; height: 36px; border: 0; border-radius: 50%;" />
                           </a>
                         </td>

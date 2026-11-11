@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MobileCommunityScreen, MobileCommunityItem } from "./types";
 import { MOCK_COMMUNITIES } from "./mockData";
+import { useExploreCommunities } from "@/lib/api/services/community.hooks";
+import { toMobileCommunityItem } from "@/lib/api/services/community.service";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { MobileCommunityExplore } from "./MobileCommunityExplore";
 import { MobilePaidCommunityDetails } from "./MobilePaidCommunityDetails";
@@ -31,6 +33,11 @@ export function MobileCommunityFlow({
   className = "",
 }: MobileCommunityFlowProps) {
   const router = useRouter();
+
+  // Live API data with MOCK_COMMUNITIES fallback while loading
+  const { data: communityData } = useExploreCommunities();
+  const communities: MobileCommunityItem[] =
+    communityData?.items?.map(toMobileCommunityItem) ?? MOCK_COMMUNITIES;
 
   const [currentScreen, setCurrentScreen] =
     useState<MobileCommunityScreen>(initialScreen);
@@ -79,7 +86,7 @@ export function MobileCommunityFlow({
       <div className="flex-1 w-full min-h-0 overflow-hidden relative">
         {currentScreen === "explore" && (
           <MobileCommunityExplore
-            communities={MOCK_COMMUNITIES}
+            communities={communities}
             onSelectCommunity={handleSelectCommunityFromExplore}
             onOpenMenu={() => router.push("/")}
             onOpenSearch={() => router.push("/search")}

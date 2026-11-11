@@ -154,6 +154,17 @@ export const queryKeys = {
       [...queryKeys.adminRewards.all, 'vanity-codes', params] as const,
   },
 
+  // Community
+  community: {
+    all: ['community'] as const,
+    list: (filters?: Record<string, unknown>) => [...queryKeys.community.all, 'list', filters] as const,
+    detail: (idOrSlug: string) => [...queryKeys.community.all, 'detail', idOrSlug] as const,
+    feed: (idOrSlug: string, params?: Record<string, unknown>) => [...queryKeys.community.all, 'feed', idOrSlug, params] as const,
+    memberships: () => [...queryKeys.community.all, 'me', 'memberships'] as const,
+    myCommunities: () => [...queryKeys.community.all, 'creator', 'my-communities'] as const,
+    comments: (postId: string) => [...queryKeys.community.all, 'comments', postId] as const,
+  },
+
   // Add more entity types as needed
 } as const;
 

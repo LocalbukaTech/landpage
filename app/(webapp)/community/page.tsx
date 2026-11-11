@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, Suspense } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -18,134 +18,16 @@ import { PaymentCheckoutCard } from "@/components/community/PaymentCheckoutCard"
 import { DashboardTab } from "@/components/community/types";
 import { MobileCommunityFlow } from "@/components/community/mobile/MobileCommunityFlow";
 import { cn } from "@/lib/utils";
+import { CommunityItem } from "@/lib/api/services/community.service";
+import { useExploreCommunities } from "@/lib/api/services/community.hooks";
 
 type CommunityTab = "Recommended" | "Trending" | "Free" | "Paid";
-
-type CommunityItem = {
-  id: string;
-  name: string;
-  creator: string;
-  members: string;
-  posts: string;
-  price: string;
-  priceAmount: number;
-  isFree: boolean;
-  image: string;
-  accent: "yellow" | "blue" | "green" | "rose";
-};
 
 const tabs: CommunityTab[] = [
   "Recommended",
   "Trending",
   "Free",
   "Paid",
-];
-
-const featuredCommunities: CommunityItem[] = [
-  {
-    id: "nigeria-food",
-    name: "Nigeria food and culture",
-    creator: "Localbuka owned",
-    members: "12.4k members",
-    posts: "340 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
-    accent: "green",
-  },
-  {
-    id: "chef-amaka",
-    name: "Chef Amaka's kitchen",
-    creator: "By Amaka Obi",
-    members: "2.1k members",
-    posts: "210 posts",
-    price: "Paid · N2,500/mo",
-    priceAmount: 2500,
-    isFree: false,
-    image:
-      "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=80",
-    accent: "yellow",
-  },
-  {
-    id: "street-food",
-    name: "Street food lovers",
-    creator: "Localbuka owned",
-    members: "8.7k members",
-    posts: "210 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80",
-    accent: "rose",
-  },
-  {
-    id: "taste-hunters",
-    name: "Taste Hunters",
-    creator: "By Wilson",
-    members: "3.7k members",
-    posts: "90 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=1200&q=80",
-    accent: "blue",
-  },
-  {
-    id: "budget-bites",
-    name: "Budget bites",
-    creator: "Localbuka owned",
-    members: "5.3k members",
-    posts: "96 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=1200&q=80",
-    accent: "yellow",
-  },
-  {
-    id: "food-travel",
-    name: "Food and travel",
-    creator: "By Blessing",
-    members: "2.1k members",
-    posts: "58 posts",
-    price: "Paid · N1,200/mo",
-    priceAmount: 1200,
-    isFree: false,
-    image:
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80",
-    accent: "blue",
-  },
-  {
-    id: "grill-masters",
-    name: "Grill masters NG",
-    creator: "By Grill Masters",
-    members: "3.7k members",
-    posts: "170 posts",
-    price: "Free",
-    priceAmount: 0,
-    isFree: true,
-    image:
-      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80",
-    accent: "green",
-  },
-  {
-    id: "food-room",
-    name: "The food room",
-    creator: "By Festus Ojo",
-    members: "1.3k members",
-    posts: "78 posts",
-    price: "Paid · N1,200/mo",
-    priceAmount: 1200,
-    isFree: false,
-    image:
-      "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80",
-    accent: "rose",
-  },
 ];
 
 const COMMUNITY_COPY = {
@@ -180,35 +62,14 @@ function CommunityPageContent() {
   // Explore view state
   const [activeTab, setActiveTab] = useState<CommunityTab>("Recommended");
   const [showModal, setShowModal] = useState(false);
-  const [selectedCommunity, setSelectedCommunity] = useState<CommunityItem | null>(
-    featuredCommunities[1] // Chef Amaka's kitchen
-  );
+  const [selectedCommunity, setSelectedCommunity] = useState<CommunityItem | null>(null);
   const [isCheckingOut, setIsCheckingOut] = useState(
     searchParams.get("checkout") === "true"
   );
 
-  const visibleCommunities = useMemo(() => {
-    if (activeTab === "Free") {
-      return featuredCommunities.filter((item) => item.isFree);
-    }
-    if (activeTab === "Paid") {
-      return featuredCommunities.filter((item) => !item.isFree);
-    }
-    if (activeTab === "Trending") {
-      return featuredCommunities.slice(4);
-    }
-    return featuredCommunities;
-  }, [activeTab]);
-
-  const recommendedItems = useMemo(
-    () => featuredCommunities.slice(0, 4),
-    []
-  );
-
-  const trendingItems = useMemo(
-    () => featuredCommunities.slice(4),
-    []
-  );
+  // Live API data
+  const { data, isLoading } = useExploreCommunities({ tab: activeTab });
+  const communities: CommunityItem[] = data?.items ?? [];
 
   const handleCardClick = (community: CommunityItem) => {
     setSelectedCommunity(community);
@@ -216,14 +77,14 @@ function CommunityPageContent() {
       // Option to show preview modal or navigate to detail
       setShowModal(true);
     } else {
-      router.push(`/community/${community.id}`);
+      router.push(`/community/${community.slug || community.id}`);
     }
   };
 
   const handleStartCheckout = () => {
     setShowModal(false);
     if (selectedCommunity) {
-      router.push(`/community/${selectedCommunity.id}/subscribe`);
+      router.push(`/community/${selectedCommunity.slug || selectedCommunity.id}/subscribe`);
     } else {
       setIsCheckingOut(true);
     }
@@ -371,7 +232,17 @@ function CommunityPageContent() {
             ) : activeTab === "Recommended" ? (
               /* ── Standard Explore Flow: Recommended + Trending ── */
               <div className="space-y-8 pt-1">
-                {/* 1. Recommended Section */}
+                {/* Loading skeleton */}
+                {isLoading && (
+                  <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="animate-pulse bg-[#252525] rounded-2xl h-48" />
+                    ))}
+                  </div>
+                )}
+
+                {/* 1. Recommended Section + Trending Section */}
+                {!isLoading && (<>
                 <section className="space-y-3 sm:space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
@@ -381,9 +252,9 @@ function CommunityPageContent() {
 
                   {/* Mobile View (< md): Horizontal Touch Snap Slider */}
                   <div className="flex items-stretch gap-3 overflow-x-auto pb-2 scrollbar-none -mx-3 px-3 snap-x md:hidden">
-                    {recommendedItems.map((community) => (
+                    {communities.slice(0, 4).map((community) => (
                       <div
-                        key={community.id}
+                        key={community.slug || community.id}
                         onClick={() => handleCardClick(community)}
                         className="group snap-start shrink-0 w-[180px] rounded-2xl bg-[#1c1c1d] border border-white/8 overflow-hidden cursor-pointer hover:border-white/20 active:scale-[0.98] transition-all flex flex-col justify-between shadow-lg"
                       >
@@ -430,9 +301,9 @@ function CommunityPageContent() {
 
                   {/* Desktop View (≥ md): Responsive Multi-Column Grid */}
                   <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
-                    {recommendedItems.map((community) => (
+                    {communities.slice(0, 4).map((community) => (
                       <article
-                        key={community.id}
+                        key={community.slug || community.id}
                         onClick={() => handleCardClick(community)}
                         className="group relative cursor-pointer overflow-hidden rounded-[20px] border border-white/8 bg-[#1c1c1d] shadow-[0_10px_35px_rgba(0,0,0,0.18)] hover:border-white/20 transition-all flex flex-col justify-between"
                       >
@@ -489,9 +360,9 @@ function CommunityPageContent() {
 
                   {/* Mobile View (< md): Stacked Tap-able Rows */}
                   <div className="space-y-2.5 md:hidden">
-                    {trendingItems.map((community) => (
+                    {communities.slice(4).map((community) => (
                       <div
-                        key={community.id}
+                        key={community.slug || community.id}
                         onClick={() => handleCardClick(community)}
                         className="group flex items-center justify-between gap-3 p-3 rounded-2xl bg-[#1c1c1d] border border-white/6 hover:border-white/15 cursor-pointer active:scale-[0.99] transition-all"
                       >
@@ -537,9 +408,9 @@ function CommunityPageContent() {
 
                   {/* Desktop View (≥ md): Multi-Column Grid */}
                   <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
-                    {trendingItems.map((community) => (
+                    {communities.slice(4).map((community) => (
                       <article
-                        key={community.id}
+                        key={community.slug || community.id}
                         onClick={() => handleCardClick(community)}
                         className="group relative cursor-pointer overflow-hidden rounded-[20px] border border-white/8 bg-[#1c1c1d] shadow-[0_10px_35px_rgba(0,0,0,0.18)] hover:border-white/20 transition-all flex flex-col justify-between"
                       >
@@ -585,6 +456,7 @@ function CommunityPageContent() {
                     ))}
                   </div>
                 </section>
+                </>)}
               </div>
             ) : (
               /* ── Filtered Communities Grid (Trending / Free / Paid) ── */
@@ -597,10 +469,20 @@ function CommunityPageContent() {
                     : "Free Communities"}
                 </h2>
 
+                {/* Loading skeleton */}
+                {isLoading && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="animate-pulse bg-[#252525] rounded-2xl h-48" />
+                    ))}
+                  </div>
+                )}
+
+                {!isLoading && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
-                  {visibleCommunities.map((community) => (
+                  {communities.map((community) => (
                     <article
-                      key={community.id}
+                      key={community.slug || community.id}
                       onClick={() => handleCardClick(community)}
                       className="group relative cursor-pointer overflow-hidden rounded-[20px] border border-white/8 bg-[#1c1c1d] shadow-[0_10px_35px_rgba(0,0,0,0.18)] hover:border-white/20 transition-all flex flex-col justify-between"
                     >
@@ -645,6 +527,7 @@ function CommunityPageContent() {
                     </article>
                   ))}
                 </div>
+                )}
               </div>
             )}
 

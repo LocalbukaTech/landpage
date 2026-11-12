@@ -19,51 +19,20 @@ import {
   FiGift,
   FiRefreshCw,
   FiCompass,
-  FiSend,
 } from 'react-icons/fi';
-import api from '@/lib/api/client';
 
 type TemplateKey = 'welcome' | 'reengagement' | 'referral-referrer' | 'referral-referee' | 'welcome-visual';
 
 export default function EmailTemplatesGalleryPage() {
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateKey>('referral-referee');
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateKey>('welcome');
   const [viewportMode, setViewportMode] = useState<'desktop' | 'mobile'>('desktop');
   const [copied, setCopied] = useState(false);
 
   // Dynamic state
-  const [name, setName] = useState('Tobi Akinkuotu');
-  const [pointsEarned, setPointsEarned] = useState(25);
-  const [currentBalance, setCurrentBalance] = useState(25);
-  const [referralCode, setReferralCode] = useState('TOBI-BUKA');
-  const [testEmail, setTestEmail] = useState('akinkuotutobi6@gmail.com');
-  const [isSendingTest, setIsSendingTest] = useState(false);
-  const [sendFeedback, setSendFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-
-  const handleSendTestEmail = async () => {
-    if (!testEmail.trim()) return;
-    setIsSendingTest(true);
-    setSendFeedback(null);
-    try {
-      await api.post('/lifecycle-emails/test-send', {
-        email: testEmail.trim(),
-        template: selectedTemplate,
-        fullName: name,
-        referrerName: 'Wilson',
-        bonusPoints: selectedTemplate === 'referral-referee' ? 25 : pointsEarned,
-        currentBalance: selectedTemplate === 'referral-referee' ? 25 : currentBalance,
-        referralCode,
-      });
-      setSendFeedback({
-        type: 'success',
-        message: `Sent ${selectedTemplate} (+${selectedTemplate === 'referral-referee' ? 25 : pointsEarned} pts) to ${testEmail.trim()}!`,
-      });
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to send test email';
-      setSendFeedback({ type: 'error', message: msg });
-    } finally {
-      setIsSendingTest(false);
-    }
-  };
+  const [name, setName] = useState('Wilson');
+  const [pointsEarned, setPointsEarned] = useState(50);
+  const [currentBalance, setCurrentBalance] = useState(100);
+  const [referralCode, setReferralCode] = useState('BUKA-EXPLORE');
 
   const currentEmail: EmailRenderResult = useMemo(() => {
     const data: EmailDynamicData = {
@@ -287,42 +256,6 @@ export default function EmailTemplatesGalleryPage() {
                   />
                 </div>
               </>
-            )}
-          </div>
-
-          {/* Send Live Test Email Card */}
-          <div className="bg-slate-900/70 p-4 rounded-xl border border-[#FBBE15]/40 space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[#FBBE15] flex items-center gap-1.5">
-              <FiSend className="w-3.5 h-3.5" />
-              Send Live Test Email
-            </h3>
-            <div>
-              <label className="text-[11px] text-slate-400 block mb-1">Recipient Email</label>
-              <input
-                type="email"
-                value={testEmail}
-                onChange={(e) => setTestEmail(e.target.value)}
-                placeholder="akinkuotutobi6@gmail.com"
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#FBBE15]"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleSendTestEmail}
-              disabled={isSendingTest || !testEmail.trim()}
-              className="w-full flex items-center justify-center gap-2 bg-[#FBBE15] hover:bg-[#F2B005] disabled:opacity-50 text-[#0A182F] px-3.5 py-2 rounded-lg text-xs font-bold transition shadow-md cursor-pointer"
-            >
-              <FiSend className="w-3.5 h-3.5" />
-              {isSendingTest ? 'Sending...' : 'Send Test Email Now'}
-            </button>
-            {sendFeedback && (
-              <p
-                className={`text-[11px] font-medium ${
-                  sendFeedback.type === 'success' ? 'text-emerald-400' : 'text-rose-400'
-                }`}
-              >
-                {sendFeedback.message}
-              </p>
             )}
           </div>
 

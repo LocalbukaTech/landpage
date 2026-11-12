@@ -208,7 +208,8 @@ export function Sidebar() {
               setIsSearchOpen(true);
               setIsNotificationOpen(false);
             }}
-            role='button'
+            role='search'
+            aria-label='Search LocalBuka'
             tabIndex={0}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {

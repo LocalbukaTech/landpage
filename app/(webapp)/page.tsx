@@ -267,6 +267,17 @@ function LocalBukaEditorialSection() {
         <p>
           Welcome to LocalBuka, the premier restaurant discovery platform, neighborhood buka directory, and interactive culinary community built for food lovers across Nigeria and Africa. Whether you are searching for smoky firewood Jollof rice in Lagos, traditional Tuwo Shinkafa in Abuja, roasted plantain (Bole) and grilled fish in Port Harcourt, or chef-led culinary masterclasses, LocalBuka connects diners with verified restaurants, transparent hygiene ratings, honest customer reviews, and short-form culinary video feeds.
         </p>
+        <form role='search' action='/search' method='get' aria-label='Search Restaurants, Bukas and Dishes'>
+          <label htmlFor='localbuka-site-search'>Search Restaurants, Bukas, Dishes &amp; Communities</label>
+          <input
+            id='localbuka-site-search'
+            type='search'
+            name='q'
+            placeholder='Search restaurants, bukas, dishes, or neighborhoods...'
+            aria-label='Search restaurants, bukas, dishes, or neighborhoods'
+          />
+          <button type='submit'>Search</button>
+        </form>
       </header>
 
       <h2>How LocalBuka Transforms Restaurant Discovery and Local Dining</h2>

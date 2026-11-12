@@ -31,8 +31,11 @@ export function CookieConsentBanner() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
+      const forceShow =
+        window.location.search.includes('cookie_banner=1') ||
+        window.location.hash === '#cookie-consent-banner';
       const saved = window.localStorage.getItem(CONSENT_STORAGE_KEY);
-      if (!saved) {
+      if (!saved || forceShow) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setVisible(true);
       } else {

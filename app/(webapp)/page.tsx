@@ -396,31 +396,86 @@ function LocalBukaEditorialSection() {
       <article>
         <h3>How do I find verified local bukas and restaurants near me?</h3>
         <p>
-          Visit the Buka Explorer page on LocalBuka, enable location access or type your city and neighborhood (such as Lekki, Ikeja, Surulere, Wuse, or GRA Port Harcourt), and filter by dish type, rating, or budget.
+          Visit the Buka Explorer page on LocalBuka, enable location access or type your city and neighborhood (such as Lekki, Ikeja, Surulere, Wuse, or GRA Port Harcourt), and filter by dish type, rating, or budget. Every listing includes community-verified directions, opening hours, signature dishes, and video reviews from real diners.
         </p>
       </article>
       <article>
         <h3>Can restaurant owners and chefs list their kitchen on LocalBuka?</h3>
         <p>
-          Yes. Any restaurant, neighborhood buka, bakery, or food business can submit a listing through the List Restaurant page with their address, operating hours, signature dishes, and photos for community discovery.
+          Yes. Any restaurant, neighborhood buka, bakery, catering kitchen, or food business can submit a listing through the List Restaurant page with their street address, operating hours, signature dishes, price range, and kitchen photos for community discovery across Nigeria.
         </p>
       </article>
       <article>
         <h3>What are LocalBuka Culinary Communities?</h3>
         <p>
-          LocalBuka Communities are interactive groups where food lovers and culinary creators connect around shared food interests—ranging from regional Nigerian soup recipes and budget meal prep to city-specific restaurant hunting.
+          LocalBuka Communities are interactive groups where food lovers and culinary creators connect around shared food interests—ranging from regional Nigerian soup recipes and budget meal prep to city-specific restaurant hunting and live cooking demonstrations.
+        </p>
+      </article>
+      <article>
+        <h3>How does LocalBuka verify restaurant reviews and food hygiene ratings?</h3>
+        <p>
+          Reviews submitted on LocalBuka are moderated for authenticity and paired with diner-recorded video clips and photographs. Our community guidelines require honest, first-hand dining experiences covering food temperature, kitchen cleanliness, water safety, staff courtesy, and accurate menu pricing.
         </p>
       </article>
 
-      <nav aria-label='Essential Platform Links'>
-        <Link href='/about'>About LocalBuka</Link>
-        <Link href='/contact'>Contact Us &amp; Support</Link>
+      <h2>Glossary of Essential Nigerian &amp; West African Dishes</h2>
+      <article>
+        <h3>Traditional Swallows, Soups, Rice Dishes &amp; Street Delicacies</h3>
+        <p>
+          For travelers, culinary students, and food enthusiasts exploring Nigerian cuisine for the first time, this reference guide explains the most popular dishes featured across LocalBuka restaurants:
+        </p>
+        <ul>
+          <li>
+            <strong>Jollof Rice:</strong> West Africa&rsquo;s iconic one-pot long-grain parboiled rice simmered in a roasted tomato, red bell pepper, Scotch bonnet, onion, ginger, curry, thyme, and bay-leaf reduction, traditionally finished over firewood for a signature smoky aroma.
+          </li>
+          <li>
+            <strong>Amala, Ewedu &amp; Gbegiri (Abula):</strong> A classic Yoruba trio combining smooth yam-flour swallow (Amala) with whisked jute-leaf soup (Ewedu), creamy peeled-bean soup (Gbegiri), and rich palm-oil assorted meat stew seasoned with fermented locust beans (Iru).
+          </li>
+          <li>
+            <strong>Egusi Soup:</strong> Ground melon seeds slow-cooked with palm oil, crayfish, stockfish, leafy vegetables (Ugu or bitterleaf), and assorted meats—enjoyed with pounded yam, eba, semovita, or fufu across every region of Nigeria.
+          </li>
+          <li>
+            <strong>Ofada Rice &amp; Ayamase Stew:</strong> Unpolished indigenous short-grain Nigerian rice boasting an earthy, nutty aroma, served in traditional uma leaves alongside green bell-pepper designer stew (Ayamase) cooked with bleached palm oil and locust beans.
+          </li>
+          <li>
+            <strong>Suya &amp; Kilishi:</strong> Skewered strips of tender beef, ram, or chicken marinated in Yaji (roasted peanut cake, ginger, garlic, cloves, and chili spice blend) and grilled over open charcoal embers each evening.
+          </li>
+          <li>
+            <strong>Bole &amp; Grilled Fish:</strong> Port Harcourt&rsquo;s signature street-side feast of charcoal-roasted plantain and sweet yam served with deeply spiced grilled mackerel or croaker and a tangy palm-oil pepper sauce.
+          </li>
+          <li>
+            <strong>Pounded Yam &amp; Edikang Ikong / Afang:</strong> Boiled white yam pounded to a stretchy, cloud-like consistency and paired with nutrient-dense vegetable soups native to Cross River and Akwa Ibom States.
+          </li>
+          <li>
+            <strong>Tuwo Shinkafa &amp; Miyan Kuka:</strong> Soft, steamed rice pudding swallow from Northern Nigeria served with savory baobab-leaf soup (Miyan Kuka) or spiced pumpkin stew (Miyan Taushe).
+          </li>
+          <li>
+            <strong>Moi Moi &amp; Akara:</strong> Peeled black-eyed peas blended with peppers, onions, and crayfish—either steamed in leaves as a savory pudding (Moi Moi) or deep-fried into golden, crispy bean fritters (Akara) enjoyed withogi (fermented corn pap) or fresh Agege bread.
+          </li>
+          <li>
+            <strong>Pepper Soup:</strong> A fragrant, soothing broth infused with calabash nutmeg (Ehuru), grains of Selim (Uda), scent leaf (Efirin), and chili, prepared with fresh catfish (Point &amp; Kill), goat meat, or cow foot.
+          </li>
+        </ul>
+      </article>
+
+      <h2>Editorial Policy, Disclaimer &amp; Terms of Use</h2>
+      <p>
+        All restaurant guides, culinary articles, and community reviews published on LocalBuka are created for informational and educational purposes. While our editorial team and community moderators verify restaurant locations, operating hours, and menu highlights, diners with specific food allergies or dietary restrictions should always confirm ingredient details directly with the restaurant kitchen before ordering.
+      </p>
+
+      <nav aria-label='Essential Platform & Policy Links'>
+        <Link href='/about'>About Us</Link>
+        <Link href='/contact'>Contact Us</Link>
         <Link href='/blog'>Culinary Blog &amp; Articles</Link>
         <Link href='/buka'>Explore Restaurants &amp; Bukas</Link>
         <Link href='/community'>Food Communities</Link>
         <Link href='/faqs'>Frequently Asked Questions</Link>
-        <Link href='/team'>Our Team</Link>
-        <Link href='/privacy'>Privacy Policy &amp; Terms of Service</Link>
+        <Link href='/team'>Editorial &amp; Engineering Team</Link>
+        <Link href='/privacy'>Privacy Policy</Link>
+        <Link href='/privacy#terms'>Terms of Service &amp; Conditions</Link>
+        <Link href='/privacy#disclaimer'>Legal Disclaimer</Link>
+        <Link href='/privacy#website-app-privacy'>Cookie Policy &amp; GDPR Notice</Link>
+        <Link href='/sitemap.xml'>XML Sitemap</Link>
       </nav>
     </section>
   );

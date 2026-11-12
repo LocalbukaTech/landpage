@@ -21,8 +21,45 @@ export const metadata: Metadata = {
   },
 };
 export default function TeamPage() {
+  const teamSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'AboutPage',
+        '@id': 'https://localbuka.com/team#webpage',
+        url: 'https://localbuka.com/team',
+        name: 'Our Team - Meet the People Behind LocalBuka',
+        description:
+          'Meet the passionate team behind LocalBuka working together to bring you the best food discovery experience.',
+        isPartOf: { '@id': 'https://localbuka.com/#website' },
+        about: { '@id': 'https://localbuka.com/#organization' },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://localbuka.com',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Our Team',
+            item: 'https://localbuka.com/team',
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(teamSchema) }}
+      />
       <main className='bg-[#FFF9E8] dark:bg-black'>
         <Navbar />
         <div className='py-30'>

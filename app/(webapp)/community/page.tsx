@@ -14,14 +14,70 @@ import {
 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { CreatorDashboard } from "@/components/community/CreatorDashboard";
+import {
+  CreatorCommunityForm,
+  CreatorCommunityFormData,
+} from "@/components/community/CreatorCommunityForm";
+import { CreatorCommunityCarousel } from "@/components/community/CreatorCommunityCarousel";
+import { CreatorPaymentPortal } from "@/components/community/CreatorPaymentPortal";
+import { CreatorCommunityApprovedCard } from "@/components/community/CreatorCommunityApprovedCard";
+import { CreatorCommunityChangesRequestedCard } from "@/components/community/CreatorCommunityChangesRequestedCard";
+import { CreatorCommunityRejectedCard } from "@/components/community/CreatorCommunityRejectedCard";
+import { CommunityMembershipsList } from "@/components/community/CommunityMembershipsList";
 import { PaymentCheckoutCard } from "@/components/community/PaymentCheckoutCard";
 import { DashboardTab } from "@/components/community/types";
 import { MobileCommunityFlow } from "@/components/community/mobile/MobileCommunityFlow";
 import { cn } from "@/lib/utils";
 import { CommunityItem } from "@/lib/api/services/community.service";
-import { useExploreCommunities } from "@/lib/api/services/community.hooks";
+import {
+  useExploreCommunities,
+  useCreateCommunity,
+} from "@/lib/api/services/community.hooks";
+import { useToast } from "@/hooks/use-toast";
 
 type CommunityTab = "Recommended" | "Trending" | "Free" | "Paid";
+type CreatorStep =
+  | "form"
+  | "payment"
+  | "approved"
+  | "changes-requested"
+  | "rejected"
+  | "dashboard";
+
+const CREATOR_COMMUNITY_STORAGE_KEY = "localbuka_creator_community_v1";
+
+const DEFAULT_CREATOR_DATA: CreatorCommunityFormData = {
+  name: "Chef Tolu's VIP Kitchen",
+  bio: "Weekly private recipes, live cook-alongs, and direct culinary coaching.",
+  category: "paid",
+  avatar: "/images/community/cover-1.jpg",
+  coverImage: "/images/community/cover-1.jpg",
+  costBracket: "base_2k",
+  pricePerMonth: 2000,
+  yearlyPrice: 20000,
+  billingSchedule: "monthly",
+  payoutSchedule: "7_day_hold",
+  scheduledLaunchDate: new Date().toISOString().split("T")[0],
+  primaryPaymentMethod: "paystack",
+  paymentPlatforms: ["paystack", "card", "bank_transfer"],
+  payoutAccount: {
+    bankCode: "zenith",
+    bankName: "Zenith Bank PLC",
+    accountNumber: "2083948192",
+    accountName: "Tolu Olawale",
+  },
+  paymentLinks: {
+    paystack: "http://localhost:3000/community/chef-tolu-s-vip-kitchen/subscribe",
+    flutterwave: "http://localhost:3000/community/chef-tolu-s-vip-kitchen/subscribe",
+    stripe: "http://localhost:3000/community/chef-tolu-s-vip-kitchen/subscribe",
+    custom: "http://localhost:3000/community/chef-tolu-s-vip-kitchen/subscribe",
+  },
+  benefits: [
+    "Exclusive recipes and weekly cook-along sessions",
+    "Private food spot recommendations & tasting invites",
+    "Direct Q&A and priority community badge",
+  ],
+};
 
 const tabs: CommunityTab[] = [
   "Recommended",
@@ -40,11 +96,56 @@ const COMMUNITY_COPY = {
 function CommunityPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const createCommunityMutation = useCreateCommunity();
+
   const initialMode =
     searchParams.get("view") === "creator"
       ? "creator"
+      : searchParams.get("view") === "memberships"
+      ? "memberships"
       : "explore";
-  const [viewMode, setViewMode] = useState<"creator" | "explore">(initialMode);
+  const [viewMode, setViewMode] = useState<"creator" | "explore" | "memberships">(
+    initialMode
+  );
+
+  const stepParam = searchParams.get("step") || searchParams.get("status");
+  const [creatorStep, setCreatorStep] = useState<CreatorStep>(() => {
+    if (stepParam === "payment") return "payment";
+    if (stepParam === "approved") return "approved";
+    if (stepParam === "changes-requested") return "changes-requested";
+    if (stepParam === "rejected") return "rejected";
+    if (stepParam === "dashboard" || searchParams.get("tab")) return "dashboard";
+    return "form";
+  });
+
+  const [creatorData, setCreatorData] = useState<CreatorCommunityFormData>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = window.localStorage.getItem(CREATOR_COMMUNITY_STORAGE_KEY);
+        if (saved) {
+          return { ...DEFAULT_CREATOR_DATA, ...JSON.parse(saved) };
+        }
+      } catch {
+        // ignore storage errors
+      }
+    }
+    return DEFAULT_CREATOR_DATA;
+  });
+
+  const saveCreatorData = (next: CreatorCommunityFormData) => {
+    setCreatorData(next);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(
+          CREATOR_COMMUNITY_STORAGE_KEY,
+          JSON.stringify(next)
+        );
+      } catch {
+        // ignore storage quota errors
+      }
+    }
+  };
 
   // Tab from URL if specified
   const tabParam = searchParams.get("tab");
@@ -57,7 +158,7 @@ function CommunityPageContent() {
       ? "Monetization"
       : tabParam === "overview"
       ? "Overview"
-      : "Content and feed management";
+      : "Overview";
 
   // Explore view state
   const [activeTab, setActiveTab] = useState<CommunityTab>("Recommended");
@@ -70,6 +171,60 @@ function CommunityPageContent() {
   // Live API data
   const { data, isLoading } = useExploreCommunities({ tab: activeTab });
   const communities: CommunityItem[] = data?.items ?? [];
+
+  const handleSelectFreePlan = (formData: CreatorCommunityFormData) => {
+    saveCreatorData(formData);
+    createCommunityMutation.mutate({
+      name: formData.name,
+      description: formData.bio,
+      category: "free",
+      pricePerMonth: 0,
+      pricePerYear: 0,
+      coverImage: formData.coverImage || formData.avatar,
+      avatar: formData.avatar,
+      benefits: formData.benefits,
+    });
+    toast({
+      title: "Free Community Created! 🎉",
+      description: `${formData.name} is now live on LocalBuka.`,
+    });
+    setCreatorStep("approved");
+  };
+
+  const handleSelectPaidPlan = (formData: CreatorCommunityFormData) => {
+    saveCreatorData(formData);
+    setCreatorStep("payment");
+  };
+
+  const handlePaymentSuccess = () => {
+    createCommunityMutation.mutate({
+      name: creatorData.name,
+      description: creatorData.bio,
+      category: "paid",
+      costBracket: creatorData.costBracket,
+      pricePerMonth: Math.max(2000, creatorData.pricePerMonth || 2000),
+      pricePerYear: Math.max(2000, creatorData.pricePerMonth || 2000) * 10,
+      billingSchedule: creatorData.billingSchedule,
+      payoutSchedule: creatorData.payoutSchedule,
+      primaryPaymentMethod: creatorData.primaryPaymentMethod,
+      paymentPlatforms: creatorData.paymentPlatforms,
+      payoutAccount: creatorData.payoutAccount,
+      paymentLinks: creatorData.paymentLinks,
+      coverImage: creatorData.coverImage || creatorData.avatar,
+      avatar: creatorData.avatar,
+      benefits: creatorData.benefits,
+    });
+    toast({
+      title: "Paid Community Submitted & Approved! 🎉",
+      description: `${creatorData.name} (₦${Math.max(
+        2000,
+        creatorData.pricePerMonth || 2000
+      ).toLocaleString("en-NG")}/mo) is now configured with ${
+        creatorData.payoutAccount.bankName
+      }.`,
+    });
+    setCreatorStep("approved");
+  };
 
   const handleCardClick = (community: CommunityItem) => {
     setSelectedCommunity(community);
@@ -135,10 +290,29 @@ function CommunityPageContent() {
               </button>
               <button
                 type="button"
-                onClick={() => setViewMode("creator")}
+                onClick={() => {
+                  setViewMode("creator");
+                  setCreatorStep("form");
+                }}
                 className={cn(
                   "flex items-center gap-1.5 rounded-full px-3 sm:px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer",
-                  viewMode === "creator"
+                  viewMode === "creator" && creatorStep !== "dashboard"
+                    ? "bg-[#f5c94d] text-black shadow-sm font-bold"
+                    : "text-white/60 hover:text-white"
+                )}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Creator Community</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode("creator");
+                  setCreatorStep("dashboard");
+                }}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-full px-3 sm:px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                  viewMode === "creator" && creatorStep === "dashboard"
                     ? "bg-[#f5c94d] text-black shadow-sm font-bold"
                     : "text-white/60 hover:text-white"
                 )}
@@ -151,7 +325,10 @@ function CommunityPageContent() {
             {viewMode === "explore" && (
               <button
                 type="button"
-                onClick={() => setViewMode("creator")}
+                onClick={() => {
+                  setViewMode("creator");
+                  setCreatorStep("form");
+                }}
                 className="inline-flex sm:hidden items-center gap-1 rounded-full bg-[#f5c94d] px-3 py-1.5 text-xs font-bold text-black active:scale-95 transition-all shadow-md cursor-pointer"
               >
                 <Plus className="h-3.5 w-3.5 stroke-[3]" />
@@ -161,9 +338,158 @@ function CommunityPageContent() {
           </div>
         </div>
 
-        {/* ── View 1: Creator Management Dashboard ── */}
+        {/* ── View 0: My Memberships ── */}
+        {viewMode === "memberships" && (
+          <CommunityMembershipsList onBack={() => setViewMode("explore")} />
+        )}
+
+        {/* ── View 1: Creator Community Creation, Payment, Review & Management Dashboard ── */}
         {viewMode === "creator" && (
-          <CreatorDashboard initialTab={initialDashboardTab} />
+          <div className="space-y-6">
+            {/* Creator Flow Step Navigator Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#202020] border border-white/8 px-4 py-3">
+              <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                <span className="text-white/40 font-medium mr-1">
+                  Creator Flow:
+                </span>
+                {(
+                  [
+                    { id: "form", label: "1. Create & Cost Bracket" },
+                    { id: "payment", label: "2. Payment & Account" },
+                    { id: "approved", label: "3. Approved & Live" },
+                    { id: "changes-requested", label: "4. Changes Requested" },
+                    { id: "rejected", label: "5. Not Approved" },
+                    { id: "dashboard", label: "6. Creator Dashboard" },
+                  ] as { id: CreatorStep; label: string }[]
+                ).map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setCreatorStep(s.id)}
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
+                      creatorStep === s.id
+                        ? "bg-[#f5c94d] text-black font-bold"
+                        : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+                    )}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setViewMode("explore")}
+                className="text-xs text-white/60 hover:text-white flex items-center gap-1 cursor-pointer"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span>Back to Explore</span>
+              </button>
+            </div>
+
+            {/* Step 1: Create Community + Cost Bracket + Payout Bank Account Form */}
+            {creatorStep === "form" && (
+              <div className="flex flex-col lg:flex-row w-full max-w-[1080px] mx-auto bg-[#1a1a1a] rounded-[25px] overflow-hidden shadow-2xl border border-white/8">
+                <div className="w-full lg:w-[440px] lg:flex-shrink-0 min-h-[420px]">
+                  <CreatorCommunityCarousel />
+                </div>
+                <div className="flex-1">
+                  <CreatorCommunityForm
+                    initialData={creatorData}
+                    onSelectPaidPlan={handleSelectPaidPlan}
+                    onSelectFreePlan={handleSelectFreePlan}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Payment Method & Gateway Portal */}
+            {creatorStep === "payment" && (
+              <div className="py-2">
+                <CreatorPaymentPortal
+                  creatorDetails={creatorData}
+                  onBack={() => setCreatorStep("form")}
+                  onSuccess={handlePaymentSuccess}
+                  onGoToDashboard={() => {
+                    handlePaymentSuccess();
+                    setCreatorStep("dashboard");
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Step 3: Approved & Live Status Card */}
+            {creatorStep === "approved" && (
+              <CreatorCommunityApprovedCard
+                communityName={creatorData.name || "Chef Tolu's VIP Kitchen"}
+                liveSince="Today"
+                price={
+                  creatorData.category === "free"
+                    ? "Free"
+                    : `₦${Math.max(2000, creatorData.pricePerMonth || 2000).toLocaleString("en-NG")}/${
+                        creatorData.billingSchedule === "yearly"
+                          ? "yr"
+                          : creatorData.billingSchedule === "quarterly"
+                          ? "qtr"
+                          : "mo"
+                      }`
+                }
+                payoutAccountSummary={
+                  creatorData.category === "free"
+                    ? "Free Community (No Payout Fee)"
+                    : `${creatorData.payoutAccount.bankName} · ${creatorData.payoutAccount.accountNumber}`
+                }
+                paymentLink={
+                  creatorData.paymentLinks.paystack ||
+                  creatorData.paymentLinks.custom
+                }
+                onGoToCommunity={() => setCreatorStep("dashboard")}
+                onCreateNew={() => setCreatorStep("form")}
+              />
+            )}
+
+            {/* Step 4: Changes Requested Status Card */}
+            {creatorStep === "changes-requested" && (
+              <CreatorCommunityChangesRequestedCard
+                reviewDate="Just now"
+                caseId="CR-1041"
+                summaryMessage="Your community is almost ready. Update the items below and resubmit for another review (72-hour SLA)."
+                feedbackMessage="Your pricing section doesn't clearly state the billing cadence. Please ensure your paid plan starts at the ₦2,000/month Base Plan or higher and specify monthly vs. annual before resubmitting."
+                changeItems={[
+                  { label: "Pricing and billing cadence (Min ₦2,000 Base Plan)", status: "pending" },
+                  { label: "Name, bio and category", status: "updated" },
+                  { label: "Payout bank account & member benefits", status: "updated" },
+                ]}
+                onEditAndResubmit={() => setCreatorStep("form")}
+              />
+            )}
+
+            {/* Step 5: Not Approved / Rejected Status Card */}
+            {creatorStep === "rejected" && (
+              <CreatorCommunityRejectedCard
+                reviewDate="1 day ago"
+                caseId="CR-1041"
+                rejectionReason="This community didn't meet our requirements and can't be published."
+                feedbackMessage="Pricing described does not match LocalBuka's membership guidelines (Base plan starts at ₦2,000/month). This community cannot be published."
+                actionMessage="You can create a new community with a compliant cost bracket (₦2,000/mo Base Plan and upward) and valid payout bank account."
+                onCreateNewCommunity={() => setCreatorStep("form")}
+                onContactSupport={() => setCreatorStep("form")}
+              />
+            )}
+
+            {/* Step 6: Creator Management Dashboard */}
+            {creatorStep === "dashboard" && (
+              <CreatorDashboard
+                initialTab={initialDashboardTab}
+                community={creatorData}
+                onCreateNewCommunity={() => setCreatorStep("form")}
+                onUpdateCommunity={(updates) =>
+                  saveCreatorData({ ...creatorData, ...updates })
+                }
+              />
+            )}
+          </div>
         )}
 
         {/* ── View 2: Explore Member Feed & Checkout ── */}
@@ -191,11 +517,31 @@ function CommunityPageContent() {
                     {tab}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("creator");
+                    setCreatorStep("form");
+                  }}
+                  className="rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 bg-[#252525] text-white/70 hover:bg-[#2f2f2f] hover:text-white"
+                >
+                  Creator community
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("memberships")}
+                  className="rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 bg-[#252525] text-white/70 hover:bg-[#2f2f2f] hover:text-white"
+                >
+                  My memberships
+                </button>
               </div>
 
               <button
                 type="button"
-                onClick={() => setViewMode("creator")}
+                onClick={() => {
+                  setViewMode("creator");
+                  setCreatorStep("form");
+                }}
                 className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#f5c94d] px-5 py-2 text-xs sm:text-sm font-bold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md cursor-pointer shrink-0"
               >
                 <Plus className="h-4 w-4 stroke-[2.5]" />
@@ -260,7 +606,7 @@ function CommunityPageContent() {
                       >
                         <div className="relative h-28 w-full bg-zinc-800">
                           <Image
-                            src={community.image}
+                            src={community.coverImage || community.image}
                             alt={community.name}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -309,7 +655,7 @@ function CommunityPageContent() {
                       >
                         <div className="relative h-56 w-full overflow-hidden bg-zinc-800">
                           <Image
-                            src={community.image}
+                            src={community.coverImage || community.image}
                             alt={community.name}
                             fill
                             className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -369,7 +715,7 @@ function CommunityPageContent() {
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-white/10 bg-zinc-800">
                             <Image
-                              src={community.image}
+                              src={community.coverImage || community.image}
                               alt={community.name}
                               fill
                               className="object-cover"
@@ -416,7 +762,7 @@ function CommunityPageContent() {
                       >
                         <div className="relative h-56 w-full overflow-hidden bg-zinc-800">
                           <Image
-                            src={community.image}
+                            src={community.coverImage || community.image}
                             alt={community.name}
                             fill
                             className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -488,7 +834,7 @@ function CommunityPageContent() {
                     >
                       <div className="relative h-48 sm:h-56 w-full overflow-hidden bg-zinc-800">
                         <Image
-                          src={community.image}
+                          src={community.coverImage || community.image}
                           alt={community.name}
                           fill
                           className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -598,7 +944,7 @@ function CommunityPageContent() {
                         type="button"
                         onClick={() => {
                           setShowModal(false);
-                          router.push(`/community/${selectedCommunity.id}`);
+                          router.push(`/community/${selectedCommunity.slug || selectedCommunity.id}`);
                         }}
                         className="w-full py-2 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
                       >

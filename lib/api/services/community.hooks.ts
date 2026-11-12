@@ -53,6 +53,19 @@ export const useMyCreatedCommunities = () => {
   });
 };
 
+export const useCreateCommunity = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (
+      data: Parameters<typeof communityService.create>[0],
+    ) => communityService.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.myCommunities() });
+    },
+  });
+};
+
 export const useJoinCommunity = () => {
   const queryClient = useQueryClient();
   return useMutation({

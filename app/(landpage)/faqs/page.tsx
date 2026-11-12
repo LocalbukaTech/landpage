@@ -15,8 +15,50 @@ import {faqCategories} from '@/lib/faq-data';
 const FAQPage = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
+  const allFaqItems = faqCategories.flatMap((cat) => cat.faqs);
+  const faqPageSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'FAQPage',
+        '@id': 'https://localbuka.com/faqs#faqpage',
+        url: 'https://localbuka.com/faqs',
+        name: 'LocalBuka Frequently Asked Questions',
+        mainEntity: allFaqItems.map((faq) => ({
+          '@type': 'Question',
+          name: faq.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.answer,
+          },
+        })),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://localbuka.com',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'FAQs',
+            item: 'https://localbuka.com/faqs',
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageSchema) }}
+      />
       <main className='bg-white dark:bg-black min-h-screen'>
         <Navbar />
         <div className='pt-24 pb-16 px-4 sm:px-6 lg:px-8'>

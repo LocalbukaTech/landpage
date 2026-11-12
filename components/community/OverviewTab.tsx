@@ -1,30 +1,61 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import Image from "next/image";
+import { ArrowUpRight, Heart, MessageCircle, Plus } from "lucide-react";
+import { CommunityPost } from "./types";
 
 interface OverviewTabProps {
   defaultLoading?: boolean;
+  posts?: CommunityPost[];
   onNavigateToContent?: () => void;
+  onNavigateToMembers?: () => void;
+  onNavigateToMonetization?: () => void;
+  communityName?: string;
+  pricePerMonth?: number;
 }
+
+const GROWTH_POINTS = [
+  { label: "Mon", value: 420 },
+  { label: "Tue", value: 580 },
+  { label: "Wed", value: 740 },
+  { label: "Thu", value: 1120 },
+  { label: "Fri", value: 1480 },
+  { label: "Sat", value: 1890 },
+  { label: "Sun", value: 2148 },
+];
 
 export function OverviewTab({
   defaultLoading = false,
+  posts = [],
   onNavigateToContent,
+  onNavigateToMembers,
+  onNavigateToMonetization,
 }: OverviewTabProps) {
-  const [isLoading, setIsLoading] = useState(defaultLoading);
+  const [viewState, setViewState] = useState<"filled" | "empty" | "loading">(
+    defaultLoading ? "loading" : "filled"
+  );
+
+  const isLoading = viewState === "loading";
+  const showEmptyPerformance = viewState === "empty" || posts.length === 0;
 
   return (
     <div className="w-full text-white space-y-6 pt-1">
       {/* Dev / Reviewer State Switcher */}
-      <div className="flex justify-end mb-2" style={{ maxWidth: '1012px' }}>
-        <button
-          type="button"
-          onClick={() => setIsLoading(!isLoading)}
-          className="text-xs text-white/50 hover:text-[#FBBE15] transition-colors underline cursor-pointer"
-        >
-          {isLoading ? "Switch to filled state" : "Switch to loading state"}
-        </button>
+      <div className="flex items-center justify-end gap-3 mb-2" style={{ maxWidth: '1012px' }}>
+        <span className="text-xs text-white/40">View state:</span>
+        {(["filled", "empty", "loading"] as const).map((state) => (
+          <button
+            key={state}
+            type="button"
+            onClick={() => setViewState(state)}
+            className={`text-xs transition-colors underline cursor-pointer capitalize ${
+              viewState === state ? "text-[#FBBE15] font-semibold" : "text-white/50 hover:text-[#FBBE15]"
+            }`}
+          >
+            {state}
+          </button>
+        ))}
       </div>
 
       {isLoading ? (
@@ -185,7 +216,7 @@ export function OverviewTab({
 
               <div className="my-1">
                 <span className="text-[38px] font-bold text-white tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-none">
-                  0
+                  {showEmptyPerformance ? "0" : "2,148"}
                 </span>
               </div>
 
@@ -193,9 +224,13 @@ export function OverviewTab({
                 <span className="text-[#4ade80] font-medium flex items-center gap-1">
                   <span>▲</span> + 8.3% this weekend
                 </span>
-                <span className="text-white/40 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={onNavigateToMembers}
+                  className="text-white/40 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5"
+                >
                   View details <ArrowUpRight className="w-3 h-3" />
-                </span>
+                </button>
               </div>
             </div>
 
@@ -226,7 +261,7 @@ export function OverviewTab({
 
               <div className="my-1">
                 <span className="text-[38px] font-bold text-white tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-none">
-                  0
+                  {showEmptyPerformance ? "0" : "1,500"}
                 </span>
               </div>
 
@@ -234,9 +269,13 @@ export function OverviewTab({
                 <span className="text-[#4ade80] font-medium flex items-center gap-1">
                   <span>▲</span> + 12% this weekend
                 </span>
-                <span className="text-white/40 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={onNavigateToMembers}
+                  className="text-white/40 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5"
+                >
                   View details <ArrowUpRight className="w-3 h-3" />
-                </span>
+                </button>
               </div>
             </div>
 
@@ -273,7 +312,7 @@ export function OverviewTab({
 
               <div className="my-1">
                 <span className="text-[38px] font-bold text-white tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-none">
-                  0
+                  {showEmptyPerformance ? "0" : "₦3.5m"}
                 </span>
               </div>
 
@@ -281,9 +320,13 @@ export function OverviewTab({
                 <span className="text-[#4ade80] font-medium flex items-center gap-1">
                   <span>▲</span> + 12% this weekend
                 </span>
-                <span className="text-white/40 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={onNavigateToMonetization}
+                  className="text-white/40 hover:text-white transition-colors cursor-pointer flex items-center gap-0.5"
+                >
                   View details <ArrowUpRight className="w-3 h-3" />
-                </span>
+                </button>
               </div>
             </div>
           </div>
@@ -294,58 +337,202 @@ export function OverviewTab({
               Performance
             </h2>
 
-            {/* Performance Main Box (911x440px, r: 18px, border 1px) */}
-            <div
-              style={{
-                width: '100%',
-                maxWidth: '911px',
-                height: '440px',
-                borderRadius: '18px',
-                backgroundColor: '#000000',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-                boxSizing: 'border-box',
-              }}
-              className="shadow-xl flex flex-col items-center justify-center text-center px-6 relative"
-            >
-              <div className="flex flex-col items-center gap-7 max-w-[580px]">
-                <p
-                  style={{
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    fontWeight: 600,
-                    fontSize: '24px',
-                    lineHeight: '140%',
-                    letterSpacing: '-0.03em',
-                    textAlign: 'center',
-                    color: '#FFFFFF',
-                  }}
-                  className="m-0"
-                >
-                  You have no content, upload more videos<br className="hidden sm:inline" /> and photos to view your metrics
-                </p>
+            {showEmptyPerformance ? (
+              /* Empty Performance Box (911x440px, r: 18px, border 1px) */
+              <div
+                style={{
+                  width: '100%',
+                  maxWidth: '911px',
+                  height: '440px',
+                  borderRadius: '18px',
+                  backgroundColor: '#000000',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  boxSizing: 'border-box',
+                }}
+                className="shadow-xl flex flex-col items-center justify-center text-center px-6 relative"
+              >
+                <div className="flex flex-col items-center gap-7 max-w-[580px]">
+                  <p
+                    style={{
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      fontWeight: 600,
+                      fontSize: '24px',
+                      lineHeight: '140%',
+                      letterSpacing: '-0.03em',
+                      textAlign: 'center',
+                      color: '#FFFFFF',
+                    }}
+                    className="m-0"
+                  >
+                    You have no content, upload more videos<br className="hidden sm:inline" /> and photos to view your metrics
+                  </p>
 
-                <button
-                  type="button"
-                  onClick={onNavigateToContent}
-                  style={{
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
-                    fontWeight: 700,
-                    fontSize: '16px',
-                    lineHeight: '140%',
-                    letterSpacing: '0%',
-                    textAlign: 'center',
-                    height: '48px',
-                    borderRadius: '40px',
-                    paddingLeft: '40px',
-                    paddingRight: '40px',
-                    backgroundColor: '#FBBE15',
-                    color: '#000000',
-                  }}
-                  className="hover:brightness-105 active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center whitespace-nowrap"
-                >
-                  Head over to content
-                </button>
+                  <button
+                    type="button"
+                    onClick={onNavigateToContent}
+                    style={{
+                      fontFamily: "'Plus Jakarta Sans', sans-serif",
+                      fontWeight: 700,
+                      fontSize: '16px',
+                      lineHeight: '140%',
+                      letterSpacing: '0%',
+                      textAlign: 'center',
+                      height: '48px',
+                      borderRadius: '40px',
+                      paddingLeft: '40px',
+                      paddingRight: '40px',
+                      backgroundColor: '#FBBE15',
+                      color: '#000000',
+                    }}
+                    className="hover:brightness-105 active:scale-95 transition-all shadow-md cursor-pointer flex items-center justify-center whitespace-nowrap"
+                  >
+                    Head over to content
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              /* Filled Performance Chart + Recent Posted Content */
+              <div className="space-y-8" style={{ maxWidth: '911px' }}>
+                <div
+                  style={{
+                    width: '100%',
+                    maxWidth: '911px',
+                    height: '440px',
+                    borderRadius: '18px',
+                    backgroundColor: '#000000',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '31px 38px 24px 38px',
+                    boxSizing: 'border-box',
+                  }}
+                  className="shadow-xl flex flex-col justify-between relative overflow-hidden"
+                >
+                  {/* Top Header */}
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-white/90">
+                        Membership &amp; Content Growth
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#4ade80]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#4ade80]">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#4ade80]" />
+                        Live · {posts.length} {posts.length === 1 ? "post" : "posts"}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onNavigateToContent}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#FBBE15] px-4 py-1.5 text-xs font-bold text-black hover:brightness-105 transition-all cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+                      <span>Upload content</span>
+                    </button>
+                  </div>
+
+                  {/* Chart Center Area */}
+                  <div className="relative w-full flex-1 flex flex-col justify-center my-2">
+                    <div className="relative w-full flex items-center justify-center z-10">
+                      <svg
+                        width="100%"
+                        height="239"
+                        viewBox="0 0 697 239"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-full max-w-[697px] h-[239px] overflow-visible"
+                      >
+                        <path
+                          d="M0 181.59C74.6319 179.293 111.948 165.515 186.58 151.736C261.212 137.958 298.528 160.922 373.16 112.697C447.792 64.4728 485.108 96.6226 559.739 23.1374C609.494 -25.0872 641.834 9.35897 696.565 59.88V239H0V181.59Z"
+                          fill="url(#paint0_linear_overview_filled)"
+                        />
+                        <path
+                          d="M0 181.59C74.6319 179.293 111.948 165.515 186.58 151.736C261.212 137.958 298.528 160.922 373.16 112.697C447.792 64.4728 485.108 96.6226 559.739 23.1374C609.494 -25.0872 641.834 9.35897 696.565 59.88"
+                          stroke="#FBBE15"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                        />
+                        <circle cx="560" cy="23" r="6" fill="#FBBE15" stroke="#000" strokeWidth="2" />
+                        <defs>
+                          <linearGradient
+                            id="paint0_linear_overview_filled"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="239"
+                            gradientUnits="userSpaceOnUse"
+                          >
+                            <stop stopColor="#FBBE15" stopOpacity="0.35" />
+                            <stop offset="0.75" stopColor="#FBBE15" stopOpacity="0.05" />
+                            <stop offset="1" stopColor="#161618" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Bottom X-Axis Labels */}
+                  <div className="flex items-center justify-between w-full pt-1 px-4 text-xs text-white/50">
+                    {GROWTH_POINTS.map((pt) => (
+                      <span key={pt.label} className="font-medium">
+                        {pt.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recent Posted Content Preview */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-white">
+                      Recent Posted Content ({posts.length})
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={onNavigateToContent}
+                      className="text-xs font-semibold text-[#FBBE15] hover:underline cursor-pointer"
+                    >
+                      Manage all content →
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {posts.slice(0, 6).map((post) => (
+                      <div
+                        key={post.id}
+                        onClick={onNavigateToContent}
+                        className="group rounded-2xl bg-[#161618] border border-white/8 overflow-hidden cursor-pointer hover:border-white/20 transition-all flex flex-col justify-between"
+                      >
+                        <div className="relative h-44 w-full bg-zinc-900">
+                          <Image
+                            src={post.mediaUrl}
+                            alt={post.caption}
+                            fill
+                            unoptimized
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            sizes="300px"
+                          />
+                          <div className="absolute top-2.5 right-2.5 rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-medium text-white/90">
+                            {post.timestamp}
+                          </div>
+                        </div>
+                        <div className="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between">
+                          <p className="text-xs text-white/90 line-clamp-2 leading-relaxed">
+                            {post.caption}
+                          </p>
+                          <div className="flex items-center gap-4 text-[11px] text-white/60 pt-1">
+                            <span className="inline-flex items-center gap-1">
+                              <Heart className="h-3.5 w-3.5 text-[#FBBE15]" />
+                              {post.likes}
+                            </span>
+                            <span className="inline-flex items-center gap-1">
+                              <MessageCircle className="h-3.5 w-3.5" />
+                              {post.comments}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

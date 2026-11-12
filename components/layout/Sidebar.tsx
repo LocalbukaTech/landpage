@@ -332,7 +332,7 @@ export function Sidebar() {
                   </Link>
                 ))}
               </div>
-              <Link href='/company' className='text-[11px] text-zinc-600 mt-1'>
+              <Link href='/about' className='text-[11px] text-zinc-600 mt-1'>
                 &copy; {year} LocalBuka
               </Link>
             </footer>

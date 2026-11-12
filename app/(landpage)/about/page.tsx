@@ -9,8 +9,45 @@ import { Reveal } from '@/components/anim/Reveal';
 import StarIcon from '@/public/svg/StarIcon';
 
 export default function AboutPage() {
+  const aboutSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'AboutPage',
+        '@id': 'https://localbuka.com/about#webpage',
+        url: 'https://localbuka.com/about',
+        name: 'About LocalBuka - Africa’s Food Discovery & Community Platform',
+        description:
+          'LocalBuka is Africa’s food discovery and community platform built for people who care deeply about where they eat, what they eat, and who they eat with.',
+        isPartOf: { '@id': 'https://localbuka.com/#website' },
+        about: { '@id': 'https://localbuka.com/#organization' },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://localbuka.com',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'About Us',
+            item: 'https://localbuka.com/about',
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutSchema) }}
+      />
       <Navbar />
 
       {/* --- HERO SECTION --- */}
@@ -82,7 +119,7 @@ export default function AboutPage() {
                 <Reveal direction='up' delay={0.2} duration={0.6}>
                   <p>
                     We started with a simple observation: finding a great restaurant in an
-                    African city shouldn&apos;t feel like a gamble. Recommendations from
+                    African city shouldn&apos;t feel like guesswork. Recommendations from
                     friends, honest reviews from real people, and local knowledge should
                     be easy to find and easy to trust. LocalBuka makes that possible.
                     Whether you&apos;re a chef, a home cook, or someone who just loves a

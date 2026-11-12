@@ -1,6 +1,7 @@
 'use client';
 
 import {Suspense, useState, useMemo, useEffect} from 'react';
+import Link from 'next/link';
 import {useSearchParams} from 'next/navigation';
 import {useQueryClient} from '@tanstack/react-query';
 import {MainLayout} from '@/components/layout/MainLayout';
@@ -246,6 +247,48 @@ function HomeContent() {
             isLoadingMore={isFetchingNextPage}
           />
         )}
+        {/* Crawlable Editorial & Culinary Guide Section for Search Engines & AdSense Crawlers */}
+        <section
+          aria-label='LocalBuka Culinary Discovery & Restaurant Guide'
+          className='sr-only'
+        >
+          <h1>LocalBuka — Discover the Best Restaurants, Authentic Nigerian Cuisine, and Food Communities</h1>
+          <p>
+            Welcome to LocalBuka, the premier restaurant discovery and culinary community platform across Nigeria and Africa. Whether you are searching for authentic local bukas in Lagos, fine dining restaurants in Abuja, street food gems in Port Harcourt, or vibrant chef-led cooking communities, LocalBuka connects food lovers with verified dining experiences, honest customer reviews, and interactive culinary video feeds.
+          </p>
+          <h2>How LocalBuka Helps You Find Trusted Restaurants Near You</h2>
+          <p>
+            Finding a reliable place to eat in a busy city should be effortless and transparent. LocalBuka curates thousands of verified restaurants, neighborhood bukas, bakeries, and contemporary kitchens with real-time menus, hygiene ratings, price brackets, and video reviews recorded by real diners. Use our interactive Buka Explorer to filter restaurants by city, neighborhood, cuisine type, dietary preference, and customer rating.
+          </p>
+          <h2>Explore Culinary Articles, Recipes &amp; Dining Guides</h2>
+          <article>
+            <h3>The Ultimate Guide to Authentic Nigerian Jollof Rice &amp; Local Bukas in Lagos</h3>
+            <p>
+              Smoky party Jollof rice, slow-cookedayamase (designer stew), amala with ewedu and gbegiri, and freshly grilled suya remain the cornerstone of West African culinary heritage. On LocalBuka, top chefs and neighborhood bukas share traditional preparation techniques, spice blends, and verified locations where diners can enjoy freshly prepared meals every day.
+            </p>
+          </article>
+          <article>
+            <h3>How Food Creators &amp; Chefs Build Thriving Culinary Communities</h3>
+            <p>
+              Through LocalBuka Communities, professional chefs, nutritionists, and culinary creators host dedicated spaces for recipe sharing, live cook-along sessions, restaurant tasting tours, and regional food culture discussions. Members can join free public food communities or subscribe to specialized creator kitchens for exclusive culinary masterclasses.
+            </p>
+          </article>
+          <article>
+            <h3>Verified Restaurant Reviews, Food Safety &amp; Honest Dining Ratings</h3>
+            <p>
+              Every restaurant review on LocalBuka is backed by community moderation and authentic diner feedback. Diners evaluate taste, portion value, service speed, ambiance, and cleanliness so families, travelers, and everyday food enthusiasts can make informed dining decisions.
+            </p>
+          </article>
+          <nav aria-label='Essential Platform Links'>
+            <Link href='/about'>About LocalBuka</Link>
+            <Link href='/contact'>Contact Us &amp; Support</Link>
+            <Link href='/blog'>Culinary Blog &amp; Articles</Link>
+            <Link href='/buka'>Explore Restaurants &amp; Bukas</Link>
+            <Link href='/community'>Food Communities</Link>
+            <Link href='/faqs'>Frequently Asked Questions</Link>
+            <Link href='/privacy'>Privacy Policy &amp; Terms of Service</Link>
+          </nav>
+        </section>
         <PasswordPromptModal />
       </div>
     </MainLayout>

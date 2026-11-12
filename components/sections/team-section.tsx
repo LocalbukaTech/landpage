@@ -48,12 +48,15 @@ function TeamMemberCard({member}: {member: Team}) {
               <p className='text-xs text-gray-300'>{member.position}</p>
               {member.linkedin_url && (
                 <div className='mt-3 flex justify-center'>
-                  <p
+                  <a
+                    href={formatExternalUrl(member.linkedin_url)}
+                    target='_blank'
                     rel='noopener noreferrer'
+                    onClick={(e) => e.stopPropagation()}
                     aria-label={`Open ${member.first_name} ${member.last_name}'s LinkedIn`}
                     className='inline-flex items-center justify-center rounded-md bg-white/15 hover:bg-white/25 transition-colors p-2 backdrop-blur-sm'>
                     <RiLinkedinFill className='w-4 h-4 text-white' />
-                  </p>
+                  </a>
                 </div>
               )}
             </div>

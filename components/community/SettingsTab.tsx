@@ -10,6 +10,15 @@ import { GalleryPickerModal } from "./modals/GalleryPickerModal";
 interface SettingsTabProps {
   communityName?: string;
   communityBio?: string;
+  initialPrice?: number;
+  initialBenefits?: string[];
+  onUpdateCommunity?: (updates: {
+    name?: string;
+    bio?: string;
+    pricePerMonth?: number;
+    benefits?: string[];
+    coverImage?: string;
+  }) => void;
 }
 
 const PRESET_COVERS = [
@@ -38,15 +47,22 @@ const PRESET_COVERS = [
 export function SettingsTab({
   communityName: initialName = "Chef Tolu's kitchen",
   communityBio: initialBio = "Cooked some good food tonight, tap the link on my bio for the recepies",
+  initialPrice = 2000,
+  initialBenefits,
+  onUpdateCommunity,
 }: SettingsTabProps) {
   const [communityName, setCommunityName] = useState(initialName);
   const [communityBio, setCommunityBio] = useState(initialBio);
-  const [pricePerMonth, setPricePerMonth] = useState(2500);
-  const [benefits, setBenefits] = useState<string[]>([
-    "Recipes and cook-alongs from Chef Tolu",
-    "Private food spot recommendations in Lagos",
-    "Exclusive live Q&A cooking sessions",
-  ]);
+  const [pricePerMonth, setPricePerMonth] = useState(initialPrice);
+  const [benefits, setBenefits] = useState<string[]>(
+    initialBenefits && initialBenefits.length > 0
+      ? initialBenefits
+      : [
+          "Recipes and cook-alongs from Chef Tolu",
+          "Private food spot recommendations in Lagos",
+          "Exclusive live Q&A cooking sessions",
+        ]
+  );
   const [selectedCover, setSelectedCover] = useState(PRESET_COVERS[0].url);
   const [isVisible, setIsVisible] = useState(true);
 
@@ -177,6 +193,7 @@ export function SettingsTab({
         onSave={(name, bio) => {
           setCommunityName(name);
           setCommunityBio(bio);
+          onUpdateCommunity?.({ name, bio });
         }}
       />
 
@@ -186,8 +203,13 @@ export function SettingsTab({
         pricePerMonth={pricePerMonth}
         benefits={benefits}
         onSave={(price, newBenefits) => {
-          setPricePerMonth(price);
+          const validPrice = price > 0 ? Math.max(2000, price) : 0;
+          setPricePerMonth(validPrice);
           setBenefits(newBenefits);
+          onUpdateCommunity?.({
+            pricePerMonth: validPrice,
+            benefits: newBenefits,
+          });
         }}
       />
 
@@ -195,7 +217,10 @@ export function SettingsTab({
         isOpen={isGalleryModalOpen}
         onClose={() => setIsGalleryModalOpen(false)}
         selectedImage={selectedCover}
-        onSelectImage={(url) => setSelectedCover(url)}
+        onSelectImage={(url) => {
+          setSelectedCover(url);
+          onUpdateCommunity?.({ coverImage: url });
+        }}
       />
     </div>
   );

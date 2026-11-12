@@ -65,7 +65,7 @@ export function PricingBenefitsModal({
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
             <label className="block text-xs font-medium text-white/70 mb-1.5">
-              Monthly Subscription Price (NGN)
+              Monthly Subscription Price (NGN) — Base Plan starts at ₦2,000
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/50">
@@ -76,14 +76,36 @@ export function PricingBenefitsModal({
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
                 min={0}
-                step={100}
-                placeholder="2500"
+                step={500}
+                placeholder="2000"
                 className="w-full rounded-2xl border border-white/10 bg-[#212121] pl-8 pr-4 py-3 text-sm font-medium text-white placeholder-white/30 focus:border-[#f5c94d] focus:outline-none focus:ring-1 focus:ring-[#f5c94d]"
                 required
               />
             </div>
-            <p className="mt-1 text-[11px] text-white/40">
-              Set to 0 if your community is free to join.
+            <div className="flex items-center gap-1.5 flex-wrap pt-2">
+              {[
+                { label: "Free (₦0)", val: 0 },
+                { label: "Base ₦2,000", val: 2000 },
+                { label: "Growth ₦3,500", val: 3500 },
+                { label: "Pro ₦5,000", val: 5000 },
+                { label: "VIP ₦10,000", val: 10000 },
+              ].map((tier) => (
+                <button
+                  key={tier.val}
+                  type="button"
+                  onClick={() => setPrice(tier.val)}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer ${
+                    price === tier.val
+                      ? "bg-[#f5c94d] text-black"
+                      : "bg-[#212121] text-white/70 hover:bg-white/10"
+                  }`}
+                >
+                  {tier.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[11px] text-white/40">
+              Set to 0 for a Free community, or ₦2,000+ for a Paid community (92% creator share / 8% LocalBuka fee).
             </p>
           </div>
 

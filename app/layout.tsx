@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { ScrollToTop } from "@/components/common";
+import { CookieConsentBanner } from "@/components/common/CookieConsentBanner";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
 
@@ -62,6 +63,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://localbuka.com"),
+  alternates: {
+    canonical: "./",
+  },
 
   // Basic metadata
   title: {
@@ -168,9 +172,6 @@ export default async function RootLayout({
         {/* Google AdSense */}
         <meta name="google-adsense-account" content="ca-pub-2319578381550272" />
 
-        {/* Canonical URL */}
-        <link rel="canonical" href="https://localbuka.com" />
-
         {/* Preconnect to external domains for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -178,11 +179,138 @@ export default async function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+
+        {/* Schema.org Structured Data (Organization, WebSite, SearchAction & WebApplication) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": "https://localbuka.com/#organization",
+                  name: "LocalBuka",
+                  url: "https://localbuka.com",
+                  logo: {
+                    "@type": "ImageObject",
+                    url: "https://localbuka.com/images/localBuka_logo.png",
+                  },
+                  description: siteConfig.description,
+                  sameAs: [
+                    "https://www.linkedin.com/company/localbuka/",
+                    "https://www.instagram.com/localbuka_app",
+                    "https://www.tiktok.com/@localbuka_app",
+                    "https://x.com/LocalBuka_app",
+                    "https://web.facebook.com/people/Local-Buka/61569877310017/",
+                    "https://www.youtube.com/@LocalBuka__App",
+                  ],
+                  contactPoint: {
+                    "@type": "ContactPoint",
+                    email: "support@localbuka.com",
+                    telephone: "+234-801-234-5678",
+                    contactType: "customer support",
+                    areaServed: "NG",
+                    availableLanguage: ["English"],
+                  },
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://localbuka.com/#website",
+                  url: "https://localbuka.com",
+                  name: "LocalBuka",
+                  publisher: {
+                    "@id": "https://localbuka.com/#organization",
+                  },
+                  potentialAction: {
+                    "@type": "SearchAction",
+                    target: "https://localbuka.com/buka?q={search_term_string}",
+                    "query-input": "required name=search_term_string",
+                  },
+                },
+                {
+                  "@type": "WebApplication",
+                  name: "LocalBuka",
+                  url: "https://localbuka.com",
+                  applicationCategory: "FoodEstablishmentReservation",
+                  operatingSystem: "Web, iOS, Android",
+                  offers: {
+                    "@type": "Offer",
+                    price: "0",
+                    priceCurrency: "NGN",
+                  },
+                },
+                {
+                  "@type": "ItemList",
+                  "@id": "https://localbuka.com/#navigation",
+                  name: "Main Navigation",
+                  itemListElement: [
+                    {
+                      "@type": "SiteNavigationElement",
+                      position: 1,
+                      name: "About Us",
+                      url: "https://localbuka.com/about",
+                    },
+                    {
+                      "@type": "SiteNavigationElement",
+                      position: 2,
+                      name: "Contact Us",
+                      url: "https://localbuka.com/contact",
+                    },
+                    {
+                      "@type": "SiteNavigationElement",
+                      position: 3,
+                      name: "Discover Bukas",
+                      url: "https://localbuka.com/buka",
+                    },
+                    {
+                      "@type": "SiteNavigationElement",
+                      position: 4,
+                      name: "Community",
+                      url: "https://localbuka.com/community",
+                    },
+                    {
+                      "@type": "SiteNavigationElement",
+                      position: 5,
+                      name: "Blog",
+                      url: "https://localbuka.com/blog",
+                    },
+                    {
+                      "@type": "SiteNavigationElement",
+                      position: 6,
+                      name: "FAQs",
+                      url: "https://localbuka.com/faqs",
+                    },
+                    {
+                      "@type": "SiteNavigationElement",
+                      position: 7,
+                      name: "Privacy Policy & Terms",
+                      url: "https://localbuka.com/privacy",
+                    },
+                  ],
+                },
+              ],
+            }),
+          }}
+        />
       </head>
       {/* Body start here */}
       <body
         className={`${nunitoSans.variable} ${plusJakartaSans.variable} ${hakuna.variable} font-sans antialiased`}
       >
+        <Script id="google-consent-mode-v2" strategy="beforeInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('consent', 'default', {
+              'ad_storage': 'granted',
+              'ad_user_data': 'granted',
+              'ad_personalization': 'granted',
+              'analytics_storage': 'granted',
+              'wait_for_update': 500
+            });
+          `}
+        </Script>
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2319578381550272"
@@ -203,6 +331,7 @@ export default async function RootLayout({
         <ScrollToTop />
         <Providers initialUser={initialUser} initialToken={tokenCookie}>
           {children}
+          <CookieConsentBanner />
         </Providers>
       </body>
     </html>

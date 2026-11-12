@@ -12,8 +12,25 @@ export function FAQSection() {
   // Show only the first 5 FAQs on the landing page
   const displayFaqs = allFaqs.slice(0, 5);
 
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: displayFaqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  };
+
   return (
     <section className='py-20 bg-white dark:bg-black'>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         <SectionHeader title='FAQs' />
         <div className='max-w-3xl mx-auto py-2'>

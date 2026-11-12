@@ -20,12 +20,16 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { CommunityPost } from "./types";
+import { useCreateCommunityPost } from "@/lib/api/services/community.hooks";
 
 interface ContentManagementTabProps {
   communityName?: string;
+  communitySlug?: string;
+  posts?: CommunityPost[];
+  onPostsChange?: (posts: CommunityPost[]) => void;
 }
 
-const INITIAL_POSTS: CommunityPost[] = [
+export const INITIAL_CREATOR_POSTS: CommunityPost[] = [
   {
     id: "post-1",
     communityName: "Chef Tolu's kitchen",
@@ -78,9 +82,15 @@ const ONE_GB_BYTES = 1024 * 1024 * 1024;
 
 export function ContentManagementTab({
   communityName = "Chef Tolu's kitchen",
+  communitySlug = "nigeria-food",
+  posts: externalPosts,
+  onPostsChange,
 }: ContentManagementTabProps) {
+  const createPostMutation = useCreateCommunityPost(communitySlug);
+
   // File upload states
   const [uploadedMedia, setUploadedMedia] = useState<string | null>(null);
+  const [uploadedMediaType, setUploadedMediaType] = useState<"image" | "video">("image");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [location, setLocation] = useState("Island, Lekki");
@@ -92,25 +102,32 @@ export function ContentManagementTab({
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [showHashtagInput, setShowHashtagInput] = useState(false);
 
-  // Posts state
-  const [posts, setPosts] = useState<CommunityPost[]>(INITIAL_POSTS);
+  // Posts state (synced with CreatorDashboard when provided)
+  const [internalPosts, setInternalPosts] = useState<CommunityPost[]>(
+    externalPosts ?? INITIAL_CREATOR_POSTS
+  );
+  const posts = externalPosts ?? internalPosts;
+
+  const updatePosts = (
+    updater: CommunityPost[] | ((prev: CommunityPost[]) => CommunityPost[])
+  ) => {
+    const next = typeof updater === "function" ? updater(posts) : updater;
+    setInternalPosts(next);
+    onPostsChange?.(next);
+  };
+
   const [activeMenuPostId, setActiveMenuPostId] = useState<string | null>(null);
   const [disabledCommentsPostIds, setDisabledCommentsPostIds] = useState<
     string[]
   >([]);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
-
-  // Simulate data loading
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1800);
-    return () => clearTimeout(timer);
-  }, []);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const postedSectionRef = useRef<HTMLDivElement>(null);
 
   // Close context menu on outside click
   useEffect(() => {
@@ -123,17 +140,35 @@ export function ContentManagementTab({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const processSelectedFile = (file: File) => {
+    if (file.size > ONE_GB_BYTES) {
+      setUploadError("Files larger than 1GB can't be uploaded");
+      setUploadedMedia(null);
+      return;
+    }
+    setUploadError(null);
+    const isVideo = file.type.startsWith("video/");
+    setUploadedMediaType(isVideo ? "video" : "image");
+
+    // For images under 5MB, convert to data URL so it persists across tabs/reload
+    if (!isVideo && file.size < 5 * 1024 * 1024) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          setUploadedMedia(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      const url = URL.createObjectURL(file);
+      setUploadedMedia(url);
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > ONE_GB_BYTES) {
-        setUploadError("Files larger than 1GB can't be uploaded");
-        setUploadedMedia(null);
-        return;
-      }
-      setUploadError(null);
-      const url = URL.createObjectURL(file);
-      setUploadedMedia(url);
+      processSelectedFile(file);
     }
   };
 
@@ -141,18 +176,11 @@ export function ContentManagementTab({
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      if (file.size > ONE_GB_BYTES) {
-        setUploadError("Files larger than 1GB can't be uploaded");
-        setUploadedMedia(null);
-        return;
-      }
-      setUploadError(null);
-      const url = URL.createObjectURL(file);
-      setUploadedMedia(url);
+      processSelectedFile(file);
     }
   };
 
-  const nextPostIdRef = useRef(3);
+  const nextPostIdRef = useRef(1000);
 
   const handlePost = () => {
     if (!uploadedMedia && !caption.trim()) {
@@ -161,6 +189,17 @@ export function ContentManagementTab({
     }
 
     const nextId = nextPostIdRef.current++;
+    const formattedTags = [
+      ...tags.map((t) => (t.startsWith("@") ? t : `@${t}`)),
+      ...hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)),
+    ].join(" ");
+    const fullCaption =
+      [caption.trim() || "Cooked some good food tonight!", formattedTags]
+        .filter(Boolean)
+        .join(" ");
+
+    const mediaToUse = uploadedMedia || SAMPLE_UPLOADED_IMAGE;
+
     const newPost: CommunityPost = {
       id: `post-${nextId}`,
       communityName,
@@ -171,8 +210,8 @@ export function ContentManagementTab({
       authorAvatar:
         "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
       timestamp: "Just now",
-      caption: caption || "Cooked some good food tonight!",
-      mediaUrl: uploadedMedia || SAMPLE_UPLOADED_IMAGE,
+      caption: fullCaption,
+      mediaUrl: mediaToUse,
       likes: "0",
       comments: "0",
       bookmarks: "0",
@@ -181,17 +220,36 @@ export function ContentManagementTab({
       isBookmarked: false,
     };
 
-    // Show spinner overlay
+    // Show spinner overlay briefly and fire API mutation in background
     setIsPosting(true);
+    createPostMutation
+      .mutateAsync({
+        content: fullCaption,
+        mediaUrls: mediaToUse.startsWith("http") ? [mediaToUse] : [],
+      })
+      .catch(() => {
+        // Ignore auth/membership error when testing locally without creator token
+      });
 
     setTimeout(() => {
-      setPosts([newPost, ...posts]);
+      updatePosts((prev) => [newPost, ...prev]);
       setUploadedMedia(null);
       setUploadError(null);
       setCaption("");
+      setTags([]);
+      setHashtags([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       setIsPosting(false);
       showToast("Post published successfully to community feed!");
-    }, 2000);
+      setTimeout(() => {
+        postedSectionRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    }, 400);
   };
 
   const handleDraft = () => {
@@ -215,7 +273,7 @@ export function ContentManagementTab({
   };
 
   const toggleLike = (postId: string) => {
-    setPosts((prev) =>
+    updatePosts((prev) =>
       prev.map((p) => {
         if (p.id !== postId) return p;
         return {
@@ -227,7 +285,7 @@ export function ContentManagementTab({
   };
 
   const toggleBookmark = (postId: string) => {
-    setPosts((prev) =>
+    updatePosts((prev) =>
       prev.map((p) => {
         if (p.id !== postId) return p;
         return {
@@ -239,7 +297,7 @@ export function ContentManagementTab({
   };
 
   const handleDeletePost = (postId: string) => {
-    setPosts((prev) => prev.filter((p) => p.id !== postId));
+    updatePosts((prev) => prev.filter((p) => p.id !== postId));
     setActiveMenuPostId(null);
     showToast("Post deleted from feed.");
   };
@@ -487,14 +545,23 @@ export function ContentManagementTab({
           /* Uploaded Preview state (Matching Screenshot 5) */
           <div className="relative w-full rounded-[24px] overflow-hidden bg-[#1a1a1a] border border-white/5 shadow-lg group">
             <div className="relative h-64 md:h-80 w-full">
-              <Image
-                src={uploadedMedia}
-                alt="Uploaded food media"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 680px"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              {uploadedMediaType === "video" ? (
+                <video
+                  src={uploadedMedia}
+                  controls
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Image
+                  src={uploadedMedia}
+                  alt="Uploaded food media"
+                  fill
+                  unoptimized
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 680px"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
             </div>
 
             <button
@@ -625,10 +692,15 @@ export function ContentManagementTab({
       </div>
 
       {/* Posted Content Section */}
-      <div className="space-y-6 pt-4">
-        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white">
-          Posted Content
-        </h2>
+      <div ref={postedSectionRef} id="posted-content-section" className="space-y-6 pt-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+            Posted Content
+          </h2>
+          <span className="text-xs font-medium text-white/50">
+            {posts.length} {posts.length === 1 ? "post" : "posts"}
+          </span>
+        </div>
 
         {/* Community Branding Header for Feed */}
         <div className="flex items-center gap-3 pb-1">
@@ -684,6 +756,7 @@ export function ContentManagementTab({
                       src={post.mediaUrl}
                       alt="Post food photo"
                       fill
+                      unoptimized
                       className="object-cover"
                       sizes="(max-width: 768px) 100vw, 680px"
                     />

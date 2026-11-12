@@ -7,6 +7,8 @@ import { CommunityDetailView } from '@/components/community/CommunityDetailView'
 import { MobilePaidCommunityDetails } from '@/components/community/mobile/MobilePaidCommunityDetails';
 import { MobileFreeCommunityDetails } from '@/components/community/mobile/MobileFreeCommunityDetails';
 import { MOCK_COMMUNITIES } from '@/components/community/mobile/mockData';
+import { useCommunity } from '@/lib/api/services/community.hooks';
+import { toMobileCommunityItem } from '@/lib/api/services/community.service';
 
 interface CommunityDetailPageProps {
   params: Promise<{
@@ -17,15 +19,18 @@ interface CommunityDetailPageProps {
 export default function CommunityDetailPage({ params }: CommunityDetailPageProps) {
   const router = useRouter();
   const { id } = use(params);
+  const { data: liveCommunity } = useCommunity(id);
 
   const isChefAmaka = id === 'chef-amaka' || id === '2';
+  const isPaidCommunity = liveCommunity ? !liveCommunity.isFree : isChefAmaka;
   const isNigeriaCulture = !id || id === 'nigeria-food-and-culture' || id === 'nigeria-food' || id === '1';
 
-  const mobileCommunity =
-    MOCK_COMMUNITIES.find((c) => c.id === id) ||
-    (isChefAmaka ? MOCK_COMMUNITIES[1] : MOCK_COMMUNITIES[0]);
+  const mobileCommunity = liveCommunity
+    ? toMobileCommunityItem(liveCommunity)
+    : MOCK_COMMUNITIES.find((c) => c.id === id) ||
+      (isChefAmaka ? MOCK_COMMUNITIES[1] : MOCK_COMMUNITIES[0]);
 
-  if (isChefAmaka) {
+  if (isPaidCommunity) {
     return (
       <MainLayout>
         {/* ── Mobile View (< md): Native Mobile Paid Community Detail ── */}
@@ -37,19 +42,34 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
           />
         </div>
 
-        {/* ── Desktop View (≥ md): Exact Existing Desktop Layout (Untouched) ── */}
+        {/* ── Desktop View (≥ md): Exact Existing Desktop Layout ── */}
         <div className='hidden md:block w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-4'>
           <CommunityDetailView
-            id='chef-amaka'
-            name="Chef Amaka's kitchen"
-            description='Weekly private recipes, live cook-alongs, and direct feedback from Chef Amaka for members serious about leveling up their cooking.'
-            coverImage='/images/community/chef-amaka-hero.jpg'
-            avatarImage='/images/community/amaka-avatar.jpg'
+            id={liveCommunity?.slug || id}
+            name={liveCommunity?.name || "Chef Amaka's kitchen"}
+            description={
+              liveCommunity?.description ||
+              'Weekly private recipes, live cook-alongs, and direct feedback from Chef Amaka for members serious about leveling up their cooking.'
+            }
+            coverImage={liveCommunity?.coverImage || '/images/community/chef-amaka-hero.jpg'}
+            avatarImage={liveCommunity?.avatar || '/images/community/amaka-avatar.jpg'}
             isFree={false}
-            price='₦2,500'
-            yearlyPrice='or ₦25,000 billed yearly'
-            owner='Amaka Obi'
-            membersCount='2.1k members . 58 posts'
+            price={
+              liveCommunity?.priceAmount
+                ? `₦${liveCommunity.priceAmount.toLocaleString('en-NG')}`
+                : '₦2,500'
+            }
+            yearlyPrice={
+              liveCommunity?.yearlyPriceAmount
+                ? `or ₦${liveCommunity.yearlyPriceAmount.toLocaleString('en-NG')} billed yearly`
+                : 'or ₦25,000 billed yearly'
+            }
+            owner={liveCommunity?.creator?.replace(/^By\s+/i, '') || 'Amaka Obi'}
+            membersCount={
+              liveCommunity
+                ? `${liveCommunity.members} . ${liveCommunity.posts}`
+                : '2.1k members . 58 posts'
+            }
             recentPosts={[
               {
                 id: 'post-1',
@@ -85,21 +105,29 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
         />
       </div>
 
-      {/* ── Desktop View (≥ md): Exact Existing Desktop Layout (Untouched) ── */}
+      {/* ── Desktop View (≥ md): Exact Existing Desktop Layout ── */}
       <div className='hidden md:block w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-4'>
         <CommunityDetailView
-          id={id}
-          name={isNigeriaCulture ? 'Nigeria food and culture' : 'Lagos Street Food Explorers'}
-          description={
-            isNigeriaCulture
-              ? 'A space to explore Nigerian dishes, cooking traditions, and the stories behind the food. Share recipes, ask questions, and connect with fellow food lovers across the country.'
-              : 'Discover the hidden buka gems, late-night spots, and authentic street flavors across Lagos.'
+          id={liveCommunity?.slug || id}
+          name={
+            liveCommunity?.name ||
+            (isNigeriaCulture ? 'Nigeria food and culture' : 'Lagos Street Food Explorers')
           }
-          coverImage='/images/community/rec-nigeria-food.jpg'
-          avatarImage='/images/community/community-logo.svg'
+          description={
+            liveCommunity?.description ||
+            (isNigeriaCulture
+              ? 'A space to explore Nigerian dishes, cooking traditions, and the stories behind the food. Share recipes, ask questions, and connect with fellow food lovers across the country.'
+              : 'Discover the hidden buka gems, late-night spots, and authentic street flavors across Lagos.')
+          }
+          coverImage={liveCommunity?.coverImage || '/images/community/rec-nigeria-food.jpg'}
+          avatarImage={liveCommunity?.avatar || '/images/community/community-logo.svg'}
           isFree={true}
-          owner='Localbuka'
-          membersCount='12.4k members . 340 posts'
+          owner={liveCommunity?.creator?.replace(/\s+owned$/i, '') || 'Localbuka'}
+          membersCount={
+            liveCommunity
+              ? `${liveCommunity.members} . ${liveCommunity.posts}`
+              : '12.4k members . 340 posts'
+          }
           recentPosts={[
             {
               id: 'post-1',

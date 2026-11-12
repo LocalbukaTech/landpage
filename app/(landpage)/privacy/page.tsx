@@ -23,7 +23,7 @@ const sections = [
     id: 'health-disclaimer',
     title: 'Health, Fitness, and Food Safety Disclaimer',
   },
-  {id: 'payment-terms', title: 'Payment, Financial, and Cryptocurrency Terms'},
+  {id: 'payment-terms', title: 'Payment and Financial Transaction Terms'},
   {id: 'ai-recommendations', title: 'AI Features and User Content Policy'},
   {
     id: 'data-protection',
@@ -59,8 +59,44 @@ const PrivacyPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const privacySchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': 'https://localbuka.com/privacy#webpage',
+        url: 'https://localbuka.com/privacy',
+        name: 'Privacy Policy, Terms of Service & Community Guidelines | LocalBuka',
+        description:
+          'Official Privacy Policy, Terms of Service, Community Guidelines, and Google AdSense Cookie Disclosures for LocalBuka.',
+        isPartOf: { '@id': 'https://localbuka.com/#website' },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://localbuka.com',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Privacy Policy & Terms',
+            item: 'https://localbuka.com/privacy',
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(privacySchema) }}
+      />
       <main className='min-h-screen bg-white dark:bg-black scroll-smooth'>
         {/* Custom Header */}
         <header className='relative bg-primary h-32 overflow-hidden'>
@@ -148,20 +184,19 @@ const PrivacyPage = () => {
                       <ul className='list-disc pl-6 mt-2 space-y-1'>
                         <li>
                           <strong className='text-foreground'>
-                            Payment Features & Cryptocurrency:
+                            Payment &amp; Creator Subscription Features:
                           </strong>{' '}
                           You must be at least 18 years old to make payments,
-                          conduct transactions, or use the Crypto LocalBuka app
-                          features, as these involve legally binding contracts.
+                          subscribe to paid communities, or conduct financial
+                          transactions on the LocalBuka platform, as these
+                          involve legally binding agreements.
                         </li>
                         <li>
                           <strong className='text-foreground'>
                             Advanced Community Features:
                           </strong>{' '}
                           Participation in certain user-generated content areas
-                          may be restricted to users 18 and over to mitigate
-                          exposure to mature content (e.g., discussions about
-                          culinary techniques involving alcohol).
+                          may be restricted to users 18 and over to ensure age-appropriate community discussions.
                         </li>
                       </ul>
                     </li>
@@ -292,8 +327,8 @@ const PrivacyPage = () => {
                       SUGGESTIONS.
                     </li>
                     <li>
-                      FINANCIAL LOSS FROM USING THE PAYMENT FEATURE OR CRYPTO
-                      LOCAL BUKA APP.
+                      FINANCIAL LOSS FROM USING THIRD-PARTY PAYMENT GATEWAYS OR
+                      PAID SUBSCRIPTION FEATURES ON THE LOCALBUKA PLATFORM.
                     </li>
                     <li>
                       DISRUPTIONS TO YOUR DAILY STREAK OR REWARDS SYSTEM DUE TO
@@ -337,9 +372,9 @@ const PrivacyPage = () => {
                       <strong className='text-foreground'>
                         Financial Data:
                       </strong>{' '}
-                      Payment information (processed by secure third-party
-                      gateways), cryptocurrency wallet addresses (if
-                      applicable).
+                      Billing and payment information (processed by secure
+                      third-party gateways such as Paystack) and creator payout
+                      settlement account details.
                     </li>
                     <li>
                       <strong className='text-foreground'>
@@ -542,6 +577,38 @@ const PrivacyPage = () => {
                     child under 18 has provided us with personal information, we
                     will take steps to delete such information.
                   </p>
+
+                  <h3 className='text-lg font-semibold mt-6 mb-3 text-foreground'>
+                    2.8. Google AdSense &amp; Third-Party Advertising Cookies (DART Cookie Disclosure)
+                  </h3>
+                  <p className='mb-4 text-foreground/80'>
+                    Third-party vendors, including Google, use cookies (such as
+                    the Google AdSense and DoubleClick DART cookie) to serve ads
+                    based on a user&apos;s prior visits to LocalBuka or other
+                    websites on the internet. Google&apos;s use of advertising
+                    cookies enables it and its partners to serve relevant
+                    advertisements to our users based on their visit to
+                    LocalBuka and/or other sites on the Internet. Users may opt
+                    out of personalized advertising at any time by visiting{' '}
+                    <a
+                      href='https://adssettings.google.com'
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-primary underline hover:opacity-80'
+                    >
+                      Google Ads Settings
+                    </a>{' '}
+                    or by visiting{' '}
+                    <a
+                      href='https://www.aboutads.info/choices/'
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-primary underline hover:opacity-80'
+                    >
+                      www.aboutads.info
+                    </a>
+                    .
+                  </p>
                 </div>
               </section>
 
@@ -589,79 +656,65 @@ const PrivacyPage = () => {
                   </p>
 
                   <p className='mb-2 font-semibold text-foreground'>
-                    Nudity and Sexually Explicit Content:
+                    Age-Inappropriate and Mature Content:
                   </p>
                   <ul className='list-disc pl-6 space-y-2 mb-4 text-foreground/80'>
                     <li>
-                      Absolutely no nudity, pornography, or sexually explicit
-                      material of any kind.
+                      Strictly no mature, non-family-friendly, or
+                      age-inappropriate visual or written material of any kind.
                     </li>
                     <li>
-                      No sexually suggestive or lewd content involving food.
-                      This includes, but is not limited to:
-                      <ul className='list-disc pl-6 mt-2 space-y-1'>
-                        <li>
-                          Content that uses food in a sexually suggestive
-                          manner.
-                        </li>
-                        <li>
-                          Imagery or language that is overtly erotic or
-                          pornographic in nature.
-                        </li>
-                        <li>
-                          &ldquo;Food fetish&rdquo; content that is sexually
-                          gratifying or explicit.
-                        </li>
-                        <li>
-                          Content that depicts, promotes, or glorifies sexual
-                          violence or exploitation.
-                        </li>
-                      </ul>
+                      All culinary photos, videos, reviews, and profile images
+                      must remain family-safe and focused strictly on authentic
+                      food, dining, and hospitality experiences.
                     </li>
                     <li>
                       Profile pictures, posts, reviews, or any other
-                      user-generated content that contains sexually explicit
-                      imagery or language.
+                      user-generated content that violates family-safe community
+                      standards will be removed immediately.
                     </li>
                   </ul>
 
                   <p className='mb-2 font-semibold text-foreground'>
-                    Harmful and Dangerous Acts:
+                    Unsafe and Harmful Activities:
                   </p>
                   <ul className='list-disc pl-6 space-y-2 mb-4 text-foreground/80'>
                     <li>
-                      Content that promotes or depicts self-harm, suicide, or
-                      eating disorders.
-                    </li>
-                    <li>
-                      Dangerous challenges or dares that could lead to physical
+                      Content that promotes unsafe dietary practices or physical
                       harm.
                     </li>
-                    <li>Instructions on how to commit violent acts.</li>
-                  </ul>
-
-                  <p className='mb-2 font-semibold text-foreground'>
-                    Hate Speech and Harassment:
-                  </p>
-                  <ul className='list-disc pl-6 space-y-2 mb-4 text-foreground/80'>
                     <li>
-                      Content that attacks or incites hatred against individuals
-                      or groups based on race, ethnicity, religion, gender,
-                      sexual orientation, disability, or other protected
-                      characteristics.
+                      Dangerous food challenges or activities that could lead to
+                      personal injury.
                     </li>
                     <li>
-                      Bullying, threats, or targeted harassment of other users.
+                      Content that threatens the physical safety of any person
+                      or business.
                     </li>
                   </ul>
 
                   <p className='mb-2 font-semibold text-foreground'>
-                    Illegal Activities:
+                    Harassment and Disrespectful Conduct:
                   </p>
                   <ul className='list-disc pl-6 space-y-2 mb-4 text-foreground/80'>
                     <li>
-                      Content that promotes or facilitates illegal activities,
-                      including drug abuse, violence, or fraud.
+                      Content that discriminates against individuals or groups
+                      based on race, ethnicity, religion, gender, disability, or
+                      other protected characteristics.
+                    </li>
+                    <li>
+                      Bullying, threats, or targeted harassment of other
+                      community members or restaurant owners.
+                    </li>
+                  </ul>
+
+                  <p className='mb-2 font-semibold text-foreground'>
+                    Unlawful Activities:
+                  </p>
+                  <ul className='list-disc pl-6 space-y-2 mb-4 text-foreground/80'>
+                    <li>
+                      Content that promotes or facilitates unlawful acts,
+                      regulated substances, or fraudulent transactions.
                     </li>
                   </ul>
 
@@ -724,7 +777,7 @@ const PrivacyPage = () => {
                     <li>The specific content that was removed.</li>
                     <li>
                       The exact policy violated (e.g., &ldquo;Section 3.3:
-                      Nudity and Sexually Explicit Content&rdquo;).
+                      Community Safety &amp; Content Standards&rdquo;).
                     </li>
                     <li>
                       The action taken (e.g., post removal, account suspension).
@@ -791,7 +844,7 @@ const PrivacyPage = () => {
               {/* Section 6: Payment Terms */}
               <section id='payment-terms' className='mb-12 scroll-mt-8'>
                 <h2 className='text-2xl font-bold mb-4 pb-3 border-b-2 border-primary text-foreground'>
-                  6. Payment, Financial, and Cryptocurrency Terms
+                  6. Payment and Financial Transaction Terms
                 </h2>
                 <div className='bg-gray-100 dark:bg-gray-900 p-6 rounded-lg'>
                   <h3 className='text-lg font-semibold mt-4 mb-3 text-foreground'>
@@ -799,43 +852,42 @@ const PrivacyPage = () => {
                   </h3>
                   <p className='mb-4 text-foreground/80'>
                     All transactions via the Payment Feature are processed by
-                    secure third-party gateways. We do not store your full
-                    financial details.
+                    secure third-party gateways (such as Paystack). We do not
+                    store your full card or banking credentials on our servers.
                   </p>
 
                   <h3 className='text-lg font-semibold mt-6 mb-3 text-foreground'>
-                    6.2. Cryptocurrency (&ldquo;Crypto LocalBuka App&rdquo;)
+                    6.2. Creator Subscriptions &amp; Payouts
                   </h3>
                   <ul className='list-disc pl-6 space-y-2 mb-4 text-foreground/80'>
                     <li>
                       <strong className='text-foreground'>
-                        High Risk Acknowledgement:
+                        Transparent Revenue Split:
                       </strong>{' '}
-                      Cryptocurrency transactions are highly volatile and risky.
-                      You acknowledge that you are solely responsible for any
-                      gains or losses.
+                      Paid community subscriptions are processed in Nigerian
+                      Naira (NGN) with 92% attributed to the creator and an 8%
+                      LocalBuka platform commission.
                     </li>
                     <li>
                       <strong className='text-foreground'>
-                        No Investment Advice:
+                        No Financial Advice:
                       </strong>{' '}
-                      LocalBuka does not provide financial advice. The ability
-                      to transact with crypto is a utility feature, not an
-                      investment platform.
+                      LocalBuka is a culinary discovery and community platform
+                      and does not provide financial or investment services.
                     </li>
                     <li>
                       <strong className='text-foreground'>
-                        Wallet Security:
+                        Account Security:
                       </strong>{' '}
-                      You are responsible for the security of your
-                      cryptocurrency wallet.
+                      Creators are responsible for verifying the accuracy of
+                      their settlement bank account details.
                     </li>
                     <li>
                       <strong className='text-foreground'>
-                        Age Restriction:
+                        Age Requirement:
                       </strong>{' '}
-                      This feature is restricted to users over 18 years of age
-                      and older.
+                      Paid subscriptions and creator monetization features are
+                      restricted to users 18 years of age and older.
                     </li>
                   </ul>
 

@@ -56,8 +56,56 @@ export default function ContactPage() {
     }
   };
 
+  const contactSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'ContactPage',
+        '@id': 'https://localbuka.com/contact#webpage',
+        url: 'https://localbuka.com/contact',
+        name: 'Contact LocalBuka - Customer Support & Restaurant Partnerships',
+        description:
+          'Get in touch with LocalBuka for restaurant listings, creator community programs, partnerships, or customer support across Africa.',
+        isPartOf: { '@id': 'https://localbuka.com/#website' },
+        mainEntity: {
+          '@type': 'Organization',
+          name: 'LocalBuka',
+          url: 'https://localbuka.com',
+          email: 'support@localbuka.com',
+          telephone: '+234-801-234-5678',
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: 'Lagos',
+            addressCountry: 'NG',
+          },
+        },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: 'https://localbuka.com',
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Contact Us',
+            item: 'https://localbuka.com/contact',
+          },
+        ],
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactSchema) }}
+      />
       <Navbar />
 
       <main className="bg-[#121214] text-white min-h-screen">

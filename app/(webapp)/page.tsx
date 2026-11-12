@@ -247,65 +247,188 @@ function HomeContent() {
             isLoadingMore={isFetchingNextPage}
           />
         )}
-        {/* Crawlable Editorial & Culinary Guide Section for Search Engines & AdSense Crawlers */}
-        <section
-          aria-label='LocalBuka Culinary Discovery & Restaurant Guide'
-          className='sr-only'
-        >
-          <h1>LocalBuka — Discover the Best Restaurants, Authentic Nigerian Cuisine, and Food Communities</h1>
-          <p>
-            Welcome to LocalBuka, the premier restaurant discovery and culinary community platform across Nigeria and Africa. Whether you are searching for authentic local bukas in Lagos, fine dining restaurants in Abuja, street food gems in Port Harcourt, or vibrant chef-led cooking communities, LocalBuka connects food lovers with verified dining experiences, honest customer reviews, and interactive culinary video feeds.
-          </p>
-          <h2>How LocalBuka Helps You Find Trusted Restaurants Near You</h2>
-          <p>
-            Finding a reliable place to eat in a busy city should be effortless and transparent. LocalBuka curates thousands of verified restaurants, neighborhood bukas, bakeries, and contemporary kitchens with real-time menus, hygiene ratings, price brackets, and video reviews recorded by real diners. Use our interactive Buka Explorer to filter restaurants by city, neighborhood, cuisine type, dietary preference, and customer rating.
-          </p>
-          <h2>Explore Culinary Articles, Recipes &amp; Dining Guides</h2>
-          <article>
-            <h3>The Ultimate Guide to Authentic Nigerian Jollof Rice &amp; Local Bukas in Lagos</h3>
-            <p>
-              Smoky party Jollof rice, slow-cookedayamase (designer stew), amala with ewedu and gbegiri, and freshly grilled suya remain the cornerstone of West African culinary heritage. On LocalBuka, top chefs and neighborhood bukas share traditional preparation techniques, spice blends, and verified locations where diners can enjoy freshly prepared meals every day.
-            </p>
-          </article>
-          <article>
-            <h3>How Food Creators &amp; Chefs Build Thriving Culinary Communities</h3>
-            <p>
-              Through LocalBuka Communities, professional chefs, nutritionists, and culinary creators host dedicated spaces for recipe sharing, live cook-along sessions, restaurant tasting tours, and regional food culture discussions. Members can join free public food communities or subscribe to specialized creator kitchens for exclusive culinary masterclasses.
-            </p>
-          </article>
-          <article>
-            <h3>Verified Restaurant Reviews, Food Safety &amp; Honest Dining Ratings</h3>
-            <p>
-              Every restaurant review on LocalBuka is backed by community moderation and authentic diner feedback. Diners evaluate taste, portion value, service speed, ambiance, and cleanliness so families, travelers, and everyday food enthusiasts can make informed dining decisions.
-            </p>
-          </article>
-          <nav aria-label='Essential Platform Links'>
-            <Link href='/about'>About LocalBuka</Link>
-            <Link href='/contact'>Contact Us &amp; Support</Link>
-            <Link href='/blog'>Culinary Blog &amp; Articles</Link>
-            <Link href='/buka'>Explore Restaurants &amp; Bukas</Link>
-            <Link href='/community'>Food Communities</Link>
-            <Link href='/faqs'>Frequently Asked Questions</Link>
-            <Link href='/privacy'>Privacy Policy &amp; Terms of Service</Link>
-          </nav>
-        </section>
         <PasswordPromptModal />
       </div>
     </MainLayout>
   );
 }
 
+function LocalBukaEditorialSection() {
+  return (
+    <section
+      aria-label='LocalBuka Culinary Discovery, Restaurant Directory & Nigerian Food Culture Guide'
+      className='sr-only'
+    >
+      <header>
+        <h1>LocalBuka — Discover the Best Restaurants, Authentic Nigerian Cuisine, and Culinary Communities Across Africa</h1>
+        <p>
+          By <span>LocalBuka Editorial Team</span> · Published <time dateTime='2026-11-12'>November 12, 2026</time>
+        </p>
+        <p>
+          Welcome to LocalBuka, the premier restaurant discovery platform, neighborhood buka directory, and interactive culinary community built for food lovers across Nigeria and Africa. Whether you are searching for smoky firewood Jollof rice in Lagos, traditional Tuwo Shinkafa in Abuja, roasted plantain (Bole) and grilled fish in Port Harcourt, or chef-led culinary masterclasses, LocalBuka connects diners with verified restaurants, transparent hygiene ratings, honest customer reviews, and short-form culinary video feeds.
+        </p>
+      </header>
+
+      <h2>How LocalBuka Transforms Restaurant Discovery and Local Dining</h2>
+      <p>
+        Finding a clean, reliable, and authentic place to eat in a bustling city should never require guesswork. Millions of diners rely on neighborhood bukas, independent kitchens, family-owned restaurants, and contemporary bistros every single day, yet many of the best culinary spots remain hidden offline without standardized menus or verified customer feedback. LocalBuka bridges that gap by combining GPS-powered restaurant discovery with community-verified video reviews, real-time menu pricing, dietary filters, and kitchen hygiene benchmarks.
+      </p>
+      <p>
+        Through our interactive Buka Explorer, diners can search and filter thousands of culinary establishments by city, neighborhood, regional specialty, average meal price, seating ambiance, delivery availability, and verified diner rating. Every restaurant profile highlights signature dishes, operating hours, directions, and authentic video walk-throughs filmed by real customers and culinary creators.
+      </p>
+
+      <h2>Comprehensive Regional Guide to Nigerian &amp; West African Cuisine</h2>
+
+      <article>
+        <h3>1. South-West Nigeria: Lagos, Ibadan &amp; Abeokuta Buka Classics</h3>
+        <p>
+          The culinary landscape of South-West Nigeria is famous for rich, aromatic stews, vibrant leafy vegetable soups, and smooth traditional swallows. In neighborhoods such as Surulere, Yaba, Ikeja, Lekki, and Victoria Island in Lagos—as well as Bodija and Ring Road in Ibadan—local bukas perfect dishes that have been passed down through generations.
+        </p>
+        <p>
+          Signature dishes include Amala (yam flour swallow) served hot with Ewedu (jute leaf soup), Gbegiri (creamy peeled bean soup), and assorted stew simmered with locust beans (Iru). Another beloved specialty is Ofada rice served in uma leaves alongside fiery Ayamase (green pepper designer stew) or Ofada sauce slow-cooked in bleached palm oil with assorted meats and dried fish. Party Jollof rice cooked over firewood, Efo Riro prepared with fluted pumpkin leaves (Ugu) or Lagos spinach (Soko), and Asun (peppered roasted goat meat) round out the essential South-West dining experience.
+        </p>
+      </article>
+
+      <article>
+        <h3>2. South-South &amp; Niger Delta: Port Harcourt, Calabar, Uyo &amp; Warri</h3>
+        <p>
+          Rooted in coastal waterways, mangrove estuaries, and fertile rainforests, the cuisine of the South-South region celebrates fresh seafood, palm nut extracts, and nutrient-dense indigenous herbs. In Port Harcourt, street corners and sit-down lounges alike are famous for Bole and Fish—sweet or semi-ripe plantains roasted slowly over charcoal and paired with deeply spiced grilled mackerel or croaker, rich palm-oil pepper sauce, and crunchy groundnuts.
+        </p>
+        <p>
+          In Calabar and Uyo, culinary heritage shines through Edikang Ikong (a nourishing vegetable soup made with waterleaf and fluted pumpkin leaves), Afang soup (wild okazi leaves pounded and simmered with waterleaf, periwinkle, stockfish, and crayfish), Fisherman soup brimming with fresh prawns and crabs, and Ekpang Nkukwo (grated cocoyam and wateryam wrapped in tender cocoyam leaves). Across Warri and Benin City, Banga soup extracted from fresh palm fruit and spiced with Ataiko, Irugje, and Beletete leaves is traditionally enjoyed with Starch (Usi) or pounded yam.
+        </p>
+      </article>
+
+      <article>
+        <h3>3. South-East Nigeria: Enugu, Owerri, Awka &amp; Aba</h3>
+        <p>
+          South-Eastern Nigerian cooking emphasizes seasonal freshness, aromatic forest spices such as Uziza and Ehuru (calabash nutmeg), and time-honored fermentation techniques. Visitors exploring Enugu, Owerri, or Onitsha will encounter Ofe Oha (tender oha leaves in a broth thickened with cocoyam paste), Ofe Nsala (white soup spiced with utazi and yam paste, traditionally prepared with fresh catfish), and Ofe Onugbu (bitterleaf soup washed to perfection and simmered with cocoyam and assorted meats).
+        </p>
+        <p>
+          Beyond soups, Abacha (African salad crafted from shredded dried cassava tossed in palm oil potash emulsion with ugba, garden eggs, kpomo, and fried fish) and Okpa (steamed Bambara nut pudding wrapped in banana leaves, an iconic Enugu breakfast staple) represent the vibrant street and market food traditions documented on LocalBuka.
+        </p>
+      </article>
+
+      <article>
+        <h3>4. Northern Nigeria: Abuja, Kano, Kaduna &amp; Jos Culinary Traditions</h3>
+        <p>
+          Across Abuja and Northern Nigeria, grains, grilled meats, aromatic spice blends, and dairy delicacies take center stage. Evening food culture is synonymous with Suya—thinly sliced beef, ram, or chicken skewered and grilled over open embers after being coated in Yaji, a savory blend of roasted groundnut cake (kuli-kuli), ginger, garlic, cloves, and dried cayenne pepper. Kilishi (sun-dried, spice-crusted beef jerky) and Masa (fermented rice cakes pan-fried to a golden crust and served with Miyan Taushe pumpkin stew or yaji) are cherished across Kano, Kaduna, and Wuse.
+        </p>
+        <p>
+          Hearty main meals include Tuwo Shinkafa (soft mashed rice pudding) and Tuwo Masara (corn flour swallow) paired with Miyan Kuka (baobab leaf soup), Miyan Karkashi, or Miyan Wake, followed by refreshing Fura da Nono (spiced millet doughballs whisked into fermented cow milk) and Zobo (hibiscus flower infusion steeped with ginger, pineapple, and cloves).
+        </p>
+      </article>
+
+      <h2>Food Safety, Kitchen Hygiene &amp; Community Verification Standards</h2>
+      <p>
+        At LocalBuka, we believe that every diner deserves confidence in how their meal is prepared. Our community review framework encourages diners and culinary creators to evaluate restaurants across five core pillars:
+      </p>
+      <ul>
+        <li>
+          <strong>Kitchen &amp; Dining Hygiene:</strong> Cleanliness of food preparation counters, hand-washing stations, potable water access, covered food display warmers, and tidy dining tables.
+        </li>
+        <li>
+          <strong>Ingredient Freshness &amp; Authenticity:</strong> Use of fresh seasonal vegetables, properly stored proteins, unrefined local spices, and freshly prepared daily batches.
+        </li>
+        <li>
+          <strong>Transparent Pricing &amp; Portion Value:</strong> Clear menu boards, accurate price brackets per protein and swallow portion, and zero hidden charges.
+        </li>
+        <li>
+          <strong>Customer Service &amp; Speed:</strong> Welcoming hospitality, accurate order fulfillment, and respectful handling of diner feedback.
+        </li>
+        <li>
+          <strong>Accessibility &amp; Takeaway Packaging:</strong> Safe, food-grade takeaway containers, clear neighborhood landmarks, and convenient seating options.
+        </li>
+      </ul>
+
+      <h2>Empowering Food Creators, Chefs &amp; Culinary Communities</h2>
+      <p>
+        LocalBuka is more than a restaurant finder—it is a home for culinary storytelling and creator-led communities. Through LocalBuka Communities, professional chefs, home cooks, food historians, dietitians, and restaurant reviewers can launch free public discussion hubs or specialized creator kitchens. Members share step-by-step video recipes, organize neighborhood food crawls, host live cooking Q&amp;As, and preserve indigenous African recipes for future generations.
+      </p>
+      <p>
+        Independent restaurant owners can also list their buka or restaurant on LocalBuka at no cost, upload verified photos of their dining space and menu items, respond to customer reviews, and reach thousands of nearby food lovers actively deciding what to eat today.
+      </p>
+
+      <h2>Traditional Nigerian Cooking Techniques &amp; Indigenous Ingredients</h2>
+      <article>
+        <h3>Fermentation, Smoke-Roasting &amp; Stone-Grinding Heritage</h3>
+        <p>
+          Authentic West African flavor profiles depend on centuries-old culinary techniques that cannot be replicated with artificial shortcuts. Across Nigerian kitchens, locust beans are naturally fermented into Iru (Yoruba), Dawadawa (Hausa), or Ogiri (Igbo) to provide deep umami complexity to soups and stews. Fresh red bell peppers (Tatashe), Scotch bonnets (Atarodo), tomatoes, and red onions are fire-roasted or steamed down before being blended and fried in pure palm oil or groundnut oil to create the unmistakable base of Nigerian stew and smoky party Jollof rice.
+        </p>
+        <p>
+          Leafy greens such as Ugu (fluted pumpkin), Efirin (scent leaf), Uziza, Utazi, Waterleaf, and Ewedu are harvested fresh from local farms and added at the final stage of simmering to preserve their vibrant color, crisp texture, and essential vitamins. Root crops and grains—including white yam, yellow yam, cassava, plantain, cocoyam, guinea corn, and millet—are pounded, stone-ground, or sun-dried into nutrient-rich flours that sustain families across the continent.
+        </p>
+      </article>
+
+      <article>
+        <h3>City-by-City Neighborhood Dining Highlights on LocalBuka</h3>
+        <p>
+          Whether you are a resident exploring a new district or a traveler visiting Nigeria for business and culture, LocalBuka organizes verified restaurant recommendations by neighborhood so you always know where to eat:
+        </p>
+        <ul>
+          <li>
+            <strong>Lagos Mainland (Ikeja, Surulere, Yaba, Maryland &amp; Festac):</strong> Famous for bustling lunchtime bukas serving hot Amala, Ofada rice in leaves, Ewa Agoyin with freshly baked Agege bread, and late-night suya spots along Allen Avenue and Bode Thomas.
+          </li>
+          <li>
+            <strong>Lagos Island (Victoria Island, Ikoyi, Lekki &amp; Ajah):</strong> Home to contemporary Afro-fusion dining rooms, waterfront seafood grills, artisanal bakeries, and heritage kitchens offering elevated takes on traditional Nigerian classics.
+          </li>
+          <li>
+            <strong>Abuja Federal Capital Territory (Wuse II, Maitama, Garki, Jabi &amp; Gwarinpa):</strong> Renowned for garden grills, northern Kilishi and Masa hubs, lakeside fish spots in Jabi, and pan-Nigerian restaurants catering to diplomats, families, and professionals.
+          </li>
+          <li>
+            <strong>Port Harcourt, Enugu &amp; Ibadan:</strong> Celebrated for authentic regional specialties—from GRA Port Harcourt Bole lounges and New Haven Enugu Okpa and Ofe Oha kitchens to legendary Ibadan Amala bukas that attract food lovers from across West Africa.
+          </li>
+        </ul>
+      </article>
+
+      <h2>Frequently Asked Questions About LocalBuka</h2>
+      <article>
+        <h3>How do I find verified local bukas and restaurants near me?</h3>
+        <p>
+          Visit the Buka Explorer page on LocalBuka, enable location access or type your city and neighborhood (such as Lekki, Ikeja, Surulere, Wuse, or GRA Port Harcourt), and filter by dish type, rating, or budget.
+        </p>
+      </article>
+      <article>
+        <h3>Can restaurant owners and chefs list their kitchen on LocalBuka?</h3>
+        <p>
+          Yes. Any restaurant, neighborhood buka, bakery, or food business can submit a listing through the List Restaurant page with their address, operating hours, signature dishes, and photos for community discovery.
+        </p>
+      </article>
+      <article>
+        <h3>What are LocalBuka Culinary Communities?</h3>
+        <p>
+          LocalBuka Communities are interactive groups where food lovers and culinary creators connect around shared food interests—ranging from regional Nigerian soup recipes and budget meal prep to city-specific restaurant hunting.
+        </p>
+      </article>
+
+      <nav aria-label='Essential Platform Links'>
+        <Link href='/about'>About LocalBuka</Link>
+        <Link href='/contact'>Contact Us &amp; Support</Link>
+        <Link href='/blog'>Culinary Blog &amp; Articles</Link>
+        <Link href='/buka'>Explore Restaurants &amp; Bukas</Link>
+        <Link href='/community'>Food Communities</Link>
+        <Link href='/faqs'>Frequently Asked Questions</Link>
+        <Link href='/team'>Our Team</Link>
+        <Link href='/privacy'>Privacy Policy &amp; Terms of Service</Link>
+      </nav>
+    </section>
+  );
+}
+
 export default function HomePage() {
   return (
-    <Suspense
-      fallback={
-        <MainLayout>
-          <div className='flex flex-col items-center justify-center h-full w-full text-white/70'>
-            <Loader2 className='w-8 h-8 animate-spin text-[#FFC727]' />
-          </div>
-        </MainLayout>
-      }>
-      <HomeContent />
-    </Suspense>
+    <>
+      <Suspense
+        fallback={
+          <MainLayout>
+            <div className='flex flex-col items-center justify-center h-full w-full text-white/70'>
+              <Loader2 className='w-8 h-8 animate-spin text-[#FFC727]' />
+            </div>
+          </MainLayout>
+        }>
+        <HomeContent />
+      </Suspense>
+      <LocalBukaEditorialSection />
+    </>
   );
 }

@@ -17,6 +17,7 @@ export interface CommunityMember {
 export interface CommunityPost {
   id: string;
   communityName: string;
+  communitySlug?: string;
   communityAvatar: string;
   authorName: string;
   authorHandle: string;

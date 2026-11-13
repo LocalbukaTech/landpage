@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { CommunityPost } from "./types";
 import { useCreateCommunityPost } from "@/lib/api/services/community.hooks";
+import apiClient from "@/lib/api/client";
 
 interface ContentManagementTabProps {
   communityName?: string;
@@ -90,6 +91,7 @@ export function ContentManagementTab({
 
   // File upload states
   const [uploadedMedia, setUploadedMedia] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadedMediaType, setUploadedMediaType] = useState<"image" | "video">("image");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -144,9 +146,11 @@ export function ContentManagementTab({
     if (file.size > ONE_GB_BYTES) {
       setUploadError("Files larger than 1GB can't be uploaded");
       setUploadedMedia(null);
+      setSelectedFile(null);
       return;
     }
     setUploadError(null);
+    setSelectedFile(file);
     const isVideo = file.type.startsWith("video/");
     setUploadedMediaType(isVideo ? "video" : "image");
 
@@ -199,10 +203,13 @@ export function ContentManagementTab({
         .join(" ");
 
     const mediaToUse = uploadedMedia || SAMPLE_UPLOADED_IMAGE;
+    const fileToUpload = selectedFile;
+    const postId = `post-${nextId}`;
 
     const newPost: CommunityPost = {
-      id: `post-${nextId}`,
+      id: postId,
       communityName,
+      communitySlug,
       communityAvatar:
         "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
       authorName: "Chef Tolu",
@@ -220,20 +227,49 @@ export function ContentManagementTab({
       isBookmarked: false,
     };
 
-    // Show spinner overlay briefly and fire API mutation in background
+    // Show spinner overlay briefly and fire API upload + post mutation in background
     setIsPosting(true);
-    createPostMutation
-      .mutateAsync({
-        content: fullCaption,
-        mediaUrls: mediaToUse.startsWith("http") ? [mediaToUse] : [],
-      })
-      .catch(() => {
+    void (async () => {
+      let mediaUrls: string[] = mediaToUse.startsWith("http")
+        ? [mediaToUse]
+        : [];
+
+      if (fileToUpload) {
+        try {
+          const formData = new FormData();
+          formData.append("file", fileToUpload);
+          const uploadRes = await apiClient.post<{
+            url?: string;
+            data?: string;
+          }>("/images/upload", formData);
+          const remoteUrl = uploadRes?.data?.url || uploadRes?.data?.data;
+          if (typeof remoteUrl === "string" && remoteUrl.startsWith("http")) {
+            mediaUrls = [remoteUrl];
+            updatePosts((prev) =>
+              prev.map((p) =>
+                p.id === postId ? { ...p, mediaUrl: remoteUrl } : p
+              )
+            );
+          }
+        } catch {
+          // Ignore upload error when testing locally without auth token
+        }
+      }
+
+      try {
+        await createPostMutation.mutateAsync({
+          content: fullCaption,
+          mediaUrls,
+        });
+      } catch {
         // Ignore auth/membership error when testing locally without creator token
-      });
+      }
+    })();
 
     setTimeout(() => {
       updatePosts((prev) => [newPost, ...prev]);
       setUploadedMedia(null);
+      setSelectedFile(null);
       setUploadError(null);
       setCaption("");
       setTags([]);

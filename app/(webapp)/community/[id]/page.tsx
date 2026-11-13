@@ -1,13 +1,13 @@
 'use client';
 
-import { use } from 'react';
+import { use, useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CommunityDetailView } from '@/components/community/CommunityDetailView';
 import { MobilePaidCommunityDetails } from '@/components/community/mobile/MobilePaidCommunityDetails';
 import { MobileFreeCommunityDetails } from '@/components/community/mobile/MobileFreeCommunityDetails';
 import { MOCK_COMMUNITIES } from '@/components/community/mobile/mockData';
-import { useCommunity } from '@/lib/api/services/community.hooks';
+import { useCommunity, useCommunityFeed } from '@/lib/api/services/community.hooks';
 import { toMobileCommunityItem } from '@/lib/api/services/community.service';
 
 interface CommunityDetailPageProps {
@@ -16,14 +16,168 @@ interface CommunityDetailPageProps {
   }>;
 }
 
+interface StoredCreatorPost {
+  id: string;
+  communityName?: string;
+  communitySlug?: string;
+  caption?: string;
+  mediaUrl?: string;
+}
+
+interface StoredCreatorCommunity {
+  name?: string;
+  bio?: string;
+  category?: 'free' | 'paid';
+  pricePerMonth?: number;
+  yearlyPrice?: number;
+  coverImage?: string;
+  avatar?: string;
+  payoutAccount?: { accountName?: string };
+}
+
+const CREATOR_POSTS_STORAGE_KEY = 'localbuka_creator_posts_v1';
+const CREATOR_COMMUNITY_STORAGE_KEY = 'localbuka_creator_community_v1';
+
+const toSlug = (val: string) =>
+  val
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
 export default function CommunityDetailPage({ params }: CommunityDetailPageProps) {
   const router = useRouter();
   const { id } = use(params);
   const { data: liveCommunity } = useCommunity(id);
+  const { data: liveFeed } = useCommunityFeed(id);
+
+  const [localPosts, setLocalPosts] = useState<StoredCreatorPost[]>([]);
+  const [localCommunity, setLocalCommunity] = useState<StoredCreatorCommunity | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const savedPosts = window.localStorage.getItem(CREATOR_POSTS_STORAGE_KEY);
+      if (savedPosts) {
+        const parsed = JSON.parse(savedPosts);
+        if (Array.isArray(parsed)) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setLocalPosts(parsed);
+        }
+      }
+      const savedComm = window.localStorage.getItem(CREATOR_COMMUNITY_STORAGE_KEY);
+      if (savedComm) {
+        setLocalCommunity(JSON.parse(savedComm));
+      }
+    } catch {
+      // ignore localStorage errors
+    }
+  }, []);
+
+  const isLocalCreatorMatch =
+    !liveCommunity &&
+    Boolean(localCommunity?.name) &&
+    (toSlug(localCommunity!.name!) === id || id === 'chef-amaka' || id === 'my-community');
+
+  const effectiveCommunity = liveCommunity
+    ? liveCommunity
+    : isLocalCreatorMatch && localCommunity
+    ? {
+        id,
+        slug: toSlug(localCommunity.name || id),
+        name: localCommunity.name || "Chef Tolu's VIP Kitchen",
+        description: localCommunity.bio || '',
+        coverImage: localCommunity.coverImage || localCommunity.avatar,
+        avatar: localCommunity.avatar || localCommunity.coverImage,
+        isFree: localCommunity.category === 'free',
+        priceAmount: localCommunity.pricePerMonth || 2000,
+        yearlyPriceAmount:
+          localCommunity.yearlyPrice || (localCommunity.pricePerMonth || 2000) * 10,
+        creator: localCommunity.payoutAccount?.accountName || 'Creator',
+        members: '1 member',
+        posts: `${localPosts.length} posts`,
+      }
+    : null;
 
   const isChefAmaka = id === 'chef-amaka' || id === '2';
-  const isPaidCommunity = liveCommunity ? !liveCommunity.isFree : isChefAmaka;
+  const isPaidCommunity = effectiveCommunity ? !effectiveCommunity.isFree : isChefAmaka;
   const isNigeriaCulture = !id || id === 'nigeria-food-and-culture' || id === 'nigeria-food' || id === '1';
+
+  const resolvedRecentPosts = useMemo(() => {
+    const apiPosts = (liveFeed?.items || [])
+      .filter((p) => p.mediaUrls && p.mediaUrls.length > 0)
+      .map((p) => ({
+        id: p.id,
+        image: p.mediaUrls[0],
+        title: p.content || 'Community post',
+      }));
+
+    // Include newly posted creator posts from localStorage for this community (or newly created creator community)
+    const matchingLocalPosts = localPosts
+      .filter((p) => {
+        if (!p.mediaUrl) return false;
+        if (p.communitySlug && p.communitySlug === id) return true;
+        if (p.communityName && effectiveCommunity?.name) {
+          return toSlug(p.communityName) === toSlug(effectiveCommunity.name);
+        }
+        return isLocalCreatorMatch;
+      })
+      .map((p) => ({
+        id: p.id,
+        image: p.mediaUrl!,
+        title: p.caption || 'Recent post',
+      }));
+
+    const combined: Array<{ id: string; image: string; title: string }> = [];
+    const seen = new Set<string>();
+    for (const item of [...matchingLocalPosts, ...apiPosts]) {
+      if (!seen.has(item.image)) {
+        seen.add(item.image);
+        combined.push(item);
+      }
+    }
+
+    if (combined.length > 0) {
+      return combined.slice(0, 6);
+    }
+
+    if (isPaidCommunity) {
+      return [
+        {
+          id: 'post-1',
+          image: '/images/community/recent-post-burger.jpg',
+          title: 'Loaded Burgers & Fries Spread',
+        },
+        {
+          id: 'post-2',
+          image: '/images/community/recent-post-bbq.jpg',
+          title: 'Outdoor BBQ & Suya Grill',
+        },
+        {
+          id: 'post-3',
+          image: '/images/community/recent-post-feast.jpg',
+          title: 'Grand Banquet Table Feast',
+        },
+      ];
+    }
+
+    return [
+      {
+        id: 'post-1',
+        image: '/images/community/free-recent-post-1.jpg',
+        title: 'Nigerian Food Platter',
+      },
+      {
+        id: 'post-2',
+        image: '/images/community/free-recent-post-2.jpg',
+        title: 'Jollof Rice & Grilled Chicken',
+      },
+      {
+        id: 'post-3',
+        image: '/images/community/free-recent-post-3.jpg',
+        title: 'Grand Banquet Table Feast',
+      },
+    ];
+  }, [liveFeed, localPosts, id, effectiveCommunity, isLocalCreatorMatch, isPaidCommunity]);
 
   const mobileCommunity = liveCommunity
     ? toMobileCommunityItem(liveCommunity)
@@ -37,6 +191,7 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
         <div className='block md:hidden min-h-screen bg-[#141414]'>
           <MobilePaidCommunityDetails
             community={mobileCommunity}
+            recentPosts={resolvedRecentPosts}
             onBack={() => router.push('/community')}
             onSubscribe={() => router.push(`/community/${id}/subscribe`)}
           />
@@ -45,48 +200,32 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
         {/* ── Desktop View (≥ md): Exact Existing Desktop Layout ── */}
         <div className='hidden md:block w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-4'>
           <CommunityDetailView
-            id={liveCommunity?.slug || id}
-            name={liveCommunity?.name || "Chef Amaka's kitchen"}
+            id={effectiveCommunity?.slug || id}
+            name={effectiveCommunity?.name || "Chef Amaka's kitchen"}
             description={
-              liveCommunity?.description ||
+              effectiveCommunity?.description ||
               'Weekly private recipes, live cook-alongs, and direct feedback from Chef Amaka for members serious about leveling up their cooking.'
             }
-            coverImage={liveCommunity?.coverImage || '/images/community/chef-amaka-hero.jpg'}
-            avatarImage={liveCommunity?.avatar || '/images/community/amaka-avatar.jpg'}
+            coverImage={effectiveCommunity?.coverImage || '/images/community/chef-amaka-hero.jpg'}
+            avatarImage={effectiveCommunity?.avatar || '/images/community/amaka-avatar.jpg'}
             isFree={false}
             price={
-              liveCommunity?.priceAmount
-                ? `₦${liveCommunity.priceAmount.toLocaleString('en-NG')}`
+              effectiveCommunity?.priceAmount
+                ? `₦${effectiveCommunity.priceAmount.toLocaleString('en-NG')}`
                 : '₦2,500'
             }
             yearlyPrice={
-              liveCommunity?.yearlyPriceAmount
-                ? `or ₦${liveCommunity.yearlyPriceAmount.toLocaleString('en-NG')} billed yearly`
+              effectiveCommunity?.yearlyPriceAmount
+                ? `or ₦${effectiveCommunity.yearlyPriceAmount.toLocaleString('en-NG')} billed yearly`
                 : 'or ₦25,000 billed yearly'
             }
-            owner={liveCommunity?.creator?.replace(/^By\s+/i, '') || 'Amaka Obi'}
+            owner={effectiveCommunity?.creator?.replace(/^By\s+/i, '') || 'Amaka Obi'}
             membersCount={
-              liveCommunity
-                ? `${liveCommunity.members} . ${liveCommunity.posts}`
+              effectiveCommunity
+                ? `${effectiveCommunity.members} . ${effectiveCommunity.posts}`
                 : '2.1k members . 58 posts'
             }
-            recentPosts={[
-              {
-                id: 'post-1',
-                image: '/images/community/recent-post-burger.jpg',
-                title: 'Loaded Burgers & Fries Spread',
-              },
-              {
-                id: 'post-2',
-                image: '/images/community/recent-post-bbq.jpg',
-                title: 'Outdoor BBQ & Suya Grill',
-              },
-              {
-                id: 'post-3',
-                image: '/images/community/recent-post-feast.jpg',
-                title: 'Grand Banquet Table Feast',
-              },
-            ]}
+            recentPosts={resolvedRecentPosts}
           />
         </div>
       </MainLayout>
@@ -99,6 +238,7 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
       <div className='block md:hidden min-h-screen bg-[#141414]'>
         <MobileFreeCommunityDetails
           community={mobileCommunity}
+          recentPosts={resolvedRecentPosts}
           onBack={() => router.push('/community')}
           onJoin={() => router.push(`/community/${id}/feed`)}
           onSelectPost={() => router.push(`/community/${id}/feed`)}
@@ -108,43 +248,27 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
       {/* ── Desktop View (≥ md): Exact Existing Desktop Layout ── */}
       <div className='hidden md:block w-full max-w-[1117px] mx-auto px-2 sm:px-4 py-4'>
         <CommunityDetailView
-          id={liveCommunity?.slug || id}
+          id={effectiveCommunity?.slug || id}
           name={
-            liveCommunity?.name ||
+            effectiveCommunity?.name ||
             (isNigeriaCulture ? 'Nigeria food and culture' : 'Lagos Street Food Explorers')
           }
           description={
-            liveCommunity?.description ||
+            effectiveCommunity?.description ||
             (isNigeriaCulture
               ? 'A space to explore Nigerian dishes, cooking traditions, and the stories behind the food. Share recipes, ask questions, and connect with fellow food lovers across the country.'
               : 'Discover the hidden buka gems, late-night spots, and authentic street flavors across Lagos.')
           }
-          coverImage={liveCommunity?.coverImage || '/images/community/rec-nigeria-food.jpg'}
-          avatarImage={liveCommunity?.avatar || '/images/community/community-logo.svg'}
+          coverImage={effectiveCommunity?.coverImage || '/images/community/rec-nigeria-food.jpg'}
+          avatarImage={effectiveCommunity?.avatar || '/images/community/community-logo.svg'}
           isFree={true}
-          owner={liveCommunity?.creator?.replace(/\s+owned$/i, '') || 'Localbuka'}
+          owner={effectiveCommunity?.creator?.replace(/\s+owned$/i, '') || 'Localbuka'}
           membersCount={
-            liveCommunity
-              ? `${liveCommunity.members} . ${liveCommunity.posts}`
+            effectiveCommunity
+              ? `${effectiveCommunity.members} . ${effectiveCommunity.posts}`
               : '12.4k members . 340 posts'
           }
-          recentPosts={[
-            {
-              id: 'post-1',
-              image: '/images/community/free-recent-post-1.jpg',
-              title: 'Nigerian Food Platter',
-            },
-            {
-              id: 'post-2',
-              image: '/images/community/free-recent-post-2.jpg',
-              title: 'Jollof Rice & Grilled Chicken',
-            },
-            {
-              id: 'post-3',
-              image: '/images/community/free-recent-post-3.jpg',
-              title: 'Grand Banquet Table Feast',
-            },
-          ]}
+          recentPosts={resolvedRecentPosts}
         />
       </div>
     </MainLayout>

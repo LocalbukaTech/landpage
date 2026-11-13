@@ -6,12 +6,14 @@ import { MobileCommunityItem } from "./types";
 
 interface MobilePaidCommunityDetailsProps {
   community: MobileCommunityItem;
+  recentPosts?: Array<{ id: string; image: string; title: string }>;
   onBack: () => void;
   onSubscribe: () => void;
 }
 
 export function MobilePaidCommunityDetails({
   community,
+  recentPosts,
   onBack,
   onSubscribe,
 }: MobilePaidCommunityDetailsProps) {
@@ -121,11 +123,14 @@ export function MobilePaidCommunityDetails({
           </div>
 
           <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-none pb-1">
-            {[
-              { id: "1", title: "Loaded Burgers", image: "/images/community/recent-post-burger.jpg" },
-              { id: "2", title: "Outdoor BBQ", image: "/images/community/recent-post-bbq.jpg" },
-              { id: "3", title: "Grand Banquet", image: "/images/community/recent-post-feast.jpg" },
-            ].map((post) => (
+            {(recentPosts && recentPosts.length > 0
+              ? recentPosts
+              : [
+                  { id: "1", title: "Loaded Burgers", image: "/images/community/recent-post-burger.jpg" },
+                  { id: "2", title: "Outdoor BBQ", image: "/images/community/recent-post-bbq.jpg" },
+                  { id: "3", title: "Grand Banquet", image: "/images/community/recent-post-feast.jpg" },
+                ]
+            ).map((post) => (
               <div
                 key={post.id}
                 onClick={onSubscribe}
@@ -135,6 +140,7 @@ export function MobilePaidCommunityDetails({
                   src={post.image}
                   alt={post.title}
                   fill
+                  unoptimized
                   className="object-cover blur-[2px] brightness-75 group-hover:scale-105 transition-transform duration-300"
                   sizes="130px"
                 />

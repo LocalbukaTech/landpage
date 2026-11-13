@@ -6,6 +6,7 @@ import { MobileCommunityItem } from "./types";
 
 interface MobileFreeCommunityDetailsProps {
   community: MobileCommunityItem;
+  recentPosts?: Array<{ id: string; image: string; title: string }>;
   onBack: () => void;
   onJoin: () => void;
   onSelectPost?: () => void;
@@ -13,6 +14,7 @@ interface MobileFreeCommunityDetailsProps {
 
 export function MobileFreeCommunityDetails({
   community,
+  recentPosts,
   onBack,
   onJoin,
   onSelectPost,
@@ -116,20 +118,34 @@ export function MobileFreeCommunityDetails({
             Recent posts
           </h2>
 
-          <div
-            onClick={onSelectPost || onJoin}
-            className="group relative w-32 h-24 rounded-xl overflow-hidden border border-white/10 bg-zinc-800 cursor-pointer active:scale-95 transition-all"
-          >
-            <Image
-              src={
-                community.recentPostImage ||
-                "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=400&q=80"
-              }
-              alt="Recent post"
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-              sizes="150px"
-            />
+          <div className="flex items-center gap-2.5 overflow-x-auto scrollbar-none pb-1">
+            {(recentPosts && recentPosts.length > 0
+              ? recentPosts
+              : [
+                  {
+                    id: "default-free-post",
+                    title: "Recent post",
+                    image:
+                      community.recentPostImage ||
+                      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=400&q=80",
+                  },
+                ]
+            ).map((post) => (
+              <div
+                key={post.id}
+                onClick={onSelectPost || onJoin}
+                className="group relative w-32 h-24 rounded-xl overflow-hidden border border-white/10 bg-zinc-800 shrink-0 cursor-pointer active:scale-95 transition-all"
+              >
+                <Image
+                  src={post.image}
+                  alt={post.title || "Recent post"}
+                  fill
+                  unoptimized
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="150px"
+                />
+              </div>
+            ))}
           </div>
         </div>
       </div>

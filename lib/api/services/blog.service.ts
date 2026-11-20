@@ -145,17 +145,21 @@ export const blogService = {
     const formData = new FormData();
     formData.append("image", file);
 
-    const response = await api.post<{url: string; data?: any; message?: string}>(
+    const response = await api.post<{url?: string; data?: {url?: string; secure_url?: string}; message?: string}>(
       "/images/upload",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      formData
     );
 
-    return response.data?.url || (response as any).url;
+    const uploadedUrl =
+      response?.data?.url ||
+      response?.data?.secure_url ||
+      response?.url;
+
+    if (!uploadedUrl) {
+      throw new Error('Image upload succeeded but no URL was returned.');
+    }
+
+    return uploadedUrl;
   },
 
   /**
@@ -182,11 +186,7 @@ export const blogService = {
     }
 
 
-    return api.post<ApiResponse<Blog>>('/blogs', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return api.post<ApiResponse<Blog>>('/blogs', formData);
   },
 
   /**
@@ -223,11 +223,7 @@ export const blogService = {
     }
 
 
-    return api.put<ApiResponse<Blog>>(`/blogs/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return api.put<ApiResponse<Blog>>(`/blogs/${id}`, formData);
   },
 
   /**

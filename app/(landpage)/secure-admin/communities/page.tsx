@@ -11,10 +11,12 @@ import {
   Users,
   Search,
   MessageSquare,
+  Trash2,
 } from 'lucide-react';
 import {
   useAdminCommunities,
   useAdminReviewCommunity,
+  useDeleteCommunity,
 } from '@/lib/api/services/community.hooks';
 
 type ReviewStatusFilter =
@@ -62,6 +64,27 @@ export default function AdminCommunitiesApprovalPage() {
   const { data: communities = [], isLoading } =
     useAdminCommunities(statusFilter);
   const reviewMutation = useAdminReviewCommunity();
+  const deleteMutation = useDeleteCommunity();
+
+  const handleDelete = async (id: string, name: string) => {
+    if (
+      !window.confirm(
+        `Permanently delete "${name}"? This removes the community, its posts, and memberships.`
+      )
+    ) {
+      return;
+    }
+    try {
+      await deleteMutation.mutateAsync(id);
+      setToastMsg(`"${name}" has been permanently deleted.`);
+      setTimeout(() => setToastMsg(null), 4000);
+    } catch (err: any) {
+      setToastMsg(
+        err?.response?.data?.message || `Failed to delete "${name}".`
+      );
+      setTimeout(() => setToastMsg(null), 4000);
+    }
+  };
 
   const filtered = communities.filter(
     (c) =>
@@ -286,6 +309,17 @@ export default function AdminCommunitiesApprovalPage() {
                   >
                     <XCircle className="w-3.5 h-3.5" />
                     <span>Reject</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={deleteMutation.isPending}
+                    onClick={() => handleDelete(comm.id, comm.name)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white font-semibold text-xs transition-all cursor-pointer disabled:opacity-40"
+                    title="Permanently delete community"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
                   </button>
                 </div>
               </div>

@@ -15,8 +15,10 @@ import { cn } from "@/lib/utils";
 interface CreatorDashboardProps {
   initialTab?: DashboardTab;
   community?: CreatorCommunityFormData;
+  communitySlug?: string;
   onCreateNewCommunity?: () => void;
   onUpdateCommunity?: (updates: Partial<CreatorCommunityFormData>) => void;
+  onDeleteCommunity?: () => void;
 }
 
 const DASHBOARD_TABS: DashboardTab[] = [
@@ -33,8 +35,10 @@ const SEED_PLACEHOLDER_POST_IDS = new Set(["post-1", "post-2"]);
 export function CreatorDashboard({
   initialTab = "Members",
   community,
+  communitySlug,
   onCreateNewCommunity,
   onUpdateCommunity,
+  onDeleteCommunity,
 }: CreatorDashboardProps) {
   const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>(initialTab);
@@ -268,6 +272,15 @@ export function CreatorDashboard({
         {activeTab === "Settings" && (
           <SettingsTab
             communityName={community?.name}
+            communitySlug={
+              communitySlug ||
+              (community?.name
+                ? community.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "")
+                : undefined)
+            }
             communityBio={community?.bio}
             initialPrice={
               community?.category === "free"
@@ -276,6 +289,7 @@ export function CreatorDashboard({
             }
             initialBenefits={community?.benefits}
             onUpdateCommunity={onUpdateCommunity}
+            onDeleteCommunity={onDeleteCommunity}
           />
         )}
       </div>

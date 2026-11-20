@@ -210,21 +210,65 @@ function CommunityPageContent() {
 
   const handleSelectFreePlan = (formData: CreatorCommunityFormData) => {
     saveCreatorData(formData);
-    createCommunityMutation.mutate({
-      name: formData.name,
-      description: formData.bio,
-      category: "free",
-      pricePerMonth: 0,
-      pricePerYear: 0,
-      coverImage: formData.coverImage || formData.avatar,
-      avatar: formData.avatar,
-      benefits: formData.benefits,
-    });
-    toast({
-      title: "Community Submitted for Admin Review",
-      description: `${formData.name} has been sent to the LocalBuka Admin team for approval.`,
-    });
-    setCreatorStep("pending");
+    createCommunityMutation.mutate(
+      {
+        name: formData.name,
+        description: formData.bio,
+        category: "free",
+        pricePerMonth: 0,
+        pricePerYear: 0,
+        coverImage: formData.coverImage || formData.avatar,
+        avatar: formData.avatar,
+        benefits: formData.benefits,
+      },
+      {
+        onSuccess: (created: any) => {
+          const status = created?.status;
+          const feedback = created?.adminFeedback;
+          if (status === "approved") {
+            toast({
+              title: "Community Auto-Approved & Live! 🎉",
+              description: `${formData.name} passed automated quality checks and is now live.`,
+            });
+            setCreatorStep("approved");
+          } else if (status === "changes_requested") {
+            toast({
+              title: "Quick Updates Needed",
+              description:
+                feedback ||
+                "Please refine your community details and resubmit.",
+              variant: "destructive",
+            });
+            setCreatorStep("changes-requested");
+          } else if (status === "rejected") {
+            toast({
+              title: "Community Not Approved",
+              description:
+                feedback ||
+                "This submission did not meet LocalBuka community guidelines.",
+              variant: "destructive",
+            });
+            setCreatorStep("rejected");
+          } else {
+            toast({
+              title: "Community Submitted for Review",
+              description: `${formData.name} has been submitted for review.`,
+            });
+            setCreatorStep("pending");
+          }
+        },
+        onError: (err: any) => {
+          toast({
+            title: "Unable to create community",
+            description:
+              err?.response?.data?.message ||
+              err?.message ||
+              "Please check your details and try again.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   const handleSelectPaidPlan = (formData: CreatorCommunityFormData) => {
@@ -575,10 +619,20 @@ function CommunityPageContent() {
               <CreatorDashboard
                 initialTab={initialDashboardTab}
                 community={creatorData}
+                communitySlug={latestCreatedCommunity?.slug}
                 onCreateNewCommunity={() => setCreatorStep("form")}
                 onUpdateCommunity={(updates) =>
                   saveCreatorData({ ...creatorData, ...updates })
                 }
+                onDeleteCommunity={() => {
+                  try {
+                    window.localStorage.removeItem("localbuka_creator_community_v1");
+                  } catch {
+                    // ignore
+                  }
+                  setCreatorStep("form");
+                  setViewMode("explore");
+                }}
               />
             )}
           </div>

@@ -89,6 +89,7 @@ const CreateBlogContent = () => {
   // Form state
   const [title, setTitle] = useState('');
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
   const [category, setCategory] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [metaTitle, setMetaTitle] = useState('');
@@ -137,6 +138,7 @@ const CreateBlogContent = () => {
   const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setCoverImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverImage(reader.result as string);
@@ -299,8 +301,9 @@ const CreateBlogContent = () => {
     setIsSaving(true);
     
     try {
-      // Convert base64 image to File
-      const imageFile = await dataUrlToFile(coverImage, 'cover-image.jpg');
+      // Use the original selected File directly when available; fall back to pure-JS base64 decoding for loaded drafts
+      const imageFile =
+        coverImageFile || (await dataUrlToFile(coverImage, 'cover-image.jpg'));
       
       await createBlogMutation.mutateAsync({
         image: imageFile,
@@ -322,7 +325,10 @@ const CreateBlogContent = () => {
       });
       router.push('/secure-admin/blog');
     } catch (error: any) {
-      const message = error?.response?.data?.message || 'Failed to publish blog post. Please try again.';
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to publish blog post. Please try again.';
       toast({
         title: 'Publish failed',
         description: message,

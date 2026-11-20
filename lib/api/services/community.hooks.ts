@@ -252,6 +252,16 @@ export const useDeclineCommunityInvite = () => {
   });
 };
 
+export const useDeleteCommunity = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (idOrSlug: string) => communityService.deleteCommunity(idOrSlug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
+    },
+  });
+};
+
 export const useAdminCommunities = (status?: string) => {
   return useQuery({
     queryKey: [...queryKeys.community.all, 'admin', status || 'all'],

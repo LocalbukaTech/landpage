@@ -8,7 +8,7 @@ const ContentSecurityPolicy = [
   "img-src 'self' data: blob: https: http:",
   "font-src 'self' data: https://fonts.gstatic.com",
   "frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://pagead2.googlesyndication.com https://www.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://accounts.google.com",
-  "connect-src 'self' https: wss: http://localhost:* ws://localhost:*",
+  "connect-src 'self' data: blob: https: wss: http://localhost:* ws://localhost:*",
   "media-src 'self' data: blob: https: http:",
   "object-src 'none'",
   "base-uri 'self'",

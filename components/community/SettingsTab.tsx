@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ChevronRight, Image as ImageIcon } from "lucide-react";
+import { ChevronRight, Image as ImageIcon, Trash2, Loader2 } from "lucide-react";
 import { EditCommunityModal } from "./modals/EditCommunityModal";
 import { PricingBenefitsModal } from "./modals/PricingBenefitsModal";
 import { GalleryPickerModal } from "./modals/GalleryPickerModal";
+import { useDeleteCommunity } from "@/lib/api/services/community.hooks";
+import { useToast } from "@/hooks/use-toast";
 
 interface SettingsTabProps {
   communityName?: string;
+  communitySlug?: string;
   communityBio?: string;
   initialPrice?: number;
   initialBenefits?: string[];
@@ -19,6 +22,7 @@ interface SettingsTabProps {
     benefits?: string[];
     coverImage?: string;
   }) => void;
+  onDeleteCommunity?: () => void;
 }
 
 const PRESET_COVERS = [
@@ -46,11 +50,16 @@ const PRESET_COVERS = [
 
 export function SettingsTab({
   communityName: initialName = "Chef Tolu's kitchen",
+  communitySlug,
   communityBio: initialBio = "Cooked some good food tonight, tap the link on my bio for the recepies",
   initialPrice = 2000,
   initialBenefits,
   onUpdateCommunity,
+  onDeleteCommunity,
 }: SettingsTabProps) {
+  const { toast } = useToast();
+  const deleteCommunityMutation = useDeleteCommunity();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [communityName, setCommunityName] = useState(initialName);
   const [communityBio, setCommunityBio] = useState(initialBio);
   const [pricePerMonth, setPricePerMonth] = useState(initialPrice);
@@ -182,6 +191,76 @@ export function SettingsTab({
           Status: {isVisible ? "Publicly Discoverable" : "Hidden (Private)"} · Fee:{" "}
           {pricePerMonth > 0 ? `₦${pricePerMonth.toLocaleString()}/month` : "Free"}
         </p>
+      </div>
+
+      {/* Danger Zone — Delete Community */}
+      <div className="rounded-2xl border border-red-500/25 bg-red-950/20 p-5 space-y-3">
+        <div className="space-y-1">
+          <h4 className="text-sm font-semibold text-red-400">Danger Zone</h4>
+          <p className="text-xs text-white/60">
+            Permanently delete <strong className="text-white/90">{communityName}</strong>, including all posts and memberships. You will be able to create a new community afterward.
+          </p>
+        </div>
+
+        {!confirmDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-600/15 px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-600 hover:text-white transition-all cursor-pointer"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Delete Community</span>
+          </button>
+        ) : (
+          <div className="flex flex-wrap items-center gap-2.5 pt-1">
+            <button
+              type="button"
+              disabled={deleteCommunityMutation.isPending}
+              onClick={async () => {
+                const targetSlug =
+                  communitySlug ||
+                  communityName
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "");
+                try {
+                  await deleteCommunityMutation.mutateAsync(targetSlug);
+                  toast({
+                    title: "Community deleted",
+                    description: `"${communityName}" has been permanently deleted.`,
+                  });
+                  onDeleteCommunity?.();
+                } catch (err: any) {
+                  toast({
+                    title: "Failed to delete community",
+                    description:
+                      err?.response?.data?.message ||
+                      err?.message ||
+                      "Please try again.",
+                    variant: "destructive",
+                  });
+                  setConfirmDelete(false);
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 transition-all cursor-pointer disabled:opacity-50"
+            >
+              {deleteCommunityMutation.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
+              <span>Yes, Permanently Delete</span>
+            </button>
+            <button
+              type="button"
+              disabled={deleteCommunityMutation.isPending}
+              onClick={() => setConfirmDelete(false)}
+              className="rounded-xl bg-white/10 px-4 py-2 text-xs font-medium text-white/80 hover:bg-white/15 transition-all cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modals */}

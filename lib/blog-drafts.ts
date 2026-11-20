@@ -99,12 +99,26 @@ export const getDraftsCount = (): number => {
 };
 
 /**
- * Convert base64 data URL to File
+ * Convert base64 data URL to File (pure JS decoding so it never triggers CSP fetch('data:') errors)
  */
 export const dataUrlToFile = async (
   dataUrl: string,
   filename: string = 'image.jpg'
 ): Promise<File> => {
+  if (dataUrl.startsWith('data:')) {
+    const [header, base64Data] = dataUrl.split(',');
+    const mimeMatch = header.match(/data:([^;]+);/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const binaryString = atob(base64Data || '');
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+    const safeFilename = filename.includes('.') ? filename : `${filename}.${ext}`;
+    return new File([bytes], safeFilename, { type: mimeType });
+  }
   const response = await fetch(dataUrl);
   const blob = await response.blob();
   return new File([blob], filename, { type: blob.type || 'image/jpeg' });

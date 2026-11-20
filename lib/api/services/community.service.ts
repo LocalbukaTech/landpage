@@ -509,6 +509,13 @@ export const communityService = {
     );
   },
 
+  /** DELETE /community/:idOrSlug — Delete a community (Creator or Admin) */
+  deleteCommunity: (idOrSlug: string) => {
+    return api.delete<ApiResponse<{ success: boolean; message: string }>>(
+      `/community/${idOrSlug}`,
+    );
+  },
+
   /** GET /community/admin/all — Admin list of all submitted communities */
   adminListCommunities: (status?: string) => {
     return api.get<

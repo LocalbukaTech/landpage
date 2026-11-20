@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import {
   ArrowLeft,
@@ -13,6 +13,15 @@ import {
 import { MobileCommunityItem, CommunityComment } from "./types";
 import { INITIAL_COMMENTS } from "./mockData";
 import { cn } from "@/lib/utils";
+import {
+  useCommunityFeed,
+  useTogglePostLike,
+  usePostComments,
+  useCreatePostComment,
+} from "@/lib/api/services/community.hooks";
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface MobileCommunityFeedProps {
   community: MobileCommunityItem;
@@ -23,34 +32,89 @@ export function MobileCommunityFeed({
   community,
   onBack,
 }: MobileCommunityFeedProps) {
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(24);
+  const communityKey = (community as any).slug || community.id;
+  const { data: liveFeed } = useCommunityFeed(communityKey);
+  const livePost = liveFeed?.items?.[0] || null;
+  const activePostId = livePost?.id || "";
+  const isRealPost = UUID_REGEX.test(activePostId);
+
+  const toggleLikeMutation = useTogglePostLike();
+  const { data: liveCommentsData } = usePostComments(
+    isRealPost ? activePostId : ""
+  );
+  const createCommentMutation = useCreatePostComment(activePostId);
+
+  const [localLiked, setLocalLiked] = useState<boolean | null>(null);
+  const [localLikeCount, setLocalLikeCount] = useState<number | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [comments, setComments] = useState<CommunityComment[]>(INITIAL_COMMENTS);
+  const [fallbackComments, setFallbackComments] =
+    useState<CommunityComment[]>(INITIAL_COMMENTS);
   const [newCommentText, setNewCommentText] = useState("");
 
-  const handleToggleLike = () => {
-    if (isLiked) {
-      setIsLiked(false);
-      setLikeCount((prev) => prev - 1);
-    } else {
-      setIsLiked(true);
-      setLikeCount((prev) => prev + 1);
+  const isLiked =
+    localLiked !== null ? localLiked : Boolean(livePost?.hasLiked);
+  const likeCount =
+    localLikeCount !== null
+      ? localLikeCount
+      : livePost
+      ? livePost.likesCount
+      : 24;
+
+  const comments: CommunityComment[] = useMemo(() => {
+    if (isRealPost && liveCommentsData?.comments) {
+      return liveCommentsData.comments.map((c) => ({
+        id: c.id,
+        author: c.author?.fullName || "@member",
+        text: c.content,
+        timeAgo: "Recently",
+      }));
+    }
+    return fallbackComments;
+  }, [isRealPost, liveCommentsData, fallbackComments]);
+
+  const handleToggleLike = async () => {
+    const nextLiked = !isLiked;
+    setLocalLiked(nextLiked);
+    setLocalLikeCount(Math.max(0, likeCount + (nextLiked ? 1 : -1)));
+
+    if (isRealPost) {
+      try {
+        const res = await toggleLikeMutation.mutateAsync(activePostId);
+        const result = (res as any)?.data ?? res;
+        if (typeof result?.liked === "boolean") setLocalLiked(result.liked);
+        if (typeof result?.likesCount === "number") {
+          setLocalLikeCount(result.likesCount);
+        }
+      } catch {
+        setLocalLiked(!nextLiked);
+        setLocalLikeCount(likeCount);
+      }
     }
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCommentText.trim()) return;
+    const trimmed = newCommentText.trim();
+    if (!trimmed) return;
+
+    if (isRealPost) {
+      try {
+        await createCommentMutation.mutateAsync({ content: trimmed });
+        setNewCommentText("");
+        return;
+      } catch {
+        // fallback below if unauthenticated
+      }
+    }
 
     const newComment: CommunityComment = {
       id: `c-${Date.now()}`,
       author: "@you",
-      text: newCommentText.trim(),
+      text: trimmed,
       timeAgo: "Just now",
     };
 
-    setComments((prev) => [...prev, newComment]);
+    setFallbackComments((prev) => [...prev, newComment]);
     setNewCommentText("");
   };
 
@@ -99,15 +163,19 @@ export function MobileCommunityFeed({
               />
             </div>
             <div>
-              <span className="text-sm font-bold text-white">@chef_tolu</span>
-              <span className="text-xs text-zinc-400 ml-1.5">· 3h</span>
+              <span className="text-sm font-bold text-white">
+                {livePost?.author?.fullName || "@chef_tolu"}
+              </span>
+              <span className="text-xs text-zinc-400 ml-1.5">
+                · {livePost ? "Live" : "3h"}
+              </span>
             </div>
           </div>
 
           {/* Post Content */}
           <p className="text-sm text-zinc-200 leading-relaxed">
-            Tried jollof with smoked paprika this time, unexpectedly good. Anyone
-            else experiment with theirs?
+            {livePost?.content ||
+              "Tried jollof with smoked paprika this time, unexpectedly good. Anyone else experiment with theirs?"}
           </p>
 
           {/* Interaction Bar */}
@@ -115,7 +183,7 @@ export function MobileCommunityFeed({
             {/* Like */}
             <button
               type="button"
-              onClick={handleToggleLike}
+              onClick={() => void handleToggleLike()}
               className={cn(
                 "flex items-center gap-1.5 transition-colors cursor-pointer",
                 isLiked ? "text-red-500 font-bold" : "hover:text-white"
@@ -125,13 +193,13 @@ export function MobileCommunityFeed({
                 size={17}
                 className={isLiked ? "fill-red-500 stroke-red-500" : ""}
               />
-              <span>{likeCount}k</span>
+              <span>{livePost ? likeCount : `${likeCount}k`}</span>
             </button>
 
             {/* Comment */}
             <div className="flex items-center gap-1.5 text-zinc-400">
               <MessageCircle size={17} />
-              <span>{comments.length > 3 ? "4.1k" : "4k"}</span>
+              <span>{livePost ? comments.length : comments.length > 3 ? "4.1k" : "4k"}</span>
             </div>
 
             {/* Bookmark */}

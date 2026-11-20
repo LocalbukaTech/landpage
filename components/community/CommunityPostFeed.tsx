@@ -1,11 +1,33 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import Image from 'next/image';
-import { Flag } from 'lucide-react';
+import { Flag, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BackCircleButton } from '@/components/ui/BackCircleButton';
 import { UgcReportModal } from '@/components/modals/UgcReportModal';
+import {
+  useCommunityFeed,
+  useCreateCommunityPost,
+  useTogglePostLike,
+  usePostComments,
+  useCreatePostComment,
+} from '@/lib/api/services/community.hooks';
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function formatRelativeTime(isoDate?: string): string {
+  if (!isoDate) return 'Just now';
+  const diffMs = Date.now() - new Date(isoDate).getTime();
+  if (Number.isNaN(diffMs) || diffMs < 60_000) return 'Just now';
+  const mins = Math.floor(diffMs / 60_000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
 
 /* ─────────────────────── Types ─────────────────────── */
 interface CommentItem {
@@ -126,9 +148,61 @@ function CommentsPanel({
   post: CommunityPost;
   onClose: () => void;
 }) {
+  const { toast } = useToast();
   const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
   const [inputValue, setInputValue] = useState('');
+  const [localComments, setLocalComments] = useState<CommentItem[]>([]);
+
+  const isRealPost = UUID_REGEX.test(post.id);
+  const { data: liveCommentsData, isLoading: isLoadingComments } = usePostComments(
+    isRealPost ? post.id : ''
+  );
+  const createCommentMutation = useCreatePostComment(post.id);
+
+  const displayedComments: CommentItem[] = useMemo(() => {
+    if (isRealPost && liveCommentsData?.comments) {
+      return liveCommentsData.comments.map((c) => ({
+        id: c.id,
+        avatar: c.author?.avatar || '/images/community/avatar-1.png',
+        username: c.author?.fullName || 'Community Member',
+        timeAgo: formatRelativeTime(c.createdAt),
+        text: c.content,
+      }));
+    }
+    return [...localComments, ...post.commentList];
+  }, [isRealPost, liveCommentsData, localComments, post.commentList]);
+
+  const handleSubmitComment = async () => {
+    const trimmed = inputValue.trim();
+    if (!trimmed) return;
+    if (isRealPost) {
+      try {
+        await createCommentMutation.mutateAsync({ content: trimmed });
+        setInputValue('');
+      } catch (err: any) {
+        toast({
+          title: 'Could not post comment',
+          description:
+            err?.response?.data?.message ||
+            'Please sign in and try again.',
+          variant: 'destructive',
+        });
+      }
+    } else {
+      setLocalComments((prev) => [
+        {
+          id: `local-c-${Date.now()}`,
+          avatar: '/images/community/avatar-1.png',
+          username: 'You',
+          timeAgo: 'Just now',
+          text: trimmed,
+        },
+        ...prev,
+      ]);
+      setInputValue('');
+    }
+  };
 
   const toggleLike = (id: string) =>
     setLikedComments(prev => ({ ...prev, [id]: !prev[id] }));
@@ -162,7 +236,17 @@ function CommentsPanel({
 
         {/* Comment List */}
         <div className='flex-1 overflow-y-auto px-5 py-3 space-y-5'>
-          {post.commentList.map(comment => (
+          {isLoadingComments && (
+            <div className='flex items-center justify-center py-8 text-gray-400'>
+              <Loader2 className='w-5 h-5 animate-spin' />
+            </div>
+          )}
+          {!isLoadingComments && displayedComments.length === 0 && (
+            <p className='text-center text-gray-500 text-xs py-8'>
+              No comments yet. Start the conversation!
+            </p>
+          )}
+          {displayedComments.map(comment => (
             <div key={comment.id}>
               <div className='flex gap-3'>
                 <div className='relative w-8 h-8 rounded-full overflow-hidden shrink-0 mt-0.5'>
@@ -256,14 +340,18 @@ function CommentsPanel({
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               onKeyDown={e => {
-                if (e.key === 'Enter' && inputValue.trim()) setInputValue('');
+                if (e.key === 'Enter' && inputValue.trim()) {
+                  e.preventDefault();
+                  void handleSubmitComment();
+                }
               }}
               placeholder='Add a comment…'
               className='flex-1 bg-transparent text-white text-sm outline-none placeholder:text-gray-500'
             />
             <button
-              onClick={() => setInputValue('')}
-              disabled={!inputValue.trim()}
+              type='button'
+              onClick={() => void handleSubmitComment()}
+              disabled={!inputValue.trim() || createCommentMutation.isPending}
               className='w-8 h-8 rounded-full bg-[#FFC533] flex items-center justify-center shrink-0 disabled:opacity-40 transition-opacity cursor-pointer'
               aria-label='Send comment'
             >
@@ -311,9 +399,14 @@ export function CommunityPostFeed({
 }: CommunityPostFeedProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const [posts, setPosts] = useState<CommunityPost[]>(mockPosts);
+  const { data: liveFeed } = useCommunityFeed(communityId);
+  const createPostMutation = useCreateCommunityPost(communityId);
+  const togglePostLikeMutation = useTogglePostLike();
+
+  const [localFallbackPosts, setLocalFallbackPosts] = useState<CommunityPost[]>(mockPosts);
   const [currentViewState, setCurrentViewState] = useState<'feed' | 'empty' | 'expired'>(initialViewState);
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
+  const [likeOverrides, setLikeOverrides] = useState<Record<string, number>>({});
   const [savedPosts, setSavedPosts] = useState<Record<string, boolean>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [openCommentsPost, setOpenCommentsPost] = useState<CommunityPost | null>(null);
@@ -321,6 +414,60 @@ export function CommunityPostFeed({
   const [newPostText, setNewPostText] = useState('');
   const [reportingPost, setReportingPost] = useState<CommunityPost | null>(null);
   const feedRef = useRef<HTMLDivElement>(null);
+
+  const posts: CommunityPost[] = useMemo(() => {
+    if (liveFeed?.items && liveFeed.items.length > 0) {
+      return liveFeed.items.map((p) => {
+        const effectiveCount =
+          likeOverrides[p.id] !== undefined ? likeOverrides[p.id] : p.likesCount;
+        return {
+          id: p.id,
+          username: p.author?.fullName || '@member',
+          avatar: p.author?.avatar || '/images/community/avatar-1.png',
+          timeAgo: formatRelativeTime(p.createdAt),
+          text: p.content,
+          image: p.mediaUrls?.[0],
+          likes: String(effectiveCount ?? 0),
+          comments: String(p.commentsCount ?? 0),
+          saves: '0',
+          commentList: [],
+        };
+      });
+    }
+    return localFallbackPosts;
+  }, [liveFeed, likeOverrides, localFallbackPosts]);
+
+  const handleToggleLike = async (post: CommunityPost) => {
+    const isRealPost = UUID_REGEX.test(post.id);
+    const livePost = liveFeed?.items?.find((p) => p.id === post.id);
+    const currentlyLiked =
+      likedPosts[post.id] !== undefined
+        ? likedPosts[post.id]
+        : Boolean(livePost?.hasLiked);
+
+    setLikedPosts((prev) => ({ ...prev, [post.id]: !currentlyLiked }));
+
+    if (isRealPost) {
+      try {
+        const res = await togglePostLikeMutation.mutateAsync(post.id);
+        const result = (res as any)?.data ?? res;
+        if (typeof result?.liked === 'boolean') {
+          setLikedPosts((prev) => ({ ...prev, [post.id]: result.liked }));
+        }
+        if (typeof result?.likesCount === 'number') {
+          setLikeOverrides((prev) => ({ ...prev, [post.id]: result.likesCount }));
+        }
+      } catch (err: any) {
+        setLikedPosts((prev) => ({ ...prev, [post.id]: currentlyLiked }));
+        toast({
+          title: 'Could not update like',
+          description:
+            err?.response?.data?.message || 'Please sign in to like posts.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
 
   const handleBack = () => {
     if (onBack) {
@@ -348,30 +495,41 @@ export function CommunityPostFeed({
     }
   };
 
-  const handleCreatePost = (e: React.FormEvent) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPostText.trim()) return;
 
-    const newPost: CommunityPost = {
-      id: `post-${Date.now()}`,
-      username: '@food_enthusiast',
-      avatar: '/images/community/avatar-1.png',
-      timeAgo: 'Just now',
-      text: newPostText.trim(),
-      likes: '0',
-      comments: '0',
-      saves: '0',
-      commentList: [],
-    };
-
-    setPosts(prev => [newPost, ...prev]);
-    setNewPostText('');
-    setShowCreateModal(false);
-    setCurrentViewState('feed');
-    toast({
-      title: 'Post Published! 🎉',
-      description: 'Your post was shared with the community.',
-    });
+    const content = newPostText.trim();
+    try {
+      await createPostMutation.mutateAsync({ content });
+      setNewPostText('');
+      setShowCreateModal(false);
+      setCurrentViewState('feed');
+      toast({
+        title: 'Post Published! 🎉',
+        description: 'Your post was shared with the community.',
+      });
+    } catch {
+      const newPost: CommunityPost = {
+        id: `post-${Date.now()}`,
+        username: '@food_enthusiast',
+        avatar: '/images/community/avatar-1.png',
+        timeAgo: 'Just now',
+        text: content,
+        likes: '0',
+        comments: '0',
+        saves: '0',
+        commentList: [],
+      };
+      setLocalFallbackPosts(prev => [newPost, ...prev]);
+      setNewPostText('');
+      setShowCreateModal(false);
+      setCurrentViewState('feed');
+      toast({
+        title: 'Post Published! 🎉',
+        description: 'Your post was shared with the community.',
+      });
+    }
   };
 
   return (
@@ -498,7 +656,11 @@ export function CommunityPostFeed({
           <>
             <div ref={feedRef} className='space-y-6'>
               {posts.map((post, index) => {
-                const isLiked = likedPosts[post.id];
+                const livePost = liveFeed?.items?.find((p) => p.id === post.id);
+                const isLiked =
+                  likedPosts[post.id] !== undefined
+                    ? likedPosts[post.id]
+                    : Boolean(livePost?.hasLiked);
                 const isSaved = savedPosts[post.id];
 
                 return (
@@ -539,7 +701,7 @@ export function CommunityPostFeed({
                     <div className='flex items-center gap-5'>
                       {/* Like */}
                       <button
-                        onClick={() => setLikedPosts(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                        onClick={() => void handleToggleLike(post)}
                         className='flex items-center gap-2 group cursor-pointer'
                         aria-label='Like post'
                       >

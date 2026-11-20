@@ -226,14 +226,14 @@ function CommunityContent() {
   return (
     <div className='w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2 space-y-6'>
       {/* Page Header */}
-      <div className='pb-4 border-b border-white/10 flex items-center justify-between'>
+      <div className='pb-4 border-b border-white/10 flex flex-wrap items-center justify-between gap-3'>
         <h1 className='text-2xl sm:text-3xl font-extrabold text-white tracking-tight'>
           Community
         </h1>
         {activeTab === 'creator' && (
-          <div className='flex items-center gap-3'>
+          <div className='flex flex-wrap items-center gap-2 sm:gap-3 max-w-full'>
             {/* Dev / Reviewer Switcher */}
-            <div className='flex items-center gap-2 text-xs text-white/50 bg-white/5 px-2.5 py-1 rounded-lg border border-white/10'>
+            <div className='flex flex-wrap items-center gap-2 text-xs text-white/50 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/10'>
               <span className='text-white/40'>State:</span>
               <button
                 type='button'
@@ -296,7 +296,7 @@ function CommunityContent() {
           { id: 'paid', label: 'Paid' },
           { id: 'creator', label: 'Creator community' },
           { id: 'memberships', label: 'My memberships' },
-          { id: 'mobile', label: '📱 Mobile Screens' },
+          { id: 'mobile', label: ' Mobile Screens' },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           return (

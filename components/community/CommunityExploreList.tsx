@@ -125,7 +125,7 @@ function CardItem({ item }: { item: CommunityExploreItem }) {
   return (
     <Link
       href={item.href}
-      className='group bg-[#242424] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 flex flex-col shadow-md cursor-pointer w-full max-w-[231px] h-[315px]'
+      className='group bg-[#242424] border border-white/10 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 flex min-w-0 w-full max-w-none flex-col shadow-md cursor-pointer h-[315px]'
     >
       {/* Cover Image Header - Height 160px */}
       <div className='relative w-full h-[160px] min-h-[160px] shrink-0 overflow-hidden bg-zinc-800'>

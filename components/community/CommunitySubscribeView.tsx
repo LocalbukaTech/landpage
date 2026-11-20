@@ -55,22 +55,22 @@ export function CommunitySubscribeView({
   };
 
   return (
-    <div className='w-full max-w-4xl mx-auto space-y-8 py-2 text-white'>
+    <div className='w-full min-w-0 max-w-4xl mx-auto space-y-6 sm:space-y-8 py-1 sm:py-2 text-white'>
       {/* Header */}
-      <div className='pb-4 border-b border-white/10 flex items-center gap-3.5'>
+      <div className='pb-4 border-b border-white/10 flex min-w-0 items-center gap-3'>
         <BackCircleButton onClick={handleBack} size={26} />
-        <h1 className='text-2xl sm:text-3xl font-extrabold tracking-tight'>
+        <h1 className='min-w-0 text-2xl sm:text-3xl font-extrabold tracking-tight'>
           Your membership
         </h1>
       </div>
 
-      <div className='max-w-xl space-y-8'>
+      <div className='w-full min-w-0 max-w-xl space-y-6 sm:space-y-8'>
         {/* Subscribe Section */}
         <div className='space-y-3'>
           <h2 className='text-xs font-semibold text-gray-300 tracking-wider uppercase'>
             Subscribe
           </h2>
-          <div className='flex items-center gap-3.5'>
+          <div className='flex min-w-0 items-center gap-3.5'>
             <div className='relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-white/10 shrink-0'>
               <Image
                 src={communityAvatar}
@@ -79,8 +79,8 @@ export function CommunitySubscribeView({
                 className='object-cover'
               />
             </div>
-            <div>
-              <h3 className='font-bold text-white text-base'>{communityName}</h3>
+            <div className='min-w-0'>
+              <h3 className='break-words font-bold text-white text-base'>{communityName}</h3>
               <p className='text-xs text-gray-400'>Paid community</p>
             </div>
           </div>
@@ -144,13 +144,13 @@ export function CommunitySubscribeView({
             style={{ borderRadius: '10px' }}
             className='w-full px-4 py-3.5 bg-[#242424] border border-white/10 rounded-[10px] text-white text-sm flex items-center justify-between'
           >
-            <span>Visa ending in 4417</span>
+            <span className='min-w-0 break-words'>Visa ending in 4417</span>
             <span className='text-xs text-gray-400 font-mono'>10/28</span>
           </div>
         </div>
 
         {/* Fine print */}
-        <p style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 400, fontSize: '16px', lineHeight: '140%', letterSpacing: '0%', verticalAlign: 'middle', color: '#9ca3af', margin: 0 }}>
+        <p className='text-sm sm:text-base leading-relaxed text-gray-400'>
           By subscribing you agree to LocalBuka&apos;s Terms of Service and authorize recurring monthly charges until cancelled.
         </p>
 
@@ -159,7 +159,7 @@ export function CommunitySubscribeView({
           <button
             onClick={() => handleSubscribe(false)}
             disabled={isProcessing}
-            className='w-full py-3.5 rounded-xl bg-[#FFC533] hover:bg-[#e6b12d] text-gray-950 font-bold text-sm transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-50'
+            className='w-full min-h-12 px-4 py-3.5 rounded-xl bg-[#FFC533] hover:bg-[#e6b12d] text-gray-950 font-bold text-sm text-center leading-snug transition-all shadow-md active:scale-98 cursor-pointer disabled:opacity-50'
           >
             {isProcessing ? 'Processing…' : `Subscribe to unlock · ${priceLabel}`}
           </button>

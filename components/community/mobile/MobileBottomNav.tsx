@@ -18,7 +18,7 @@ export function MobileBottomNav({
   return (
     <div
       className={cn(
-        "w-full h-16 bg-[#161616] border-t border-white/8 flex items-center justify-around px-2 z-40 select-none",
+        "w-full h-16 min-h-16 bg-[#161616] border-t border-white/8 flex items-center justify-around px-1 sm:px-2 z-40 select-none",
         className
       )}
     >
@@ -27,12 +27,14 @@ export function MobileBottomNav({
         type="button"
         onClick={() => onTabClick?.("home")}
         className={cn(
-          "flex flex-col items-center justify-center gap-1 w-14 transition-colors cursor-pointer",
+          "flex flex-col items-center justify-center gap-1 w-12 sm:w-14 transition-colors cursor-pointer",
           activeTab === "home" ? "text-[#fbbe15]" : "text-zinc-400 hover:text-white"
         )}
       >
         <Home size={20} strokeWidth={activeTab === "home" ? 2.4 : 1.8} />
-        <span className="text-[11px] font-medium leading-none">Home</span>
+        <span className="text-[10px] sm:text-[11px] font-medium leading-none">
+          Home
+        </span>
       </button>
 
       {/* Buka */}
@@ -40,7 +42,7 @@ export function MobileBottomNav({
         type="button"
         onClick={() => onTabClick?.("buka")}
         className={cn(
-          "flex flex-col items-center justify-center gap-1 w-14 transition-colors cursor-pointer",
+          "flex flex-col items-center justify-center gap-1 w-12 sm:w-14 transition-colors cursor-pointer",
           activeTab === "buka" ? "text-[#fbbe15]" : "text-zinc-400 hover:text-white"
         )}
       >
@@ -48,7 +50,9 @@ export function MobileBottomNav({
           size={20}
           strokeWidth={activeTab === "buka" ? 2.4 : 1.8}
         />
-        <span className="text-[11px] font-medium leading-none">Buka</span>
+        <span className="text-[10px] sm:text-[11px] font-medium leading-none">
+          Buka
+        </span>
       </button>
 
       {/* Center + Action Button */}
@@ -65,7 +69,7 @@ export function MobileBottomNav({
         type="button"
         onClick={() => onTabClick?.("inbox")}
         className={cn(
-          "flex flex-col items-center justify-center gap-1 w-14 transition-colors cursor-pointer relative",
+          "flex flex-col items-center justify-center gap-1 w-12 sm:w-14 transition-colors cursor-pointer relative",
           activeTab === "inbox" ? "text-[#fbbe15]" : "text-zinc-400 hover:text-white"
         )}
       >
@@ -73,7 +77,9 @@ export function MobileBottomNav({
           <Bell size={20} strokeWidth={activeTab === "inbox" ? 2.4 : 1.8} />
           <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#fbbe15]" />
         </div>
-        <span className="text-[11px] font-medium leading-none">Inbox</span>
+        <span className="text-[10px] sm:text-[11px] font-medium leading-none">
+          Inbox
+        </span>
       </button>
 
       {/* Profile */}
@@ -81,7 +87,7 @@ export function MobileBottomNav({
         type="button"
         onClick={() => onTabClick?.("profile")}
         className={cn(
-          "flex flex-col items-center justify-center gap-1 w-14 transition-colors cursor-pointer",
+          "flex flex-col items-center justify-center gap-1 w-12 sm:w-14 transition-colors cursor-pointer",
           activeTab === "profile" ? "text-[#fbbe15]" : "text-zinc-400 hover:text-white"
         )}
       >
@@ -99,7 +105,9 @@ export function MobileBottomNav({
             className="w-full h-full object-cover"
           />
         </div>
-        <span className="text-[11px] font-medium leading-none">Profile</span>
+        <span className="text-[10px] sm:text-[11px] font-medium leading-none">
+          Profile
+        </span>
       </button>
     </div>
   );

@@ -163,6 +163,16 @@ export const queryKeys = {
     memberships: () => [...queryKeys.community.all, 'me', 'memberships'] as const,
     myCommunities: () => [...queryKeys.community.all, 'creator', 'my-communities'] as const,
     comments: (postId: string) => [...queryKeys.community.all, 'comments', postId] as const,
+    earnings: () => [...queryKeys.community.all, 'creator', 'earnings'] as const,
+    payouts: () => [...queryKeys.community.all, 'creator', 'payouts'] as const,
+    notifications: () => [...queryKeys.community.all, 'notifications'] as const,
+  },
+
+  // Contact Us (Admin)
+  contact: {
+    all: ['contact'] as const,
+    list: (filters?: Record<string, unknown>) => [...queryKeys.contact.all, 'list', filters] as const,
+    detail: (id: string) => [...queryKeys.contact.all, 'detail', id] as const,
   },
 
   // Add more entity types as needed

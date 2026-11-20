@@ -5,7 +5,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, CreditCard, Building2, CheckCircle2, Lock } from 'lucide-react';
 import { BackCircleButton } from '@/components/ui/BackCircleButton';
-import { useSubscribeCommunity } from '@/lib/api/services/community.hooks';
+import {
+  useSubscribeCommunity,
+  useInitializeCommunityPayment,
+} from '@/lib/api/services/community.hooks';
 
 export interface CommunitySubscribeViewProps {
   communityId?: string;
@@ -30,7 +33,9 @@ export function CommunitySubscribeView({
 }: CommunitySubscribeViewProps) {
   const router = useRouter();
   const subscribeMutation = useSubscribeCommunity();
+  const initPaymentMutation = useInitializeCommunityPayment();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [paymentGateway, setPaymentGateway] = useState<'paystack' | 'korapay'>('paystack');
   const [paystackMethod, setPaystackMethod] = useState<'card' | 'transfer' | 'ussd'>('card');
   const [cardLast4, setCardLast4] = useState('8821');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +43,7 @@ export function CommunitySubscribeView({
   const activeAmount = selectedPlan === 'monthly' ? Math.max(2000, monthlyAmount) : Math.max(20000, yearlyAmount);
   const creatorShare = Math.round(activeAmount * 0.92);
   const platformFee = Math.round(activeAmount * 0.08);
+  const gatewayLabel = paymentGateway === 'korapay' ? 'Korapay' : 'Paystack';
 
   const handleBack = () => {
     if (onBack) {
@@ -49,7 +55,7 @@ export function CommunitySubscribeView({
     }
   };
 
-  const handleContinuePayment = (simulateFailure = false) => {
+  const handleContinuePayment = async (simulateFailure = false) => {
     setIsSubmitting(true);
     if (simulateFailure || cardLast4.trim() === '4417') {
       setTimeout(() => {
@@ -59,20 +65,47 @@ export function CommunitySubscribeView({
       return;
     }
 
+    const prefix = paymentGateway === 'korapay' ? 'KPY' : 'PSK';
+    let paymentReference = `${prefix}-${Date.now()}`;
+
+    try {
+      const initRes = await initPaymentMutation.mutateAsync({
+        idOrSlug: communityId,
+        data: {
+          billingPeriod: selectedPlan,
+          provider: paymentGateway,
+          paymentReference,
+        },
+      });
+      const initData = initRes?.data;
+      if (initData?.reference) {
+        paymentReference = initData.reference;
+      }
+      if (initData?.authorizationUrl && typeof window !== 'undefined') {
+        window.location.href = initData.authorizationUrl;
+        return;
+      }
+    } catch {
+      // Fallback to direct subscription verification
+    }
+
     subscribeMutation.mutate(
       {
         idOrSlug: communityId,
         data: {
           billingPeriod: selectedPlan,
-          paymentReference: `PSK-${Date.now()}`,
+          provider: paymentGateway,
+          paymentReference,
         },
       },
       {
         onSettled: () => {
           setIsSubmitting(false);
-          router.push(`/community/${communityId}/subscribe/success?plan=${selectedPlan}&amount=${activeAmount}`);
+          router.push(
+            `/community/${communityId}/subscribe/success?plan=${selectedPlan}&amount=${activeAmount}&gateway=${paymentGateway}&ref=${paymentReference}`,
+          );
         },
-      }
+      },
     );
   };
 
@@ -83,7 +116,7 @@ export function CommunitySubscribeView({
         <BackCircleButton onClick={handleBack} size={26} color='#FFFFFF' className='text-white' />
         <span className='inline-flex items-center gap-1.5 rounded-full bg-[#4ade80]/15 border border-[#4ade80]/30 px-3 py-1 text-[11px] font-semibold text-[#4ade80]'>
           <ShieldCheck className='w-3.5 h-3.5' />
-          <span>Secured by Paystack</span>
+          <span>Secured by {gatewayLabel}</span>
         </span>
       </div>
 
@@ -195,18 +228,47 @@ export function CommunitySubscribeView({
           </button>
         </div>
 
-        {/* Paystack Payment Channel Selector */}
+        {/* Payment Gateway & Channel Selector (Paystack / Korapay) */}
         <div className='w-full px-6 mb-5 space-y-3'>
           <div className='rounded-2xl bg-[#161616] border border-white/8 p-4 space-y-3'>
             <div className='flex items-center justify-between text-xs'>
               <span className='font-semibold text-white flex items-center gap-1.5'>
                 <Lock className='w-3.5 h-3.5 text-[#FFC533]' />
-                <span>Paystack Checkout Method</span>
+                <span>Payment Gateway</span>
               </span>
               <span className='text-[11px] text-gray-400'>NGN Instant Settlement</span>
             </div>
 
-            <div className='grid grid-cols-3 gap-2'>
+            {/* Gateway Switcher: Paystack vs Korapay */}
+            <div className='grid grid-cols-2 gap-2'>
+              {(
+                [
+                  { id: 'paystack', label: 'Paystack', badge: 'Cards · USSD · Bank' },
+                  { id: 'korapay', label: 'Korapay', badge: 'Instant Bank · Cards' },
+                ] as const
+              ).map((gw) => (
+                <button
+                  key={gw.id}
+                  type='button'
+                  onClick={() => setPaymentGateway(gw.id)}
+                  className={`py-2.5 px-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    paymentGateway === gw.id
+                      ? 'bg-[#FFC533]/15 border-[#FFC533] text-white'
+                      : 'bg-[#222222] text-gray-300 border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <div className='flex items-center justify-between'>
+                    <span className='text-xs font-bold'>{gw.label}</span>
+                    {paymentGateway === gw.id && (
+                      <span className='w-2 h-2 rounded-full bg-[#FFC533]' />
+                    )}
+                  </div>
+                  <div className='text-[10px] text-gray-400 mt-0.5'>{gw.badge}</div>
+                </button>
+              ))}
+            </div>
+
+            <div className='grid grid-cols-3 gap-2 pt-1'>
               {(
                 [
                   { id: 'card', label: 'Card' },
@@ -289,8 +351,8 @@ export function CommunitySubscribeView({
             <CheckCircle2 className='w-4 h-4' />
             <span>
               {isSubmitting
-                ? 'Processing Paystack Payment...'
-                : `Pay ₦${activeAmount.toLocaleString('en-NG')} with Paystack`}
+                ? `Processing ${gatewayLabel} Payment...`
+                : `Pay ₦${activeAmount.toLocaleString('en-NG')} with ${gatewayLabel}`}
             </span>
           </button>
 

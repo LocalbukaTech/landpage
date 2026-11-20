@@ -197,7 +197,7 @@ export function CreatorCommunityApprovedCard({
               )}
             </button>
             <span className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/5 border border-white/10 px-3.5 py-2 text-xs font-semibold text-gray-400 cursor-not-allowed">
-              <span>Paystack Closed Until Deploy</span>
+              <span>Paystack · Coming Soon</span>
             </span>
           </div>
         </div>

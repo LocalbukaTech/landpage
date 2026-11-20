@@ -4,6 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import { ArrowLeft, Star, X } from "lucide-react";
 import { MOCK_NOTIFICATIONS } from "./mockData";
+import { useCommunityNotifications } from "@/lib/api/services/community.hooks";
+import type { MobileNotificationItem } from "./types";
 
 interface MobileNotificationsViewProps {
   onBack: () => void;
@@ -12,7 +14,23 @@ interface MobileNotificationsViewProps {
 export function MobileNotificationsView({
   onBack,
 }: MobileNotificationsViewProps) {
-  const notifications = MOCK_NOTIFICATIONS;
+  const { data: liveNotificationsData } = useCommunityNotifications();
+  const liveNotifications: MobileNotificationItem[] =
+    (liveNotificationsData?.items || []).map((item) => ({
+      id: item.id,
+      type:
+        item.type === "comment" || item.type === "post" || item.type === "like"
+          ? "like"
+          : "follow",
+      title: item.title,
+      time: item.time,
+      avatar: item.avatar || "/images/community/avatar-1.png",
+      thumbnail: item.thumbnail || undefined,
+      isNew: item.isNew,
+    }));
+
+  const notifications =
+    liveNotifications.length > 0 ? liveNotifications : MOCK_NOTIFICATIONS;
   const [followedBackUsers, setFollowedBackUsers] = useState<
     Record<string, boolean>
   >({});

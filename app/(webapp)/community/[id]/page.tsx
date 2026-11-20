@@ -111,10 +111,11 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
         title: p.content || 'Community post',
       }));
 
-    // Include newly posted creator posts from localStorage for this community (or newly created creator community)
+    // Include newly posted creator posts from localStorage for this community (excluding old seed post-1 / post-2)
     const matchingLocalPosts = localPosts
       .filter((p) => {
         if (!p.mediaUrl) return false;
+        if (p.id === 'post-1' || p.id === 'post-2') return false;
         if (p.communitySlug && p.communitySlug === id) return true;
         if (p.communityName && effectiveCommunity?.name) {
           return toSlug(p.communityName) === toSlug(effectiveCommunity.name);
@@ -140,44 +141,8 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
       return combined.slice(0, 6);
     }
 
-    if (isPaidCommunity) {
-      return [
-        {
-          id: 'post-1',
-          image: '/images/community/recent-post-burger.jpg',
-          title: 'Loaded Burgers & Fries Spread',
-        },
-        {
-          id: 'post-2',
-          image: '/images/community/recent-post-bbq.jpg',
-          title: 'Outdoor BBQ & Suya Grill',
-        },
-        {
-          id: 'post-3',
-          image: '/images/community/recent-post-feast.jpg',
-          title: 'Grand Banquet Table Feast',
-        },
-      ];
-    }
-
-    return [
-      {
-        id: 'post-1',
-        image: '/images/community/free-recent-post-1.jpg',
-        title: 'Nigerian Food Platter',
-      },
-      {
-        id: 'post-2',
-        image: '/images/community/free-recent-post-2.jpg',
-        title: 'Jollof Rice & Grilled Chicken',
-      },
-      {
-        id: 'post-3',
-        image: '/images/community/free-recent-post-3.jpg',
-        title: 'Grand Banquet Table Feast',
-      },
-    ];
-  }, [liveFeed, localPosts, id, effectiveCommunity, isLocalCreatorMatch, isPaidCommunity]);
+    return [];
+  }, [liveFeed, localPosts, id, effectiveCommunity, isLocalCreatorMatch]);
 
   const mobileCommunity = liveCommunity
     ? toMobileCommunityItem(liveCommunity)
@@ -209,6 +174,8 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
             coverImage={effectiveCommunity?.coverImage || '/images/community/chef-amaka-hero.jpg'}
             avatarImage={effectiveCommunity?.avatar || '/images/community/amaka-avatar.jpg'}
             isFree={false}
+            isMember={Boolean((effectiveCommunity as any)?.isMember)}
+            benefits={(effectiveCommunity as any)?.benefits}
             price={
               effectiveCommunity?.priceAmount
                 ? `₦${effectiveCommunity.priceAmount.toLocaleString('en-NG')}`
@@ -262,11 +229,23 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
           coverImage={effectiveCommunity?.coverImage || '/images/community/rec-nigeria-food.jpg'}
           avatarImage={effectiveCommunity?.avatar || '/images/community/community-logo.svg'}
           isFree={true}
-          owner={effectiveCommunity?.creator?.replace(/\s+owned$/i, '') || 'Localbuka'}
+          isMember={Boolean((effectiveCommunity as any)?.isMember)}
+          owner={
+            effectiveCommunity?.creator &&
+            effectiveCommunity.creator !== 'Creator'
+              ? effectiveCommunity.creator.replace(/\s+owned$/i, '')
+              : localCommunity?.payoutAccount?.accountName || 'LocalBuka Creator'
+          }
           membersCount={
             effectiveCommunity
-              ? `${effectiveCommunity.members} . ${effectiveCommunity.posts}`
-              : '12.4k members . 340 posts'
+              ? `${effectiveCommunity.members} . ${
+                  resolvedRecentPosts.length > 0
+                    ? `${resolvedRecentPosts.length} ${
+                        resolvedRecentPosts.length === 1 ? 'post' : 'posts'
+                      }`
+                    : effectiveCommunity.posts
+                }`
+              : '1 member . 0 posts'
           }
           recentPosts={resolvedRecentPosts}
         />

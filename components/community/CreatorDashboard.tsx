@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { DashboardTab, CommunityPost } from "./types";
 import { OverviewTab } from "./OverviewTab";
-import { ContentManagementTab, INITIAL_CREATOR_POSTS } from "./ContentManagementTab";
+import { ContentManagementTab } from "./ContentManagementTab";
 import { MembersTab } from "./MembersTab";
 import { MonetizationTab } from "./MonetizationTab";
 import { SettingsTab } from "./SettingsTab";
 import type { CreatorCommunityFormData } from "./CreatorCommunityForm";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 
 interface CreatorDashboardProps {
@@ -27,6 +28,7 @@ const DASHBOARD_TABS: DashboardTab[] = [
 ];
 
 const STORAGE_KEY = "localbuka_creator_posts_v1";
+const SEED_PLACEHOLDER_POST_IDS = new Set(["post-1", "post-2"]);
 
 export function CreatorDashboard({
   initialTab = "Members",
@@ -34,23 +36,89 @@ export function CreatorDashboard({
   onCreateNewCommunity,
   onUpdateCommunity,
 }: CreatorDashboardProps) {
+  const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>(initialTab);
+
+  const realAuthorName =
+    authUser?.fullName ||
+    authUser?.username ||
+    (community?.payoutAccount?.accountName &&
+    community.payoutAccount.accountName !== "Tolu Olawale"
+      ? community.payoutAccount.accountName
+      : community?.name || "Creator");
+
+  const realAuthorHandle = authUser?.username
+    ? `@${authUser.username.replace(/^@/, "")}`
+    : `@${realAuthorName
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")}`;
+
+  const realAuthorAvatar =
+    authUser?.avatar ||
+    authUser?.image_url ||
+    community?.avatar ||
+    community?.coverImage ||
+    "/images/community/cover-1.jpg";
+
   const [posts, setPosts] = useState<CommunityPost[]>(() => {
     if (typeof window !== "undefined") {
       try {
         const saved = window.localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
+          if (Array.isArray(parsed)) {
+            const realOnly = parsed
+              .filter((p: any) => p && !SEED_PLACEHOLDER_POST_IDS.has(p.id))
+              .map((p: CommunityPost) => {
+                // Clean up any old saved post that had the hardcoded @chef_tolu placeholder
+                if (
+                  p.authorHandle === "@chef_tolu" ||
+                  p.authorName === "Chef Tolu"
+                ) {
+                  return {
+                    ...p,
+                    authorName: realAuthorName,
+                    authorHandle: realAuthorHandle,
+                    authorAvatar: realAuthorAvatar,
+                    communityName: community?.name || p.communityName,
+                  };
+                }
+                return p;
+              });
+            return realOnly;
           }
         }
       } catch {
         // ignore storage errors
       }
     }
-    return INITIAL_CREATOR_POSTS;
+    return [];
   });
+
+  // Keep existing posts' author handle synced once authUser hydrates from cookies
+  useEffect(() => {
+    if (!authUser) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (
+          p.authorHandle === "@chef_tolu" ||
+          p.authorName === "Chef Tolu" ||
+          p.authorHandle === "@tolu_olawale"
+        ) {
+          return {
+            ...p,
+            authorName: realAuthorName,
+            authorHandle: realAuthorHandle,
+            authorAvatar: realAuthorAvatar,
+          };
+        }
+        return p;
+      })
+    );
+  }, [authUser, realAuthorName, realAuthorHandle, realAuthorAvatar]);
 
   useEffect(() => {
     if (initialTab) {
@@ -148,25 +216,55 @@ export function CreatorDashboard({
             onNavigateToMembers={() => setActiveTab("Members")}
             onNavigateToMonetization={() => setActiveTab("Monetization")}
             communityName={community?.name}
-            pricePerMonth={community?.pricePerMonth}
-          />
-        )}
-        {activeTab === "Content and feed management" && (
-          <ContentManagementTab
-            posts={posts}
-            onPostsChange={handleUpdatePosts}
             communitySlug={
               community?.name
                 ? community.name
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, "-")
                     .replace(/^-|-$/g, "")
-                : "chef-amaka"
+                : ""
+            }
+            pricePerMonth={community?.category === "free" ? 0 : community?.pricePerMonth}
+          />
+        )}
+        {activeTab === "Content and feed management" && (
+          <ContentManagementTab
+            posts={posts}
+            onPostsChange={handleUpdatePosts}
+            communityName={community?.name}
+            communityAvatar={community?.avatar || community?.coverImage}
+            authorName={realAuthorName}
+            authorHandle={realAuthorHandle}
+            authorAvatar={realAuthorAvatar}
+            communitySlug={
+              community?.name
+                ? community.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "")
+                : ""
             }
           />
         )}
-        {activeTab === "Members" && <MembersTab />}
-        {activeTab === "Monetization" && <MonetizationTab community={community} />}
+        {activeTab === "Members" && (
+          <MembersTab
+            communityName={community?.name}
+            communitySlug={
+              community?.name
+                ? community.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "")
+                : ""
+            }
+          />
+        )}
+        {activeTab === "Monetization" && (
+          <MonetizationTab
+            community={community}
+            onUpdateCommunity={onUpdateCommunity}
+          />
+        )}
         {activeTab === "Settings" && (
           <SettingsTab
             communityName={community?.name}

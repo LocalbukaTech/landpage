@@ -18,76 +18,70 @@ import {
   MessageSquareOff,
   Check,
   AlertTriangle,
+  LocateFixed,
+  Loader2,
+  Users,
+  UtensilsCrossed,
+  User as UserIcon,
 } from "lucide-react";
 import { CommunityPost } from "./types";
-import { useCreateCommunityPost } from "@/lib/api/services/community.hooks";
+import {
+  useCreateCommunityPost,
+  useExploreCommunities,
+  useCommunityTagSuggestions,
+} from "@/lib/api/services/community.hooks";
+import { useRestaurants } from "@/lib/api/services/restaurants.hooks";
 import apiClient from "@/lib/api/client";
 
 interface ContentManagementTabProps {
   communityName?: string;
   communitySlug?: string;
+  communityAvatar?: string;
+  authorName?: string;
+  authorHandle?: string;
+  authorAvatar?: string;
   posts?: CommunityPost[];
   onPostsChange?: (posts: CommunityPost[]) => void;
 }
 
-export const INITIAL_CREATOR_POSTS: CommunityPost[] = [
-  {
-    id: "post-1",
-    communityName: "Chef Tolu's kitchen",
-    communityAvatar:
-      "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
-    authorName: "Chef Tolu",
-    authorHandle: "@chef_tolu",
-    authorAvatar:
-      "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
-    timestamp: "3h",
-    caption:
-      "Tried jollof with smoked paprika this time, unexpectedly good. Anyone else experiment with theirs?",
-    mediaUrl:
-      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
-    likes: "24k",
-    comments: "4k",
-    bookmarks: "4k",
-    shares: "Share",
-    isLiked: false,
-    isBookmarked: false,
-  },
-  {
-    id: "post-2",
-    communityName: "Chef Tolu's kitchen",
-    communityAvatar:
-      "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
-    authorName: "Chef Tolu",
-    authorHandle: "@chef_tolu",
-    authorAvatar:
-      "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
-    timestamp: "2d",
-    caption:
-      "Cooked myself a treat, double bacon cheeseburger! What are you making today!",
-    mediaUrl:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80",
-    likes: "18k",
-    comments: "3.2k",
-    bookmarks: "2.8k",
-    shares: "Share",
-    isLiked: false,
-    isBookmarked: false,
-  },
-];
+export const INITIAL_CREATOR_POSTS: CommunityPost[] = [];
 
 // Sample uploaded grilled chicken dish from Image 3 & 5
 const SAMPLE_UPLOADED_IMAGE =
   "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=1200&q=80";
 
 const ONE_GB_BYTES = 1024 * 1024 * 1024;
+const USED_HASHTAGS_STORAGE_KEY = "localbuka_used_hashtags_v1";
+const SEED_PLACEHOLDER_SLUGS = new Set([
+  "nigeria-food",
+  "chef-amaka",
+  "street-food",
+  "baking-desserts",
+  "suya-grill",
+]);
+
+interface TagSuggestionItem {
+  id: string;
+  handle: string;
+  label: string;
+  subtitle: string;
+  category: "person" | "community" | "buka";
+}
 
 export function ContentManagementTab({
-  communityName = "Chef Tolu's kitchen",
-  communitySlug = "nigeria-food",
+  communityName = "My Community",
+  communitySlug = "",
+  communityAvatar = "/images/community/cover-1.jpg",
+  authorName = "Creator",
+  authorHandle,
+  authorAvatar,
   posts: externalPosts,
   onPostsChange,
 }: ContentManagementTabProps) {
   const createPostMutation = useCreateCommunityPost(communitySlug);
+  const { data: exploreCommunitiesData } = useExploreCommunities();
+  const { data: backendTagSuggestions } = useCommunityTagSuggestions();
+  const { data: restaurantsData } = useRestaurants({ page: 1, pageSize: 15 });
 
   // File upload states
   const [uploadedMedia, setUploadedMedia] = useState<string | null>(null);
@@ -95,14 +89,307 @@ export function ContentManagementTab({
   const [uploadedMediaType, setUploadedMediaType] = useState<"image" | "video">("image");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
-  const [location, setLocation] = useState("Island, Lekki");
+  const [location, setLocation] = useState("");
   const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [locationQuery, setLocationQuery] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    Array<{ name: string; address: string }>
+  >([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [showTagInput, setShowTagInput] = useState(false);
+  const [tagFilterCategory, setTagFilterCategory] = useState<
+    "all" | "person" | "community" | "buka"
+  >("all");
+  const [userSearchResults, setUserSearchResults] = useState<TagSuggestionItem[]>([]);
+
   const [hashtagInput, setHashtagInput] = useState("");
   const [hashtags, setHashtags] = useState<string[]>([]);
+  const [rememberedHashtags, setRememberedHashtags] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = window.localStorage.getItem(USED_HASHTAGS_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return [];
+  });
   const [showHashtagInput, setShowHashtagInput] = useState(false);
+
+  const locationBoxRef = useRef<HTMLDivElement>(null);
+  const tagBoxRef = useRef<HTMLDivElement>(null);
+  const hashtagBoxRef = useRef<HTMLDivElement>(null);
+
+  // Live OpenStreetMap Nominatim location search (same as Buka page)
+  useEffect(() => {
+    if (!locationQuery.trim()) {
+      setLocationSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingLocation(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            locationQuery.trim()
+          )}&limit=6&countrycodes=ng`
+        );
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((item: any) => {
+            const parts = String(item.display_name || "").split(",");
+            const name = parts.slice(0, 2).map((p) => p.trim()).join(", ");
+            const address = parts.slice(2, 4).map((p) => p.trim()).join(", ");
+            return { name: name || locationQuery, address: address || "Nigeria" };
+          });
+          setLocationSuggestions(mapped);
+        } else {
+          setLocationSuggestions([
+            { name: locationQuery.trim(), address: "Custom Location" },
+          ]);
+        }
+      } catch {
+        setLocationSuggestions([
+          { name: locationQuery.trim(), address: "Custom Location" },
+        ]);
+      } finally {
+        setIsSearchingLocation(false);
+      }
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [locationQuery]);
+
+  // Live user search from backend /search?type=users when typing @tag
+  useEffect(() => {
+    const cleanQ = tagInput.replace(/^@/, "").trim();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await apiClient.get(`/search`, {
+          params: { q: cleanQ || "a", type: "users" },
+        });
+        const rawUsers =
+          res?.data?.data?.users ||
+          res?.data?.users ||
+          (Array.isArray(res?.data?.data) ? res.data.data : []);
+        if (Array.isArray(rawUsers)) {
+          setUserSearchResults(
+            rawUsers.slice(0, 8).map((u: any) => {
+              const handle =
+                u.username ||
+                (u.fullName || u.name || "user")
+                  .toLowerCase()
+                  .replace(/[^a-z0-9_]/g, "_");
+              return {
+                id: `user-${u.id || handle}`,
+                handle: `@${handle}`,
+                label: u.fullName || u.name || handle,
+                subtitle: "Person · LocalBuka User",
+                category: "person" as const,
+              };
+            })
+          );
+        }
+      } catch {
+        // ignore if unauthenticated
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [tagInput]);
+
+  // Unified Tag Suggestions Pool: ONLY Real Users + Real Created Communities + Real Buka Restaurants (Zero Placeholders)
+  const allTagSuggestions: TagSuggestionItem[] = (() => {
+    const backendComms: TagSuggestionItem[] = (
+      backendTagSuggestions?.communities || []
+    ).filter((c) => !SEED_PLACEHOLDER_SLUGS.has(c.handle.replace(/^@/, "")));
+
+    const exploreComms: TagSuggestionItem[] = (
+      exploreCommunitiesData?.items || []
+    )
+      .filter((c) => !SEED_PLACEHOLDER_SLUGS.has(c.slug))
+      .map((c) => ({
+        id: `comm-${c.id}`,
+        handle: `@${c.slug}`,
+        label: c.name,
+        subtitle: `Fellow Community · ${c.members}`,
+        category: "community" as const,
+      }));
+
+    // Also include local creator community if created in this session
+    const localCommItems: TagSuggestionItem[] = [];
+    if (
+      communityName &&
+      communitySlug &&
+      !SEED_PLACEHOLDER_SLUGS.has(communitySlug)
+    ) {
+      localCommItems.push({
+        id: `comm-local-${communitySlug}`,
+        handle: `@${communitySlug}`,
+        label: communityName,
+        subtitle: "Fellow Community · Active",
+        category: "community",
+      });
+    }
+
+    const bukaSpots: TagSuggestionItem[] = (restaurantsData?.data || [])
+      .slice(0, 8)
+      .map((r: any) => {
+        const slug = (r.name || "buka")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "_");
+        return {
+          id: `buka-${r.id}`,
+          handle: `@${slug}`,
+          label: r.name,
+          subtitle: `Buka Restaurant · ${r.city || r.address || "Nigeria"}`,
+          category: "buka" as const,
+        };
+      });
+
+    const combined = [
+      ...localCommItems,
+      ...backendComms,
+      ...exploreComms,
+      ...userSearchResults,
+      ...bukaSpots,
+    ];
+    const seen = new Set<string>();
+    return combined.filter((item) => {
+      if (seen.has(item.handle)) return false;
+      seen.add(item.handle);
+      if (
+        tagFilterCategory !== "all" &&
+        item.category !== tagFilterCategory
+      ) {
+        return false;
+      }
+      const q = tagInput.replace(/^@/, "").trim().toLowerCase();
+      if (!q) return true;
+      return (
+        item.handle.toLowerCase().includes(q) ||
+        item.label.toLowerCase().includes(q)
+      );
+    });
+  })();
+
+  // Request live high-accuracy browser GPS directly on click (so it never misreads stale cached coordinates)
+  const handleUseCurrentGpsLocation = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      showToast("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsSearchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const r = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+          );
+          const data = await r.json();
+          const addr = data?.address || {};
+          const streetOrArea =
+            addr.road ||
+            addr.neighbourhood ||
+            addr.suburb ||
+            addr.quarter ||
+            addr.hamlet ||
+            addr.village ||
+            addr.city_district ||
+            "";
+          const cityOrState =
+            addr.city ||
+            addr.town ||
+            addr.county ||
+            addr.state ||
+            "";
+          const resolved = [streetOrArea, cityOrState]
+            .filter(Boolean)
+            .join(", ");
+          setLocation(
+            resolved ||
+              data?.display_name?.split(",").slice(0, 2).join(", ") ||
+              `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+          );
+        } catch {
+          setLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        } finally {
+          setIsSearchingLocation(false);
+          setIsEditingLocation(false);
+        }
+      },
+      (err) => {
+        setIsSearchingLocation(false);
+        showToast(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission denied. Please type your location in the search box."
+            : "Could not read GPS position. Please search your location above."
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  const handleAddTagItem = (rawTag: string) => {
+    const clean = rawTag.trim().replace(/^@+/, "");
+    if (!clean) return;
+    const formatted = `@${clean}`;
+    if (!tags.includes(formatted)) {
+      setTags((prev) => [...prev, formatted]);
+    }
+    setTagInput("");
+  };
+
+  const persistRememberedHashtags = (newTags: string[]) => {
+    setRememberedHashtags((prev) => {
+      const merged = Array.from(new Set([...newTags, ...prev]));
+      if (typeof window !== "undefined") {
+        try {
+          window.localStorage.setItem(
+            USED_HASHTAGS_STORAGE_KEY,
+            JSON.stringify(merged)
+          );
+        } catch {
+          // ignore
+        }
+      }
+      return merged;
+    });
+  };
+
+  const handleAddHashtagItem = (rawHash: string) => {
+    const parts = rawHash
+      .split(/[\s,]+/)
+      .map((p) => p.trim().replace(/^#+/, ""))
+      .filter(Boolean);
+    if (parts.length === 0) return;
+    const formattedList = parts.map((p) => `#${p}`);
+    setHashtags((prev) => {
+      const next = [...prev];
+      for (const formatted of formattedList) {
+        if (!next.includes(formatted)) {
+          next.push(formatted);
+        }
+      }
+      return next;
+    });
+    persistRememberedHashtags(formattedList);
+    setHashtagInput("");
+  };
 
   // Posts state (synced with CreatorDashboard when provided)
   const [internalPosts, setInternalPosts] = useState<CommunityPost[]>(
@@ -131,11 +418,21 @@ export function ContentManagementTab({
   const menuRef = useRef<HTMLDivElement>(null);
   const postedSectionRef = useRef<HTMLDivElement>(null);
 
-  // Close context menu on outside click
+  // Close context menu and dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (menuRef.current && !menuRef.current.contains(target)) {
         setActiveMenuPostId(null);
+      }
+      if (locationBoxRef.current && !locationBoxRef.current.contains(target)) {
+        setIsEditingLocation(false);
+      }
+      if (tagBoxRef.current && !tagBoxRef.current.contains(target)) {
+        setShowTagInput(false);
+      }
+      if (hashtagBoxRef.current && !hashtagBoxRef.current.contains(target)) {
+        setShowHashtagInput(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -206,19 +503,29 @@ export function ContentManagementTab({
     const fileToUpload = selectedFile;
     const postId = `post-${nextId}`;
 
+    const authorHandleFormatted =
+      authorHandle ||
+      `@${(authorName || communityName || "creator")
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")}`;
+
     const newPost: CommunityPost = {
       id: postId,
       communityName,
       communitySlug,
-      communityAvatar:
-        "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
-      authorName: "Chef Tolu",
-      authorHandle: "@chef_tolu",
+      communityAvatar: communityAvatar || "/images/community/cover-1.jpg",
+      authorName: authorName || communityName,
+      authorHandle: authorHandleFormatted,
       authorAvatar:
-        "https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80",
+        authorAvatar || communityAvatar || "/images/community/cover-1.jpg",
       timestamp: "Just now",
       caption: fullCaption,
       mediaUrl: mediaToUse,
+      location: location || undefined,
+      tags: [...tags],
+      hashtags: [...hashtags],
       likes: "0",
       comments: "0",
       bookmarks: "0",
@@ -260,6 +567,9 @@ export function ContentManagementTab({
         await createPostMutation.mutateAsync({
           content: fullCaption,
           mediaUrls,
+          location: location || undefined,
+          tags,
+          hashtags,
         });
       } catch {
         // Ignore auth/membership error when testing locally without creator token
@@ -621,82 +931,364 @@ export function ContentManagementTab({
             className="w-full bg-transparent text-sm md:text-[15px] text-white placeholder-white/30 focus:outline-none resize-none leading-relaxed"
           />
 
-          {/* Tags / Location chips row inside caption card */}
-          <div className="flex flex-wrap items-center gap-3 pt-2 text-xs md:text-sm text-white/90">
-            {/* Location */}
-            <div className="flex items-center gap-1.5 cursor-pointer hover:text-[#f5c94d] transition-colors">
-              <MapPin className="h-4 w-4 text-[#f5c94d]" />
-              {isEditingLocation ? (
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  onBlur={() => setIsEditingLocation(false)}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && setIsEditingLocation(false)
-                  }
-                  autoFocus
-                  className="rounded bg-[#252525] px-2 py-0.5 text-xs text-white focus:outline-none"
-                />
-              ) : (
-                <span onClick={() => setIsEditingLocation(true)}>
-                  {location}
-                </span>
-              )}
-            </div>
+          {/* Tags / Location / Hashtags row inside caption card */}
+          <div className="space-y-3 pt-2">
+            {/* Active Selected Chips (Tags & Hashtags) */}
+            {(tags.length > 0 || hashtags.length > 0) && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {tags.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1 rounded-full bg-[#f5c94d]/15 border border-[#f5c94d]/35 px-2.5 py-0.5 text-xs font-semibold text-[#f5c94d]"
+                  >
+                    <span>{t}</span>
+                    <button
+                      type="button"
+                      onClick={() => setTags(tags.filter((x) => x !== t))}
+                      className="hover:text-white cursor-pointer"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+                {hashtags.map((h) => (
+                  <span
+                    key={h}
+                    className="inline-flex items-center gap-1 rounded-full bg-white/10 border border-white/15 px-2.5 py-0.5 text-xs font-medium text-white/90"
+                  >
+                    <span>{h}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setHashtags(hashtags.filter((x) => x !== h))
+                      }
+                      className="text-white/60 hover:text-white cursor-pointer"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
 
-            {/* Tag User */}
-            <div className="flex items-center gap-1.5 cursor-pointer hover:text-[#f5c94d] transition-colors">
-              <Tag className="h-4 w-4 text-[#f5c94d]" />
-              {showTagInput ? (
-                <input
-                  type="text"
-                  placeholder="@username"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && tagInput.trim()) {
-                      setTags([...tags, tagInput.trim()]);
-                      setTagInput("");
-                      setShowTagInput(false);
-                    }
+            <div className="flex flex-wrap items-center gap-4 text-xs md:text-sm text-white/90 relative">
+              {/* 1. Location Search Dropdown (works just like Buka Page) */}
+              <div ref={locationBoxRef} className="relative">
+                <div
+                  onClick={() => {
+                    setIsEditingLocation(true);
+                    setShowTagInput(false);
+                    setShowHashtagInput(false);
                   }}
-                  onBlur={() => setShowTagInput(false)}
-                  autoFocus
-                  className="rounded bg-[#252525] px-2 py-0.5 text-xs text-white focus:outline-none"
-                />
-              ) : (
-                <span onClick={() => setShowTagInput(true)}>
-                  {tags.length > 0 ? tags.join(", ") : "Add @Tag"}
-                </span>
-              )}
-            </div>
+                  className="flex items-center gap-1.5 cursor-pointer hover:text-[#f5c94d] transition-colors"
+                >
+                  <MapPin className="h-4 w-4 text-[#f5c94d]" />
+                  <span>{location || "Add Location"}</span>
+                </div>
 
-            {/* Hashtags */}
-            <div className="flex items-center gap-1.5 cursor-pointer hover:text-[#f5c94d] transition-colors">
-              <Hash className="h-4 w-4 text-[#f5c94d]" />
-              {showHashtagInput ? (
-                <input
-                  type="text"
-                  placeholder="#foodie"
-                  value={hashtagInput}
-                  onChange={(e) => setHashtagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && hashtagInput.trim()) {
-                      setHashtags([...hashtags, hashtagInput.trim()]);
-                      setHashtagInput("");
-                      setShowHashtagInput(false);
-                    }
+                {isEditingLocation && (
+                  <div className="absolute left-0 top-7 z-40 w-72 rounded-2xl border border-[#f5c94d]/40 bg-[#18181b] p-3 shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-[#f5c94d]" />
+                        <span>Search Location (Buka Map)</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingLocation(false)}
+                        className="text-zinc-400 hover:text-white cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Search city, area or address..."
+                      value={locationQuery}
+                      onChange={(e) => setLocationQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && locationQuery.trim()) {
+                          e.preventDefault();
+                          setLocation(locationQuery.trim());
+                          setIsEditingLocation(false);
+                        }
+                      }}
+                      autoFocus
+                      className="w-full rounded-xl bg-[#242428] border border-white/10 px-3 py-2 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-[#f5c94d]"
+                    />
+
+                    {/* Use Current GPS Location Button */}
+                    <button
+                      type="button"
+                      onClick={handleUseCurrentGpsLocation}
+                      className="w-full flex items-center gap-2 rounded-xl bg-[#f5c94d]/15 hover:bg-[#f5c94d]/25 border border-[#f5c94d]/30 px-3 py-2 text-xs font-semibold text-[#f5c94d] transition-colors cursor-pointer text-left"
+                    >
+                      <LocateFixed className="h-3.5 w-3.5 shrink-0" />
+                      <span>Use my current location</span>
+                    </button>
+
+                    {/* Live Suggestions List */}
+                    <div className="max-h-44 overflow-y-auto space-y-1 pr-1">
+                      {isSearchingLocation ? (
+                        <div className="flex items-center justify-center py-4 text-xs text-zinc-400 gap-2">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#f5c94d]" />
+                          <span>Reading location...</span>
+                        </div>
+                      ) : locationSuggestions.length === 0 ? (
+                        <p className="py-3 px-2 text-[11px] text-zinc-400 text-center">
+                          Type your city, neighborhood, or street above, or tap &ldquo;Use my current location&rdquo;.
+                        </p>
+                      ) : (
+                        locationSuggestions.map((loc, idx) => (
+                          <button
+                            key={`${loc.name}-${idx}`}
+                            type="button"
+                            onClick={() => {
+                              setLocation(loc.name);
+                              setLocationQuery("");
+                              setIsEditingLocation(false);
+                            }}
+                            className="w-full flex flex-col items-start rounded-xl px-2.5 py-2 hover:bg-white/10 transition-colors text-left cursor-pointer"
+                          >
+                            <span className="text-xs font-semibold text-white">
+                              {loc.name}
+                            </span>
+                            <span className="text-[10.5px] text-zinc-400">
+                              {loc.address}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Real @Tagging Dropdown (Real People, Real Fellow Communities & Bukas) */}
+              <div ref={tagBoxRef} className="relative">
+                <div
+                  onClick={() => {
+                    setShowTagInput(true);
+                    setIsEditingLocation(false);
+                    setShowHashtagInput(false);
                   }}
-                  onBlur={() => setShowHashtagInput(false)}
-                  autoFocus
-                  className="rounded bg-[#252525] px-2 py-0.5 text-xs text-white focus:outline-none"
-                />
-              ) : (
-                <span onClick={() => setShowHashtagInput(true)}>
-                  {hashtags.length > 0 ? hashtags.join(" ") : "Hashtags"}
-                </span>
-              )}
+                  className="flex items-center gap-1.5 cursor-pointer hover:text-[#f5c94d] transition-colors"
+                >
+                  <Tag className="h-4 w-4 text-[#f5c94d]" />
+                  <span>
+                    {tags.length > 0 ? tags.join(", ") : "Add @Tag"}
+                  </span>
+                </div>
+
+                {showTagInput && (
+                  <div className="absolute left-0 top-7 z-40 w-80 rounded-2xl border border-[#f5c94d]/40 bg-[#18181b] p-3 shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <Tag className="h-3.5 w-3.5 text-[#f5c94d]" />
+                        <span>Tag Real Person, Community or Buka</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowTagInput(false)}
+                        className="text-zinc-400 hover:text-white cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Filter Pills: All | People | Communities | Bukas */}
+                    <div className="flex items-center gap-1">
+                      {(
+                        [
+                          { id: "all", label: "All" },
+                          { id: "community", label: "Communities" },
+                          { id: "person", label: "People" },
+                          { id: "buka", label: "Bukas" },
+                        ] as const
+                      ).map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setTagFilterCategory(tab.id)}
+                          className={`rounded-lg px-2 py-1 text-[10.5px] font-semibold transition-colors cursor-pointer ${
+                            tagFilterCategory === tab.id
+                              ? "bg-[#f5c94d] text-black"
+                              : "bg-white/5 text-zinc-400 hover:text-white"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Search real @community, @user or @buka..."
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && tagInput.trim()) {
+                          e.preventDefault();
+                          handleAddTagItem(tagInput);
+                        }
+                      }}
+                      autoFocus
+                      className="w-full rounded-xl bg-[#242428] border border-white/10 px-3 py-2 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-[#f5c94d]"
+                    />
+
+                    <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                      {allTagSuggestions.length === 0 ? (
+                        <p className="py-3 px-2 text-[11px] text-zinc-400 text-center">
+                          No matching {tagFilterCategory === "all" ? "communities or users" : tagFilterCategory} found. Type a handle and press Enter.
+                        </p>
+                      ) : (
+                        allTagSuggestions.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleAddTagItem(item.handle)}
+                            className="w-full flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 hover:bg-white/10 transition-colors text-left cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#f5c94d]">
+                                {item.category === "community" ? (
+                                  <Users className="h-3.5 w-3.5" />
+                                ) : item.category === "buka" ? (
+                                  <UtensilsCrossed className="h-3.5 w-3.5" />
+                                ) : (
+                                  <UserIcon className="h-3.5 w-3.5" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs font-bold text-white truncate">
+                                  {item.label}{" "}
+                                  <span className="text-[#f5c94d] font-normal">
+                                    {item.handle}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-zinc-400 truncate">
+                                  {item.subtitle}
+                                </div>
+                              </div>
+                            </div>
+                            {tags.includes(item.handle) && (
+                              <Check className="h-3.5 w-3.5 text-[#4ade80] shrink-0" />
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Real #Hashtags (Shows actual hashtag names like #foodie, remembers used hashtags, zero preset placeholders) */}
+              <div ref={hashtagBoxRef} className="relative">
+                <div
+                  onClick={() => {
+                    setShowHashtagInput(true);
+                    setIsEditingLocation(false);
+                    setShowTagInput(false);
+                  }}
+                  className="flex items-center gap-1.5 cursor-pointer hover:text-[#f5c94d] transition-colors"
+                >
+                  <Hash className="h-4 w-4 text-[#f5c94d]" />
+                  <span>
+                    {hashtags.length > 0 ? hashtags.join(" ") : "Hashtags"}
+                  </span>
+                </div>
+
+                {showHashtagInput && (
+                  <div className="absolute left-0 sm:left-auto sm:right-0 top-7 z-40 w-72 rounded-2xl border border-[#f5c94d]/40 bg-[#18181b] p-3 shadow-2xl space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                        <Hash className="h-3.5 w-3.5 text-[#f5c94d]" />
+                        <span>Add Hashtags</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowHashtagInput(false)}
+                        className="text-zinc-400 hover:text-white cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Type #tag and press Enter or Space..."
+                      value={hashtagInput}
+                      onChange={(e) => setHashtagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (
+                          (e.key === "Enter" ||
+                            e.key === " " ||
+                            e.key === ",") &&
+                          hashtagInput.trim()
+                        ) {
+                          e.preventDefault();
+                          handleAddHashtagItem(hashtagInput);
+                        }
+                      }}
+                      autoFocus
+                      className="w-full rounded-xl bg-[#242428] border border-white/10 px-3 py-2 text-xs text-white placeholder-zinc-400 focus:outline-none focus:border-[#f5c94d]"
+                    />
+
+                    {(() => {
+                      const historyTags = Array.from(
+                        new Set([
+                          ...rememberedHashtags,
+                          ...(backendTagSuggestions?.hashtags || []),
+                          ...posts.flatMap((p) => [
+                            ...(p.hashtags || []),
+                            ...((p.caption || "").match(/#[a-zA-Z0-9_]+/g) || []),
+                          ]),
+                        ])
+                      );
+                      if (historyTags.length === 0) {
+                        return (
+                          <p className="text-[10.5px] text-zinc-400">
+                            Hashtags you use will be remembered here for future posts.
+                          </p>
+                        );
+                      }
+                      return (
+                        <div className="space-y-1.5">
+                          <span className="text-[10.5px] font-semibold text-zinc-400">
+                            Your recently used hashtags:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {historyTags.map((h) => {
+                              const active = hashtags.includes(h);
+                              return (
+                                <button
+                                  key={h}
+                                  type="button"
+                                  onClick={() =>
+                                    active
+                                      ? setHashtags(
+                                          hashtags.filter((x) => x !== h)
+                                        )
+                                      : handleAddHashtagItem(h)
+                                  }
+                                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
+                                    active
+                                      ? "bg-[#f5c94d] text-black font-bold"
+                                      : "bg-white/8 text-zinc-300 hover:bg-white/15"
+                                  }`}
+                                >
+                                  {h}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -740,21 +1332,32 @@ export function ContentManagementTab({
 
         {/* Community Branding Header for Feed */}
         <div className="flex items-center gap-3 pb-1">
-          <div className="relative h-9 w-9 rounded-full overflow-hidden">
+          <div className="relative h-9 w-9 rounded-full overflow-hidden bg-zinc-800">
             <Image
-              src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=200&q=80"
-              alt="Chef Tolu's Kitchen"
+              src={communityAvatar || "/images/community/cover-1.jpg"}
+              alt={communityName}
               fill
+              unoptimized
               className="object-cover"
               sizes="36px"
             />
           </div>
           <h3 className="text-lg md:text-xl font-bold text-white">
-            Chef Tolu&apos;s kitchen
+            {communityName}
           </h3>
         </div>
 
         {/* Post Items */}
+        {posts.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-[#1a1a1a] p-10 text-center space-y-2">
+            <p className="text-sm font-semibold text-white">
+              No posts published yet
+            </p>
+            <p className="text-xs text-zinc-400">
+              Upload your first photo or video above to share with your community.
+            </p>
+          </div>
+        ) : (
         <div className="space-y-8">
           {posts.map((post) => {
             const isMenuOpen = activeMenuPostId === post.id;
@@ -773,16 +1376,47 @@ export function ContentManagementTab({
                       sizes="28px"
                     />
                   </div>
-                  <div className="flex items-center gap-1.5 text-sm text-white/90">
+                  <div className="flex items-center gap-1.5 text-sm text-white/90 flex-wrap">
                     <span className="font-semibold">{post.authorHandle}</span>
                     <span className="text-white/40">·</span>
                     <span className="text-white/60">{post.timestamp}</span>
+                    {post.location && (
+                      <>
+                        <span className="text-white/40">·</span>
+                        <span className="inline-flex items-center gap-1 text-xs text-[#f5c94d]">
+                          <MapPin className="h-3 w-3" />
+                          {post.location}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {/* Caption */}
+                {/* Caption with highlighted @tags and #hashtags */}
                 <p className="text-sm md:text-[15px] text-white/90 leading-relaxed">
-                  {post.caption}
+                  {post.caption.split(/(\s+)/).map((part, idx) => {
+                    if (/^@[a-zA-Z0-9_.-]+/.test(part)) {
+                      return (
+                        <span
+                          key={idx}
+                          className="text-[#f5c94d] font-semibold cursor-pointer hover:underline"
+                        >
+                          {part}
+                        </span>
+                      );
+                    }
+                    if (/^#[a-zA-Z0-9_]+/.test(part)) {
+                      return (
+                        <span
+                          key={idx}
+                          className="text-[#74e3a4] font-medium cursor-pointer hover:underline"
+                        >
+                          {part}
+                        </span>
+                      );
+                    }
+                    return <span key={idx}>{part}</span>;
+                  })}
                 </p>
 
                 {/* Media Image Container with `...` Menu */}
@@ -938,6 +1572,7 @@ export function ContentManagementTab({
             );
           })}
         </div>
+        )}
       </div>
     </div>
   );

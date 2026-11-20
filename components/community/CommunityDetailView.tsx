@@ -14,6 +14,10 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { BackCircleButton } from "@/components/ui/BackCircleButton";
 import { MembersOnlyModal } from "@/components/community/MembersOnlyModal";
+import {
+  useJoinCommunity,
+  useLeaveCommunity,
+} from "@/lib/api/services/community.hooks";
 
 export interface CommunityDetailProps {
   id?: string;
@@ -22,6 +26,8 @@ export interface CommunityDetailProps {
   coverImage?: string;
   avatarImage?: string;
   isFree?: boolean;
+  isMember?: boolean;
+  benefits?: string[];
   price?: string;
   yearlyPrice?: string;
   owner?: string;
@@ -41,33 +47,24 @@ export function CommunityDetailView({
   coverImage = "/images/community/chef-amaka-hero.jpg",
   avatarImage = "/images/community/amaka-avatar.jpg",
   isFree = false,
+  isMember = false,
   price = "₦2,500",
   yearlyPrice = "or ₦25,000 billed yearly",
   owner = "Amaka Obi",
   membersCount = "2.1k members . 58 posts",
-  recentPosts = [
-    {
-      id: "post-1",
-      image: "/images/community/recent-post-burger.jpg",
-      title: "Loaded Burgers & Fries Spread",
-    },
-    {
-      id: "post-2",
-      image: "/images/community/recent-post-bbq.jpg",
-      title: "Outdoor BBQ & Suya Grill",
-    },
-    {
-      id: "post-3",
-      image: "/images/community/recent-post-feast.jpg",
-      title: "Grand Banquet Table Feast",
-    },
-  ],
+  recentPosts = [],
   onBack,
 }: CommunityDetailProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [isJoined, setIsJoined] = useState(false);
+  const [isJoined, setIsJoined] = useState(isMember);
+  const joinMutation = useJoinCommunity();
+  const leaveMutation = useLeaveCommunity();
+
+  useEffect(() => {
+    setIsJoined(isMember);
+  }, [isMember]);
   const [selectedPostImage, setSelectedPostImage] = useState<string | null>(
     null,
   );
@@ -109,13 +106,28 @@ export function CommunityDetailView({
   };
 
   const handleToggleJoin = () => {
-    setIsJoined(!isJoined);
-    toast({
-      title: isJoined ? "Left community" : "Joined community!",
-      description: isJoined
-        ? "You have left this community."
-        : "Welcome! You now have access to all posts.",
-    });
+    const nextState = !isJoined;
+    setIsJoined(nextState);
+    if (nextState) {
+      joinMutation.mutate(id, {
+        onSettled: () => {
+          toast({
+            title: "Joined community!",
+            description: "Welcome! You now have access to all posts.",
+          });
+          router.push(`/community/${id}/feed`);
+        },
+      });
+    } else {
+      leaveMutation.mutate(id, {
+        onSettled: () => {
+          toast({
+            title: "Left community",
+            description: "You have left this community.",
+          });
+        },
+      });
+    }
   };
 
   return (
@@ -285,23 +297,29 @@ export function CommunityDetailView({
           Recent posts
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4.5 max-w-[800px]">
-          {recentPosts.map((post) => (
-            <div
-              key={post.id}
-              onClick={() => handlePostClick(post.image)}
-              className="group relative h-[160px] rounded-2xl overflow-hidden bg-zinc-800 border border-white/10 cursor-pointer shadow-md"
-            >
-              <Image
-                src={post.image}
-                alt={post.title}
-                fill
-                unoptimized
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          ))}
-        </div>
+        {recentPosts.length === 0 ? (
+          <div className="max-w-[800px] rounded-2xl border border-white/10 bg-[#1a1a1a] p-8 text-center text-xs sm:text-sm text-zinc-400">
+            No posts shared in this community yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4.5 max-w-[800px]">
+            {recentPosts.map((post) => (
+              <div
+                key={post.id}
+                onClick={() => handlePostClick(post.image)}
+                className="group relative h-[160px] rounded-2xl overflow-hidden bg-zinc-800 border border-white/10 cursor-pointer shadow-md"
+              >
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  fill
+                  unoptimized
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Members-only Content Paywall Modal */}

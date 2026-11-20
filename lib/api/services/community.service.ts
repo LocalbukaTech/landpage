@@ -45,11 +45,36 @@ export interface CommunityPost {
   author: { id: string; fullName: string; avatar?: string | null };
   content: string;
   mediaUrls: string[];
+  location?: string | null;
+  tags?: string[];
+  hashtags?: string[];
   likesCount: number;
   commentsCount: number;
   isPinned: boolean;
   hasLiked: boolean;
   createdAt: string;
+}
+
+export interface CommunityAnalyticsResponse {
+  communityId: string | null;
+  communityName: string;
+  activeMembers: number;
+  activePaidSubscriptions: number;
+  grossRevenue: number;
+  postsCount: number;
+  recentHashtags: string[];
+  growthPoints: Array<{ label: string; posts: number; members: number }>;
+}
+
+export interface CommunityTagSuggestionsResponse {
+  communities: Array<{
+    id: string;
+    handle: string;
+    label: string;
+    subtitle: string;
+    category: 'community';
+  }>;
+  hashtags: string[];
 }
 
 export interface PaginatedCommunityFeedResponse {
@@ -76,6 +101,46 @@ export interface CommunityMembership {
   status: string;
   membershipType: string;
   joinedAt: string;
+}
+
+export interface CreatorEarningsSummary {
+  availableBalance: number;
+  grossRevenue: number;
+  creatorSharePercent: number;
+  platformFeePercent: number;
+  platformFee: number;
+  paidSubscribersCount: number;
+  totalCommunities: number;
+  holdingPeriodDays: number;
+  currency: string;
+  supportedGateways: string[];
+}
+
+export interface PaymentInitializeResponse {
+  provider: 'paystack' | 'korapay';
+  reference: string;
+  authorizationUrl: string | null;
+  accessCode?: string;
+  amount: number;
+  currency: string;
+  creatorShare: number;
+  platformFee: number;
+  billingPeriod: 'monthly' | 'yearly';
+  communityId?: string;
+  communityName?: string;
+  mode: 'live' | 'ready';
+}
+
+export interface CommunityNotificationItem {
+  id: string;
+  type: 'comment' | 'post' | 'like' | 'membership';
+  title: string;
+  time: string;
+  avatar: string;
+  thumbnail?: string | null;
+  communityId?: string;
+  postId?: string;
+  isNew: boolean;
 }
 
 // ─── Query Params ──────────────────────────────────────────────────────────
@@ -181,11 +246,64 @@ export const communityService = {
   /** POST /community/:idOrSlug/subscribe — Subscribe to paid community */
   subscribe: (
     idOrSlug: string,
-    data: { billingPeriod: 'monthly' | 'yearly'; paymentReference?: string },
+    data: {
+      billingPeriod: 'monthly' | 'yearly';
+      provider?: 'paystack' | 'korapay';
+      paymentReference?: string;
+      callbackUrl?: string;
+    },
   ) => {
     return api.post<ApiResponse<{ success: boolean; message: string; membership: any }>>(
       `/community/${idOrSlug}/subscribe`,
       data,
+    );
+  },
+
+  /** POST /community/:idOrSlug/payment/initialize — Initialize Paystack or Korapay payment */
+  initializePayment: (
+    idOrSlug: string,
+    data: {
+      billingPeriod: 'monthly' | 'yearly';
+      provider?: 'paystack' | 'korapay';
+      paymentReference?: string;
+      callbackUrl?: string;
+    },
+  ) => {
+    return api.post<ApiResponse<PaymentInitializeResponse>>(
+      `/community/${idOrSlug}/payment/initialize`,
+      data,
+    );
+  },
+
+  /** GET /community/creator/earnings — Creator earnings & revenue share */
+  getCreatorEarnings: () => {
+    return api.get<ApiResponse<CreatorEarningsSummary>>('/community/creator/earnings');
+  },
+
+  /** POST /community/creator/payouts — Request creator payout withdrawal */
+  requestCreatorPayout: (data: {
+    amount: number;
+    bankName: string;
+    accountNumber: string;
+    accountName?: string;
+  }) => {
+    return api.post<
+      ApiResponse<{
+        success: boolean;
+        reference: string;
+        amount: number;
+        bankName: string;
+        accountNumber: string;
+        status: string;
+        message: string;
+      }>
+    >('/community/creator/payouts', data);
+  },
+
+  /** GET /community/notifications/feed — Community notifications */
+  getCommunityNotifications: () => {
+    return api.get<ApiResponse<{ items: CommunityNotificationItem[]; total: number }>>(
+      '/community/notifications/feed',
     );
   },
 
@@ -321,8 +439,103 @@ export const communityService = {
   },
 
   /** POST /community/:idOrSlug/posts — Create post in community */
-  createPost: (idOrSlug: string, data: { content: string; mediaUrls?: string[] }) => {
+  createPost: (
+    idOrSlug: string,
+    data: {
+      content: string;
+      mediaUrls?: string[];
+      location?: string;
+      tags?: string[];
+      hashtags?: string[];
+    },
+  ) => {
     return api.post<ApiResponse<CommunityPost>>(`/community/${idOrSlug}/posts`, data);
+  },
+
+  /** GET /community/:idOrSlug/analytics — Real performance analytics & 7-day growth chart */
+  getAnalytics: (idOrSlug: string) => {
+    return api.get<ApiResponse<CommunityAnalyticsResponse>>(
+      `/community/${idOrSlug}/analytics`,
+    );
+  },
+
+  /** GET /community/tags/suggestions — Real taggable fellow communities & used hashtags */
+  getTagSuggestions: (q?: string) => {
+    return api.get<ApiResponse<CommunityTagSuggestionsResponse>>(
+      '/community/tags/suggestions',
+      { params: q ? { q } : undefined },
+    );
+  },
+
+  /** GET /community/:idOrSlug/members — Real members list for a community */
+  getCommunityMembers: (idOrSlug: string) => {
+    return api.get<
+      ApiResponse<
+        Array<{
+          id: string;
+          userId: string;
+          name: string;
+          username: string;
+          avatar: string;
+          role: string;
+          status: 'Active' | 'Pending Invite' | 'Expiring soon' | 'Cancelled';
+          membershipType: string;
+          joinedAt: string;
+          expiresAt?: string | null;
+        }>
+      >
+    >(`/community/${idOrSlug}/members`);
+  },
+
+  /** POST /community/:idOrSlug/invite — Send pending invitation to a real user */
+  inviteMember: (idOrSlug: string, userId: string) => {
+    return api.post<
+      ApiResponse<{ success: boolean; status: string; message: string }>
+    >(`/community/${idOrSlug}/invite`, { userId });
+  },
+
+  /** POST /community/:idOrSlug/invite/accept — Accept pending invitation */
+  acceptInvite: (idOrSlug: string) => {
+    return api.post<ApiResponse<{ success: boolean; message: string }>>(
+      `/community/${idOrSlug}/invite/accept`,
+    );
+  },
+
+  /** POST /community/:idOrSlug/invite/decline — Decline or cancel pending invitation */
+  declineInvite: (idOrSlug: string, userId?: string) => {
+    return api.post<ApiResponse<{ success: boolean; message: string }>>(
+      `/community/${idOrSlug}/invite/decline`,
+      userId ? { userId } : {},
+    );
+  },
+
+  /** GET /community/admin/all — Admin list of all submitted communities */
+  adminListCommunities: (status?: string) => {
+    return api.get<
+      ApiResponse<
+        Array<
+          CommunityItem & {
+            adminFeedback?: string | null;
+            creatorEmail?: string | null;
+            createdAt?: string;
+          }
+        >
+      >
+    >('/community/admin/all', { params: status ? { status } : undefined });
+  },
+
+  /** PATCH /community/admin/:id/review — Admin Approve, Request Changes, or Reject */
+  adminReviewCommunity: (
+    id: string,
+    data: {
+      status: 'approved' | 'changes_requested' | 'rejected' | 'pending';
+      adminFeedback?: string;
+    },
+  ) => {
+    return api.patch<ApiResponse<{ success: boolean; message: string; data: CommunityItem }>>(
+      `/community/admin/${id}/review`,
+      data,
+    );
   },
 
   /** POST /community/posts/:postId/like — Toggle like on post */

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  useMyMemberships,
+  useLeaveCommunity,
+} from "@/lib/api/services/community.hooks";
 
 interface MembershipItem {
   id: string;
@@ -37,22 +41,62 @@ const initialMemberships: MembershipItem[] = [
 export function MobileMembershipList() {
   const router = useRouter();
   const { toast } = useToast();
-  const [memberships, setMemberships] =
-    useState<MembershipItem[]>(initialMemberships);
+  const { data: liveMemberships } = useMyMemberships();
+  const leaveMutation = useLeaveCommunity();
+  const [memberships, setMemberships] = useState<MembershipItem[]>([]);
   const [cancellingItem, setCancellingItem] = useState<MembershipItem | null>(
     null
   );
 
+  useEffect(() => {
+    if (Array.isArray(liveMemberships)) {
+      const mapped: MembershipItem[] = liveMemberships
+        .filter(
+          (m) =>
+            ![
+              "nigeria-food",
+              "chef-amaka",
+              "street-food",
+              "baking-desserts",
+              "suya-grill",
+            ].includes(m.community?.slug || "")
+        )
+        .map((m) => ({
+          id: m.community?.slug || m.communityId,
+          name: m.community?.name || "Community",
+          avatar:
+            m.community?.avatar ||
+            m.community?.coverImage ||
+            "/images/community/chef-amaka-avatar.jpg",
+          price:
+            m.community?.price ||
+            (m.membershipType === "free" ? "Free" : "₦2,500/month"),
+          status: m.status === "active" ? "active" : "paused",
+          billingDate: m.joinedAt
+            ? new Date(m.joinedAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "Active",
+        }));
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMemberships(mapped);
+    }
+  }, [liveMemberships]);
+
   const handleConfirmCancel = () => {
     if (!cancellingItem) return;
+    const itemToCancel = cancellingItem;
+    leaveMutation.mutate(itemToCancel.id);
     setMemberships((prev) =>
       prev.map((item) =>
-        item.id === cancellingItem.id ? { ...item, status: "paused" } : item
+        item.id === itemToCancel.id ? { ...item, status: "paused" } : item
       )
     );
     toast({
       title: "Membership Cancelled",
-      description: `Your access to ${cancellingItem.name} will end on ${cancellingItem.billingDate}.`,
+      description: `Your access to ${itemToCancel.name} will end on ${itemToCancel.billingDate}.`,
     });
     setCancellingItem(null);
   };

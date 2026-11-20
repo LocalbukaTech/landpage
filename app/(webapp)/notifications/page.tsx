@@ -11,6 +11,10 @@ import {
   useMarkAsRead,
 } from '@/lib/api/services/notifications.hooks';
 import {useFollowUser, useUserProfile} from '@/lib/api/services/profile.hooks';
+import {
+  useAcceptCommunityInvite,
+  useDeclineCommunityInvite,
+} from '@/lib/api/services/community.hooks';
 import {formatDistanceToNow} from 'date-fns';
 import {MainLayout} from '@/components/layout/MainLayout';
 import type {Notification} from '@/types/notification';
@@ -72,8 +76,13 @@ function NotificationItem({
 }) {
   const markAsRead = useMarkAsRead();
   const followUserMutation = useFollowUser();
+  const acceptInviteMutation = useAcceptCommunityInvite();
+  const declineInviteMutation = useDeclineCommunityInvite();
   const router = useRouter();
   const [isFollowingBack, setIsFollowingBack] = useState(false);
+  const [inviteDecision, setInviteDecision] = useState<
+    'pending' | 'accepted' | 'declined'
+  >('pending');
   const [showRestaurantDrawer, setShowRestaurantDrawer] = useState(false);
 
   const {data: actorProfile} = useUserProfile(
@@ -97,8 +106,41 @@ function NotificationItem({
 
   const isLocalBukaActor = isRestaurant || isRewardsNotification;
 
+  const isCommunityInvite =
+    (notification.type as string) === 'community_invite';
+  const isCommunityNotification =
+    isCommunityInvite ||
+    (notification.type as string) === 'community_invite_accepted' ||
+    (notification.entityType as string) === 'community';
+
+  const handleAcceptInvite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!notification.entityId) return;
+    if (!notification.isRead) markAsRead.mutate(notification.id);
+    setInviteDecision('accepted');
+    acceptInviteMutation.mutate(notification.entityId, {
+      onSuccess: () => {
+        router.push(`/community/${notification.entityId}/feed`);
+      },
+      onError: () => setInviteDecision('pending'),
+    });
+  };
+
+  const handleDeclineInvite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!notification.entityId) return;
+    if (!notification.isRead) markAsRead.mutate(notification.id);
+    setInviteDecision('declined');
+    declineInviteMutation.mutate({idOrSlug: notification.entityId});
+  };
+
   const handleItemClick = () => {
     if (!notification.isRead) markAsRead.mutate(notification.id);
+
+    if (isCommunityNotification && notification.entityId) {
+      router.push(`/community/${notification.entityId}`);
+      return;
+    }
 
     if (isRewardsNotification) {
       router.push('/rewards');
@@ -226,6 +268,35 @@ function NotificationItem({
               <span className='text-zinc-500 text-xs'>▶</span>
             </div>
           </div>
+        )}
+
+        {isCommunityInvite && inviteDecision === 'pending' && (
+          <div className='flex items-center gap-1.5 shrink-0'>
+            <button
+              onClick={handleAcceptInvite}
+              disabled={acceptInviteMutation.isPending}
+              className='bg-[#fbbe15] text-[#1a1a1a] text-[10px] font-bold px-3 py-1.5 rounded-lg hover:bg-[#e5ac10] transition-colors disabled:opacity-50 border-none cursor-pointer'>
+              {acceptInviteMutation.isPending ? 'Joining...' : 'Accept'}
+            </button>
+            <button
+              onClick={handleDeclineInvite}
+              disabled={declineInviteMutation.isPending}
+              className='bg-white/10 text-zinc-300 text-[10px] font-semibold px-2.5 py-1.5 rounded-lg hover:bg-white/15 transition-colors disabled:opacity-50 border-none cursor-pointer'>
+              Decline
+            </button>
+          </div>
+        )}
+
+        {isCommunityInvite && inviteDecision === 'accepted' && (
+          <span className='text-[#4ade80] text-[10px] font-bold shrink-0'>
+            Joined ✓
+          </span>
+        )}
+
+        {isCommunityInvite && inviteDecision === 'declined' && (
+          <span className='text-zinc-500 text-[10px] font-semibold shrink-0'>
+            Declined
+          </span>
         )}
 
         {showFollowBack && (

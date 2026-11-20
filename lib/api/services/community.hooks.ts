@@ -96,11 +96,70 @@ export const useSubscribeCommunity = () => {
       data,
     }: {
       idOrSlug: string;
-      data: { billingPeriod: 'monthly' | 'yearly'; paymentReference?: string };
+      data: {
+        billingPeriod: 'monthly' | 'yearly';
+        provider?: 'paystack' | 'korapay';
+        paymentReference?: string;
+        callbackUrl?: string;
+      };
     }) => communityService.subscribe(idOrSlug, data),
     onSuccess: (_, { idOrSlug }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.community.detail(idOrSlug) });
       queryClient.invalidateQueries({ queryKey: queryKeys.community.memberships() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.earnings() });
+    },
+  });
+};
+
+export const useInitializeCommunityPayment = () => {
+  return useMutation({
+    mutationFn: ({
+      idOrSlug,
+      data,
+    }: {
+      idOrSlug: string;
+      data: {
+        billingPeriod: 'monthly' | 'yearly';
+        provider?: 'paystack' | 'korapay';
+        paymentReference?: string;
+        callbackUrl?: string;
+      };
+    }) => communityService.initializePayment(idOrSlug, data),
+  });
+};
+
+export const useCreatorEarnings = () => {
+  return useQuery({
+    queryKey: [...queryKeys.community.earnings()],
+    queryFn: async () => {
+      const response = await communityService.getCreatorEarnings();
+      return response.data;
+    },
+  });
+};
+
+export const useRequestCreatorPayout = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      amount: number;
+      bankName: string;
+      accountNumber: string;
+      accountName?: string;
+    }) => communityService.requestCreatorPayout(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.earnings() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.payouts() });
+    },
+  });
+};
+
+export const useCommunityNotifications = () => {
+  return useQuery({
+    queryKey: [...queryKeys.community.notifications()],
+    queryFn: async () => {
+      const response = await communityService.getCommunityNotifications();
+      return response.data;
     },
   });
 };
@@ -108,10 +167,116 @@ export const useSubscribeCommunity = () => {
 export const useCreateCommunityPost = (idOrSlug: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { content: string; mediaUrls?: string[] }) =>
-      communityService.createPost(idOrSlug, data),
+    mutationFn: (data: {
+      content: string;
+      mediaUrls?: string[];
+      location?: string;
+      tags?: string[];
+      hashtags?: string[];
+    }) => communityService.createPost(idOrSlug, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.community.feed(idOrSlug) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.detail(idOrSlug) });
+    },
+  });
+};
+
+export const useCommunityAnalytics = (idOrSlug: string) => {
+  return useQuery({
+    queryKey: [...queryKeys.community.detail(idOrSlug), 'analytics'],
+    queryFn: async () => {
+      const response = await communityService.getAnalytics(idOrSlug);
+      return response.data;
+    },
+    enabled: !!idOrSlug,
+  });
+};
+
+export const useCommunityTagSuggestions = (q?: string) => {
+  return useQuery({
+    queryKey: [...queryKeys.community.all, 'tag-suggestions', q || ''],
+    queryFn: async () => {
+      const response = await communityService.getTagSuggestions(q);
+      return response.data;
+    },
+  });
+};
+
+export const useCommunityMembers = (idOrSlug: string) => {
+  return useQuery({
+    queryKey: [...queryKeys.community.detail(idOrSlug), 'members'],
+    queryFn: async () => {
+      const response = await communityService.getCommunityMembers(idOrSlug);
+      return response.data;
+    },
+    enabled: !!idOrSlug,
+  });
+};
+
+export const useInviteCommunityMember = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ idOrSlug, userId }: { idOrSlug: string; userId: string }) =>
+      communityService.inviteMember(idOrSlug, userId),
+    onSuccess: (_, { idOrSlug }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.community.detail(idOrSlug), 'members'],
+      });
+    },
+  });
+};
+
+export const useAcceptCommunityInvite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (idOrSlug: string) => communityService.acceptInvite(idOrSlug),
+    onSuccess: (_, idOrSlug) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.detail(idOrSlug) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.memberships() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+    },
+  });
+};
+
+export const useDeclineCommunityInvite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ idOrSlug, userId }: { idOrSlug: string; userId?: string }) =>
+      communityService.declineInvite(idOrSlug, userId),
+    onSuccess: (_, { idOrSlug }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.community.detail(idOrSlug), 'members'],
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+    },
+  });
+};
+
+export const useAdminCommunities = (status?: string) => {
+  return useQuery({
+    queryKey: [...queryKeys.community.all, 'admin', status || 'all'],
+    queryFn: async () => {
+      const response = await communityService.adminListCommunities(status);
+      return response.data;
+    },
+  });
+};
+
+export const useAdminReviewCommunity = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        status: 'approved' | 'changes_requested' | 'rejected' | 'pending';
+        adminFeedback?: string;
+      };
+    }) => communityService.adminReviewCommunity(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
     },
   });
 };

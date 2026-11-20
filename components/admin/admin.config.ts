@@ -6,6 +6,7 @@ import {
   Megaphone,
   TrendingUp,
   KeyRound,
+  MessageSquareText,
   LucideIcon,
 } from 'lucide-react';
 import { IconType } from 'react-icons';
@@ -40,6 +41,16 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     name: 'Waitlist',
     href: '/secure-admin/waitlist',
     icon: BsClock,
+  },
+  {
+    name: 'Contact & Inquiries',
+    href: '/secure-admin/contact',
+    icon: MessageSquareText,
+  },
+  {
+    name: 'Community Approvals',
+    href: '/secure-admin/communities',
+    icon: IoIosPeople,
   },
   {
     name: 'User Management',

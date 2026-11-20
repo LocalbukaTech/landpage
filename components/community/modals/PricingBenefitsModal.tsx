@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, Check, Plus, Trash2, BadgePercent } from "lucide-react";
+import { X, Check, Plus, Trash2, BadgePercent, Clock } from "lucide-react";
+import { PAID_COMMUNITIES_ENABLED } from "../CreatorCommunityForm";
 
 interface PricingBenefitsModalProps {
   isOpen: boolean;
@@ -64,21 +65,34 @@ export function PricingBenefitsModal({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-white/70 mb-1.5">
-              Monthly Subscription Price (NGN) — Base Plan starts at ₦2,000
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-white/70">
+                Monthly Subscription Price (NGN)
+              </label>
+              {!PAID_COMMUNITIES_ENABLED && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#f5c94d]/15 border border-[#f5c94d]/30 px-2 py-0.5 text-[10px] font-bold text-[#f5c94d]">
+                  <Clock className="h-3 w-3" />
+                  Paid Tiers · Coming Soon
+                </span>
+              )}
+            </div>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-white/50">
                 ₦
               </span>
               <input
                 type="number"
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
+                value={PAID_COMMUNITIES_ENABLED ? price : 0}
+                onChange={(e) => {
+                  if (PAID_COMMUNITIES_ENABLED) {
+                    setPrice(Number(e.target.value));
+                  }
+                }}
+                disabled={!PAID_COMMUNITIES_ENABLED}
                 min={0}
                 step={500}
-                placeholder="2000"
-                className="w-full rounded-2xl border border-white/10 bg-[#212121] pl-8 pr-4 py-3 text-sm font-medium text-white placeholder-white/30 focus:border-[#f5c94d] focus:outline-none focus:ring-1 focus:ring-[#f5c94d]"
+                placeholder="0"
+                className="w-full rounded-2xl border border-white/10 bg-[#212121] pl-8 pr-4 py-3 text-sm font-medium text-white placeholder-white/30 focus:border-[#f5c94d] focus:outline-none focus:ring-1 focus:ring-[#f5c94d] disabled:opacity-60 disabled:cursor-not-allowed"
                 required
               />
             </div>
@@ -89,23 +103,32 @@ export function PricingBenefitsModal({
                 { label: "Growth ₦3,500", val: 3500 },
                 { label: "Pro ₦5,000", val: 5000 },
                 { label: "VIP ₦10,000", val: 10000 },
-              ].map((tier) => (
-                <button
-                  key={tier.val}
-                  type="button"
-                  onClick={() => setPrice(tier.val)}
-                  className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer ${
-                    price === tier.val
-                      ? "bg-[#f5c94d] text-black"
-                      : "bg-[#212121] text-white/70 hover:bg-white/10"
-                  }`}
-                >
-                  {tier.label}
-                </button>
-              ))}
+              ].map((tier) => {
+                const isLockedPaid = !PAID_COMMUNITIES_ENABLED && tier.val > 0;
+                return (
+                  <button
+                    key={tier.val}
+                    type="button"
+                    disabled={isLockedPaid}
+                    onClick={() => !isLockedPaid && setPrice(tier.val)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                      isLockedPaid
+                        ? "bg-white/5 text-white/30 cursor-not-allowed"
+                        : (PAID_COMMUNITIES_ENABLED ? price : 0) === tier.val
+                        ? "bg-[#f5c94d] text-black cursor-pointer"
+                        : "bg-[#212121] text-white/70 hover:bg-white/10 cursor-pointer"
+                    }`}
+                  >
+                    {tier.label}
+                    {isLockedPaid ? " · Soon" : ""}
+                  </button>
+                );
+              })}
             </div>
             <p className="mt-1.5 text-[11px] text-white/40">
-              Set to 0 for a Free community, or ₦2,000+ for a Paid community (92% creator share / 8% LocalBuka fee).
+              {PAID_COMMUNITIES_ENABLED
+                ? "Set to 0 for a Free community, or ₦2,000+ for a Paid community (92% creator share / 8% LocalBuka fee)."
+                : "Free communities are live now. Paid tiers (₦2,000+/mo with 92% creator share) will unlock once Paystack is live."}
             </p>
           </div>
 

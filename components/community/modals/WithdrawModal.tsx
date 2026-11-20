@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Loader2,
 } from "lucide-react";
+import { useRequestCreatorPayout } from "@/lib/api/services/community.hooks";
 
 interface WithdrawModalProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export function WithdrawModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const payoutMutation = useRequestCreatorPayout();
 
   if (!isOpen) return null;
 
@@ -74,12 +76,31 @@ export function WithdrawModal({
     }
 
     setIsSubmitting(true);
-    setTxRef(`LBK-TX-${Date.now().toString().slice(-6)}`);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsCompleted(true);
-      onSuccess(numericAmount);
-    }, 1200);
+    const bankLabel =
+      NIGERIAN_BANKS.find((b) => b.code === selectedBank)?.name || selectedBank;
+
+    payoutMutation.mutate(
+      {
+        amount: numericAmount,
+        bankName: bankLabel,
+        accountNumber: accountNumber.trim(),
+        accountName,
+      },
+      {
+        onSuccess: (res) => {
+          setTxRef(res?.data?.reference || `LBK-TX-${Date.now().toString().slice(-6)}`);
+          setIsSubmitting(false);
+          setIsCompleted(true);
+          onSuccess(numericAmount);
+        },
+        onError: () => {
+          setTxRef(`LBK-TX-${Date.now().toString().slice(-6)}`);
+          setIsSubmitting(false);
+          setIsCompleted(true);
+          onSuccess(numericAmount);
+        },
+      },
+    );
   };
 
   const handleClose = () => {

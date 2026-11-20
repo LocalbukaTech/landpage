@@ -139,6 +139,23 @@ export function MobileCommunityExplore({
           )}
         </div>
 
+        {/* Empty State when no real communities exist yet */}
+        {filteredCommunities.length === 0 ? (
+          <div className="rounded-2xl border border-white/10 bg-[#1e1e1e] p-8 text-center space-y-3 my-4">
+            <Users size={32} className="mx-auto text-[#fbbe15]" />
+            <h3 className="text-base font-bold text-white">
+              {activeCategory === "Paid"
+                ? "Paid Communities · Coming Soon"
+                : "No communities created yet"}
+            </h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              {activeCategory === "Paid"
+                ? "Paid creator communities with Paystack & Korapay are launching soon."
+                : "Only real creator communities appear here. Create a community to get started!"}
+            </p>
+          </div>
+        ) : (
+          <>
         {/* Section 1: Recommended for you */}
         <section className="space-y-3">
           <h2 className="text-[17px] font-bold text-white tracking-tight">
@@ -259,6 +276,8 @@ export function MobileCommunityExplore({
             ))}
           </div>
         </section>
+          </>
+        )}
       </div>
     </div>
   );

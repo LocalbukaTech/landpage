@@ -119,6 +119,11 @@ interface CreatorCommunityFormProps {
 }
 
 export const MIN_PAID_PRICE = 2000;
+/**
+ * Toggle to true once live Paystack/Korapay keys are connected.
+ * While false, Paid Communities show "Coming Soon" and creators launch Free communities.
+ */
+export const PAID_COMMUNITIES_ENABLED = false;
 
 export function CreatorCommunityForm({
   initialData,
@@ -128,7 +133,7 @@ export function CreatorCommunityForm({
   const [name, setName] = useState(initialData?.name || '');
   const [bio, setBio] = useState(initialData?.bio || '');
   const [category, setCategory] = useState<'free' | 'paid'>(
-    initialData?.category || 'paid'
+    PAID_COMMUNITIES_ENABLED ? initialData?.category || 'paid' : 'free'
   );
   const [selectedAvatar, setSelectedAvatar] = useState(
     initialData?.avatar || PRESET_AVATARS[0]
@@ -459,63 +464,81 @@ export function CreatorCommunityForm({
             </div>
           </div>
 
-          {/* Paid / Subscribed Card */}
+          {/* Paid / Subscribed Card (Temporarily Suspended — Coming Soon) */}
           <div
-            onClick={() => setCategory('paid')}
-            className={`cursor-pointer p-4 border transition-all duration-200 flex flex-col justify-between gap-3 rounded-[15px] min-h-[250px] ${
-              category === 'paid'
-                ? 'bg-[#252525] border-[#FFC533] shadow-[0_0_0_1px_#FFC533]'
-                : 'bg-[#222222] border-white/5 hover:border-white/15'
+            onClick={() => {
+              if (PAID_COMMUNITIES_ENABLED) {
+                setCategory('paid');
+              }
+            }}
+            className={`p-4 border transition-all duration-200 flex flex-col justify-between gap-3 rounded-[15px] min-h-[250px] ${
+              !PAID_COMMUNITIES_ENABLED
+                ? 'bg-[#1e1e1e] border-white/10 opacity-85 cursor-not-allowed'
+                : category === 'paid'
+                ? 'bg-[#252525] border-[#FFC533] shadow-[0_0_0_1px_#FFC533] cursor-pointer'
+                : 'bg-[#222222] border-white/5 hover:border-white/15 cursor-pointer'
             }`}
           >
             <div>
-              <div className="flex items-center justify-between mb-2.5">
-                <span className="inline-flex items-center justify-center text-[11px] font-bold bg-[#86efac] text-black px-3 py-1 rounded-full">
+              <div className="flex items-center justify-between mb-2.5 gap-2">
+                <span className="inline-flex items-center justify-center text-[11px] font-bold bg-[#86efac]/20 text-[#86efac] border border-[#86efac]/30 px-3 py-1 rounded-full">
                   Paid (Subscribed)
                 </span>
-                {category === 'paid' && (
-                  <span className="text-[10px] font-semibold text-[#FFC533]">
-                    Selected ✓
+                {!PAID_COMMUNITIES_ENABLED ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-[#FFC533]/20 border border-[#FFC533]/40 px-2.5 py-0.5 text-[10px] font-bold text-[#FFC533]">
+                    <Clock className="w-3 h-3" />
+                    <span>Coming Soon</span>
                   </span>
+                ) : (
+                  category === 'paid' && (
+                    <span className="text-[10px] font-semibold text-[#FFC533]">
+                      Selected ✓
+                    </span>
+                  )
                 )}
               </div>
-              <ul className="space-y-2 text-[10.5px] text-gray-300 leading-snug pl-1">
+              <ul className="space-y-2 text-[10.5px] text-gray-400 leading-snug pl-1">
                 <li className="flex gap-1.5">
-                  <span className="text-gray-400 font-medium shrink-0">1.</span>
+                  <span className="text-gray-500 font-medium shrink-0">1.</span>
                   <span>Base plan starts at ₦2,000/mo and scales upward by bracket.</span>
                 </li>
                 <li className="flex gap-1.5">
-                  <span className="text-gray-400 font-medium shrink-0">2.</span>
+                  <span className="text-gray-500 font-medium shrink-0">2.</span>
                   <span>Creator earns 92% of revenue (8% LocalBuka commission).</span>
                 </li>
                 <li className="flex gap-1.5">
-                  <span className="text-gray-400 font-medium shrink-0">3.</span>
-                  <span>Link your payout bank account &amp; Paystack/Flutterwave gateway.</span>
+                  <span className="text-gray-500 font-medium shrink-0">3.</span>
+                  <span>Paystack &amp; Korapay gateway integration launching soon.</span>
                 </li>
               </ul>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-white/5">
-              <span className="inline-flex items-center justify-center bg-[#FFC533]/20 text-[#FFC533] border border-[#FFC533]/40 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
-                ₦{Math.max(MIN_PAID_PRICE, pricePerMonth || MIN_PAID_PRICE).toLocaleString('en-NG')}
-                {cycleSuffix}
+              <span className="inline-flex items-center justify-center bg-white/5 text-gray-400 border border-white/10 px-2.5 py-0.5 rounded-full text-[11px] font-semibold">
+                ₦2,000+/mo
               </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePaidSubmit();
-                }}
-                className="inline-flex items-center justify-center bg-[#FFC533] hover:bg-[#e6b12d] text-black font-semibold text-xs px-4 py-1.5 rounded-full transition-colors cursor-pointer"
-              >
-                Setup &amp; Pay
-              </button>
+              {PAID_COMMUNITIES_ENABLED ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePaidSubmit();
+                  }}
+                  className="inline-flex items-center justify-center bg-[#FFC533] hover:bg-[#e6b12d] text-black font-semibold text-xs px-4 py-1.5 rounded-full transition-colors cursor-pointer"
+                >
+                  Setup &amp; Pay
+                </button>
+              ) : (
+                <span className="inline-flex items-center justify-center bg-white/10 text-white/60 font-semibold text-[11px] px-3.5 py-1.5 rounded-full select-none">
+                  Paid · Coming Soon
+                </span>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* ── Step 3: Cost Bracket (₦2,000 Base Plan Upward) + Payment Method & Bank Account ── */}
-      {category === 'paid' && (
+      {PAID_COMMUNITIES_ENABLED && category === 'paid' && (
         <div className="mb-6 rounded-2xl bg-[#222222] border border-[#FFC533]/30 p-4 sm:p-5 space-y-6 animate-in fade-in duration-200">
           {/* Section A: Cost Bracket Selector (Base ₦2,000 upward) */}
           <div className="space-y-3">
@@ -852,7 +875,7 @@ export function CreatorCommunityForm({
                     )}
                   </button>
                   <span className="inline-flex items-center gap-1 rounded-md bg-white/10 border border-white/15 px-2 py-0.5 text-[10.5px] font-semibold text-gray-300">
-                    <span>Closed until deploy</span>
+                    <span>Coming Soon</span>
                   </span>
                 </div>
               </div>
@@ -862,13 +885,13 @@ export function CreatorCommunityForm({
 
               <div className="pt-1">
                 <label className="block text-[10.5px] text-gray-400 mb-1">
-                  Paystack Payment Link (Closed for now until ready to deploy)
+                  Paystack Payment Link (Coming Soon)
                 </label>
                 <input
                   type="url"
                   disabled
                   value="https://paystack.com/pay/localbuka-creator"
-                  placeholder="Closed until production deployment"
+                  placeholder="Coming soon"
                   className="w-full px-3 py-2 bg-[#161616] border border-white/10 rounded-xl text-xs text-gray-500 cursor-not-allowed"
                 />
               </div>

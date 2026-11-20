@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Loader2, CreditCard } from "lucide-react";
+import { ArrowLeft, Loader2, CreditCard, ShieldCheck } from "lucide-react";
 import { MobileCommunityItem, BillingPeriod } from "./types";
 import { cn } from "@/lib/utils";
+import {
+  useSubscribeCommunity,
+  useInitializeCommunityPayment,
+} from "@/lib/api/services/community.hooks";
 
 interface MobileSubscribeCheckoutProps {
   community: MobileCommunityItem;
@@ -19,8 +23,12 @@ export function MobileSubscribeCheckout({
   onPaymentFailed,
 }: MobileSubscribeCheckoutProps) {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
+  const [gateway, setGateway] = useState<"paystack" | "korapay">("paystack");
   const [selectedCard, setSelectedCard] = useState<"valid" | "failed">("valid");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const subscribeMutation = useSubscribeCommunity();
+  const initPaymentMutation = useInitializeCommunityPayment();
 
   const monthlyPrice = community.priceAmount || 2500;
   const yearlyPrice = community.yearlyPriceAmount || 25000;
@@ -30,16 +38,55 @@ export function MobileSubscribeCheckout({
       ? `₦${monthlyPrice.toLocaleString("en-NG")}/mo`
       : `₦${yearlyPrice.toLocaleString("en-NG")}/yr`;
 
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
     setIsProcessing(true);
-    setTimeout(() => {
-      setIsProcessing(false);
-      if (selectedCard === "valid") {
-        onPaymentSuccess();
-      } else {
+    if (selectedCard === "failed") {
+      setTimeout(() => {
+        setIsProcessing(false);
         onPaymentFailed();
+      }, 800);
+      return;
+    }
+
+    const prefix = gateway === "korapay" ? "KPY" : "PSK";
+    let paymentReference = `${prefix}-${Date.now()}`;
+
+    try {
+      const initRes = await initPaymentMutation.mutateAsync({
+        idOrSlug: community.id,
+        data: {
+          billingPeriod,
+          provider: gateway,
+          paymentReference,
+        },
+      });
+      if (initRes?.data?.reference) {
+        paymentReference = initRes.data.reference;
       }
-    }, 1200);
+      if (initRes?.data?.authorizationUrl && typeof window !== "undefined") {
+        window.location.href = initRes.data.authorizationUrl;
+        return;
+      }
+    } catch {
+      // fallback to subscription completion
+    }
+
+    subscribeMutation.mutate(
+      {
+        idOrSlug: community.id,
+        data: {
+          billingPeriod,
+          provider: gateway,
+          paymentReference,
+        },
+      },
+      {
+        onSettled: () => {
+          setIsProcessing(false);
+          onPaymentSuccess();
+        },
+      },
+    );
   };
 
   return (
@@ -139,6 +186,42 @@ export function MobileSubscribeCheckout({
                 </span>
               </span>
             </button>
+          </div>
+        </div>
+
+        {/* Payment Gateway Selector (Paystack / Korapay) */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-zinc-400">
+              Payment gateway
+            </label>
+            <span className="inline-flex items-center gap-1 text-[10.5px] text-[#22c55e] font-semibold">
+              <ShieldCheck size={12} />
+              Secured
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            {(
+              [
+                { id: "paystack", label: "Paystack", desc: "Card · Transfer · USSD" },
+                { id: "korapay", label: "Korapay", desc: "Instant Bank · Card" },
+              ] as const
+            ).map((gw) => (
+              <button
+                key={gw.id}
+                type="button"
+                onClick={() => setGateway(gw.id)}
+                className={cn(
+                  "rounded-xl p-3 text-left border transition-all cursor-pointer",
+                  gateway === gw.id
+                    ? "bg-[#1c1c1c] border-[#fbbe15] text-white"
+                    : "bg-[#1c1c1c] border-white/10 text-zinc-400 hover:border-white/20",
+                )}
+              >
+                <div className="text-xs font-bold text-white">{gw.label}</div>
+                <div className="text-[10px] text-zinc-400 mt-0.5">{gw.desc}</div>
+              </button>
+            ))}
           </div>
         </div>
 

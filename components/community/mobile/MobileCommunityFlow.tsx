@@ -25,27 +25,37 @@ interface MobileCommunityFlowProps {
   className?: string;
 }
 
+const SEED_PLACEHOLDER_SLUGS = new Set([
+  "nigeria-food",
+  "chef-amaka",
+  "street-food",
+  "baking-desserts",
+  "suya-grill",
+]);
+
 export function MobileCommunityFlow({
   initialScreen = "explore",
-  initialCommunityId = "chef-amaka",
+  initialCommunityId = "",
   onSwitchToCreator,
   showStatusBar = true,
   className = "",
 }: MobileCommunityFlowProps) {
   const router = useRouter();
 
-  // Live API data with MOCK_COMMUNITIES fallback while loading
+  // Live API data (filtering out the 5 initial seed placeholder communities)
   const { data: communityData } = useExploreCommunities();
-  const communities: MobileCommunityItem[] =
-    communityData?.items?.map(toMobileCommunityItem) ?? MOCK_COMMUNITIES;
+  const communities: MobileCommunityItem[] = (communityData?.items ?? [])
+    .filter((c) => !SEED_PLACEHOLDER_SLUGS.has(c.slug))
+    .map(toMobileCommunityItem);
 
   const [currentScreen, setCurrentScreen] =
     useState<MobileCommunityScreen>(initialScreen);
 
   const [selectedCommunity, setSelectedCommunity] =
     useState<MobileCommunityItem>(
-      MOCK_COMMUNITIES.find((c) => c.id === initialCommunityId) ||
-        MOCK_COMMUNITIES[1], // Chef Amaka
+      communities.find((c) => c.id === initialCommunityId) ||
+        communities[0] ||
+        MOCK_COMMUNITIES[0],
     );
 
   const handleSelectCommunityFromExplore = (community: MobileCommunityItem) => {

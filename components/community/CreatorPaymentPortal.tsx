@@ -462,7 +462,7 @@ export function CreatorPaymentPortal({
                   )}
                 </button>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-200 text-gray-500 text-xs font-semibold cursor-not-allowed">
-                  <span>Closed until deploy</span>
+                  <span>Coming Soon</span>
                 </span>
               </div>
             </div>

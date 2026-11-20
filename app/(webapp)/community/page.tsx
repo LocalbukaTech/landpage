@@ -11,6 +11,7 @@ import {
   Compass,
   ArrowLeft,
   Plus,
+  Clock,
 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { CreatorDashboard } from "@/components/community/CreatorDashboard";
@@ -32,6 +33,7 @@ import { CommunityItem } from "@/lib/api/services/community.service";
 import {
   useExploreCommunities,
   useCreateCommunity,
+  useMyCreatedCommunities,
 } from "@/lib/api/services/community.hooks";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,12 +41,21 @@ type CommunityTab = "Recommended" | "Trending" | "Free" | "Paid";
 type CreatorStep =
   | "form"
   | "payment"
+  | "pending"
   | "approved"
   | "changes-requested"
   | "rejected"
   | "dashboard";
 
 const CREATOR_COMMUNITY_STORAGE_KEY = "localbuka_creator_community_v1";
+
+const SEED_PLACEHOLDER_SLUGS = new Set([
+  "nigeria-food",
+  "chef-amaka",
+  "street-food",
+  "baking-desserts",
+  "suya-grill",
+]);
 
 const DEFAULT_CREATOR_DATA: CreatorCommunityFormData = {
   name: "Chef Tolu's VIP Kitchen",
@@ -168,9 +179,34 @@ function CommunityPageContent() {
     searchParams.get("checkout") === "true"
   );
 
-  // Live API data
+  // Live API data (filtering out the 5 initial seed placeholder communities)
   const { data, isLoading } = useExploreCommunities({ tab: activeTab });
-  const communities: CommunityItem[] = data?.items ?? [];
+  const { data: myCreatedCommunities } = useMyCreatedCommunities();
+  const latestCreatedCommunity = myCreatedCommunities?.[0] || null;
+  const communities: CommunityItem[] = (data?.items ?? []).filter(
+    (c) => !SEED_PLACEHOLDER_SLUGS.has(c.slug)
+  );
+
+  // Determine the real admin-driven review status from backend (if creator has submitted a community)
+  const backendStatus = latestCreatedCommunity?.status;
+  const effectiveCreatorStep: CreatorStep = (() => {
+    // Allow explicit form editing or active dashboard if approved
+    if (creatorStep === "form" || creatorStep === "payment") {
+      return creatorStep;
+    }
+    if (creatorStep === "dashboard") {
+      if (backendStatus === "rejected") return "rejected";
+      if (backendStatus === "changes_requested") return "changes-requested";
+      return "dashboard";
+    }
+    if (backendStatus === "pending" || backendStatus === "in_review") {
+      return "pending";
+    }
+    if (backendStatus === "changes_requested") return "changes-requested";
+    if (backendStatus === "rejected") return "rejected";
+    if (backendStatus === "approved") return "approved";
+    return creatorStep;
+  })();
 
   const handleSelectFreePlan = (formData: CreatorCommunityFormData) => {
     saveCreatorData(formData);
@@ -185,10 +221,10 @@ function CommunityPageContent() {
       benefits: formData.benefits,
     });
     toast({
-      title: "Free Community Created! 🎉",
-      description: `${formData.name} is now live on LocalBuka.`,
+      title: "Community Submitted for Admin Review",
+      description: `${formData.name} has been sent to the LocalBuka Admin team for approval.`,
     });
-    setCreatorStep("approved");
+    setCreatorStep("pending");
   };
 
   const handleSelectPaidPlan = (formData: CreatorCommunityFormData) => {
@@ -346,35 +382,50 @@ function CommunityPageContent() {
         {/* ── View 1: Creator Community Creation, Payment, Review & Management Dashboard ── */}
         {viewMode === "creator" && (
           <div className="space-y-6">
-            {/* Creator Flow Step Navigator Bar */}
+            {/* Read-Only Process Progress Bar (No manual state skipping — Admin controls approval states) */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#202020] border border-white/8 px-4 py-3">
-              <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              <div className="flex items-center gap-2 flex-wrap text-xs">
                 <span className="text-white/40 font-medium mr-1">
-                  Creator Flow:
+                  Process:
                 </span>
-                {(
-                  [
-                    { id: "form", label: "1. Create & Cost Bracket" },
-                    { id: "payment", label: "2. Payment & Account" },
-                    { id: "approved", label: "3. Approved & Live" },
-                    { id: "changes-requested", label: "4. Changes Requested" },
-                    { id: "rejected", label: "5. Not Approved" },
-                    { id: "dashboard", label: "6. Creator Dashboard" },
-                  ] as { id: CreatorStep; label: string }[]
-                ).map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setCreatorStep(s.id)}
+                {[
+                  {
+                    label: "1. Setup Community",
+                    active: effectiveCreatorStep === "form",
+                    done: effectiveCreatorStep !== "form",
+                  },
+                  {
+                    label: "2. Admin Review",
+                    active:
+                      effectiveCreatorStep === "pending" ||
+                      effectiveCreatorStep === "changes-requested" ||
+                      effectiveCreatorStep === "rejected",
+                    done:
+                      effectiveCreatorStep === "approved" ||
+                      effectiveCreatorStep === "dashboard",
+                  },
+                  {
+                    label: "3. Approved & Live",
+                    active:
+                      effectiveCreatorStep === "approved" ||
+                      effectiveCreatorStep === "dashboard",
+                    done: effectiveCreatorStep === "dashboard",
+                  },
+                ].map((step) => (
+                  <span
+                    key={step.label}
                     className={cn(
-                      "rounded-full px-3 py-1 text-xs font-semibold transition-all cursor-pointer",
-                      creatorStep === s.id
+                      "rounded-full px-3 py-1 text-xs font-semibold select-none inline-flex items-center gap-1.5",
+                      step.active
                         ? "bg-[#f5c94d] text-black font-bold"
-                        : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+                        : step.done
+                        ? "bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30"
+                        : "bg-white/5 text-white/45"
                     )}
                   >
-                    {s.label}
-                  </button>
+                    {step.done && <Check className="h-3 w-3 stroke-[3]" />}
+                    <span>{step.label}</span>
+                  </span>
                 ))}
               </div>
 
@@ -388,8 +439,8 @@ function CommunityPageContent() {
               </button>
             </div>
 
-            {/* Step 1: Create Community + Cost Bracket + Payout Bank Account Form */}
-            {creatorStep === "form" && (
+            {/* Step 1: Create Community Form */}
+            {effectiveCreatorStep === "form" && (
               <div className="flex flex-col lg:flex-row w-full max-w-[1080px] mx-auto bg-[#1a1a1a] rounded-[25px] overflow-hidden shadow-2xl border border-white/8">
                 <div className="w-full lg:w-[440px] lg:flex-shrink-0 min-h-[420px]">
                   <CreatorCommunityCarousel />
@@ -404,8 +455,8 @@ function CommunityPageContent() {
               </div>
             )}
 
-            {/* Step 2: Payment Method & Gateway Portal */}
-            {creatorStep === "payment" && (
+            {/* Step 2: Payment Method & Gateway Portal (Paid Tier) */}
+            {effectiveCreatorStep === "payment" && (
               <div className="py-2">
                 <CreatorPaymentPortal
                   creatorDetails={creatorData}
@@ -413,14 +464,50 @@ function CommunityPageContent() {
                   onSuccess={handlePaymentSuccess}
                   onGoToDashboard={() => {
                     handlePaymentSuccess();
-                    setCreatorStep("dashboard");
+                    setCreatorStep("pending");
                   }}
                 />
               </div>
             )}
 
-            {/* Step 3: Approved & Live Status Card */}
-            {creatorStep === "approved" && (
+            {/* Step 2B: Pending Admin Review Screen */}
+            {effectiveCreatorStep === "pending" && (
+              <div className="w-full max-w-[780px] mx-auto rounded-[28px] border border-[#f5c94d]/30 bg-[#1a1a1a] p-8 sm:p-10 text-center space-y-6 shadow-2xl">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f5c94d]/15 text-[#f5c94d] border border-[#f5c94d]/30">
+                  <Clock className="h-8 w-8" />
+                </div>
+                <div className="space-y-2 max-w-lg mx-auto">
+                  <h2 className="text-2xl font-bold text-white">
+                    Submitted &amp; Pending Admin Review
+                  </h2>
+                  <p className="text-sm text-zinc-400 leading-relaxed">
+                    <strong className="text-white">
+                      {latestCreatedCommunity?.name || creatorData.name}
+                    </strong>{" "}
+                    has been sent to the LocalBuka Admin team. Once an administrator reviews and approves your community, you&apos;ll receive a notification and your community will go live on Explore.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("explore")}
+                    className="rounded-full bg-[#f5c94d] px-6 py-2.5 text-sm font-bold text-black hover:bg-[#eab308] transition-all cursor-pointer"
+                  >
+                    Back to Explore
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreatorStep("form")}
+                    className="rounded-full bg-white/10 px-6 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition-all cursor-pointer"
+                  >
+                    Edit Submission
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Approved & Live Status Card (Only shown when Admin approves) */}
+            {effectiveCreatorStep === "approved" && (
               <CreatorCommunityApprovedCard
                 communityName={creatorData.name || "Chef Tolu's VIP Kitchen"}
                 liveSince="Today"
@@ -449,37 +536,42 @@ function CommunityPageContent() {
               />
             )}
 
-            {/* Step 4: Changes Requested Status Card */}
-            {creatorStep === "changes-requested" && (
+            {/* Step 4: Changes Requested Status Card (Admin-driven) */}
+            {effectiveCreatorStep === "changes-requested" && (
               <CreatorCommunityChangesRequestedCard
-                reviewDate="Just now"
-                caseId="CR-1041"
-                summaryMessage="Your community is almost ready. Update the items below and resubmit for another review (72-hour SLA)."
-                feedbackMessage="Your pricing section doesn't clearly state the billing cadence. Please ensure your paid plan starts at the ₦2,000/month Base Plan or higher and specify monthly vs. annual before resubmitting."
+                reviewDate="Recently reviewed"
+                caseId={latestCreatedCommunity?.slug?.toUpperCase() || "REVIEW"}
+                summaryMessage="An administrator reviewed your community submission. Update the requested items below and resubmit."
+                feedbackMessage={
+                  (latestCreatedCommunity as any)?.adminFeedback ||
+                  "Please review your community description, cover image, and guidelines before resubmitting."
+                }
                 changeItems={[
-                  { label: "Pricing and billing cadence (Min ₦2,000 Base Plan)", status: "pending" },
+                  { label: "Address admin feedback above", status: "pending" },
                   { label: "Name, bio and category", status: "updated" },
-                  { label: "Payout bank account & member benefits", status: "updated" },
                 ]}
                 onEditAndResubmit={() => setCreatorStep("form")}
               />
             )}
 
-            {/* Step 5: Not Approved / Rejected Status Card */}
-            {creatorStep === "rejected" && (
+            {/* Step 5: Not Approved / Rejected Status Card (Admin-driven) */}
+            {effectiveCreatorStep === "rejected" && (
               <CreatorCommunityRejectedCard
-                reviewDate="1 day ago"
-                caseId="CR-1041"
+                reviewDate="Recently reviewed"
+                caseId={latestCreatedCommunity?.slug?.toUpperCase() || "REVIEW"}
                 rejectionReason="This community didn't meet our requirements and can't be published."
-                feedbackMessage="Pricing described does not match LocalBuka's membership guidelines (Base plan starts at ₦2,000/month). This community cannot be published."
-                actionMessage="You can create a new community with a compliant cost bracket (₦2,000/mo Base Plan and upward) and valid payout bank account."
+                feedbackMessage={
+                  (latestCreatedCommunity as any)?.adminFeedback ||
+                  "Your community submission did not meet LocalBuka's community guidelines."
+                }
+                actionMessage="You can create a new community that complies with LocalBuka's community guidelines or reach out to Support for clarification."
                 onCreateNewCommunity={() => setCreatorStep("form")}
-                onContactSupport={() => setCreatorStep("form")}
+                onContactSupport={() => router.push("/contact")}
               />
             )}
 
             {/* Step 6: Creator Management Dashboard */}
-            {creatorStep === "dashboard" && (
+            {effectiveCreatorStep === "dashboard" && (
               <CreatorDashboard
                 initialTab={initialDashboardTab}
                 community={creatorData}
@@ -508,13 +600,25 @@ function CommunityPageContent() {
                       setIsCheckingOut(false);
                     }}
                     className={cn(
-                      "rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0",
+                      "rounded-full px-4 sm:px-5 py-2 text-xs sm:text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 inline-flex items-center gap-1.5",
                       !isCheckingOut && activeTab === tab
                         ? "bg-[#f5c94d] text-[#111111] font-bold shadow-[0_0_0_1px_rgba(245,201,77,0.4)]"
                         : "bg-[#252525] text-white/70 hover:bg-[#2f2f2f] hover:text-white"
                     )}
                   >
-                    {tab}
+                    <span>{tab}</span>
+                    {tab === "Paid" && (
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                          !isCheckingOut && activeTab === "Paid"
+                            ? "bg-black/15 text-black"
+                            : "bg-[#f5c94d]/15 text-[#f5c94d]"
+                        )}
+                      >
+                        Coming Soon
+                      </span>
+                    )}
                   </button>
                 ))}
                 <button
@@ -588,7 +692,34 @@ function CommunityPageContent() {
                 )}
 
                 {/* 1. Recommended Section + Trending Section */}
-                {!isLoading && (<>
+                {!isLoading && communities.length === 0 && (
+                  <div className="rounded-3xl border border-white/10 bg-[#1c1c1d] p-12 text-center space-y-4">
+                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f5c94d]/15 text-[#f5c94d]">
+                      <Compass className="h-7 w-7" />
+                    </div>
+                    <div className="space-y-1.5 max-w-md mx-auto">
+                      <h3 className="text-xl font-bold text-white">
+                        No communities published yet
+                      </h3>
+                      <p className="text-xs sm:text-sm text-zinc-400">
+                        Be the first creator to launch a food community on LocalBuka and connect with food lovers.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode("creator");
+                        setCreatorStep("form");
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full bg-[#f5c94d] px-6 py-2.5 text-sm font-bold text-black hover:bg-[#eab308] transition-all cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 stroke-[2.5]" />
+                      <span>Create First Community</span>
+                    </button>
+                  </div>
+                )}
+
+                {!isLoading && communities.length > 0 && (<>
                 <section className="space-y-3 sm:space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
@@ -697,6 +828,7 @@ function CommunityPageContent() {
                 </section>
 
                 {/* 2. Trending Section */}
+                {communities.length > 4 && (
                 <section className="space-y-3 sm:space-y-4 pt-2">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
@@ -802,6 +934,7 @@ function CommunityPageContent() {
                     ))}
                   </div>
                 </section>
+                )}
                 </>)}
               </div>
             ) : (
@@ -824,7 +957,40 @@ function CommunityPageContent() {
                   </div>
                 )}
 
-                {!isLoading && (
+                {!isLoading && communities.length === 0 && (
+                  <div className="rounded-3xl border border-white/10 bg-[#1c1c1d] p-12 text-center space-y-4">
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f5c94d]/15 text-[#f5c94d]">
+                      {activeTab === "Paid" ? (
+                        <Lock className="h-6 w-6" />
+                      ) : (
+                        <Compass className="h-6 w-6" />
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold text-white">
+                      {activeTab === "Paid"
+                        ? "Paid Creator Communities · Coming Soon"
+                        : `No ${activeTab.toLowerCase()} communities created yet`}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-zinc-400 max-w-md mx-auto">
+                      {activeTab === "Paid"
+                        ? "Paid subscriptions (92% creator revenue share with Paystack & Korapay) are launching soon. You can create and join Free Communities right now!"
+                        : "Only real communities created by LocalBuka creators appear here. Be the first to create one!"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode("creator");
+                        setCreatorStep("form");
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full bg-[#f5c94d] px-6 py-2.5 text-sm font-bold text-black hover:bg-[#eab308] transition-all cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 stroke-[2.5]" />
+                      <span>Create Free Community</span>
+                    </button>
+                  </div>
+                )}
+
+                {!isLoading && communities.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 md:gap-6">
                   {communities.map((community) => (
                     <article

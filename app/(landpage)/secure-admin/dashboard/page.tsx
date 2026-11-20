@@ -1,10 +1,11 @@
 'use client';
 
 import {useMemo} from 'react';
-import {BarChart3, Users, ListCheck, FileText, Loader2} from 'lucide-react';
+import {BarChart3, Users, ListCheck, FileText, MessageSquareText, Loader2} from 'lucide-react';
 import {useAdminTeamsQuery} from '@/lib/api/services/teams.hooks';
 import {useWaitlistQuery} from '@/lib/api/services/waitlist.hooks';
 import {useBlogsQuery} from '@/lib/api/services/blog.hooks';
+import {useContactsQuery} from '@/lib/api/services/contact.hooks';
 
 const Dashboard = () => {
   // Fetch all teams to count departments (using a large size to get all)
@@ -20,10 +21,16 @@ const Dashboard = () => {
     page: 1,
     size: 1,
   });
+  const {data: contactsData, isLoading: contactsLoading} = useContactsQuery({
+    page: 1,
+    size: 5,
+  });
 
   const totalTeamMembers = teamsData?.data?.total_docs ?? 0;
   const totalWaitlistEntries = waitlistData?.data?.total_docs ?? 0;
   const totalBlogs = (blogsData?.data as any)?.data?.total_docs ?? 0;
+  const totalContacts = contactsData?.data?.total_docs ?? 0;
+  const recentContacts = contactsData?.data?.docs ?? [];
 
   // Calculate unique departments from teams
   const activeDepartments = useMemo(() => {
@@ -68,6 +75,15 @@ const Dashboard = () => {
       changeType: 'positive',
       color: 'bg-orange-500',
       loading: blogsLoading,
+    },
+    {
+      name: 'Contact & Gmail Inquiries',
+      value: totalContacts,
+      icon: MessageSquareText,
+      change: 'Inbox',
+      changeType: 'positive',
+      color: 'bg-yellow-500',
+      loading: contactsLoading,
     },
   ];
 
@@ -165,8 +181,65 @@ const Dashboard = () => {
               </p>
             </div>
           </a>
+          <a
+            href='/secure-admin/contact'
+            className='flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200'>
+            <div className='w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center'>
+              <MessageSquareText className='w-5 h-5 text-yellow-600 dark:text-yellow-400' />
+            </div>
+            <div>
+              <h3 className='font-semibold text-foreground'>Contact &amp; Gmail Inbox</h3>
+              <p className='text-sm text-muted-foreground'>
+                Review user inquiries &amp; Gmail messages
+              </p>
+            </div>
+          </a>
         </div>
       </div>
+
+      {/* Recent Contact & Gmail Inquiries Preview */}
+      {recentContacts.length > 0 && (
+        <div className='bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6'>
+          <div className='flex items-center justify-between mb-4'>
+            <h2 className='text-xl font-bold text-foreground'>
+              Recent Contact &amp; Gmail Inquiries
+            </h2>
+            <a
+              href='/secure-admin/contact'
+              className='text-xs font-bold text-[#fbbe15] hover:underline'>
+              View All ({totalContacts}) →
+            </a>
+          </div>
+          <div className='divide-y divide-gray-200 dark:divide-gray-800'>
+            {recentContacts.slice(0, 4).map((item) => (
+              <a
+                key={item.id}
+                href='/secure-admin/contact'
+                className='py-3 flex items-center justify-between gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 px-2 rounded-lg transition-colors'>
+                <div className='min-w-0'>
+                  <div className='flex items-center gap-2'>
+                    {!item.is_read && (
+                      <span className='w-2 h-2 rounded-full bg-[#fbbe15]' />
+                    )}
+                    <span className='font-semibold text-foreground text-xs'>
+                      {item.name}
+                    </span>
+                    <span className='text-muted-foreground text-[11px]'>
+                      ({item.email})
+                    </span>
+                  </div>
+                  <p className='text-xs text-muted-foreground truncate mt-0.5'>
+                    <strong className='text-foreground capitalize'>{item.subject}:</strong> {item.message}
+                  </p>
+                </div>
+                <span className='text-[11px] text-muted-foreground whitespace-nowrap'>
+                  {new Date(item.created_at).toLocaleDateString()}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Welcome Message */}
       <div className='bg-linear-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-6'>

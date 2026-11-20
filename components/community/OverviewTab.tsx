@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { ArrowUpRight, Heart, MessageCircle, Plus } from "lucide-react";
 import { CommunityPost } from "./types";
+import { useCommunityAnalytics } from "@/lib/api/services/community.hooks";
 
 interface OverviewTabProps {
   defaultLoading?: boolean;
@@ -12,18 +13,11 @@ interface OverviewTabProps {
   onNavigateToMembers?: () => void;
   onNavigateToMonetization?: () => void;
   communityName?: string;
+  communitySlug?: string;
   pricePerMonth?: number;
 }
 
-const GROWTH_POINTS = [
-  { label: "Mon", value: 420 },
-  { label: "Tue", value: 580 },
-  { label: "Wed", value: 740 },
-  { label: "Thu", value: 1120 },
-  { label: "Fri", value: 1480 },
-  { label: "Sat", value: 1890 },
-  { label: "Sun", value: 2148 },
-];
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function OverviewTab({
   defaultLoading = false,
@@ -31,13 +25,79 @@ export function OverviewTab({
   onNavigateToContent,
   onNavigateToMembers,
   onNavigateToMonetization,
+  communityName,
+  communitySlug = "",
+  pricePerMonth = 0,
 }: OverviewTabProps) {
   const [viewState, setViewState] = useState<"filled" | "empty" | "loading">(
     defaultLoading ? "loading" : "filled"
   );
+  const { data: liveAnalytics } = useCommunityAnalytics(communitySlug);
+
+  // Filter posts belonging to this community (and exclude old seed post-1 / post-2)
+  const realPosts = useMemo(() => {
+    return posts.filter((p) => {
+      if (p.id === "post-1" || p.id === "post-2") return false;
+      if (communitySlug && p.communitySlug) {
+        return p.communitySlug === communitySlug;
+      }
+      if (communityName && p.communityName) {
+        return p.communityName.toLowerCase() === communityName.toLowerCase();
+      }
+      return true;
+    });
+  }, [posts, communitySlug, communityName]);
+
+  const activeMembersCount = liveAnalytics?.activeMembers ?? 1;
+  const paidSubsCount = liveAnalytics?.activePaidSubscriptions ?? 0;
+  const grossRevenueAmount =
+    liveAnalytics?.grossRevenue ?? paidSubsCount * (pricePerMonth || 0);
+
+  // Compute dynamic 7-day chart points from backend analytics + real uploaded posts
+  const chartData = useMemo(() => {
+    const apiPoints = liveAnalytics?.growthPoints;
+    const jsDayToLabel = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const todayLabel = jsDayToLabel[new Date().getDay()];
+
+    const points = DAY_LABELS.map((label) => {
+      const apiPt = apiPoints?.find((p) => p.label === label);
+      let count = (apiPt?.posts || 0) + (apiPt?.members || 0);
+      if (label === todayLabel) {
+        count = Math.max(count, realPosts.length);
+      }
+      return { label, value: count };
+    });
+
+    const maxVal = Math.max(1, ...points.map((p) => p.value));
+    const width = 696;
+    const height = 200;
+    const baseline = 210;
+
+    const coords = points.map((pt, idx) => {
+      const x = Math.round((idx / (points.length - 1)) * width);
+      const y = Math.round(baseline - (pt.value / maxVal) * (height - 30));
+      return { ...pt, x, y };
+    });
+
+    // Build smooth SVG path
+    let linePath = `M ${coords[0].x} ${coords[0].y}`;
+    for (let i = 0; i < coords.length - 1; i++) {
+      const curr = coords[i];
+      const next = coords[i + 1];
+      const midX = (curr.x + next.x) / 2;
+      linePath += ` C ${midX} ${curr.y}, ${midX} ${next.y}, ${next.x} ${next.y}`;
+    }
+    const areaPath = `${linePath} L ${width} 239 L 0 239 Z`;
+    const peakCoord = coords.reduce(
+      (best, c) => (c.value >= best.value ? c : best),
+      coords[coords.length - 1]
+    );
+
+    return { points: coords, linePath, areaPath, peakCoord };
+  }, [liveAnalytics, realPosts.length]);
 
   const isLoading = viewState === "loading";
-  const showEmptyPerformance = viewState === "empty" || posts.length === 0;
+  const showEmptyPerformance = viewState === "empty" || realPosts.length === 0;
 
   return (
     <div className="w-full text-white space-y-6 pt-1">
@@ -216,13 +276,13 @@ export function OverviewTab({
 
               <div className="my-1">
                 <span className="text-[38px] font-bold text-white tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-none">
-                  {showEmptyPerformance ? "0" : "2,148"}
+                  {activeMembersCount.toLocaleString("en-NG")}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[11px] font-['Plus_Jakarta_Sans',sans-serif]">
                 <span className="text-[#4ade80] font-medium flex items-center gap-1">
-                  <span>▲</span> + 8.3% this weekend
+                  <span>●</span> Live community count
                 </span>
                 <button
                   type="button"
@@ -261,13 +321,13 @@ export function OverviewTab({
 
               <div className="my-1">
                 <span className="text-[38px] font-bold text-white tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-none">
-                  {showEmptyPerformance ? "0" : "1,500"}
+                  {paidSubsCount.toLocaleString("en-NG")}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[11px] font-['Plus_Jakarta_Sans',sans-serif]">
-                <span className="text-[#4ade80] font-medium flex items-center gap-1">
-                  <span>▲</span> + 12% this weekend
+                <span className="text-white/50 font-medium flex items-center gap-1">
+                  {pricePerMonth ? "Active subscribers" : "Free community"}
                 </span>
                 <button
                   type="button"
@@ -312,13 +372,13 @@ export function OverviewTab({
 
               <div className="my-1">
                 <span className="text-[38px] font-bold text-white tracking-tight font-['Plus_Jakarta_Sans',sans-serif] leading-none">
-                  {showEmptyPerformance ? "0" : "₦3.5m"}
+                  ₦{grossRevenueAmount.toLocaleString("en-NG")}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-[11px] font-['Plus_Jakarta_Sans',sans-serif]">
-                <span className="text-[#4ade80] font-medium flex items-center gap-1">
-                  <span>▲</span> + 12% this weekend
+                <span className="text-white/50 font-medium flex items-center gap-1">
+                  {pricePerMonth ? "92% creator share" : "Paid tier coming soon"}
                 </span>
                 <button
                   type="button"
@@ -414,7 +474,7 @@ export function OverviewTab({
                       </span>
                       <span className="inline-flex items-center gap-1 rounded-full bg-[#4ade80]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#4ade80]">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#4ade80]" />
-                        Live · {posts.length} {posts.length === 1 ? "post" : "posts"}
+                        Live · {realPosts.length} {realPosts.length === 1 ? "post" : "posts"}
                       </span>
                     </div>
                     <button
@@ -427,7 +487,7 @@ export function OverviewTab({
                     </button>
                   </div>
 
-                  {/* Chart Center Area */}
+                  {/* Dynamic Chart Center Area (Reflects real uploaded posts & members) */}
                   <div className="relative w-full flex-1 flex flex-col justify-center my-2">
                     <div className="relative w-full flex items-center justify-center z-10">
                       <svg
@@ -439,16 +499,23 @@ export function OverviewTab({
                         className="w-full max-w-[697px] h-[239px] overflow-visible"
                       >
                         <path
-                          d="M0 181.59C74.6319 179.293 111.948 165.515 186.58 151.736C261.212 137.958 298.528 160.922 373.16 112.697C447.792 64.4728 485.108 96.6226 559.739 23.1374C609.494 -25.0872 641.834 9.35897 696.565 59.88V239H0V181.59Z"
+                          d={chartData.areaPath}
                           fill="url(#paint0_linear_overview_filled)"
                         />
                         <path
-                          d="M0 181.59C74.6319 179.293 111.948 165.515 186.58 151.736C261.212 137.958 298.528 160.922 373.16 112.697C447.792 64.4728 485.108 96.6226 559.739 23.1374C609.494 -25.0872 641.834 9.35897 696.565 59.88"
+                          d={chartData.linePath}
                           stroke="#FBBE15"
                           strokeWidth="2.5"
                           strokeLinecap="round"
                         />
-                        <circle cx="560" cy="23" r="6" fill="#FBBE15" stroke="#000" strokeWidth="2" />
+                        <circle
+                          cx={chartData.peakCoord.x}
+                          cy={chartData.peakCoord.y}
+                          r="6"
+                          fill="#FBBE15"
+                          stroke="#000"
+                          strokeWidth="2"
+                        />
                         <defs>
                           <linearGradient
                             id="paint0_linear_overview_filled"
@@ -467,11 +534,16 @@ export function OverviewTab({
                     </div>
                   </div>
 
-                  {/* Bottom X-Axis Labels */}
+                  {/* Bottom X-Axis Labels with daily post count */}
                   <div className="flex items-center justify-between w-full pt-1 px-4 text-xs text-white/50">
-                    {GROWTH_POINTS.map((pt) => (
-                      <span key={pt.label} className="font-medium">
-                        {pt.label}
+                    {chartData.points.map((pt) => (
+                      <span key={pt.label} className="font-medium flex flex-col items-center">
+                        <span>{pt.label}</span>
+                        {pt.value > 0 && (
+                          <span className="text-[10px] text-[#FBBE15] font-bold">
+                            {pt.value} {pt.value === 1 ? "post" : "posts"}
+                          </span>
+                        )}
                       </span>
                     ))}
                   </div>
@@ -481,7 +553,7 @@ export function OverviewTab({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold text-white">
-                      Recent Posted Content ({posts.length})
+                      Recent Posted Content ({realPosts.length})
                     </h3>
                     <button
                       type="button"
@@ -493,7 +565,7 @@ export function OverviewTab({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {posts.slice(0, 6).map((post) => (
+                    {realPosts.slice(0, 6).map((post) => (
                       <div
                         key={post.id}
                         onClick={onNavigateToContent}

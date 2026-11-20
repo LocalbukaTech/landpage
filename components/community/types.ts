@@ -7,11 +7,12 @@ export type DashboardTab =
 
 export interface CommunityMember {
   id: string;
+  userId?: string;
   name: string;
   username: string;
   avatar: string;
   joinDate: string;
-  status: "Active" | "Cancelled" | "Expiring soon";
+  status: "Active" | "Pending Invite" | "Cancelled" | "Expiring soon";
 }
 
 export interface CommunityPost {
@@ -25,6 +26,9 @@ export interface CommunityPost {
   timestamp: string;
   caption: string;
   mediaUrl: string;
+  location?: string;
+  tags?: string[];
+  hashtags?: string[];
   likes: string;
   comments: string;
   bookmarks: string;

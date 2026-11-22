@@ -27,29 +27,29 @@ export function MonetizationTab() {
         </div>
       )}
 
-      {/* Main Earnings View (Exact Match to Image 1 / Screenshot 1) */}
-      <div className="space-y-4">
-        <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-white">
+      {/* Main Earnings View (Exact Match to Screen 6) */}
+      <div className="space-y-3 sm:space-y-4">
+        <h2 className="text-sm sm:text-base font-medium text-zinc-400">
           Earnings
         </h2>
 
-        <div className="text-3xl sm:text-4xl md:text-[2.6rem] font-bold text-[#f5c94d] tracking-tight">
+        <div className="text-3xl sm:text-4xl md:text-[2.6rem] font-extrabold text-[#f5c94d] tracking-tight">
           ₦ {balance.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
 
-        <div className="pt-2">
+        <div className="pt-2 sm:pt-4">
           <button
             type="button"
             onClick={() => setIsWithdrawOpen(true)}
-            className="rounded-full bg-[#f5c94d] px-8 py-3 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md inline-block text-center cursor-pointer"
+            className="w-full sm:w-auto rounded-full bg-[#f5c94d] px-10 py-3.5 text-sm font-bold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md text-center cursor-pointer"
           >
-            Withdraw to bank
+            Withdraw to Bank
           </button>
         </div>
       </div>
 
-      {/* Secondary Account & Plan Details */}
-      <div className="pt-4 space-y-6">
+      {/* Secondary Account & Plan Details (Desktop / Scrollable) */}
+      <div className="pt-2 sm:pt-4 space-y-5 sm:space-y-6">
         {/* Linked Bank Card */}
         <div className="rounded-[24px] bg-[#1a1a1a] border border-white/5 p-5 sm:p-6 shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs sm:text-sm text-white/70">

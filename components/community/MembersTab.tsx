@@ -64,27 +64,23 @@ const MEMBERS_DATA: CommunityMember[] = [
 
 export function MembersTab() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
 
   const filteredMembers = MEMBERS_DATA.filter((member) => {
-    const matchesSearch = member.name
+    return member.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === "All" || member.status === statusFilter;
-    return matchesSearch && matchesStatus;
   });
 
   return (
     <div className="w-full max-w-[700px] text-white space-y-6 pt-2">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+      {/* Header matching Screen 5 */}
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-white">
           All Members (1,200)
         </h2>
 
-        {/* Search bar */}
-        <div className="relative w-full sm:w-64">
+        {/* Desktop-only Search bar */}
+        <div className="hidden md:block relative w-64">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
           <input
             type="text"
@@ -96,34 +92,16 @@ export function MembersTab() {
         </div>
       </div>
 
-      {/* Filter Chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-        {["All", "Active", "Expiring soon", "Cancelled"].map((status) => (
-          <button
-            key={status}
-            type="button"
-            onClick={() => setStatusFilter(status)}
-            className={`rounded-full px-3.5 py-1.5 font-medium transition-all ${
-              statusFilter === status
-                ? "bg-white/20 text-white"
-                : "bg-[#1f1f1f] text-white/50 hover:text-white"
-            }`}
-          >
-            {status}
-          </button>
-        ))}
-      </div>
-
-      {/* Members Table Card (Matching Screenshot 4) */}
-      <div className="rounded-[24px] bg-[#1a1a1a] border border-white/5 p-4 sm:p-6 shadow-xl">
+      {/* Members Table Card (Matching Screen 5) */}
+      <div className="rounded-2xl md:rounded-[24px] bg-[#1a1a1a] border border-white/5 p-3 sm:p-5 md:p-6 shadow-xl">
         <div className="w-full">
           {/* Table Header Row */}
-          <div className="grid grid-cols-12 pb-4 text-xs sm:text-sm font-semibold text-white/90 border-b border-white/5 px-2">
+          <div className="grid grid-cols-12 pb-3.5 text-xs sm:text-sm font-semibold text-white/80 border-b border-white/5 px-1 sm:px-2">
             <div className="col-span-5 sm:col-span-5">User name</div>
-            <div className="col-span-4 sm:col-span-4 text-center sm:text-left">
+            <div className="col-span-3 sm:col-span-4 text-center sm:text-left">
               Join Date
             </div>
-            <div className="col-span-3 sm:col-span-3 text-right">
+            <div className="col-span-4 sm:col-span-3 text-right">
               Membership status
             </div>
           </div>

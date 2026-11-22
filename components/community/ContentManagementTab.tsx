@@ -100,14 +100,9 @@ export function ContentManagementTab({
   >([]);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
-
-  // Simulate data loading
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1800);
-    return () => clearTimeout(timer);
-  }, []);
+  const [contentType, setContentType] = useState<"free" | "members">("free");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -469,18 +464,18 @@ export function ContentManagementTab({
               <Upload className="h-10 w-10 stroke-[1.7]" />
             </div>
 
-            {/* Helper Text */}
-            <p className="text-sm md:text-base font-medium text-white mb-6">
-              Max 1GB, PNG, JPEG, MP3 and MP4
+            {/* Helper Text matching Screen 3 */}
+            <p className="text-xs sm:text-sm font-medium text-white/70 mb-5">
+              Max 10MB; PNG, JPEG, MP3 and MP4
             </p>
 
             {/* Browse File Button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="rounded-full bg-[#f5c94d] px-8 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md"
+              className="rounded-full bg-[#f5c94d] px-7 py-2 text-xs sm:text-sm font-bold text-black hover:bg-[#eab308] active:scale-95 transition-all shadow-md cursor-pointer"
             >
-              Browse File
+              Browse file
             </button>
           </div>
         ) : (
@@ -598,29 +593,58 @@ export function ContentManagementTab({
           </div>
         </div>
 
-        {/* Action Buttons Row (Draft, Post, Discard) */}
-        <div className="flex items-center gap-3 pt-1">
-          <button
-            type="button"
-            onClick={handleDraft}
-            className="flex-1 sm:flex-none rounded-full bg-[#f5c94d] px-8 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all text-center shadow-md cursor-pointer"
-          >
-            Draft
-          </button>
-          <button
-            type="button"
-            onClick={handlePost}
-            className="flex-1 sm:flex-none rounded-full bg-[#f5c94d] px-10 py-2.5 text-sm font-semibold text-black hover:bg-[#eab308] active:scale-95 transition-all text-center shadow-md cursor-pointer"
-          >
-            Post
-          </button>
-          <button
-            type="button"
-            onClick={handleDiscard}
-            className="flex-1 sm:flex-none rounded-full bg-white px-8 py-2.5 text-sm font-semibold text-black hover:bg-neutral-200 active:scale-95 transition-all text-center shadow-md cursor-pointer"
-          >
-            Discard
-          </button>
+        {/* Content Type Audience Selection & Action Buttons matching Screen 3 & 4 */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          {/* Audience selection pills */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setContentType("free")}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                contentType === "free"
+                  ? "bg-[#f5c94d] text-black font-bold shadow-sm"
+                  : "bg-[#252525] text-white/70 hover:text-white"
+              }`}
+            >
+              Free content
+            </button>
+            <button
+              type="button"
+              onClick={() => setContentType("members")}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                contentType === "members"
+                  ? "bg-[#f5c94d] text-black font-bold shadow-sm"
+                  : "bg-[#252525] text-white/70 hover:text-white"
+              }`}
+            >
+              Members content
+            </button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={handlePost}
+              className="rounded-full bg-[#f5c94d] px-8 py-2 text-xs sm:text-sm font-bold text-black hover:bg-[#eab308] active:scale-95 transition-all text-center shadow-md cursor-pointer"
+            >
+              Post
+            </button>
+            <button
+              type="button"
+              onClick={handleDraft}
+              className="hidden sm:inline-flex rounded-full bg-[#252525] px-5 py-2 text-xs font-semibold text-white/80 hover:text-white active:scale-95 transition-all cursor-pointer"
+            >
+              Draft
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscard}
+              className="hidden sm:inline-flex rounded-full bg-white/10 px-5 py-2 text-xs font-semibold text-white/80 hover:text-white active:scale-95 transition-all cursor-pointer"
+            >
+              Discard
+            </button>
+          </div>
         </div>
       </div>
 

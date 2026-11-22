@@ -8,6 +8,7 @@ import {
   User,
   Store,
   Gift,
+  TrendingUp,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -134,7 +135,7 @@ export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
   {
     id: 'community',
     label: 'Community',
-    href: '#',
+    href: '/community',
     icon: Users,
     authRequirement: 'public',
     showInDesktop: true,
@@ -146,6 +147,16 @@ export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
     label: 'Refer & Earn',
     href: '/rewards',
     icon: Gift,
+    authRequirement: 'auth-prompt',
+    showInDesktop: true,
+    showInMobileBottom: false,
+    showInMobileDrawer: true,
+  },
+  {
+    id: 'insights',
+    label: 'Insights',
+    href: '/insights',
+    icon: TrendingUp,
     authRequirement: 'auth-prompt',
     showInDesktop: true,
     showInMobileBottom: false,
@@ -165,6 +176,8 @@ export const SIDEBAR_NAV_ITEMS: NavItemConfig[] = [
 
 export const FOOTER_LINKS = [
   { label: 'Company', href: '/company' },
+  { label: 'About Us', href: '/about' },
+  { label: 'Contact Us', href: '/contact' },
   { label: 'Blogs', href: '/blog' },
   { label: 'Terms & Policies', href: '/privacy' },
 ];

@@ -28,18 +28,11 @@ export const postsService = {
 
   /** POST /posts — create a post (multipart/form-data) */
   createPost: (formData: FormData) => {
-    return api.post<ApiResponse<Post>>('/posts', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return api.post<ApiResponse<Post>>('/posts', formData);
   },
 
   /** PATCH /posts/:id — update a post (multipart/form-data or application/json) */
   updatePost: (id: string, data: FormData | Record<string, any>) => {
-    if (data instanceof FormData) {
-      return api.patch<ApiResponse<Post>>(`/posts/${id}`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-    }
     return api.patch<ApiResponse<Post>>(`/posts/${id}`, data);
   },
 

@@ -5,12 +5,14 @@ import axios, {
   AxiosResponse,
 } from 'axios';
 import Cookies from 'js-cookie';
+import { isValidJwtToken } from '../jwt';
 
 // Base URL for all API requests
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://servernew-production.up.railway.app';
 
 // Token cookie key
 const TOKEN_KEY = 'localbuka_admin_token';
+const ADMIN_USER_KEY = 'localbuka_admin_user';
 
 // Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
@@ -28,17 +30,30 @@ apiClient.interceptors.request.use(
       return config;
     }
     
-    // Determine which token to use based on current page path
-    // Admin sections (secure-admin/*) use admin token
-    // User sections (blog/*, etc.) use user token
-    const isAdminSection = window.location.pathname.startsWith('/secure-admin');
+    // Determine which token to use based on current page path (case-insensitive)
+    const currentPath = window.location.pathname.toLowerCase();
+    const isAdminSection = currentPath.startsWith('/secure-admin');
     
-    const token = isAdminSection 
-      ? Cookies.get(TOKEN_KEY)  // Admin token for admin sections
-      : Cookies.get('localbuka_user_token');  // User token for user sections
+    if (isAdminSection) {
+      const token = Cookies.get(TOKEN_KEY);
+      if (token && isValidJwtToken(token)) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } else {
+      const token = Cookies.get('localbuka_user_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Handle FormData uploads: let browser/axios set multipart/form-data with boundary
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      if (config.headers) {
+        delete config.headers['Content-Type'];
+        if (typeof (config.headers as any).delete === 'function') {
+          (config.headers as any).delete('Content-Type');
+        }
+      }
     }
 
     return config;
@@ -61,16 +76,21 @@ apiClient.interceptors.response.use(
 
       switch (status) {
         case 401:
-          // Unauthorized - clear token and redirect to login
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('authToken');
-            // You can add redirect logic here if needed
-            // window.location.href = '/login';
-          }
-          break;
         case 403:
-          // Forbidden
-          console.error('Access forbidden');
+          // Unauthorized / Forbidden - evict credentials and redirect ONLY in protected admin section
+          if (typeof window !== 'undefined') {
+            const currentPath = window.location.pathname.toLowerCase();
+            const isAdminSection = currentPath.startsWith('/secure-admin');
+            const isLoginPage = currentPath === '/secure-admin/login';
+
+            if (isAdminSection) {
+              Cookies.remove(TOKEN_KEY);
+              Cookies.remove(ADMIN_USER_KEY);
+              if (!isLoginPage) {
+                window.location.href = '/secure-admin/login';
+              }
+            }
+          }
           break;
         case 404:
           // Not found

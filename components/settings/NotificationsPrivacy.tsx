@@ -1,275 +1,410 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from 'react';
+import { useTranslation } from '@/context/LanguageContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface NotificationsPrivacyProps {
   activeSubTab?: string;
   onSubTabChange?: (tab: string) => void;
 }
 
-type ToggleSetting = {
-  key: string;
-  label: string;
-  description: string;
-  defaultOn: boolean;
-};
-
-const pushNotificationSettings: ToggleSetting[] = [
+// 1. Push Notifications Config
+const pushNotificationSettings = [
   {
-    key: "order_updates",
-    label: "Order Updates",
-    description: "Get notified when your order status changes",
+    key: 'orderUpdates',
+    label: 'Order Updates',
+    description: 'Get notified when your order status changes',
     defaultOn: true,
   },
   {
-    key: "new_nearby_buka",
-    label: "New Nearby Buka",
-    description: "Alerts when new local restaurants are available.",
+    key: 'newNearbyBuka',
+    label: 'New Nearby Buka',
+    description: 'Alerts when new local restaurants are available.',
     defaultOn: true,
   },
   {
-    key: "special_offers",
-    label: "Special Offers / Discounts",
-    description: "Receive promotions and deals.",
+    key: 'specialOffers',
+    label: 'Special Offers & Promotions',
+    description: 'Receive promotions, discounts, and deal announcements.',
     defaultOn: false,
   },
   {
-    key: "personalized_meal",
-    label: "Personalized Meal",
-    description: "Suggestions based on your taste and preferences.",
+    key: 'marketingEmails',
+    label: 'Marketing & Newsletter Emails',
+    description: 'Receive non-essential updates and newsletters. (Essential account notices will always be sent).',
+    defaultOn: false,
+  },
+  {
+    key: 'personalizedMeal',
+    label: 'Personalized Meal Suggestions',
+    description: 'Suggestions based on your taste and preferences.',
     defaultOn: false,
   },
 ];
 
-const dataSharingSettings: ToggleSetting[] = [
+// 2. Privacy Settings Config (Matching UI Mockup)
+const privacySettings = [
   {
-    key: "share_location",
-    label: "Share Location",
-    description: "Allow the app to use location for nearby bukas",
+    key: 'shareLocation',
+    label: 'Share Location',
+    description: 'Allow the app to use your location for nearby bukas',
     defaultOn: true,
   },
   {
-    key: "share_activity",
-    label: "Share Activity",
-    description: "Let others see your activity and reviews.",
+    key: 'shareActivity',
+    label: 'Share Activity',
+    description: 'Let others see your activity and reviews.',
     defaultOn: false,
   },
   {
-    key: "search_history",
-    label: "Search History",
-    description: "See your search story for better recommendations.",
+    key: 'searchHistory',
+    label: 'Search History',
+    description: 'Save your search history for better recommendations.',
     defaultOn: true,
   },
 ];
 
-const subTabs = [
-  { id: "push", label: "Push Notifications" },
-  { id: "privacy", label: "Privacy Settings" },
-  { id: "data", label: "Data Sharing / Permissions" },
+// 3. Data Sharing & Permissions Config
+const dataSharingSettings = [
+  {
+    key: 'bukaRecommendations',
+    label: 'Allow Buka Recommendations',
+    description: 'Let us suggest dishes and places based on your preferences.',
+    defaultOn: true,
+  },
+  {
+    key: 'aiTrainingOptOut',
+    label: 'AI Recommendation & Model Improvement',
+    description: 'Allow anonymized search and recipe queries to help improve AI recommendations.',
+    defaultOn: true,
+  },
+  {
+    key: 'shareUsage',
+    label: 'Share Usage with Localbuka',
+    description: 'Help us improve your experience by sharing app usage data.',
+    defaultOn: false,
+  },
+  {
+    key: 'thirdPartySharing',
+    label: 'Third-Party Data Sharing',
+    description: 'Control if your data is shared with partners outside LocalBuka.',
+    defaultOn: false,
+  },
 ];
-const validTabIds = subTabs.map((t) => t.id);
 
-const PUSH_STORAGE_KEY = "lb_push_settings";
-const DATA_STORAGE_KEY = "lb_data_permissions";
-
-const getDefaults = (settings: ToggleSetting[]) =>
-  Object.fromEntries(settings.map((s) => [s.key, s.defaultOn])) as Record<
-    string,
-    boolean
-  >;
-
-// Helper to safely load settings from localStorage during state init
-const loadStoredSettings = (
-  storageKey: string,
-  defaults: Record<string, boolean>,
-): Record<string, boolean> => {
-  // Guard for SSR — window is not available on the server
-  if (typeof window === "undefined") return defaults;
-  try {
-    const saved = localStorage.getItem(storageKey);
-    if (!saved) return defaults;
-    return { ...defaults, ...JSON.parse(saved) };
-  } catch {
-    return defaults;
-  }
-};
+const validTabIds = ['push', 'privacy', 'data'];
 
 export function NotificationsPrivacy({
-  activeSubTab = "push",
+  activeSubTab,
   onSubTabChange,
 }: NotificationsPrivacyProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
-
-  const [internalTab, setInternalTab] = useState(activeSubTab);
+  const [internalTab, setInternalTab] = useState(
+    activeSubTab && validTabIds.includes(activeSubTab) ? activeSubTab : 'push',
+  );
   const currentTab =
-    onSubTabChange && validTabIds.includes(activeSubTab)
+    onSubTabChange && activeSubTab && validTabIds.includes(activeSubTab)
       ? activeSubTab
       : internalTab;
 
-  // Lazy initializers read from localStorage during the first render on the client.
-  // On the server, they fall back to defaults (no hydration mismatch).
-  const [pushToggles, setPushToggles] = useState(() =>
-    loadStoredSettings(PUSH_STORAGE_KEY, getDefaults(pushNotificationSettings)),
+  // Push Notifications State
+  const [pushToggles, setPushToggles] = useState<Record<string, boolean>>(() => {
+    const defaults = Object.fromEntries(
+      pushNotificationSettings.map((s) => [s.key, s.defaultOn]),
+    );
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('lb_push_settings');
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // fallback to defaults
+      }
+    }
+    return defaults;
+  });
+
+  // Privacy Settings State
+  const [privacyToggles, setPrivacyToggles] = useState<Record<string, boolean>>(
+    () => {
+      const defaults = Object.fromEntries(
+        privacySettings.map((s) => [s.key, s.defaultOn]),
+      );
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('lb_privacy_settings');
+          if (saved) return JSON.parse(saved);
+        } catch {
+          // fallback to defaults
+        }
+      }
+      return defaults;
+    },
   );
-  const [dataToggles, setDataToggles] = useState(() =>
-    loadStoredSettings(DATA_STORAGE_KEY, getDefaults(dataSharingSettings)),
-  );
+
+  // Data Sharing / Permissions State
+  const [dataToggles, setDataToggles] = useState<Record<string, boolean>>(() => {
+    const defaults = Object.fromEntries(
+      dataSharingSettings.map((s) => [s.key, s.defaultOn]),
+    );
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('lb_data_permissions');
+        if (saved) return JSON.parse(saved);
+      } catch {
+        // fallback to defaults
+      }
+    }
+    return defaults;
+  });
+
+  const subTabs = [
+    { id: 'push', label: t('notifications.push', 'Push Notifications') },
+    { id: 'privacy', label: t('notifications.privacy', 'Privacy Settings') },
+    { id: 'data', label: t('notifications.data', 'Data Sharing / Permissions') },
+  ];
 
   const handleTabChange = (tabId: string) => {
     setInternalTab(tabId);
     onSubTabChange?.(tabId);
   };
 
-  const saveSettings = (
-    storageKey: string,
-    values: Record<string, boolean>,
-    description: string,
-  ) => {
+  // Toggle handlers
+  const handlePushToggle = (key: string) => {
+    setPushToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handlePrivacyToggle = (key: string) => {
+    setPrivacyToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleDataToggle = (key: string) => {
+    setDataToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Reset Handlers
+  const handleResetPrivacy = () => {
+    const defaults = Object.fromEntries(
+      privacySettings.map((s) => [s.key, s.defaultOn]),
+    );
+    setPrivacyToggles(defaults);
     try {
-      localStorage.setItem(storageKey, JSON.stringify(values));
+      localStorage.setItem('lb_privacy_settings', JSON.stringify(defaults));
     } catch {
       // Ignore storage error
     }
-    toast({ title: "Settings Saved", description });
+    toast({
+      title: 'Preferences Reset',
+      description: 'Privacy settings have been restored to default values.',
+      variant: 'default',
+    });
   };
 
+  // Save Handlers
+  const handleSavePush = () => {
+    try {
+      localStorage.setItem('lb_push_settings', JSON.stringify(pushToggles));
+    } catch {
+      // Ignore storage error
+    }
+    toast({
+      title: 'Settings Saved',
+      description: 'Push notification preferences updated successfully.',
+      variant: 'default',
+    });
+  };
+
+  const handleSavePrivacy = () => {
+    try {
+      localStorage.setItem(
+        'lb_privacy_settings',
+        JSON.stringify(privacyToggles),
+      );
+    } catch {
+      // Ignore storage error
+    }
+    toast({
+      title: 'Settings Saved',
+      description: 'Privacy settings updated successfully.',
+      variant: 'default',
+    });
+  };
+
+  const handleSaveData = () => {
+    try {
+      localStorage.setItem('lb_data_permissions', JSON.stringify(dataToggles));
+    } catch {
+      // Ignore storage error
+    }
+    toast({
+      title: 'Settings Saved',
+      description: 'Data sharing and permissions updated successfully.',
+      variant: 'default',
+    });
+  };
+
+  // Reusable Toggle Switch Component
   const renderToggleSwitch = (
     checked: boolean,
     onToggle: () => void,
     ariaLabel: string,
   ) => (
     <button
-      type="button"
-      role="switch"
+      type='button'
+      role='switch'
       aria-checked={checked}
       aria-label={ariaLabel}
       onClick={onToggle}
-      className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer border-none shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#FBBE15] ${
-        checked ? "bg-[#001F3F]" : "bg-zinc-600"
-      }`}
-    >
+      className={`relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer border-none shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-[#FBBE15] ${checked ? 'bg-[#001F3F]' : 'bg-zinc-600'
+        }`}>
       <span
-        className={`inline-block w-5 h-5 rounded-full bg-white transition-transform duration-200 shadow-sm ${
-          checked ? "translate-x-5.5" : "translate-x-0.5"
-        }`}
+        className={`inline-block w-5 h-5 rounded-full bg-white transition-transform duration-200 shadow-sm ${checked ? 'translate-x-5.5' : 'translate-x-0.5'
+          }`}
       />
     </button>
   );
 
-  const renderSettingRow = (
-    setting: ToggleSetting,
-    values: Record<string, boolean>,
-    setValues: React.Dispatch<React.SetStateAction<Record<string, boolean>>>,
-  ) => (
-    <div key={setting.key} className="flex items-center justify-between">
-      <div className="flex flex-col gap-0.5">
-        <span className="text-sm font-semibold text-white">
-          {setting.label}
-        </span>
-        <span className="text-xs text-zinc-400">{setting.description}</span>
-      </div>
-      {renderToggleSwitch(
-        !!values[setting.key],
-        () =>
-          setValues((prev) => ({ ...prev, [setting.key]: !prev[setting.key] })),
-        setting.label,
-      )}
-    </div>
-  );
-
   return (
-    <div className="flex flex-col gap-0">
-      {/* Sub-tabs */}
-      <div className="flex gap-4 border-b border-white/10 overflow-x-auto scrollbar-hide">
-        {subTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => handleTabChange(tab.id)}
-            className={`pb-3 text-sm font-medium transition-colors cursor-pointer bg-transparent border-none whitespace-nowrap shrink-0 ${
-              currentTab === tab.id
-                ? "text-white"
-                : "text-zinc-500 hover:text-zinc-300"
-            }`}
-            style={
-              currentTab === tab.id ? { borderBottom: "2px solid #FBBE15" } : {}
-            }
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div className='flex flex-col gap-0'>
+      {/* Sub-tabs Header */}
+      <div className='flex gap-4 md:gap-6 border-b border-white/10 overflow-x-auto scrollbar-hide'>
+        {subTabs.map((tab) => {
+          const isActive = currentTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`pb-3 text-xs md:text-sm font-medium transition-colors cursor-pointer bg-transparent border-none whitespace-nowrap shrink-0 ${isActive
+                ? 'text-white border-b-2 border-[#FBBE15]'
+                : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              style={isActive ? { borderBottom: '2px solid #FBBE15' } : {}}>
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Content */}
-      <div className="mt-8">
-        {currentTab === "push" && (
-          <div className="flex flex-col gap-6">
-            {pushNotificationSettings.map((s) =>
-              renderSettingRow(s, pushToggles, setPushToggles),
-            )}
-            <div className="flex justify-end mt-4">
+      {/* Content Area */}
+      <div className='mt-8'>
+        {/* TAB 1: PUSH NOTIFICATIONS */}
+        {currentTab === 'push' && (
+          <div className='flex flex-col gap-6'>
+            {pushNotificationSettings.map((setting) => (
+              <div
+                key={setting.key}
+                className='flex items-center justify-between gap-4'>
+                <div className='flex flex-col gap-0.5 min-w-0'>
+                  <span className='text-sm font-semibold text-white'>
+                    {setting.label}
+                  </span>
+                  <span className='text-xs text-zinc-400 leading-relaxed'>
+                    {setting.description}
+                  </span>
+                </div>
+                {renderToggleSwitch(
+                  !!pushToggles[setting.key],
+                  () => handlePushToggle(setting.key),
+                  setting.label,
+                )}
+              </div>
+            ))}
+
+            {/* Save Button */}
+            <div className='flex justify-end mt-4'>
               <button
-                onClick={() =>
-                  saveSettings(
-                    PUSH_STORAGE_KEY,
-                    pushToggles,
-                    "Notification preferences updated successfully.",
-                  )
-                }
-                className="px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-bold rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none"
-              >
+                type='button'
+                onClick={handleSavePush}
+                className='w-full sm:w-auto px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-bold rounded-lg hover:bg-[#e5ab13] active:scale-[0.99] transition-all cursor-pointer border-none shadow-sm text-sm text-center'>
                 Save
               </button>
             </div>
           </div>
         )}
 
-        {currentTab === "privacy" && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white mb-2">Coming Soon</p>
-              <p className="text-sm text-zinc-400">
-                Privacy settings will be available in a future update.
-              </p>
-            </div>
-          </div>
-        )}
+        {/* TAB 2: PRIVACY SETTINGS (Matches UI Mockup) */}
+        {currentTab === 'privacy' && (
+          <div className='flex flex-col gap-6'>
+            {privacySettings.map((setting) => (
+              <div
+                key={setting.key}
+                className='flex items-center justify-between gap-4'>
+                <div className='flex flex-col gap-0.5 min-w-0'>
+                  <span className='text-sm font-semibold text-white'>
+                    {setting.label}
+                  </span>
+                  <span className='text-xs text-zinc-400 leading-relaxed'>
+                    {setting.description}
+                  </span>
+                </div>
+                {renderToggleSwitch(
+                  !!privacyToggles[setting.key],
+                  () => handlePrivacyToggle(setting.key),
+                  setting.label,
+                )}
+              </div>
+            ))}
 
-        {currentTab === "data" && (
-          <div className="flex flex-col gap-6">
-            {dataSharingSettings.map((s) =>
-              renderSettingRow(s, dataToggles, setDataToggles),
-            )}
-
-            {/* Reset row */}
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-semibold text-white">
+            {/* Clear Preferences (Reset) */}
+            <div className='flex items-center justify-between gap-4 pt-1'>
+              <div className='flex flex-col gap-0.5 min-w-0'>
+                <span className='text-sm font-semibold text-white'>
                   Clear Preferences
                 </span>
-                <span className="text-xs text-zinc-400">
+                <span className='text-xs text-zinc-400'>
                   Reset all privacy settings
                 </span>
               </div>
               <button
-                onClick={() => setDataToggles(getDefaults(dataSharingSettings))}
-                className="px-4 py-2 bg-[#FBBE15] text-[#1a1a1a] font-semibold rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border border-[#FBBE15] text-sm"
-              >
+                type='button'
+                onClick={handleResetPrivacy}
+                className='px-3.5 py-1 bg-[#FBBE15] text-[#1a1a1a] text-xs font-semibold rounded-md hover:bg-[#e5ab13] active:scale-95 transition-all cursor-pointer border-none shrink-0 shadow-sm'>
                 Reset
               </button>
             </div>
 
-            <div className="flex justify-end mt-4">
+            {/* Save Button */}
+            <div className='flex justify-end mt-6'>
               <button
-                onClick={() =>
-                  saveSettings(
-                    DATA_STORAGE_KEY,
-                    dataToggles,
-                    "Data sharing and permissions updated successfully.",
-                  )
-                }
-                className="px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-bold rounded-lg hover:bg-[#e5ab13] transition-colors cursor-pointer border-none"
-              >
+                type='button'
+                onClick={handleSavePrivacy}
+                className='w-full sm:w-auto px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-bold rounded-lg hover:bg-[#e5ab13] active:scale-[0.99] transition-all cursor-pointer border-none shadow-sm text-sm text-center'>
+                Save
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: DATA SHARING / PERMISSIONS */}
+        {currentTab === 'data' && (
+          <div className='flex flex-col gap-6'>
+            {dataSharingSettings.map((setting) => (
+              <div
+                key={setting.key}
+                className='flex items-center justify-between gap-4'>
+                <div className='flex flex-col gap-0.5 min-w-0'>
+                  <span className='text-sm font-semibold text-white'>
+                    {setting.label}
+                  </span>
+                  <span className='text-xs text-zinc-400 leading-relaxed'>
+                    {setting.description}
+                  </span>
+                </div>
+                {renderToggleSwitch(
+                  !!dataToggles[setting.key],
+                  () => handleDataToggle(setting.key),
+                  setting.label,
+                )}
+              </div>
+            ))}
+
+            {/* Save Button */}
+            <div className='flex justify-end mt-4'>
+              <button
+                type='button'
+                onClick={handleSaveData}
+                className='w-full sm:w-auto px-16 py-3 bg-[#FBBE15] text-[#1a1a1a] font-bold rounded-lg hover:bg-[#e5ab13] active:scale-[0.99] transition-all cursor-pointer border-none shadow-sm text-sm text-center'>
                 Save
               </button>
             </div>

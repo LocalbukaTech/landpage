@@ -18,10 +18,12 @@ export function SettingsSidebar({
   const sidebarItems = [
     {id: 'account', label: t('settings.account', 'Account Information'), icon: User},
     {id: 'notifications', label: t('settings.notifications', 'Notifications & Privacy'), icon: Lock},
-    {id: 'support', label: t('settings.rewardsSupport', 'Rewards & Support'), icon: RotateCcw},
+    {id: 'support', label: t('settings.support', 'Support'), icon: RotateCcw},
   ];
 
   const footerLinks = [
+    {label: t('nav.aboutUs', 'About Us'), href: '/about'},
+    {label: t('nav.contactUs', 'Contact Us'), href: '/contact'},
     {label: t('nav.company', 'Company'), href: '/company'},
     {label: t('nav.program', 'Program'), href: '/rewards'},
     {label: t('nav.termsAndPolicies', 'Terms & Policies'), href: '/privacy'},

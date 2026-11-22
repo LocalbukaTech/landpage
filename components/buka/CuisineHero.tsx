@@ -2,7 +2,7 @@
 
 import {useState, useEffect, useCallback} from 'react';
 import Image from 'next/image';
-import {ArrowLeft} from 'lucide-react';
+import {BackCircleButton} from '@/components/ui/BackCircleButton';
 import {useRouter} from 'next/navigation';
 
 interface CuisineHeroProps {
@@ -52,12 +52,9 @@ export function CuisineHero({name, description, images}: CuisineHeroProps) {
       <div className='absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent' />
 
       {/* Back Button */}
-      <button
-        onClick={() => router.back()}
-        className='absolute top-4 left-4 md:top-8 md:left-8 z-10 flex items-center justify-center w-10 h-10 rounded-full border border-white/40 text-white hover:bg-white/10 transition-colors bg-transparent cursor-pointer'
-        aria-label='Go back'>
-        <ArrowLeft size={20} />
-      </button>
+      <div className='absolute top-4 left-4 md:top-8 md:left-8 z-10'>
+        <BackCircleButton onClick={() => router.back()} size={32} />
+      </div>
 
       {/* Content */}
       <div className='absolute bottom-8 left-4 right-4 md:bottom-12 md:left-8 md:right-auto z-10 flex flex-col gap-3 md:max-w-md'>

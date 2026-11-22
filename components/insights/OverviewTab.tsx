@@ -1,0 +1,392 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import {
+  BarChart3,
+  Plus,
+  Eye,
+  Radio,
+  Zap,
+  UserPlus,
+  ArrowUpRight,
+  ArrowDownRight,
+  AlertCircle,
+} from 'lucide-react';
+import type {
+  InsightsOverviewData,
+  InsightsChartPoint,
+} from '@/lib/api/services/insights.service';
+
+interface OverviewTabProps {
+  isLoading?: boolean;
+  isError?: boolean;
+  data: InsightsOverviewData | null;
+}
+
+// ── Skeleton ──────────────────────────────────────────────────────────────────
+function OverviewSkeleton() {
+  return (
+    <div className='flex flex-col gap-6 animate-pulse'>
+      <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className='bg-[#161616] border border-white/10 rounded-2xl p-5 h-28 flex flex-col justify-between'
+          >
+            <div className='w-24 h-4 bg-white/5 rounded-md' />
+            <div className='w-16 h-8 bg-white/10 rounded-md' />
+          </div>
+        ))}
+      </div>
+      <div className='bg-[#161616] border border-white/10 rounded-2xl p-6 h-72 flex flex-col gap-4'>
+        <div className='w-48 h-4 bg-white/5 rounded-md' />
+        <div className='flex-1 bg-white/5 rounded-xl' />
+      </div>
+    </div>
+  );
+}
+
+// ── Empty / zero-state ────────────────────────────────────────────────────────
+function OverviewEmpty() {
+  return (
+    <div className='bg-[#141416] border border-white/8 rounded-2xl sm:rounded-3xl p-8 sm:p-16 flex flex-col items-center justify-center text-center shadow-2xl min-h-[380px] sm:min-h-[440px]'>
+      <div className='w-14 h-14 rounded-2xl bg-white/5 text-zinc-400 flex items-center justify-center mb-4 border border-white/5'>
+        <BarChart3 size={28} strokeWidth={1.8} className='text-zinc-300' />
+      </div>
+      <h3 className='text-lg sm:text-xl font-bold text-white mb-2'>
+        Not enough activity yet
+      </h3>
+      <p className='text-xs sm:text-sm text-zinc-400 max-w-sm mb-6 leading-relaxed'>
+        Post something and check back once people start viewing it.
+      </p>
+      <Link
+        href='/studio'
+        className='inline-flex items-center gap-2 px-6 py-3 bg-[#FBBE15] hover:bg-[#e5ac10] text-[#141414] text-sm font-extrabold rounded-full transition-all duration-200 shadow-lg shadow-[#FBBE15]/10 hover:scale-[1.02] active:scale-[0.98]'
+      >
+        <Plus size={16} strokeWidth={3} />
+        <span>Create Post</span>
+      </Link>
+    </div>
+  );
+}
+
+// ── Interactive chart ─────────────────────────────────────────────────────────
+function PerformanceChart({
+  data,
+  yAxisMax,
+  peakLabel,
+  peakValue,
+}: {
+  data: InsightsChartPoint[];
+  yAxisMax: number;
+  peakLabel: string;
+  peakValue: string;
+}) {
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+
+  if (!data.length) return null;
+
+  const defaultIdx = () => {
+    const hi = data.findIndex((p) => p.isHighlight);
+    return hi >= 0 ? hi : data.length - 1;
+  };
+
+  // Clamp to valid range — guards against stale state during the transition render
+  const safeIdx = Math.min(
+    activeIdx !== null && activeIdx >= 0 && activeIdx < data.length ? activeIdx : defaultIdx(),
+    data.length - 1
+  );
+
+  // Subsample x-axis ticks so we never render more than 8 labels (avoids crowding)
+  const MAX_X_TICKS = 8;
+  const tickSet = new Set<number>();
+  if (data.length <= MAX_X_TICKS) {
+    data.forEach((_, i) => tickSet.add(i));
+  } else {
+    tickSet.add(0);
+    tickSet.add(data.length - 1);
+    const gap = (data.length - 1) / (MAX_X_TICKS - 1);
+    for (let k = 1; k < MAX_X_TICKS - 1; k++) tickSet.add(Math.round(k * gap));
+  }
+  const isDense = data.length > 14;
+
+  const W = 700;
+  const H = 200;
+  const PADDING = { l: 0, r: 0, t: 20, b: 0 };
+  const chartH = H - PADDING.t - PADDING.b;
+  const step = data.length > 1 ? (W - PADDING.l - PADDING.r) / (data.length - 1) : W;
+  const max = yAxisMax || Math.max(...data.map((d) => d.value), 1);
+
+  const toX = (i: number) => PADDING.l + i * step;
+  const toY = (v: number) => PADDING.t + chartH - (v / max) * chartH;
+
+  // Smooth cubic bezier path
+  const pathD = data
+    .map((pt, i) => {
+      const x = toX(i);
+      const y = toY(pt.value);
+      if (i === 0) return `M ${x} ${y}`;
+      const px = toX(i - 1);
+      const py = toY(data[i - 1].value);
+      const cpx = (px + x) / 2;
+      return `C ${cpx} ${py}, ${cpx} ${y}, ${x} ${y}`;
+    })
+    .join(' ');
+
+  const areaD =
+    pathD +
+    ` L ${toX(data.length - 1)} ${H} L ${toX(0)} ${H} Z`;
+
+  return (
+    <div className='flex flex-col gap-6'>
+      <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-2'>
+        <div>
+          <h3 className='text-base sm:text-lg font-bold text-white m-0'>
+            Performance over time
+          </h3>
+          <p className='text-xs text-zinc-400 mt-1 m-0'>
+            Peak: <span className='text-[#FBBE15] font-bold'>{peakValue}</span>{' '}
+            on {peakLabel}
+          </p>
+        </div>
+        <div className='flex items-center gap-2'>
+          <span className='w-2 h-2 rounded-full bg-[#FBBE15] animate-pulse' />
+          <span className='text-xs font-semibold text-zinc-300'>Live</span>
+        </div>
+      </div>
+
+      <div className='relative w-full'>
+        <svg
+          className='w-full overflow-visible'
+          viewBox={`0 0 ${W} ${H}`}
+          preserveAspectRatio='none'
+          style={{ height: 220 }}
+        >
+          <defs>
+            <linearGradient id='ovGrad' x1='0' y1='0' x2='0' y2='1'>
+              <stop offset='0%' stopColor='#FBBE15' stopOpacity='0.30' />
+              <stop offset='100%' stopColor='#FBBE15' stopOpacity='0.0' />
+            </linearGradient>
+          </defs>
+
+          {/* Grid lines */}
+          {[0.25, 0.5, 0.75, 1].map((f) => (
+            <line
+              key={f}
+              x1={0}
+              y1={PADDING.t + chartH * (1 - f)}
+              x2={W}
+              y2={PADDING.t + chartH * (1 - f)}
+              stroke='rgba(255,255,255,0.05)'
+              strokeDasharray='4 4'
+            />
+          ))}
+
+          {/* Active point vertical line */}
+          <line
+            x1={toX(safeIdx)}
+            y1={PADDING.t}
+            x2={toX(safeIdx)}
+            y2={H}
+            stroke='rgba(251,190,21,0.35)'
+            strokeDasharray='3 3'
+          />
+
+          {/* Area fill */}
+          <path d={areaD} fill='url(#ovGrad)' />
+
+          {/* Curve */}
+          <path
+            d={pathD}
+            fill='none'
+            stroke='#FBBE15'
+            strokeWidth='3'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+          />
+
+          {/* Data point circles */}
+          {data.map((pt, i) => {
+            const cx = toX(i);
+            const cy = toY(pt.value);
+            const isActive = i === safeIdx;
+            const r = isActive ? 6 : isDense ? 2.5 : 4;
+            return (
+              <circle
+                key={pt.date}
+                cx={cx}
+                cy={cy}
+                r={r}
+                fill='#FBBE15'
+                stroke={isActive ? '#ffffff' : '#161616'}
+                strokeWidth={isActive ? 2.5 : isDense ? 1 : 1.5}
+                className='cursor-pointer'
+                onClick={() => setActiveIdx(i)}
+              />
+            );
+          })}
+        </svg>
+
+        {/* Tooltip bubble */}
+        {(() => {
+          const pt = data[safeIdx];
+          const rawPct = toX(safeIdx) / W;
+          // Clamp so the tooltip never clips off the left/right edge
+          const pct = Math.max(0.03, Math.min(0.97, rawPct));
+          return (
+            <div
+              className='absolute pointer-events-none'
+              style={{
+                left: `${pct * 100}%`,
+                top: `${(toY(pt.value) / 220) * 100}%`,
+                transform: 'translate(-50%, -120%)',
+              }}
+            >
+              <div className='bg-[#202026] border border-white/15 rounded-lg px-2.5 py-1.5 text-center shadow-xl whitespace-nowrap'>
+                <span className='block text-xs font-black text-white font-mono leading-none'>
+                  {pt.tooltipValue}
+                </span>
+                <span className='block text-[9px] text-[#FBBE15] font-bold uppercase mt-0.5'>
+                  {pt.label}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* X-axis date labels — subsampled to avoid crowding on 30d/90d/all */}
+      <div className='flex justify-between text-[10px] font-semibold border-t border-white/5 pt-2'>
+        {data.map((pt, i) => {
+          if (!tickSet.has(i)) return null;
+          return (
+            <button
+              key={pt.date}
+              type='button'
+              onClick={() => setActiveIdx(i)}
+              className={`bg-transparent border-none p-0 cursor-pointer text-[10px] transition-colors ${
+                i === safeIdx
+                  ? 'text-[#FBBE15] font-bold'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {pt.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+export function OverviewTab({
+  isLoading = false,
+  isError = false,
+  data,
+}: OverviewTabProps) {
+  if (isLoading) return <OverviewSkeleton />;
+
+  if (isError) {
+    return (
+      <div className='bg-[#141416] border border-white/8 rounded-2xl p-10 flex flex-col items-center justify-center text-center min-h-[260px] gap-3'>
+        <AlertCircle size={28} className='text-zinc-500' />
+        <p className='text-sm text-zinc-400'>Could not load overview data. Try again later.</p>
+      </div>
+    );
+  }
+
+  const allZero =
+    !data ||
+    (data.metrics.views.value === 0 &&
+      data.metrics.reach.value === 0 &&
+      data.metrics.engagement.value === 0 &&
+      data.metrics.newFollowers.value === 0);
+
+  if (allZero) return <OverviewEmpty />;
+
+  const m = data!.metrics;
+  const pot = data!.performanceOverTime;
+
+  const metricCards = [
+    {
+      label: 'View',
+      value: m.views.formattedValue,
+      change: m.views.formattedChange,
+      isPositive: m.views.isPositive,
+      iconColor: '#FBBE15',
+      icon: <Eye size={14} className='text-[#FBBE15]' />,
+    },
+    {
+      label: 'Reach',
+      value: m.reach.formattedValue,
+      change: m.reach.formattedChange,
+      isPositive: m.reach.isPositive,
+      iconColor: '#38BDF8',
+      icon: <Radio size={14} className='text-sky-500' />,
+    },
+    {
+      label: 'Engagement',
+      value: m.engagement.formattedValue,
+      change: m.engagement.formattedChange,
+      isPositive: m.engagement.isPositive,
+      iconColor: '#EF4444',
+      icon: <Zap size={14} className='text-red-500' />,
+    },
+    {
+      label: 'New Followers',
+      value: m.newFollowers.formattedValue,
+      change: m.newFollowers.formattedChange,
+      isPositive: m.newFollowers.isPositive,
+      iconColor: '#10B981',
+      icon: <UserPlus size={14} className='text-emerald-500' />,
+    },
+  ];
+
+  return (
+    <div className='flex flex-col gap-6 animate-in fade-in duration-200'>
+      {/* Metric cards (Figma White Cards Design) */}
+      <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
+        {metricCards.map((card) => (
+          <div
+            key={card.label}
+            className='bg-[#ECECEC] rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-[130px] sm:h-[140px] shadow-md transition-all hover:scale-[1.01]'
+          >
+            <div className='flex items-center gap-1.5'>
+              {card.icon}
+              <span className='text-[11px] sm:text-xs font-semibold text-zinc-600 tracking-tight'>
+                {card.label}
+              </span>
+            </div>
+
+            <div className='my-auto'>
+              <span className='text-2xl sm:text-3xl font-black text-[#141414] tracking-tight block'>
+                {card.value}
+              </span>
+            </div>
+
+            <div className='flex items-center justify-between'>
+              <span className='text-xs sm:text-sm font-bold text-emerald-600 font-mono'>
+                {card.change}
+              </span>
+              <div className='w-7 h-7 rounded-full bg-[#1E1E1E] flex items-center justify-center text-emerald-400'>
+                <ArrowUpRight size={14} strokeWidth={2.5} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Performance chart */}
+      <div className='bg-[#161616] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl'>
+        <PerformanceChart
+          data={pot.data}
+          yAxisMax={pot.yAxisMax}
+          peakLabel={pot.peakPoint.label}
+          peakValue={pot.peakPoint.displayValue}
+        />
+      </div>
+    </div>
+  );
+}

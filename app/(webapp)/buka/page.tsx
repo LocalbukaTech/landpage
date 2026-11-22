@@ -9,6 +9,7 @@ import { MobileBukaHome } from '@/components/buka/mobile/MobileBukaHome';
 import { Typewriter } from '@/components/anim/Typewriter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { DisplayAd } from '@/components/ads/DisplayAd';
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -323,15 +324,14 @@ export default function BukaPage() {
 
           {/* By Cuisine Section Hidden For Now */}
 
-          {/* Banner Image */}
+          {/* Sponsored Display Ad (replaces static banner — falls back to original image) */}
           <div className='px-4 pb-8 md:px-8 md:pb-16'>
-            <div className='w-[92%] mx-auto rounded-2xl overflow-hidden'>
-              <Image
-                src='/images/buka_middle_Image.png'
-                alt='LocalBuka'
-                width={1400}
-                height={500}
-                className='w-full h-auto object-cover'
+            <div className='w-[92%] mx-auto'>
+              <DisplayAd
+                slot='9727155002'
+                fallbackSrc='/images/buka_middle_Image.png'
+                fallbackAlt='LocalBuka'
+                fallbackHref='/buka/restaurant'
               />
             </div>
           </div>

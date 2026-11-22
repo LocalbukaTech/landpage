@@ -23,6 +23,7 @@ import {useBlockedUsers} from '@/hooks/useBlockedUsers';
 import type {PostUser} from '@/types/post';
 import type {User} from '@/lib/api/services/auth.service';
 import {AvatarCropModal} from '@/components/ui/AvatarCropModal';
+import {UgcReportModal} from '@/components/modals/UgcReportModal';
 import {useToast} from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -217,28 +218,35 @@ export function ProfileHeader({
 
   const [isFollowing, setIsFollowing] = useState(apiUser?.isFollowing || false);
   const { isUserBlocked, blockUser, unblockUser } = useBlockedUsers();
-  const isBlocked = isUserBlocked(apiUser?.id);
+  const isBlocked = Boolean(apiUser?.blockStatus?.hasBlocked ?? isUserBlocked(apiUser?.id));
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleBlockConfirm = () => {
+  const handleBlockConfirm = async () => {
     if (!apiUser?.id) return;
     setShowBlockConfirm(false);
-    blockUser({
-      id: apiUser.id,
-      fullName: displayName,
-      username: apiUser?.username,
-      avatar: displayAvatar,
-    });
-    setToastMessage(`${displayName} has been blocked 🚫`);
+    try {
+      await blockUser(apiUser.id);
+      setIsFollowing(false);
+      setToastMessage(`${displayName} has been blocked 🚫`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to block user';
+      setToastMessage(msg);
+    }
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const handleUnblock = () => {
+  const handleUnblock = async () => {
     if (!apiUser?.id) return;
-    unblockUser(apiUser.id);
-    setToastMessage(`${displayName} is unblocked 🚫`);
+    try {
+      await unblockUser(apiUser.id);
+      setToastMessage(`${displayName} is unblocked 🚫`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to unblock user';
+      setToastMessage(msg);
+    }
     setTimeout(() => setToastMessage(null), 3500);
   };
 
@@ -436,10 +444,7 @@ export function ProfileHeader({
                       <button
                         onClick={() => {
                           setShowOptionsMenu(false);
-                          toast({
-                            title: 'Report Submitted',
-                            description: 'Thank you for your report. Our safety team will review it.',
-                          });
+                          setShowReportModal(true);
                         }}
                         className='w-full px-3 py-2 text-left text-xs font-semibold text-white hover:bg-white/5 flex items-center gap-2 cursor-pointer border-none bg-transparent transition-colors'>
                         <Flag size={14} />
@@ -573,6 +578,15 @@ export function ProfileHeader({
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* UGC Report Modal */}
+      <UgcReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        targetId={apiUser?.id}
+        targetType='user'
+        targetTitle={displayName}
+      />
     </div>
   );
 }

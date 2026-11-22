@@ -2,6 +2,7 @@
 
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {ArrowLeft, MapPin, Search, X, LocateFixed} from 'lucide-react';
+import {BackCircleButton} from '@/components/ui/BackCircleButton';
 import {useRouter} from 'next/navigation';
 import {CuisineFilters, FilterState} from '@/components/buka/CuisineFilters';
 import {BukaCard, BukaRestaurant} from '@/components/buka/BukaCard';
@@ -273,12 +274,7 @@ export default function ExploreRestaurantsPage() {
         <div className='max-w-[1440px] mx-auto'>
           {/* ── Compact Header ── */}
           <div className='w-[92%] mx-auto pt-8 pb-4 flex items-center gap-4'>
-            <button
-              onClick={() => router.back()}
-              className='w-10 h-10 flex items-center justify-center rounded-full border border-white/30 text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0'
-              aria-label='Go back'>
-              <ArrowLeft size={20} />
-            </button>
+            <BackCircleButton onClick={() => router.back()} size={28} />
             <div>
               <h1 className='text-white text-2xl font-bold'>
                 Explore Restaurants

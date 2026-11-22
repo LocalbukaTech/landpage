@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DashboardTab } from "./types";
 import { OverviewTab } from "./OverviewTab";
 import { ContentManagementTab } from "./ContentManagementTab";
@@ -25,12 +25,12 @@ export function CreatorDashboard({
   initialTab = "Overview",
 }: CreatorDashboardProps) {
   const [activeTab, setActiveTab] = useState<DashboardTab>(initialTab);
+  const [prevInitialTab, setPrevInitialTab] = useState<DashboardTab>(initialTab);
 
-  useEffect(() => {
-    if (initialTab) {
-      setActiveTab(initialTab);
-    }
-  }, [initialTab]);
+  if (initialTab !== prevInitialTab) {
+    setPrevInitialTab(initialTab);
+    setActiveTab(initialTab);
+  }
 
   return (
     <div className="w-full text-white">

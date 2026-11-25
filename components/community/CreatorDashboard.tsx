@@ -11,6 +11,7 @@ import { SettingsTab } from "./SettingsTab";
 import type { CreatorCommunityFormData } from "./CreatorCommunityForm";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { getMediaBlobUrl } from "@/lib/storage/media-storage";
 
 interface CreatorDashboardProps {
   initialTab?: DashboardTab;
@@ -130,6 +131,28 @@ export function CreatorDashboard({
       setActiveTab(initialTab);
     }
   }, [initialTab]);
+
+  // Resolve persistent IndexedDB media URLs for local video/image posts on mount
+  useEffect(() => {
+    void (async () => {
+      let changed = false;
+      const resolved = await Promise.all(
+        posts.map(async (p) => {
+          if (p.mediaUrl?.startsWith("idb://")) {
+            const blobUrl = await getMediaBlobUrl(p.mediaUrl);
+            if (blobUrl) {
+              changed = true;
+              return { ...p, mediaUrl: blobUrl };
+            }
+          }
+          return p;
+        })
+      );
+      if (changed) {
+        setPosts(resolved);
+      }
+    })();
+  }, []);
 
   const handleUpdatePosts = (nextPosts: CommunityPost[]) => {
     setPosts(nextPosts);

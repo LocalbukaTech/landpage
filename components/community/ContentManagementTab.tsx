@@ -23,6 +23,9 @@ import {
   Users,
   UtensilsCrossed,
   User as UserIcon,
+  FileText,
+  Clock,
+  RotateCcw,
 } from "lucide-react";
 import { CommunityPost } from "./types";
 import {
@@ -32,6 +35,25 @@ import {
 } from "@/lib/api/services/community.hooks";
 import { useRestaurants } from "@/lib/api/services/restaurants.hooks";
 import apiClient from "@/lib/api/client";
+import { storeMediaBlob, getMediaBlobUrl } from "@/lib/storage/media-storage";
+import {
+  getStoredCommentsForPost,
+  saveCommentForPost,
+} from "@/lib/storage/comments-storage";
+
+export const DRAFTS_STORAGE_KEY = "localbuka_creator_drafts_v1";
+
+export interface CreatorDraft {
+  id: string;
+  caption: string;
+  mediaUrl?: string | null;
+  mediaType?: "image" | "video";
+  location?: string;
+  tags: string[];
+  hashtags: string[];
+  communitySlug?: string;
+  savedAt: string;
+}
 
 interface ContentManagementTabProps {
   communityName?: string;
@@ -122,6 +144,41 @@ export function ContentManagementTab({
     return [];
   });
   const [showHashtagInput, setShowHashtagInput] = useState(false);
+
+  // Saved Drafts state
+  const [drafts, setDrafts] = useState<CreatorDraft[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = window.localStorage.getItem(DRAFTS_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return [];
+  });
+  const [showDraftsModal, setShowDraftsModal] = useState(false);
+  const [activeDraftBanner, setActiveDraftBanner] = useState<CreatorDraft | null>(null);
+  const [activeCommentsPostId, setActiveCommentsPostId] = useState<string | null>(null);
+  const [postCommentsMap, setPostCommentsMap] = useState<
+    Record<string, Array<{ id: string; author: string; avatar: string; text: string; time: string }>>
+  >({});
+  const [newCommentInput, setNewCommentInput] = useState("");
+
+  // Check for existing saved draft for this community on mount
+  useEffect(() => {
+    if (drafts.length > 0 && !caption && !uploadedMedia) {
+      const match = drafts.find(
+        (d) => !communitySlug || d.communitySlug === communitySlug
+      );
+      if (match) {
+        setActiveDraftBanner(match);
+      }
+    }
+  }, [communitySlug]);
 
   const locationBoxRef = useRef<HTMLDivElement>(null);
   const tagBoxRef = useRef<HTMLDivElement>(null);
@@ -582,10 +639,14 @@ export function ContentManagementTab({
       setSelectedFile(null);
       setUploadError(null);
       setCaption("");
+      setLocation("");
       setTags([]);
       setHashtags([]);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+      }
+      if (activeDraftBanner) {
+        handleDeleteDraft(activeDraftBanner.id);
       }
       setIsPosting(false);
       showToast("Post published successfully to community feed!");
@@ -598,16 +659,105 @@ export function ContentManagementTab({
     }, 400);
   };
 
-  const handleDraft = () => {
-    showToast("Draft saved successfully!");
+  const handleDraft = async () => {
+    if (
+      !caption.trim() &&
+      !uploadedMedia &&
+      tags.length === 0 &&
+      hashtags.length === 0
+    ) {
+      showToast("Please add content or media before saving as draft.");
+      return;
+    }
+
+    const draftId = `draft-${Date.now()}`;
+    let mediaRef = uploadedMedia;
+
+    if (selectedFile) {
+      const idbRef = await storeMediaBlob(draftId, selectedFile);
+      if (idbRef) mediaRef = idbRef;
+    }
+
+    const newDraft: CreatorDraft = {
+      id: draftId,
+      caption: caption.trim(),
+      mediaUrl: mediaRef,
+      mediaType: uploadedMediaType,
+      location: location.trim(),
+      tags: [...tags],
+      hashtags: [...hashtags],
+      communitySlug: communitySlug || undefined,
+      savedAt: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        month: "short",
+        day: "numeric",
+      }),
+    };
+
+    const nextDrafts = [newDraft, ...drafts.filter((d) => d.id !== draftId)];
+    setDrafts(nextDrafts);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(nextDrafts));
+      } catch {
+        // ignore
+      }
+    }
+    setActiveDraftBanner(null);
+    showToast("Draft saved successfully! You can restore it anytime from Saved Drafts.");
+  };
+
+  const handleRestoreDraft = async (draft: CreatorDraft) => {
+    setCaption(draft.caption || "");
+    setLocation(draft.location || "");
+    setTags(draft.tags || []);
+    setHashtags(draft.hashtags || []);
+    setUploadedMediaType(draft.mediaType || "image");
+
+    if (draft.mediaUrl) {
+      if (draft.mediaUrl.startsWith("idb://")) {
+        const blobUrl = await getMediaBlobUrl(draft.mediaUrl);
+        setUploadedMedia(blobUrl || draft.mediaUrl);
+      } else {
+        setUploadedMedia(draft.mediaUrl);
+      }
+    } else {
+      setUploadedMedia(null);
+    }
+    setActiveDraftBanner(null);
+    setShowDraftsModal(false);
+    showToast("Draft restored to editor.");
+  };
+
+  const handleDeleteDraft = (draftId: string) => {
+    const next = drafts.filter((d) => d.id !== draftId);
+    setDrafts(next);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+    }
+    if (activeDraftBanner?.id === draftId) {
+      setActiveDraftBanner(null);
+    }
+    showToast("Draft deleted.");
   };
 
   const handleDiscard = () => {
     setUploadedMedia(null);
+    setSelectedFile(null);
     setUploadError(null);
     setCaption("");
+    setLocation("");
     setTags([]);
     setHashtags([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setActiveDraftBanner(null);
     showToast("Upload and caption discarded.");
   };
 
@@ -622,24 +772,63 @@ export function ContentManagementTab({
     updatePosts((prev) =>
       prev.map((p) => {
         if (p.id !== postId) return p;
+        const nextLiked = !p.isLiked;
+        const currentCount = parseInt(String(p.likes || '0').replace(/[^0-9]/g, '') || '0', 10);
+        const nextCount = Math.max(0, currentCount + (nextLiked ? 1 : -1));
         return {
           ...p,
-          isLiked: !p.isLiked,
+          isLiked: nextLiked,
+          likes: String(nextCount),
         };
       })
     );
   };
 
   const toggleBookmark = (postId: string) => {
+    let nextSavedState = false;
     updatePosts((prev) =>
       prev.map((p) => {
         if (p.id !== postId) return p;
+        const nextSaved = !p.isBookmarked;
+        nextSavedState = nextSaved;
+        const currentCount = parseInt(String(p.bookmarks || '0').replace(/[^0-9]/g, '') || '0', 10);
+        const nextCount = Math.max(0, currentCount + (nextSaved ? 1 : -1));
+
+        if (typeof window !== 'undefined') {
+          try {
+            const raw = window.localStorage.getItem('localbuka_saved_posts_v1');
+            const list = raw ? JSON.parse(raw) : [];
+            const existing = Array.isArray(list) ? list : [];
+            let nextList;
+            if (nextSaved) {
+              const itemToSave = {
+                id: p.id,
+                communityId: communitySlug,
+                communityName,
+                caption: p.caption,
+                mediaUrl: p.mediaUrl,
+                authorName: p.authorName,
+                authorAvatar: p.authorAvatar,
+                timestamp: p.timestamp,
+                savedAt: new Date().toISOString(),
+              };
+              nextList = [itemToSave, ...existing.filter((item: any) => item.id !== p.id)];
+            } else {
+              nextList = existing.filter((item: any) => item.id !== p.id);
+            }
+            window.localStorage.setItem('localbuka_saved_posts_v1', JSON.stringify(nextList));
+            window.dispatchEvent(new Event('localbuka_saved_posts_updated'));
+          } catch {}
+        }
+
         return {
           ...p,
-          isBookmarked: !p.isBookmarked,
+          isBookmarked: nextSaved,
+          bookmarks: String(nextCount),
         };
       })
     );
+    showToast(nextSavedState ? 'Post saved to bookmarks! 📌' : 'Removed from saved.');
   };
 
   const handleDeletePost = (postId: string) => {
@@ -781,6 +970,39 @@ export function ContentManagementTab({
         <div className="fixed top-20 right-6 z-50 flex items-center gap-2 rounded-2xl bg-[#f5c94d] px-5 py-3 text-sm font-semibold text-black shadow-xl animate-in slide-in-from-top duration-200">
           <Check className="h-4 w-4" />
           <span>{feedbackMessage}</span>
+        </div>
+      )}
+
+      {/* Saved Draft Restore Banner */}
+      {activeDraftBanner && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-[#1e1e1e] border border-[#f5c94d]/40 p-3.5 shadow-lg animate-in slide-in-from-top duration-200">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Clock className="w-4 h-4 text-[#f5c94d] shrink-0" />
+            <div className="text-xs text-white min-w-0">
+              <span className="font-semibold text-[#f5c94d]">Saved Draft: </span>
+              <span className="text-white/70 truncate">
+                {activeDraftBanner.caption || "Untitled upload"} · {activeDraftBanner.savedAt}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => void handleRestoreDraft(activeDraftBanner)}
+              className="inline-flex items-center gap-1 rounded-full bg-[#f5c94d] px-3.5 py-1 text-xs font-bold text-black hover:bg-[#eab308] cursor-pointer active:scale-95 transition-all"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Load Draft</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveDraftBanner(null)}
+              className="p-1 text-white/50 hover:text-white cursor-pointer"
+              title="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -1293,8 +1515,8 @@ export function ContentManagementTab({
           </div>
         </div>
 
-        {/* Action Buttons Row (Draft, Post, Discard) */}
-        <div className="flex items-center gap-3 pt-1">
+        {/* Action Buttons Row (Draft, Post, Discard, Saved Drafts) */}
+        <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             type="button"
             onClick={handleDraft}
@@ -1316,6 +1538,17 @@ export function ContentManagementTab({
           >
             Discard
           </button>
+
+          {drafts.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowDraftsModal(true)}
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/15 active:scale-95 transition-all text-center cursor-pointer"
+            >
+              <FileText className="w-4 h-4 text-[#f5c94d]" />
+              <span>Saved Drafts ({drafts.length})</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -1516,13 +1749,13 @@ export function ContentManagementTab({
                   <button
                     type="button"
                     disabled={commentsDisabled}
-                    onClick={() =>
-                      showToast(
-                        commentsDisabled
-                          ? "Comments are turned off for this post."
-                          : "Comments view opened."
-                      )
-                    }
+                    onClick={() => {
+                      if (commentsDisabled) {
+                        showToast("Comments are turned off for this post.");
+                      } else {
+                        setActiveCommentsPostId(activeCommentsPostId === post.id ? null : post.id);
+                      }
+                    }}
                     className={`flex items-center gap-2 transition-colors ${
                       commentsDisabled
                         ? "opacity-40 cursor-not-allowed"
@@ -1557,10 +1790,13 @@ export function ContentManagementTab({
                   <button
                     type="button"
                     onClick={() => {
-                      if (typeof window !== "undefined") {
-                        navigator.clipboard?.writeText(window.location.href);
+                      const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+                      if (typeof navigator !== "undefined" && navigator.share) {
+                        navigator.share({ title: post.authorName, text: post.caption, url: shareUrl }).catch(() => {});
+                      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                        navigator.clipboard.writeText(shareUrl);
                       }
-                      showToast("Post link copied to clipboard!");
+                      showToast("Post link copied to clipboard! 📋");
                     }}
                     className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer"
                   >
@@ -1568,12 +1804,247 @@ export function ContentManagementTab({
                     <span className="text-xs font-medium">{post.shares}</span>
                   </button>
                 </div>
+
+                {/* Inline Comments View when clicked */}
+                {activeCommentsPostId === post.id && !commentsDisabled && (
+                  <div className="rounded-2xl border border-white/10 bg-[#161616] p-4 space-y-3 mt-2 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                      <span className="text-xs font-semibold text-white/90">
+                        Comments ({post.comments})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveCommentsPostId(null)}
+                        className="text-xs text-white/40 hover:text-white transition-colors cursor-pointer"
+                      >
+                        ✕ Close
+                      </button>
+                    </div>
+
+                    {/* Comments list */}
+                    <div className="space-y-2.5 max-h-48 overflow-y-auto">
+                      {(() => {
+                        const localComments = postCommentsMap[post.id] || [];
+                        const storedComments = getStoredCommentsForPost(post.id, post.caption).map((c) => ({
+                          id: c.id,
+                          author: c.author,
+                          avatar: c.avatar,
+                          text: c.text,
+                          time: c.timeAgo,
+                        }));
+                        const merged = [...localComments];
+                        for (const sc of storedComments) {
+                          if (!merged.some((m) => m.id === sc.id || m.text.trim().toLowerCase() === sc.text.trim().toLowerCase())) {
+                            merged.push(sc);
+                          }
+                        }
+                        if (merged.length === 0) {
+                          return (
+                            <p className="text-xs text-white/40 text-center py-3">
+                              No comments yet. Start the conversation!
+                            </p>
+                          );
+                        }
+                        return merged.map((c) => (
+                          <div key={c.id} className="flex items-start gap-2 text-xs">
+                            <span className="font-semibold text-white/90 shrink-0">
+                              {c.author}:
+                            </span>
+                            <span className="text-white/70 leading-relaxed">
+                              {c.text}
+                            </span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+
+                    {/* Add comment input */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-white/5">
+                      <input
+                        type="text"
+                        value={newCommentInput}
+                        onChange={(e) => setNewCommentInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && newCommentInput.trim()) {
+                            e.preventDefault();
+                            const trimmed = newCommentInput.trim();
+                            const newC = {
+                              id: `c-${Date.now()}`,
+                              author: "You",
+                              avatar: "/images/community/avatar-1.png",
+                              text: trimmed,
+                              time: "Just now",
+                            };
+                            saveCommentForPost(
+                              post.id,
+                              {
+                                id: newC.id,
+                                author: "You",
+                                avatar: "/images/community/avatar-1.png",
+                                text: trimmed,
+                                timeAgo: "Just now",
+                              },
+                              post.caption
+                            );
+                            setPostCommentsMap((prev) => ({
+                              ...prev,
+                              [post.id]: [...(prev[post.id] || []), newC],
+                            }));
+                            setNewCommentInput("");
+                            const currentC = parseInt(String(post.comments || "0").replace(/[^0-9]/g, "") || "0", 10);
+                            updatePosts((prev) =>
+                              prev.map((p) =>
+                                p.id === post.id
+                                  ? { ...p, comments: String(currentC + 1) }
+                                  : p
+                              )
+                            );
+                            showToast("Comment added! 💬");
+                          }
+                        }}
+                        placeholder="Write a comment…"
+                        className="flex-1 bg-[#222] rounded-xl px-3 py-1.5 text-xs text-white placeholder-white/40 outline-none border border-white/10 focus:border-[#f5c94d]/40"
+                      />
+                      <button
+                        type="button"
+                        disabled={!newCommentInput.trim()}
+                        onClick={() => {
+                          const trimmed = newCommentInput.trim();
+                          if (!trimmed) return;
+                          const newC = {
+                            id: `c-${Date.now()}`,
+                            author: "You",
+                            avatar: "/images/community/avatar-1.png",
+                            text: trimmed,
+                            time: "Just now",
+                          };
+                          saveCommentForPost(
+                            post.id,
+                            {
+                              id: newC.id,
+                              author: "You",
+                              avatar: "/images/community/avatar-1.png",
+                              text: trimmed,
+                              timeAgo: "Just now",
+                            },
+                            post.caption
+                          );
+                          setPostCommentsMap((prev) => ({
+                            ...prev,
+                            [post.id]: [...(prev[post.id] || []), newC],
+                          }));
+                          setNewCommentInput("");
+                          const currentC = parseInt(String(post.comments || "0").replace(/[^0-9]/g, "") || "0", 10);
+                          updatePosts((prev) =>
+                            prev.map((p) =>
+                              p.id === post.id
+                                ? { ...p, comments: String(currentC + 1) }
+                                : p
+                            )
+                          );
+                          showToast("Comment added! 💬");
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-[#f5c94d] text-zinc-950 font-bold text-xs disabled:opacity-40 transition-opacity cursor-pointer"
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </div>
+                )}
               </article>
             );
           })}
         </div>
         )}
       </div>
+
+      {/* Saved Drafts Dialog */}
+      {showDraftsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+        >
+          <div className="w-full max-w-lg rounded-2xl bg-[#1c1c1c] border border-white/10 p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#f5c94d]" />
+                <h3 className="text-lg font-bold text-white">Saved Drafts</h3>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-white/70">
+                  {drafts.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDraftsModal(false)}
+                className="text-white/50 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="max-h-96 overflow-y-auto space-y-3 pr-1">
+              {drafts.length === 0 ? (
+                <p className="text-center text-sm text-white/50 py-8">
+                  No saved drafts yet.
+                </p>
+              ) : (
+                drafts.map((d) => (
+                  <div
+                    key={d.id}
+                    className="flex items-start justify-between gap-3 rounded-xl bg-[#252525] border border-white/5 p-4 hover:border-white/15 transition-all"
+                  >
+                    <div className="space-y-1.5 min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-[#f5c94d]">
+                          {d.mediaType === "video" ? "Video Draft" : "Post Draft"}
+                        </span>
+                        <span className="text-[11px] text-white/40">· {d.savedAt}</span>
+                      </div>
+                      <p className="text-sm text-white/90 line-clamp-2">
+                        {d.caption || "No caption provided"}
+                      </p>
+                      {d.location && (
+                        <p className="text-xs text-white/50 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-[#f5c94d]" />
+                          <span>{d.location}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => void handleRestoreDraft(d)}
+                        className="rounded-lg bg-[#f5c94d] px-3 py-1.5 text-xs font-bold text-black hover:bg-[#eab308] cursor-pointer transition-all"
+                      >
+                        Load
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDraft(d.id)}
+                        className="p-1.5 text-white/40 hover:text-red-400 transition-colors cursor-pointer"
+                        title="Delete draft"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowDraftsModal(false)}
+                className="rounded-lg bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/15 transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

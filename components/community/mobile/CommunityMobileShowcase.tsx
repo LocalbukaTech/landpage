@@ -81,25 +81,25 @@ export function CommunityMobileShowcase({
     useState<MobileCommunityScreen>("explore");
 
   return (
-    <div className="w-full py-2 space-y-6">
+    <div className="w-full py-1 sm:py-2 space-y-4 sm:space-y-6">
       {/* Top Header Card */}
-      <div className="rounded-2xl border border-white/10 bg-[#1e1e1e] p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fbbe15]/15 px-2.5 py-0.5 text-xs font-bold text-[#fbbe15]">
+      <div className="rounded-2xl border border-white/10 bg-[#1e1e1e] p-3 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 sm:gap-4">
+        <div className="min-w-0 space-y-1">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-[#fbbe15]/15 px-2.5 py-0.5 text-[11px] sm:text-xs font-bold text-[#fbbe15]">
             <Smartphone size={13} />
             <span>Mobile Community Suite</span>
           </div>
-          <h2 className="text-xl font-bold text-white tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
             Interactive Community Mobile Screens
           </h2>
-          <p className="text-xs text-zinc-400">
+          <p className="text-[11px] sm:text-xs text-zinc-400 leading-relaxed">
             Preview, test, and interact with the complete mobile user flow
             designed for the LocalBuka community feature.
           </p>
         </div>
 
         {/* Action Toggles */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {onSwitchToCreator && (
             <button
               type="button"
@@ -113,34 +113,35 @@ export function CommunityMobileShowcase({
       </div>
 
       {/* Main Grid: Screen Switcher on Left + Phone Frame on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Screen Selector Nav */}
-        <div className="lg:col-span-5 space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 px-1 mb-2">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-start">
+        {/* Screen Selector Nav */}
+        <div className="lg:col-span-5 space-y-2 min-w-0">
+          <p className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-zinc-400 px-1 mb-2">
             Select Screen to Preview
           </p>
 
-          <div className="space-y-2">
+          <div className="flex lg:block gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-none lg:space-y-2">
             {SCREEN_PRESETS.map((screen) => (
               <button
                 key={screen.id}
                 type="button"
                 onClick={() => setActiveScreen(screen.id)}
                 className={cn(
-                  "w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3",
+                  "shrink-0 lg:w-full lg:shrink text-left p-3 sm:p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3",
+                  "w-[260px] sm:w-[280px] lg:w-full",
                   activeScreen === screen.id
                     ? "bg-[#252525] border-[#fbbe15] shadow-sm shadow-[#fbbe15]/10"
                     : "bg-[#1c1c1c] border-white/6 hover:bg-[#222222] hover:border-white/15"
                 )}
               >
                 <div className="min-w-0 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-white">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs font-bold text-white truncate">
                       {screen.title}
                     </span>
                     <span
                       className={cn(
-                        "rounded-full px-2 py-0.2 text-[9px] font-bold",
+                        "shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold",
                         activeScreen === screen.id
                           ? "bg-[#fbbe15] text-black"
                           : "bg-white/10 text-zinc-300"
@@ -168,18 +169,18 @@ export function CommunityMobileShowcase({
           </div>
         </div>
 
-        {/* Right Column: iPhone Frame Mockup */}
-        <div className="lg:col-span-7 flex flex-col items-center justify-center">
+        {/* Right Column: Phone Mockup Frame */}
+        <div className="lg:col-span-7 flex flex-col items-center justify-center min-w-0">
           {/* Phone Shell */}
-          <div className="relative w-[360px] sm:w-[380px] h-[760px] rounded-[48px] bg-[#141414] p-3 shadow-[0_25px_80px_rgba(0,0,0,0.85)] border-[8px] border-[#2c2c2e] ring-1 ring-white/10 overflow-hidden flex flex-col">
+          <div className="relative w-full max-w-[380px] aspect-[380/760] max-h-[760px] rounded-[38px] sm:rounded-[48px] bg-[#141414] p-2 sm:p-3 shadow-[0_25px_80px_rgba(0,0,0,0.85)] border-[6px] sm:border-[8px] border-[#2c2c2e] ring-1 ring-white/10 overflow-hidden flex flex-col">
             {/* Dynamic Island / Speaker Notch */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-black z-50 flex items-center justify-center">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#18181b] mr-3" />
-              <div className="w-2 h-2 rounded-full bg-[#111] ring-1 ring-white/5" />
+            <div className="absolute top-3 sm:top-4 left-1/2 -translate-x-1/2 w-20 sm:w-24 h-4 sm:h-5 rounded-full bg-black z-50 flex items-center justify-center">
+              <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#18181b] mr-2.5 sm:mr-3" />
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#111] ring-1 ring-white/5" />
             </div>
 
             {/* Interactive Screen Display */}
-            <div className="w-full h-full rounded-[38px] overflow-hidden bg-[#141414] relative flex flex-col">
+            <div className="w-full h-full min-h-0 rounded-[30px] sm:rounded-[38px] overflow-hidden bg-[#141414] relative flex flex-col">
               <MobileCommunityFlow
                 key={activeScreen}
                 initialScreen={activeScreen}
@@ -189,11 +190,11 @@ export function CommunityMobileShowcase({
             </div>
 
             {/* Bottom Home Indicator Bar */}
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/40 rounded-full z-50 pointer-events-none" />
+            <div className="absolute bottom-1.5 sm:bottom-2 left-1/2 -translate-x-1/2 w-24 sm:w-32 h-1 bg-white/40 rounded-full z-50 pointer-events-none" />
           </div>
 
-          <p className="text-xs text-zinc-500 mt-4 text-center">
-            📱 Fully interactive mockup — tap cards, buttons, tabs & inputs to test
+          <p className="text-[11px] sm:text-xs text-zinc-500 mt-3 sm:mt-4 text-center px-2">
+            Fully interactive mockup — tap cards, buttons, tabs & inputs to test
             live flows!
           </p>
         </div>

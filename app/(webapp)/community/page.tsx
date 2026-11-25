@@ -179,12 +179,16 @@ function CommunityPageContent() {
     searchParams.get("checkout") === "true"
   );
 
-  // Live API data (filtering out the 5 initial seed placeholder communities)
+  // Live API data (filtering out the 5 initial seed placeholder communities and stale test duplicates)
   const { data, isLoading } = useExploreCommunities({ tab: activeTab });
   const { data: myCreatedCommunities } = useMyCreatedCommunities();
   const latestCreatedCommunity = myCreatedCommunities?.[0] || null;
   const communities: CommunityItem[] = (data?.items ?? []).filter(
-    (c) => !SEED_PLACEHOLDER_SLUGS.has(c.slug)
+    (c) =>
+      !SEED_PLACEHOLDER_SLUGS.has(c.slug) &&
+      c.slug !== "nigma-s-kitche" &&
+      c.name !== "Nigma's Kitche" &&
+      c.id !== "e66d6895-d9a1-4be5-88d5-ae7bef7df176"
   );
 
   // Determine the real admin-driven review status from backend (if creator has submitted a community)

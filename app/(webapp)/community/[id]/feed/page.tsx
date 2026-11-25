@@ -24,6 +24,12 @@ export default function CommunityFeedPage({ params }: CommunityFeedPageProps) {
       const saved = window.localStorage.getItem(CREATOR_COMMUNITY_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        if (parsed?.name === "Nigma's Kitche") {
+          parsed.name = "Nigma's Kitchen";
+          try {
+            window.localStorage.setItem(CREATOR_COMMUNITY_STORAGE_KEY, JSON.stringify(parsed));
+          } catch {}
+        }
         localName = parsed?.name;
         localAvatar = parsed?.avatar;
       }

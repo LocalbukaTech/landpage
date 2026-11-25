@@ -167,7 +167,18 @@ export function getLocallyCreatedCommunities(): CommunityItem[] {
     const raw = window.localStorage.getItem(LOCAL_COMMUNITIES_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const list = Array.isArray(parsed) ? parsed : [];
+    const cleaned = list.filter(
+      (c) =>
+        c &&
+        c.slug !== 'nigma-s-kitche' &&
+        c.name !== "Nigma's Kitche" &&
+        c.id !== 'e66d6895-d9a1-4be5-88d5-ae7bef7df176'
+    );
+    if (cleaned.length !== list.length) {
+      window.localStorage.setItem(LOCAL_COMMUNITIES_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
     return [];
   }
@@ -203,7 +214,16 @@ export const communityService = {
     });
     if (localItems.length > 0 && res?.data?.items) {
       const remoteSlugs = new Set(res.data.items.map((i) => i.slug));
-      const uniqueLocal = localItems.filter((l) => !remoteSlugs.has(l.slug));
+      const remoteNames = new Set(
+        res.data.items.map((i) => (i.name || '').toLowerCase().replace(/[^a-z0-9]/g, ''))
+      );
+      const uniqueLocal = localItems.filter((l) => {
+        if (remoteSlugs.has(l.slug)) return false;
+        const norm = (l.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (remoteNames.has(norm)) return false;
+        if (l.slug === 'nigma-s-kitche' || l.name === "Nigma's Kitche") return false;
+        return true;
+      });
       res.data.items = [...uniqueLocal, ...res.data.items];
       res.data.total = (res.data.total || 0) + uniqueLocal.length;
     }
@@ -438,7 +458,7 @@ export const communityService = {
     );
   },
 
-  /** POST /community/:idOrSlug/posts — Create post in community */
+  /** POST /community/:idOrSlug/posts — Create post in community (or draft) */
   createPost: (
     idOrSlug: string,
     data: {
@@ -447,9 +467,22 @@ export const communityService = {
       location?: string;
       tags?: string[];
       hashtags?: string[];
+      isDraft?: boolean;
     },
   ) => {
     return api.post<ApiResponse<CommunityPost>>(`/community/${idOrSlug}/posts`, data);
+  },
+
+  /** GET /community/:idOrSlug/drafts — Get creator drafts in community */
+  getDrafts: (idOrSlug: string) => {
+    return api.get<ApiResponse<CommunityPost[]>>(`/community/${idOrSlug}/drafts`);
+  },
+
+  /** DELETE /community/posts/:postId — Delete or discard community post or draft */
+  deletePost: (postId: string) => {
+    return api.delete<ApiResponse<{ success: boolean; message: string }>>(
+      `/community/posts/${postId}`,
+    );
   },
 
   /** GET /community/:idOrSlug/analytics — Real performance analytics & 7-day growth chart */

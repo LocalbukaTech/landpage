@@ -24,7 +24,7 @@ export default function SubscriptionFailedPage({ params }: Props) {
       </div>
 
       {/* ── Desktop View (≥ md): Exact Existing Desktop Layout (Untouched) ── */}
-      <div className='hidden md:flex w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4 flex-col min-h-[calc(100vh-140px)]'>
+      <div className='hidden md:flex w-full min-w-0 max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex-col min-h-[calc(100dvh-140px)]'>
         {/* Header */}
         <div className='pb-4 border-b border-white/10'>
           <h1 className='text-2xl sm:text-3xl font-extrabold text-white tracking-tight'>
@@ -33,15 +33,8 @@ export default function SubscriptionFailedPage({ params }: Props) {
         </div>
 
         {/* Failed Content */}
-        <div className='flex-1 flex flex-col items-center justify-center py-12'>
-          <div
-            className='flex flex-col items-center justify-center text-center mx-auto'
-            style={{
-              maxWidth: '430px',
-              width: '100%',
-              gap: '24px',
-            }}
-          >
+        <div className='flex-1 flex flex-col items-center justify-center px-2 py-10 sm:py-12'>
+          <div className='flex w-full max-w-[430px] flex-col items-center justify-center gap-5 sm:gap-6 text-center mx-auto'>
           {/* Exact Figma Red Failed Circle SVG */}
           <div className='flex items-center justify-center shrink-0'>
             <svg
@@ -60,30 +53,12 @@ export default function SubscriptionFailedPage({ params }: Props) {
           </div>
 
           {/* Texts container */}
-          <div className='flex flex-col items-center gap-2 max-w-[360px]'>
-            <h2
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 700,
-                fontSize: '20px',
-                lineHeight: '140%',
-                color: 'white',
-                margin: 0,
-              }}
-            >
+          <div className='flex max-w-[360px] flex-col items-center gap-2'>
+            <h2 className='text-xl font-bold leading-[1.4] text-white'>
               Payment failed
             </h2>
 
-            <p
-              style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 400,
-                fontSize: '14px',
-                lineHeight: '140%',
-                color: '#9ca3af',
-                margin: 0,
-              }}
-            >
+            <p className='text-sm leading-relaxed text-gray-400'>
               We couldn&apos;t charge your Visa ending in 4417. Check your card details or try a different method.
             </p>
           </div>
@@ -91,22 +66,7 @@ export default function SubscriptionFailedPage({ params }: Props) {
           {/* Action button */}
           <Link
             href={`/community/${id}/subscribe`}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '12px 32px',
-              borderRadius: '12px',
-              background: '#FFC533',
-              color: '#111',
-              fontFamily: "'Plus Jakarta Sans', sans-serif",
-              fontWeight: 700,
-              fontSize: '14px',
-              textDecoration: 'none',
-              textAlign: 'center',
-              transition: 'opacity 0.2s',
-            }}
-            className='hover:opacity-90 active:scale-95'
+            className='inline-flex min-h-12 w-full max-w-xs items-center justify-center rounded-xl bg-[#FFC533] px-6 py-3 text-center text-sm font-bold text-[#111] transition-opacity hover:opacity-90 active:scale-95'
           >
             Try again
           </Link>

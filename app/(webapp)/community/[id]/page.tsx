@@ -66,7 +66,14 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
       }
       const savedComm = window.localStorage.getItem(CREATOR_COMMUNITY_STORAGE_KEY);
       if (savedComm) {
-        setLocalCommunity(JSON.parse(savedComm));
+        const parsed = JSON.parse(savedComm);
+        if (parsed?.name === "Nigma's Kitche") {
+          parsed.name = "Nigma's Kitchen";
+          try {
+            window.localStorage.setItem(CREATOR_COMMUNITY_STORAGE_KEY, JSON.stringify(parsed));
+          } catch {}
+        }
+        setLocalCommunity(parsed);
       }
     } catch {
       // ignore localStorage errors

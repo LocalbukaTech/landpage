@@ -19,6 +19,10 @@ import {
   usePostComments,
   useCreatePostComment,
 } from "@/lib/api/services/community.hooks";
+import {
+  getStoredCommentsForPost,
+  saveCommentForPost,
+} from "@/lib/storage/comments-storage";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -61,16 +65,37 @@ export function MobileCommunityFeed({
       : 24;
 
   const comments: CommunityComment[] = useMemo(() => {
-    if (isRealPost && liveCommentsData?.comments) {
-      return liveCommentsData.comments.map((c) => ({
-        id: c.id,
-        author: c.author?.fullName || "@member",
-        text: c.content,
-        timeAgo: "Recently",
-      }));
+    const rawStored = getStoredCommentsForPost(activePostId, livePost?.content);
+    const stored: CommunityComment[] = rawStored.map((c) => ({
+      id: c.id,
+      author: c.author,
+      text: c.text,
+      timeAgo: c.timeAgo,
+    }));
+
+    const serverComments: CommunityComment[] =
+      isRealPost && liveCommentsData?.comments
+        ? liveCommentsData.comments.map((c) => ({
+            id: c.id,
+            author: c.author?.fullName || "@member",
+            text: c.content,
+            timeAgo: "Recently",
+          }))
+        : [];
+
+    const merged = [...stored];
+    for (const sc of serverComments) {
+      if (!merged.some((m) => m.id === sc.id || m.text.trim().toLowerCase() === sc.text.trim().toLowerCase())) {
+        merged.push(sc);
+      }
     }
-    return fallbackComments;
-  }, [isRealPost, liveCommentsData, fallbackComments]);
+    for (const fc of fallbackComments) {
+      if (!merged.some((m) => m.id === fc.id || m.text.trim().toLowerCase() === fc.text.trim().toLowerCase())) {
+        merged.push(fc);
+      }
+    }
+    return merged;
+  }, [activePostId, livePost?.content, isRealPost, liveCommentsData, fallbackComments]);
 
   const handleToggleLike = async () => {
     const nextLiked = !isLiked;
@@ -97,16 +122,6 @@ export function MobileCommunityFeed({
     const trimmed = newCommentText.trim();
     if (!trimmed) return;
 
-    if (isRealPost) {
-      try {
-        await createCommentMutation.mutateAsync({ content: trimmed });
-        setNewCommentText("");
-        return;
-      } catch {
-        // fallback below if unauthenticated
-      }
-    }
-
     const newComment: CommunityComment = {
       id: `c-${Date.now()}`,
       author: "@you",
@@ -114,8 +129,28 @@ export function MobileCommunityFeed({
       timeAgo: "Just now",
     };
 
-    setFallbackComments((prev) => [...prev, newComment]);
+    saveCommentForPost(
+      activePostId,
+      {
+        id: newComment.id,
+        author: "@you",
+        avatar: "/images/community/avatar-1.png",
+        text: trimmed,
+        timeAgo: "Just now",
+      },
+      livePost?.content
+    );
+
+    setFallbackComments((prev) => [newComment, ...prev]);
     setNewCommentText("");
+
+    if (isRealPost) {
+      try {
+        await createCommentMutation.mutateAsync({ content: trimmed });
+      } catch {
+        // Fall back gracefully for offline/guest users
+      }
+    }
   };
 
   return (
@@ -205,7 +240,36 @@ export function MobileCommunityFeed({
             {/* Bookmark */}
             <button
               type="button"
-              onClick={() => setIsBookmarked(!isBookmarked)}
+              onClick={() => {
+                const nextSaved = !isBookmarked;
+                setIsBookmarked(nextSaved);
+                if (typeof window !== "undefined") {
+                  try {
+                    const raw = window.localStorage.getItem("localbuka_saved_posts_v1");
+                    const list = raw ? JSON.parse(raw) : [];
+                    const existing = Array.isArray(list) ? list : [];
+                    let nextList;
+                    if (nextSaved) {
+                      const itemToSave = {
+                        id: activePostId || `community-post-${community.id}`,
+                        communityId: community.id,
+                        communityName: community.name,
+                        caption: livePost?.content || "Community post",
+                        authorName: livePost?.author?.fullName || "@chef_tolu",
+                        timestamp: "Just now",
+                        savedAt: new Date().toISOString(),
+                      };
+                      nextList = [itemToSave, ...existing.filter((item: any) => item.id !== itemToSave.id)];
+                    } else {
+                      nextList = existing.filter(
+                        (item: any) => item.id !== (activePostId || `community-post-${community.id}`)
+                      );
+                    }
+                    window.localStorage.setItem("localbuka_saved_posts_v1", JSON.stringify(nextList));
+                    window.dispatchEvent(new Event("localbuka_saved_posts_updated"));
+                  } catch {}
+                }
+              }}
               className={cn(
                 "flex items-center gap-1.5 transition-colors cursor-pointer",
                 isBookmarked ? "text-[#fbbe15]" : "hover:text-white"
@@ -215,12 +279,20 @@ export function MobileCommunityFeed({
                 size={17}
                 className={isBookmarked ? "fill-[#fbbe15] stroke-[#fbbe15]" : ""}
               />
-              <span>1k</span>
+              <span>{isBookmarked ? "1" : "0"}</span>
             </button>
 
             {/* Share */}
             <button
               type="button"
+              onClick={() => {
+                const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+                if (typeof navigator !== "undefined" && navigator.share) {
+                  navigator.share({ title: community.name, url: shareUrl }).catch(() => {});
+                } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  navigator.clipboard.writeText(shareUrl);
+                }
+              }}
               className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer ml-auto"
             >
               <Share2 size={16} />

@@ -847,41 +847,12 @@ export function ContentManagementTab({
     showToast("Post comments setting updated.");
   };
 
-  // Demo switcher for developer testing of all states in user screenshots
-  const setDemoState = (type: "empty" | "error" | "preview") => {
-    if (type === "empty") {
-      setUploadedMedia(null);
-      setUploadError(null);
-      setCaption("");
-    } else if (type === "error") {
-      setUploadedMedia(null);
-      setUploadError("Files larger than 1GB can't be uploaded");
-    } else {
-      setUploadError(null);
-      setUploadedMedia(SAMPLE_UPLOADED_IMAGE);
-      setCaption(
-        "Cooked some good food tonight, tap the link on my bio for the recepies"
-      );
-    }
-  };
-
   // ─────────────────────────────────────────────────────────
   // LOADING / SKELETON STATE (Figma Content Management Loading)
   // ─────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="w-full text-white pt-2">
-        {/* Toggle for reviewer */}
-        <div className="flex justify-end mb-4" style={{ maxWidth: '882px' }}>
-          <button
-            type="button"
-            onClick={() => setIsLoading(false)}
-            className="text-xs text-white/50 hover:text-[#FBBE15] transition-colors underline cursor-pointer"
-          >
-            Skip to filled state
-          </button>
-        </div>
-
         <div className="space-y-0">
           {/* Skeleton Box 1: Upload area (882x424, r:40) */}
           <div
@@ -1012,39 +983,6 @@ export function ContentManagementTab({
           <h2 className="text-base md:text-lg font-semibold text-white">
             Upload File
           </h2>
-          {/* Quick toggle to cycle between Screenshot 2, 4, and 5 */}
-          <div className="flex items-center gap-2 text-xs text-white/50">
-            <span>Demo state:</span>
-            <button
-              type="button"
-              onClick={() => setDemoState("empty")}
-              className={`hover:text-[#f5c94d] transition-colors underline cursor-pointer ${
-                !uploadedMedia && !uploadError ? "text-[#f5c94d] font-semibold" : ""
-              }`}
-            >
-              Default
-            </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => setDemoState("error")}
-              className={`hover:text-[#f5c94d] transition-colors underline cursor-pointer ${
-                uploadError ? "text-red-400 font-semibold" : ""
-              }`}
-            >
-              &gt;1GB Error
-            </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => setDemoState("preview")}
-              className={`hover:text-[#f5c94d] transition-colors underline cursor-pointer ${
-                uploadedMedia ? "text-[#f5c94d] font-semibold" : ""
-              }`}
-            >
-              Uploaded
-            </button>
-          </div>
         </div>
 
         {/* Hidden File Input */}

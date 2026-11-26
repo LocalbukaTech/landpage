@@ -29,21 +29,16 @@ export function OverviewTab({
   communitySlug = "",
   pricePerMonth = 0,
 }: OverviewTabProps) {
-  const [viewState, setViewState] = useState<"filled" | "empty" | "loading">(
-    defaultLoading ? "loading" : "loading"
-  );
-  const [userSelectedState, setUserSelectedState] = useState<"filled" | "empty" | "loading" | null>(null);
-
+  const [viewState, setViewState] = useState<"loading" | "filled">("loading");
   const { data: liveAnalytics } = useCommunityAnalytics(communitySlug);
 
   // On page load/reload, show the Figma skeleton loading state first, then automatically transition to filled state!
   useEffect(() => {
-    if (userSelectedState) return;
     const timer = setTimeout(() => {
       setViewState("filled");
     }, 700);
     return () => clearTimeout(timer);
-  }, [userSelectedState]);
+  }, []);
 
   // Filter posts belonging to this community (and exclude old seed post-1 / post-2)
   const realPosts = useMemo(() => {
@@ -108,31 +103,10 @@ export function OverviewTab({
   }, [liveAnalytics, realPosts.length]);
 
   const isLoading = viewState === "loading";
-  const showEmptyPerformance =
-    viewState === "empty" || (viewState === "filled" && realPosts.length === 0);
+  const showEmptyPerformance = realPosts.length === 0;
 
   return (
     <div className="w-full text-white space-y-6 pt-1">
-      {/* Dev / Reviewer State Switcher */}
-      <div className="flex items-center justify-end gap-3 mb-2" style={{ maxWidth: '1012px' }}>
-        <span className="text-xs text-white/40">View state:</span>
-        {(["filled", "empty", "loading"] as const).map((state) => (
-          <button
-            key={state}
-            type="button"
-            onClick={() => {
-              setUserSelectedState(state);
-              setViewState(state);
-            }}
-            className={`text-xs transition-colors underline cursor-pointer capitalize ${
-              viewState === state ? "text-[#FBBE15] font-semibold" : "text-white/50 hover:text-[#FBBE15]"
-            }`}
-          >
-            {state}
-          </button>
-        ))}
-      </div>
-
       {isLoading ? (
         /* ================= FIGMA LOADING STATE ================= */
         <div className="space-y-10">

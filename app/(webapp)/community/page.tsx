@@ -466,62 +466,60 @@ function CommunityPageContent() {
         {/* ── View 1: Creator Community Creation, Payment, Review & Management Dashboard ── */}
         {viewMode === "creator" && (
           <div className="space-y-6">
-            {/* Read-Only Process Progress Bar (No manual state skipping — Admin controls approval states) */}
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#202020] border border-white/8 px-4 py-3">
-              <div className="flex items-center gap-2 flex-wrap text-xs">
-                <span className="text-white/40 font-medium mr-1">
-                  Process:
-                </span>
-                {[
-                  {
-                    label: "1. Setup Community",
-                    active: effectiveCreatorStep === "form",
-                    done: effectiveCreatorStep !== "form",
-                  },
-                  {
-                    label: "2. Admin Review",
-                    active:
-                      effectiveCreatorStep === "pending" ||
-                      effectiveCreatorStep === "changes-requested" ||
-                      effectiveCreatorStep === "rejected",
-                    done:
-                      effectiveCreatorStep === "approved" ||
-                      effectiveCreatorStep === "dashboard",
-                  },
-                  {
-                    label: "3. Approved & Live",
-                    active:
-                      effectiveCreatorStep === "approved" ||
-                      effectiveCreatorStep === "dashboard",
-                    done: effectiveCreatorStep === "dashboard",
-                  },
-                ].map((step) => (
-                  <span
-                    key={step.label}
-                    className={cn(
-                      "rounded-full px-3 py-1 text-xs font-semibold select-none inline-flex items-center gap-1.5",
-                      step.active
-                        ? "bg-[#f5c94d] text-black font-bold"
-                        : step.done
-                        ? "bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30"
-                        : "bg-white/5 text-white/45"
-                    )}
-                  >
-                    {step.done && <Check className="h-3 w-3 stroke-[3]" />}
-                    <span>{step.label}</span>
+            {/* Read-Only Process Progress Bar only during pre-dashboard onboarding */}
+            {effectiveCreatorStep !== "dashboard" && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#202020] border border-white/8 px-4 py-3">
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  <span className="text-white/40 font-medium mr-1">
+                    Process:
                   </span>
-                ))}
-              </div>
+                  {[
+                    {
+                      label: "1. Setup Community",
+                      active: effectiveCreatorStep === "form",
+                      done: effectiveCreatorStep !== "form",
+                    },
+                    {
+                      label: "2. Admin Review",
+                      active:
+                        effectiveCreatorStep === "pending" ||
+                        effectiveCreatorStep === "changes-requested" ||
+                        effectiveCreatorStep === "rejected",
+                      done: effectiveCreatorStep === "approved",
+                    },
+                    {
+                      label: "3. Approved & Live",
+                      active: effectiveCreatorStep === "approved",
+                      done: false,
+                    },
+                  ].map((step) => (
+                    <span
+                      key={step.label}
+                      className={cn(
+                        "rounded-full px-3 py-1 text-xs font-semibold select-none inline-flex items-center gap-1.5",
+                        step.active
+                          ? "bg-[#f5c94d] text-black font-bold"
+                          : step.done
+                          ? "bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30"
+                          : "bg-white/5 text-white/45"
+                      )}
+                    >
+                      {step.done && <Check className="h-3 w-3 stroke-[3]" />}
+                      <span>{step.label}</span>
+                    </span>
+                  ))}
+                </div>
 
-              <button
-                type="button"
-                onClick={() => setViewMode("explore")}
-                className="text-xs text-white/60 hover:text-white flex items-center gap-1 cursor-pointer"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span>Back to Explore</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("explore")}
+                  className="text-xs text-white/60 hover:text-white flex items-center gap-1 cursor-pointer"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <span>Back to Explore</span>
+                </button>
+              </div>
+            )}
 
             {/* Step 1: Create Community Form */}
             {effectiveCreatorStep === "form" && (

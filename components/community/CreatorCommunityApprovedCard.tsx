@@ -15,9 +15,9 @@ interface CreatorCommunityApprovedCardProps {
 }
 
 export function CreatorCommunityApprovedCard({
-  communityName = 'Smoothie Lab Lagos',
-  liveSince = 'Sept 24',
-  price = '₦2,000/mo',
+  communityName = 'Your Community',
+  liveSince = 'Today',
+  price = 'Free',
   payoutAccountSummary,
   paymentLink,
   onGoToCommunity,
@@ -30,7 +30,7 @@ export function CreatorCommunityApprovedCard({
     communityName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || 'chef-tolu-s-vip-kitchen';
+      .replace(/^-|-$/g, '') || 'my-community';
 
   const originUrl =
     typeof window !== 'undefined'
@@ -143,7 +143,7 @@ export function CreatorCommunityApprovedCard({
             <span>Settlement Account</span>
           </span>
           <span className="text-sm sm:text-base font-bold text-white tracking-tight truncate">
-            {payoutAccountSummary || 'Zenith Bank · 2083948192'}
+            {payoutAccountSummary || 'Free Community'}
           </span>
         </div>
       </div>

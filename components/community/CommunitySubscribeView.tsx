@@ -23,7 +23,7 @@ export interface CommunitySubscribeViewProps {
 
 export function CommunitySubscribeView({
   communityId = '1',
-  communityName = "Chef Tolu's VIP Kitchen",
+  communityName = 'Community',
   communityImage = '/images/community/cover-1.jpg',
   monthlyPrice = '₦2,000',
   yearlyPrice = '₦20,000',

@@ -76,10 +76,10 @@ export function CreatorPaymentPortal({
       : 'Monthly';
 
   const communitySlug =
-    (creatorDetails.name || 'chef-tolu-s-vip-kitchen')
+    (creatorDetails.name || 'my-community')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') || 'chef-tolu-s-vip-kitchen';
+      .replace(/^-|-$/g, '') || 'my-community';
 
   const originUrl =
     typeof window !== 'undefined'
@@ -226,8 +226,10 @@ export function CreatorPaymentPortal({
           <div className="flex items-center justify-between text-gray-500">
             <span>Creator Payout Account</span>
             <span className="font-semibold text-gray-900">
-              {creatorDetails.payoutAccount?.bankName || 'Zenith Bank'} ·{' '}
-              {creatorDetails.payoutAccount?.accountNumber || '2083948192'}
+              {creatorDetails.payoutAccount?.bankName || 'Not configured'}
+              {creatorDetails.payoutAccount?.accountNumber
+                ? ` · ${creatorDetails.payoutAccount.accountNumber}`
+                : ''}
             </span>
           </div>
           <div className="border-t border-gray-300/60" />
@@ -590,7 +592,7 @@ export function CreatorPaymentPortal({
               <div>
                 <span className="text-gray-400 block">Community Name</span>
                 <span className="text-white font-bold text-sm">
-                  {creatorDetails.name || "Chef Tolu's VIP Kitchen"}
+                  {creatorDetails.name || 'Your Community'}
                 </span>
               </div>
 
@@ -641,9 +643,11 @@ export function CreatorPaymentPortal({
               <p className="text-gray-400">
                 Acct:{' '}
                 <span className="text-white font-mono">
-                  {creatorDetails.payoutAccount?.accountNumber || '2083948192'}
-                </span>{' '}
-                · {creatorDetails.payoutAccount?.accountName || 'Tolu Olawale'}
+                  {creatorDetails.payoutAccount?.accountNumber || 'Not set'}
+                </span>
+                {creatorDetails.payoutAccount?.accountName
+                  ? ` · ${creatorDetails.payoutAccount.accountName}`
+                  : ''}
               </p>
             </div>
 

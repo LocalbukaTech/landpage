@@ -37,9 +37,9 @@ export function WithdrawModal({
   onSuccess,
 }: WithdrawModalProps) {
   const [selectedBank, setSelectedBank] = useState("zenith");
-  const [accountNumber, setAccountNumber] = useState("2083948192");
-  const accountName = "Tolu Olawale";
-  const [amount, setAmount] = useState<string>("500000");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [amount, setAmount] = useState<string>("");
   const [txRef, setTxRef] = useState("LBK-TX-849201");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -72,6 +72,11 @@ export function WithdrawModal({
 
     if (accountNumber.trim().length !== 10) {
       setError("Please enter a valid 10-digit Nigerian bank account number.");
+      return;
+    }
+
+    if (!accountName.trim()) {
+      setError("Please enter your bank account holder name.");
       return;
     }
 
@@ -235,10 +240,23 @@ export function WithdrawModal({
                   placeholder="0123456789"
                   className="w-full rounded-2xl bg-[#252525] border border-white/10 px-4 py-3 text-sm font-semibold tracking-wide text-white focus:border-[#f5c94d] focus:outline-none"
                 />
-                {accountName && (
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-white/80">
+                  Account Holder Name
+                </label>
+                <input
+                  type="text"
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="Enter account holder name"
+                  className="w-full rounded-2xl bg-[#252525] border border-white/10 px-4 py-3 text-sm font-medium text-white placeholder-white/30 focus:border-[#f5c94d] focus:outline-none"
+                />
+                {accountName.trim() && accountNumber.length === 10 && (
                   <div className="flex items-center gap-1.5 pt-1 text-xs text-[#4ade80]">
                     <ShieldCheck className="h-3.5 w-3.5" />
-                    <span>Verified: {accountName}</span>
+                    <span>Ready for payout: {accountName.trim()}</span>
                   </div>
                 )}
               </div>

@@ -13,10 +13,19 @@ import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { getMediaBlobUrl } from "@/lib/storage/media-storage";
 
+interface ManagedCommunityOption {
+  id: string;
+  slug: string;
+  name: string;
+  isFree: boolean;
+}
+
 interface CreatorDashboardProps {
   initialTab?: DashboardTab;
   community?: CreatorCommunityFormData;
   communitySlug?: string;
+  managedCommunities?: ManagedCommunityOption[];
+  onSelectCommunity?: (slug: string) => void;
   onCreateNewCommunity?: () => void;
   onUpdateCommunity?: (updates: Partial<CreatorCommunityFormData>) => void;
   onDeleteCommunity?: () => void;
@@ -37,6 +46,8 @@ export function CreatorDashboard({
   initialTab = "Members",
   community,
   communitySlug,
+  managedCommunities,
+  onSelectCommunity,
   onCreateNewCommunity,
   onUpdateCommunity,
   onDeleteCommunity,
@@ -184,12 +195,27 @@ export function CreatorDashboard({
               Creator management dashboard
             </h1>
             {community?.name && (
-              <p className="text-xs sm:text-sm text-white/60 mt-1">
-                Managing:{" "}
-                <span className="font-semibold text-[#f5c94d]">
-                  {community.name}
-                </span>{" "}
-                ·{" "}
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/60 mt-1">
+                <span>Managing:</span>
+                {managedCommunities && managedCommunities.length > 1 && onSelectCommunity ? (
+                  <select
+                    value={effectiveCommunitySlug}
+                    onChange={(e) => onSelectCommunity(e.target.value)}
+                    aria-label="Select community to manage"
+                    className="rounded-lg bg-[#252525] border border-[#f5c94d]/40 px-2.5 py-1 text-xs sm:text-sm font-semibold text-[#f5c94d] focus:outline-none focus:border-[#f5c94d] cursor-pointer"
+                  >
+                    {managedCommunities.map((item) => (
+                      <option key={item.id} value={item.slug} className="bg-[#1c1c1d] text-white">
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="font-semibold text-[#f5c94d]">
+                    {community.name}
+                  </span>
+                )}
+                <span>·</span>
                 <span>
                   {community.category === "free"
                     ? "Free Community"
@@ -201,7 +227,7 @@ export function CreatorDashboard({
                           : "mo"
                       }`}
                 </span>
-              </p>
+              </div>
             )}
           </div>
 

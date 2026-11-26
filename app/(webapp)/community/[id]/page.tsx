@@ -67,13 +67,17 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
       const savedComm = window.localStorage.getItem(CREATOR_COMMUNITY_STORAGE_KEY);
       if (savedComm) {
         const parsed = JSON.parse(savedComm);
-        if (parsed?.name === "Nigma's Kitche") {
-          parsed.name = "Nigma's Kitchen";
-          try {
-            window.localStorage.setItem(CREATOR_COMMUNITY_STORAGE_KEY, JSON.stringify(parsed));
-          } catch {}
+        if (parsed?.name === "Chef Tolu's VIP Kitchen") {
+          window.localStorage.removeItem(CREATOR_COMMUNITY_STORAGE_KEY);
+        } else {
+          if (parsed?.name === "Nigma's Kitche") {
+            parsed.name = "Nigma's Kitchen";
+            try {
+              window.localStorage.setItem(CREATOR_COMMUNITY_STORAGE_KEY, JSON.stringify(parsed));
+            } catch {}
+          }
+          setLocalCommunity(parsed);
         }
-        setLocalCommunity(parsed);
       }
     } catch {
       // ignore localStorage errors
@@ -83,7 +87,7 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
   const isLocalCreatorMatch =
     !liveCommunity &&
     Boolean(localCommunity?.name) &&
-    (toSlug(localCommunity!.name!) === id || id === 'chef-amaka' || id === 'my-community');
+    (toSlug(localCommunity!.name!) === id || id === 'my-community');
 
   const effectiveCommunity = liveCommunity
     ? liveCommunity
@@ -91,7 +95,7 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
     ? {
         id,
         slug: toSlug(localCommunity.name || id),
-        name: localCommunity.name || "Chef Tolu's VIP Kitchen",
+        name: localCommunity.name || 'Community',
         description: localCommunity.bio || '',
         coverImage: localCommunity.coverImage || localCommunity.avatar,
         avatar: localCommunity.avatar || localCommunity.coverImage,

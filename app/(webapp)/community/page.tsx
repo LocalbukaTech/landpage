@@ -12,8 +12,11 @@ import {
   ArrowLeft,
   Plus,
   Clock,
+  Loader2,
+  LogIn,
 } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { useAuth } from "@/context/AuthContext";
 import { CreatorDashboard } from "@/components/community/CreatorDashboard";
 import {
   CreatorCommunityForm,
@@ -58,9 +61,9 @@ const SEED_PLACEHOLDER_SLUGS = new Set([
 ]);
 
 const DEFAULT_CREATOR_DATA: CreatorCommunityFormData = {
-  name: "Chef Tolu's VIP Kitchen",
-  bio: "Weekly private recipes, live cook-alongs, and direct culinary coaching.",
-  category: "paid",
+  name: "",
+  bio: "",
+  category: "free",
   avatar: "/images/community/cover-1.jpg",
   coverImage: "/images/community/cover-1.jpg",
   costBracket: "base_2k",
@@ -74,14 +77,14 @@ const DEFAULT_CREATOR_DATA: CreatorCommunityFormData = {
   payoutAccount: {
     bankCode: "zenith",
     bankName: "Zenith Bank PLC",
-    accountNumber: "2083948192",
-    accountName: "Tolu Olawale",
+    accountNumber: "",
+    accountName: "",
   },
   paymentLinks: {
-    paystack: "http://localhost:3000/community/chef-tolu-s-vip-kitchen/subscribe",
-    flutterwave: "http://localhost:3000/community/chef-tolu-s-vip-kitchen/subscribe",
-    stripe: "http://localhost:3000/community/chef-tolu-s-vip-kitchen/subscribe",
-    custom: "http://localhost:3000/community/chef-tolu-s-vip-kitchen/subscribe",
+    paystack: "",
+    flutterwave: "",
+    stripe: "",
+    custom: "",
   },
   benefits: [
     "Exclusive recipes and weekly cook-along sessions",
@@ -99,7 +102,7 @@ const tabs: CommunityTab[] = [
 
 const COMMUNITY_COPY = {
   plus: [
-    "Recipes and cook-alongs from Chef Amaka.",
+    "Exclusive recipes, tutorials, and cook-alongs from the creator.",
     "Private food spot recommendations.",
   ],
 };
@@ -108,6 +111,7 @@ function CommunityPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const createCommunityMutation = useCreateCommunity();
 
   const initialMode = (() => {
@@ -172,9 +176,23 @@ function CommunityPageContent() {
         const saved = window.localStorage.getItem(CREATOR_COMMUNITY_STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
+          // Scrub legacy dummy "Chef Tolu's VIP Kitchen" defaults if stored in older sessions
+          const isLegacyDummy =
+            parsed?.name === "Chef Tolu's VIP Kitchen" ||
+            parsed?.paymentLinks?.paystack?.includes("chef-tolu-s-vip-kitchen");
+          if (isLegacyDummy) {
+            window.localStorage.removeItem(CREATOR_COMMUNITY_STORAGE_KEY);
+            return DEFAULT_CREATOR_DATA;
+          }
           if (parsed?.name === "Nigma's Kitc" || parsed?.name === "Nigma's Kitche") {
             parsed.name = "Nigma's Kitchen";
             window.localStorage.setItem(CREATOR_COMMUNITY_STORAGE_KEY, JSON.stringify(parsed));
+          }
+          if (parsed?.payoutAccount?.accountNumber === "2083948192") {
+            parsed.payoutAccount.accountNumber = "";
+          }
+          if (parsed?.payoutAccount?.accountName === "Tolu Olawale") {
+            parsed.payoutAccount.accountName = "";
           }
           return { ...DEFAULT_CREATOR_DATA, ...parsed };
         }
@@ -184,6 +202,8 @@ function CommunityPageContent() {
     }
     return DEFAULT_CREATOR_DATA;
   });
+
+  const [selectedManagedSlug, setSelectedManagedSlug] = useState<string | null>(null);
 
   const saveCreatorData = (next: CreatorCommunityFormData) => {
     setCreatorData(next);
@@ -222,14 +242,22 @@ function CommunityPageContent() {
 
   // Live API data (filtering out the 5 initial seed placeholder communities and stale test duplicates)
   const { data, isLoading } = useExploreCommunities({ tab: activeTab });
-  const { data: myCreatedCommunities } = useMyCreatedCommunities();
-  const validMyCreatedCommunities = (myCreatedCommunities ?? []).filter(
-    (c) =>
-      c.slug !== "nigma-s-kitche" &&
-      c.name !== "Nigma's Kitche" &&
-      c.id !== "e66d6895-d9a1-4be5-88d5-ae7bef7df176"
-  );
+  const {
+    data: myCreatedCommunities,
+    isLoading: isLoadingMyCommunities,
+  } = useMyCreatedCommunities(isAuthenticated);
+  const validMyCreatedCommunities = isAuthenticated
+    ? (myCreatedCommunities ?? []).filter(
+        (c) =>
+          c.slug !== "nigma-s-kitche" &&
+          c.name !== "Nigma's Kitche" &&
+          c.id !== "e66d6895-d9a1-4be5-88d5-ae7bef7df176"
+      )
+    : [];
   const latestCreatedCommunity =
+    (selectedManagedSlug
+      ? validMyCreatedCommunities.find((c) => c.slug === selectedManagedSlug)
+      : null) ||
     validMyCreatedCommunities.find((c) => c.status === "approved") ||
     validMyCreatedCommunities[0] ||
     null;
@@ -297,6 +325,14 @@ function CommunityPageContent() {
   })();
 
   const handleSelectFreePlan = (formData: CreatorCommunityFormData) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to create and manage your community.",
+      });
+      openAuthModal();
+      return;
+    }
     saveCreatorData(formData);
     createCommunityMutation.mutate(
       {
@@ -310,7 +346,11 @@ function CommunityPageContent() {
         benefits: formData.benefits,
       },
       {
-        onSuccess: (created: any) => {
+        onSuccess: (res: any) => {
+          const created = res?.data ?? res;
+          if (created?.slug) {
+            setSelectedManagedSlug(created.slug);
+          }
           const status = created?.status;
           const feedback = created?.adminFeedback;
           if (status === "approved") {
@@ -360,6 +400,14 @@ function CommunityPageContent() {
   };
 
   const handleSelectPaidPlan = (formData: CreatorCommunityFormData) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to create and manage your community.",
+      });
+      openAuthModal();
+      return;
+    }
     saveCreatorData(formData);
     setCreatorStep("payment");
   };
@@ -577,7 +625,9 @@ function CommunityPageContent() {
                 </div>
                 <div className="flex-1">
                   <CreatorCommunityForm
-                    initialData={creatorData}
+                    initialData={
+                      backendStatus === "changes_requested" ? creatorData : undefined
+                    }
                     onSelectPaidPlan={handleSelectPaidPlan}
                     onSelectFreePlan={handleSelectFreePlan}
                   />
@@ -639,12 +689,17 @@ function CommunityPageContent() {
             {/* Step 3: Approved & Live Status Card (Only shown when Admin approves) */}
             {effectiveCreatorStep === "approved" && (
               <CreatorCommunityApprovedCard
-                communityName={creatorData.name || "Chef Tolu's VIP Kitchen"}
+                communityName={
+                  latestCreatedCommunity?.name || creatorData.name || "Your Community"
+                }
                 liveSince="Today"
                 price={
-                  creatorData.category === "free"
+                  (latestCreatedCommunity ? latestCreatedCommunity.isFree : creatorData.category === "free")
                     ? "Free"
-                    : `₦${Math.max(2000, creatorData.pricePerMonth || 2000).toLocaleString("en-NG")}/${
+                    : `₦${Math.max(
+                        2000,
+                        latestCreatedCommunity?.priceAmount || creatorData.pricePerMonth || 2000
+                      ).toLocaleString("en-NG")}/${
                         creatorData.billingSchedule === "yearly"
                           ? "yr"
                           : creatorData.billingSchedule === "quarterly"
@@ -653,13 +708,17 @@ function CommunityPageContent() {
                       }`
                 }
                 payoutAccountSummary={
-                  creatorData.category === "free"
+                  (latestCreatedCommunity ? latestCreatedCommunity.isFree : creatorData.category === "free")
                     ? "Free Community (No Payout Fee)"
-                    : `${creatorData.payoutAccount.bankName} · ${creatorData.payoutAccount.accountNumber}`
+                    : creatorData.payoutAccount.accountNumber
+                    ? `${creatorData.payoutAccount.bankName} · ${creatorData.payoutAccount.accountNumber}`
+                    : "Not configured yet"
                 }
                 paymentLink={
-                  creatorData.paymentLinks.paystack ||
-                  creatorData.paymentLinks.custom
+                  latestCreatedCommunity?.slug && typeof window !== "undefined"
+                    ? `${window.location.origin}/community/${latestCreatedCommunity.slug}`
+                    : creatorData.paymentLinks.paystack ||
+                      creatorData.paymentLinks.custom
                 }
                 onGoToCommunity={() => setCreatorStep("dashboard")}
                 onCreateNew={() => setCreatorStep("form")}
@@ -702,41 +761,126 @@ function CommunityPageContent() {
 
             {/* Step 6: Creator Management Dashboard */}
             {effectiveCreatorStep === "dashboard" && (
-              <CreatorDashboard
-                initialTab={initialDashboardTab}
-                community={
-                  latestCreatedCommunity
-                    ? {
-                        ...creatorData,
-                        name: latestCreatedCommunity.name || creatorData.name,
-                        bio: latestCreatedCommunity.description || creatorData.bio,
-                        category: latestCreatedCommunity.isFree ? "free" : "paid",
-                        avatar:
-                          latestCreatedCommunity.avatar ||
-                          latestCreatedCommunity.coverImage ||
-                          creatorData.avatar,
-                        coverImage:
-                          latestCreatedCommunity.coverImage ||
-                          latestCreatedCommunity.avatar ||
-                          creatorData.coverImage,
-                      }
-                    : creatorData
-                }
-                communitySlug={latestCreatedCommunity?.slug}
-                onCreateNewCommunity={() => setCreatorStep("form")}
-                onUpdateCommunity={(updates) =>
-                  saveCreatorData({ ...creatorData, ...updates })
-                }
-                onDeleteCommunity={() => {
-                  try {
-                    window.localStorage.removeItem("localbuka_creator_community_v1");
-                  } catch {
-                    // ignore
+              !isAuthenticated ? (
+                <div className="w-full max-w-[680px] mx-auto rounded-[28px] border border-white/10 bg-[#1a1a1a] p-8 sm:p-10 text-center space-y-5 shadow-2xl">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f5c94d]/15 text-[#f5c94d] border border-[#f5c94d]/30">
+                    <LogIn className="h-7 w-7" />
+                  </div>
+                  <div className="space-y-2 max-w-md mx-auto">
+                    <h2 className="text-xl sm:text-2xl font-bold text-white">
+                      Sign in to manage your community
+                    </h2>
+                    <p className="text-sm text-zinc-400 leading-relaxed">
+                      Sign in with the LocalBuka account you used to create your community to view members, send invites, and publish posts.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal()}
+                      className="rounded-full bg-[#f5c94d] px-6 py-2.5 text-sm font-bold text-black hover:bg-[#eab308] transition-all cursor-pointer"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("explore")}
+                      className="rounded-full bg-white/10 px-6 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition-all cursor-pointer"
+                    >
+                      Back to Explore
+                    </button>
+                  </div>
+                </div>
+              ) : isLoadingMyCommunities ? (
+                <div className="w-full max-w-[680px] mx-auto rounded-[28px] border border-white/10 bg-[#1a1a1a] p-12 text-center space-y-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#f5c94d] mx-auto" />
+                  <p className="text-sm text-zinc-400">
+                    Loading your community dashboard...
+                  </p>
+                </div>
+              ) : !latestCreatedCommunity ? (
+                <div className="w-full max-w-[680px] mx-auto rounded-[28px] border border-white/10 bg-[#1a1a1a] p-8 sm:p-10 text-center space-y-5 shadow-2xl">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#f5c94d]/15 text-[#f5c94d] border border-[#f5c94d]/30">
+                    <LayoutDashboard className="h-7 w-7" />
+                  </div>
+                  <div className="space-y-2 max-w-md mx-auto">
+                    <h2 className="text-xl sm:text-2xl font-bold text-white">
+                      You haven&apos;t created a community yet
+                    </h2>
+                    <p className="text-sm text-zinc-400 leading-relaxed">
+                      Launch your own food community first to unlock your Creator Dashboard, share dishes, and invite LocalBuka members.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setCreatorStep("form")}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#f5c94d] px-6 py-2.5 text-sm font-bold text-black hover:bg-[#eab308] transition-all cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 stroke-[2.5]" />
+                      <span>Create Community</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("explore")}
+                      className="rounded-full bg-white/10 px-6 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition-all cursor-pointer"
+                    >
+                      Explore Communities
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <CreatorDashboard
+                  initialTab={initialDashboardTab}
+                  community={{
+                    ...creatorData,
+                    name: latestCreatedCommunity.name,
+                    bio: latestCreatedCommunity.description || "",
+                    category: latestCreatedCommunity.isFree ? "free" : "paid",
+                    avatar:
+                      latestCreatedCommunity.avatar ||
+                      latestCreatedCommunity.coverImage ||
+                      creatorData.avatar,
+                    coverImage:
+                      latestCreatedCommunity.coverImage ||
+                      latestCreatedCommunity.avatar ||
+                      creatorData.coverImage,
+                    pricePerMonth: latestCreatedCommunity.isFree
+                      ? 0
+                      : latestCreatedCommunity.priceAmount || 2000,
+                    yearlyPrice: latestCreatedCommunity.isFree
+                      ? 0
+                      : latestCreatedCommunity.yearlyPriceAmount || 20000,
+                    benefits:
+                      latestCreatedCommunity.benefits &&
+                      latestCreatedCommunity.benefits.length > 0
+                        ? latestCreatedCommunity.benefits
+                        : creatorData.benefits,
+                  }}
+                  communitySlug={latestCreatedCommunity.slug}
+                  managedCommunities={validMyCreatedCommunities.map((c) => ({
+                    id: c.id,
+                    slug: c.slug,
+                    name: c.name,
+                    isFree: c.isFree,
+                  }))}
+                  onSelectCommunity={(slug) => setSelectedManagedSlug(slug)}
+                  onCreateNewCommunity={() => setCreatorStep("form")}
+                  onUpdateCommunity={(updates) =>
+                    saveCreatorData({ ...creatorData, ...updates })
                   }
-                  setCreatorStep("form");
-                  setViewMode("explore");
-                }}
-              />
+                  onDeleteCommunity={() => {
+                    try {
+                      window.localStorage.removeItem("localbuka_creator_community_v1");
+                    } catch {
+                      // ignore
+                    }
+                    setSelectedManagedSlug(null);
+                    setCreatorStep("form");
+                    setViewMode("explore");
+                  }}
+                />
+              )
             )}
           </div>
         )}
@@ -825,7 +969,7 @@ function CommunityPageContent() {
                 </div>
 
                 <PaymentCheckoutCard
-                  communityName={selectedCommunity?.name || "Chef Amaka's kitchen"}
+                  communityName={selectedCommunity?.name || "Community"}
                   amount={selectedCommunity?.priceAmount || 2500}
                   onCancel={() => setIsCheckingOut(false)}
                   onSuccess={() => {
@@ -1243,7 +1387,10 @@ function CommunityPageContent() {
                         Unlock everything in this community:
                       </p>
                       <ul className="space-y-2 text-xs sm:text-sm text-zinc-300">
-                        {COMMUNITY_COPY.plus.map((item) => (
+                        {(selectedCommunity.benefits && selectedCommunity.benefits.length > 0
+                          ? selectedCommunity.benefits
+                          : COMMUNITY_COPY.plus
+                        ).map((item) => (
                           <li key={item} className="flex items-start gap-2">
                             <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#f5c94d] text-[10px] text-[#111111]">
                               <Check className="h-3 w-3 stroke-[3]" />

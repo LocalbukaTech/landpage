@@ -174,10 +174,10 @@ export function CreatorCommunityForm({
     initialData?.payoutAccount?.bankCode || 'zenith'
   );
   const [accountNumber, setAccountNumber] = useState<string>(
-    initialData?.payoutAccount?.accountNumber || '2083948192'
+    initialData?.payoutAccount?.accountNumber || ''
   );
   const [accountName, setAccountName] = useState<string>(
-    initialData?.payoutAccount?.accountName || 'Tolu Olawale'
+    initialData?.payoutAccount?.accountName || ''
   );
 
   // Payment Links state
@@ -286,7 +286,7 @@ export function CreatorCommunityForm({
     NIGERIAN_BANKS.find((b) => b.code === bankCode)?.name || 'Zenith Bank PLC';
 
   const buildFormData = (selectedCategory: 'free' | 'paid'): CreatorCommunityFormData => {
-    const finalName = name.trim() || "Chef Tolu's VIP Kitchen";
+    const finalName = name.trim();
     const finalBio =
       bio.trim() ||
       'A focused space where food lovers connect, share authentic recipes, and discover hidden culinary gems.';
@@ -312,7 +312,7 @@ export function CreatorCommunityForm({
       payoutAccount: {
         bankCode,
         bankName: selectedBankName,
-        accountNumber: accountNumber.trim() || '2083948192',
+        accountNumber: accountNumber.trim(),
         accountName: accountName.trim() || finalName,
       },
       paymentLinks: {
@@ -326,12 +326,20 @@ export function CreatorCommunityForm({
 
   const handleFreeSubmit = () => {
     setFormError(null);
+    if (!name.trim()) {
+      setFormError('Please enter a name for your community.');
+      return;
+    }
     setCategory('free');
     onSelectFreePlan(buildFormData('free'));
   };
 
   const handlePaidSubmit = () => {
     setFormError(null);
+    if (!name.trim()) {
+      setFormError('Please enter a name for your community.');
+      return;
+    }
     if (!pricePerMonth || pricePerMonth < MIN_PAID_PRICE) {
       setFormError(
         `Paid community base plan starts at ₦${MIN_PAID_PRICE.toLocaleString('en-NG')}/month. Prices below ₦2,000 are not allowed.`

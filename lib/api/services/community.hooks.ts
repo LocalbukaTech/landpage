@@ -43,13 +43,14 @@ export const useMyMemberships = () => {
   });
 };
 
-export const useMyCreatedCommunities = () => {
+export const useMyCreatedCommunities = (enabled = true) => {
   return useQuery({
     queryKey: [...queryKeys.community.myCommunities()],
     queryFn: async () => {
       const response = await communityService.getMyCreatedCommunities();
       return response.data;
     },
+    enabled,
   });
 };
 

@@ -587,9 +587,11 @@ export const communityService = {
 
   /** GET /community/posts/:postId/comments — Get comments on post */
   getPostComments: (postId: string, params?: { page?: number; limit?: number }) => {
+    const page = params?.page && params.page > 0 ? params.page : 1;
+    const limit = params?.limit && params.limit > 0 ? params.limit : 20;
     return api.get<ApiResponse<{ comments: CommunityComment[]; total: number; page: number; limit: number }>>(
       `/community/posts/${postId}/comments`,
-      { params },
+      { params: { page, limit } },
     );
   },
 

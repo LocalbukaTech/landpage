@@ -110,18 +110,15 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
   const isNigeriaCulture = !id || id === 'nigeria-food-and-culture' || id === 'nigeria-food' || id === '1';
 
   const resolvedRecentPosts = useMemo(() => {
-    const apiPosts = (liveFeed?.items || [])
-      .filter((p) => p.mediaUrls && p.mediaUrls.length > 0)
-      .map((p) => ({
-        id: p.id,
-        image: p.mediaUrls[0],
-        title: p.content || 'Community post',
-      }));
+    const apiPosts = (liveFeed?.items || []).map((p) => ({
+      id: p.id,
+      image: p.mediaUrls && p.mediaUrls.length > 0 ? p.mediaUrls[0] : undefined,
+      title: p.content || 'Community post',
+    }));
 
     // Include newly posted creator posts from localStorage for this community (excluding old seed post-1 / post-2)
     const matchingLocalPosts = localPosts
       .filter((p) => {
-        if (!p.mediaUrl) return false;
         if (p.id === 'post-1' || p.id === 'post-2') return false;
         if (p.communitySlug && p.communitySlug === id) return true;
         if (p.communityName && effectiveCommunity?.name) {
@@ -131,15 +128,16 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
       })
       .map((p) => ({
         id: p.id,
-        image: p.mediaUrl!,
+        image: p.mediaUrl || undefined,
         title: p.caption || 'Recent post',
       }));
 
-    const combined: Array<{ id: string; image: string; title: string }> = [];
+    const combined: Array<{ id: string; image?: string; title: string }> = [];
     const seen = new Set<string>();
-    for (const item of [...matchingLocalPosts, ...apiPosts]) {
-      if (!seen.has(item.image)) {
-        seen.add(item.image);
+    for (const item of [...apiPosts, ...matchingLocalPosts]) {
+      const dedupeKey = item.id || item.image || item.title;
+      if (!seen.has(dedupeKey)) {
+        seen.add(dedupeKey);
         combined.push(item);
       }
     }
@@ -150,6 +148,11 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
 
     return [];
   }, [liveFeed, localPosts, id, effectiveCommunity, isLocalCreatorMatch]);
+
+  const openFeedAtPost = (postId?: string) => {
+    const query = postId ? `?post=${encodeURIComponent(postId)}` : '';
+    router.push(`/community/${effectiveCommunity?.slug || id}/feed${query}`);
+  };
 
   const mobileCommunity = liveCommunity
     ? toMobileCommunityItem(liveCommunity)
@@ -164,8 +167,10 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
           <MobilePaidCommunityDetails
             community={mobileCommunity}
             recentPosts={resolvedRecentPosts}
+            isMember={Boolean((effectiveCommunity as any)?.isMember)}
             onBack={() => router.push('/community')}
             onSubscribe={() => router.push(`/community/${id}/subscribe`)}
+            onSelectPost={openFeedAtPost}
           />
         </div>
 
@@ -214,8 +219,8 @@ export default function CommunityDetailPage({ params }: CommunityDetailPageProps
           community={mobileCommunity}
           recentPosts={resolvedRecentPosts}
           onBack={() => router.push('/community')}
-          onJoin={() => router.push(`/community/${id}/feed`)}
-          onSelectPost={() => router.push(`/community/${id}/feed`)}
+          onJoin={() => openFeedAtPost()}
+          onSelectPost={openFeedAtPost}
         />
       </div>
 

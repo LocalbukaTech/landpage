@@ -25,6 +25,7 @@ export interface CommunityItem {
   benefits?: string[];
   shares?: { id: string; icon: 'recipe' | 'chat' | 'media'; title: string }[];
   status: string;
+  visibility?: boolean;
   isRecommended: boolean;
   isTrending: boolean;
   isMember: boolean;
@@ -50,8 +51,12 @@ export interface CommunityPost {
   hashtags?: string[];
   likesCount: number;
   commentsCount: number;
+  sharesCount?: number;
+  savesCount?: number;
   isPinned: boolean;
+  isArchived?: boolean;
   hasLiked: boolean;
+  hasSaved?: boolean;
   createdAt: string;
 }
 
@@ -157,46 +162,26 @@ export interface FeedParams {
   limit?: number;
 }
 
-// ─── Local Mock-Backed Store for Created Communities ───────────────────────
+// ─── Legacy Local Community Cache Cleanup ──────────────────────────────────
 
 const LOCAL_COMMUNITIES_KEY = 'localbuka_created_communities_v1';
 
-export function getLocallyCreatedCommunities(): CommunityItem[] {
-  if (typeof window === 'undefined') return [];
+function clearLegacyLocalCommunities(): void {
+  if (typeof window === 'undefined') return;
   try {
-    const raw = window.localStorage.getItem(LOCAL_COMMUNITIES_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    const list = Array.isArray(parsed) ? parsed : [];
-    const cleaned = list.filter(
-      (c) =>
-        c &&
-        c.slug !== 'nigma-s-kitche' &&
-        c.name !== "Nigma's Kitche" &&
-        c.id !== 'e66d6895-d9a1-4be5-88d5-ae7bef7df176'
-    );
-    if (cleaned.length !== list.length) {
-      window.localStorage.setItem(LOCAL_COMMUNITIES_KEY, JSON.stringify(cleaned));
-    }
-    return cleaned;
+    window.localStorage.removeItem(LOCAL_COMMUNITIES_KEY);
   } catch {
-    return [];
+    // ignore storage errors
   }
 }
 
-export function saveLocallyCreatedCommunity(item: CommunityItem): void {
-  if (typeof window === 'undefined') return;
-  try {
-    const existing = getLocallyCreatedCommunities().filter(
-      (c) => c.slug !== item.slug && c.id !== item.id,
-    );
-    window.localStorage.setItem(
-      LOCAL_COMMUNITIES_KEY,
-      JSON.stringify([item, ...existing]),
-    );
-  } catch {
-    // ignore storage quota errors
-  }
+export function getLocallyCreatedCommunities(): CommunityItem[] {
+  clearLegacyLocalCommunities();
+  return [];
+}
+
+export function saveLocallyCreatedCommunity(_item: CommunityItem): void {
+  clearLegacyLocalCommunities();
 }
 
 // ─── Service ───────────────────────────────────────────────────────────────
@@ -204,49 +189,15 @@ export function saveLocallyCreatedCommunity(item: CommunityItem): void {
 export const communityService = {
   /** GET /community — Explore/discover communities */
   explore: async (params?: ExploreCommunitiesParams) => {
-    const res = await api.get<ApiResponse<PaginatedCommunitiesResponse>>('/community', {
+    clearLegacyLocalCommunities();
+    return api.get<ApiResponse<PaginatedCommunitiesResponse>>('/community', {
       params,
     });
-    const localItems = getLocallyCreatedCommunities().filter((c) => {
-      if (params?.tab === 'Free') return c.isFree;
-      if (params?.tab === 'Paid') return !c.isFree;
-      return true;
-    });
-    if (localItems.length > 0 && res?.data?.items) {
-      const remoteSlugs = new Set(res.data.items.map((i) => i.slug));
-      const remoteNames = new Set(
-        res.data.items.map((i) => (i.name || '').toLowerCase().replace(/[^a-z0-9]/g, ''))
-      );
-      const uniqueLocal = localItems.filter((l) => {
-        if (remoteSlugs.has(l.slug)) return false;
-        const norm = (l.name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (remoteNames.has(norm)) return false;
-        if (l.slug === 'nigma-s-kitche' || l.name === "Nigma's Kitche") return false;
-        return true;
-      });
-      res.data.items = [...uniqueLocal, ...res.data.items];
-      res.data.total = (res.data.total || 0) + uniqueLocal.length;
-    }
-    return res;
   },
 
   /** GET /community/:idOrSlug — Single community detail */
   getOne: async (idOrSlug: string) => {
-    const localMatch = getLocallyCreatedCommunities().find(
-      (c) => c.slug === idOrSlug || c.id === idOrSlug,
-    );
-    try {
-      return await api.get<ApiResponse<CommunityItem>>(`/community/${idOrSlug}`);
-    } catch (err) {
-      if (localMatch) {
-        return {
-          success: true,
-          message: 'Loaded from creator store',
-          data: localMatch,
-        } as ApiResponse<CommunityItem>;
-      }
-      throw err;
-    }
+    return api.get<ApiResponse<CommunityItem>>(`/community/${idOrSlug}`);
   },
 
   /** POST /community/:idOrSlug/join — Join a free community */
@@ -334,26 +285,13 @@ export const communityService = {
 
   /** GET /community/creator/my-communities — Creator's communities */
   getMyCreatedCommunities: async () => {
-    const local = getLocallyCreatedCommunities();
-    try {
-      const res = await api.get<ApiResponse<CommunityItem[]>>(
-        '/community/creator/my-communities',
-      );
-      if (local.length > 0 && Array.isArray(res?.data)) {
-        const remoteSlugs = new Set(res.data.map((i) => i.slug));
-        res.data = [...local.filter((l) => !remoteSlugs.has(l.slug)), ...res.data];
-      }
-      return res;
-    } catch {
-      return {
-        success: true,
-        message: 'Loaded local creator communities',
-        data: local,
-      } as ApiResponse<CommunityItem[]>;
-    }
+    clearLegacyLocalCommunities();
+    return api.get<ApiResponse<CommunityItem[]>>(
+      '/community/creator/my-communities',
+    );
   },
 
-  /** POST /community/create — Create new community (with mock-backed fallback) */
+  /** POST /community/create — Create new community */
   create: async (data: {
     name: string;
     description: string;
@@ -388,66 +326,19 @@ export const communityService = {
         .replace(/(^-|-$)/g, '') ||
       `community-${Date.now()}`;
 
-    const mockCreatedItem: CommunityItem = {
-      id: `local-${Date.now()}`,
+    clearLegacyLocalCommunities();
+    return api.post<ApiResponse<CommunityItem>>('/community/create', {
       name: data.name,
       slug,
-      creator: data.payoutAccount?.accountName
-        ? `By ${data.payoutAccount.accountName}`
-        : 'By Creator',
-      ownerLine: data.payoutAccount?.accountName
-        ? `Created by ${data.payoutAccount.accountName}`
-        : 'Created by You',
-      members: '1 member',
-      posts: '0 posts',
-      price: isFree ? 'Free' : `Paid · ₦${effectivePrice.toLocaleString('en-NG')}/mo`,
-      priceBadge: isFree ? 'Free' : `₦${effectivePrice.toLocaleString('en-NG')}/mo`,
-      priceAmount: effectivePrice,
-      yearlyPriceAmount: isFree ? 0 : data.pricePerYear || effectivePrice * 10,
-      isFree,
-      image: data.coverImage || data.avatar || '/images/community/cover-1.jpg',
-      coverImage: data.coverImage || data.avatar || '/images/community/cover-1.jpg',
-      avatar: data.avatar || '/images/community/cover-1.jpg',
-      accent: data.accent || (isFree ? 'green' : 'yellow'),
       description: data.description,
+      category: data.category,
+      pricePerMonth: effectivePrice,
+      pricePerYear: isFree ? 0 : data.pricePerYear || effectivePrice * 10,
+      coverImage: data.coverImage || data.avatar,
+      avatar: data.avatar,
+      accent: data.accent || (isFree ? 'green' : 'yellow'),
       benefits: data.benefits || [],
-      shares: [
-        { id: '1', icon: 'recipe', title: 'Recipes and cooking tips' },
-        { id: '2', icon: 'chat', title: 'Food discussions' },
-        { id: '3', icon: 'media', title: 'Videos and photos' },
-      ],
-      status: 'approved',
-      isRecommended: true,
-      isTrending: true,
-      isMember: true,
-      memberRole: 'creator',
-    };
-
-    try {
-      const response = await api.post<ApiResponse<CommunityItem>>('/community/create', {
-        name: data.name,
-        slug,
-        description: data.description,
-        category: data.category,
-        pricePerMonth: effectivePrice,
-        pricePerYear: isFree ? 0 : data.pricePerYear || effectivePrice * 10,
-        coverImage: data.coverImage || data.avatar,
-        avatar: data.avatar,
-        accent: data.accent || (isFree ? 'green' : 'yellow'),
-        benefits: data.benefits || [],
-      });
-      if (response?.data) {
-        saveLocallyCreatedCommunity(response.data);
-      }
-      return response;
-    } catch {
-      saveLocallyCreatedCommunity(mockCreatedItem);
-      return {
-        success: true,
-        message: 'Community created successfully',
-        data: mockCreatedItem,
-      } as ApiResponse<CommunityItem>;
-    }
+    });
   },
 
   /** GET /community/:idOrSlug/feed — Get community feed posts */
@@ -520,6 +411,26 @@ export const communityService = {
     >(`/community/${idOrSlug}/members`);
   },
 
+  /** GET /community/:idOrSlug/suggested-invites — Hourly-rotating real unjoined users */
+  getSuggestedInvites: (
+    idOrSlug: string,
+    params?: { limit?: number; q?: string; seed?: number },
+  ) => {
+    return api.get<
+      ApiResponse<{
+        items: Array<{
+          id: string;
+          name: string;
+          username: string;
+          avatar: string | null;
+        }>;
+        totalAvailable: number;
+        rotationIntervalMinutes: number;
+        nextRefreshAt: string;
+      }>
+    >(`/community/${idOrSlug}/suggested-invites`, { params });
+  },
+
   /** POST /community/:idOrSlug/invite — Send pending invitation to a real user */
   inviteMember: (idOrSlug: string, userId: string) => {
     return api.post<
@@ -540,6 +451,23 @@ export const communityService = {
       `/community/${idOrSlug}/invite/decline`,
       userId ? { userId } : {},
     );
+  },
+
+  /** PATCH /community/:idOrSlug — Update community settings (Creator or Admin) */
+  updateCommunity: (
+    idOrSlug: string,
+    data: {
+      name?: string;
+      description?: string;
+      coverImage?: string;
+      avatar?: string;
+      benefits?: string[];
+      pricePerMonth?: number;
+      pricePerYear?: number;
+      visibility?: boolean;
+    },
+  ) => {
+    return api.patch<ApiResponse<CommunityItem>>(`/community/${idOrSlug}`, data);
   },
 
   /** DELETE /community/:idOrSlug — Delete a community (Creator or Admin) */
@@ -583,6 +511,58 @@ export const communityService = {
     return api.post<ApiResponse<{ liked: boolean; likesCount: number }>>(
       `/community/posts/${postId}/like`,
     );
+  },
+
+  /** POST /community/posts/:postId/share — Record share event on post */
+  sharePost: (postId: string, platform?: string) => {
+    return api.post<ApiResponse<{ postId: string; sharesCount: number; platform: string }>>(
+      `/community/posts/${postId}/share`,
+      { platform: platform || 'copy_link' },
+    );
+  },
+
+  /** POST /community/posts/:postId/save — Toggle bookmark/save on post */
+  togglePostSave: (postId: string) => {
+    return api.post<ApiResponse<{ saved: boolean; savesCount: number }>>(
+      `/community/posts/${postId}/save`,
+    );
+  },
+
+  /** PATCH /community/posts/:postId — Edit or archive a community post */
+  updatePost: (
+    postId: string,
+    data: {
+      content?: string;
+      mediaUrls?: string[];
+      location?: string | null;
+      tags?: string[];
+      hashtags?: string[];
+      isArchived?: boolean;
+      isPinned?: boolean;
+    },
+  ) => {
+    return api.patch<ApiResponse<CommunityPost>>(
+      `/community/posts/${postId}`,
+      data,
+    );
+  },
+
+  /** GET /community/me/saved-posts — Saved community posts for current user */
+  getMySavedPosts: () => {
+    return api.get<
+      ApiResponse<
+        Array<{
+          id: string;
+          communityId: string;
+          communityName: string;
+          caption: string;
+          mediaUrl?: string | null;
+          authorName: string;
+          authorAvatar?: string | null;
+          savedAt: string;
+        }>
+      >
+    >('/community/me/saved-posts');
   },
 
   /** GET /community/posts/:postId/comments — Get comments on post */

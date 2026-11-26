@@ -6,16 +6,20 @@ import { MobileCommunityItem } from "./types";
 
 interface MobilePaidCommunityDetailsProps {
   community: MobileCommunityItem;
-  recentPosts?: Array<{ id: string; image: string; title: string }>;
+  recentPosts?: Array<{ id: string; image?: string; title: string }>;
+  isMember?: boolean;
   onBack: () => void;
   onSubscribe: () => void;
+  onSelectPost?: (postId?: string) => void;
 }
 
 export function MobilePaidCommunityDetails({
   community,
   recentPosts,
+  isMember = false,
   onBack,
   onSubscribe,
+  onSelectPost,
 }: MobilePaidCommunityDetailsProps) {
   const benefits = community.benefits || [
     "Exclusive weekly recipes",
@@ -133,22 +137,32 @@ export function MobilePaidCommunityDetails({
             ).map((post) => (
               <div
                 key={post.id}
-                onClick={onSubscribe}
+                onClick={() => (isMember && onSelectPost ? onSelectPost(post.id) : onSubscribe())}
                 className="group relative w-32 h-24 rounded-xl overflow-hidden border border-white/10 bg-zinc-800 shrink-0 cursor-pointer active:scale-95 transition-all"
               >
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  fill
-                  unoptimized
-                  className="object-cover blur-[2px] brightness-75 group-hover:scale-105 transition-transform duration-300"
-                  sizes="130px"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-[#fbbe15]">
-                    <Lock size={14} />
+                {post.image ? (
+                  <Image
+                    src={post.image}
+                    alt={post.title}
+                    fill
+                    unoptimized
+                    className={`object-cover group-hover:scale-105 transition-transform duration-300 ${isMember ? "" : "blur-[2px] brightness-75"}`}
+                    sizes="130px"
+                  />
+                ) : (
+                  <div className="w-full h-full p-2.5 flex items-center bg-[#1e1e1e]">
+                    <p className={`text-[11px] text-zinc-200 line-clamp-3 ${isMember ? "" : "blur-[2px]"}`}>
+                      {post.title}
+                    </p>
                   </div>
-                </div>
+                )}
+                {!isMember && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-[#fbbe15]">
+                      <Lock size={14} />
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -158,10 +172,10 @@ export function MobilePaidCommunityDetails({
         <div className="pt-2">
           <button
             type="button"
-            onClick={onSubscribe}
+            onClick={() => (isMember && onSelectPost ? onSelectPost() : onSubscribe())}
             className="w-full py-3.5 px-6 rounded-xl bg-[#fbbe15] hover:bg-[#eab308] active:scale-[0.98] transition-all font-bold text-[#141414] text-[15px] shadow-lg shadow-[#fbbe15]/20 cursor-pointer text-center"
           >
-            Subscribe to unlock
+            {isMember ? "Open Community Feed" : "Subscribe to unlock"}
           </button>
         </div>
       </div>

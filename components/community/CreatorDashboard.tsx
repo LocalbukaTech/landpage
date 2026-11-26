@@ -165,6 +165,15 @@ export function CreatorDashboard({
     }
   };
 
+  const effectiveCommunitySlug =
+    communitySlug ||
+    (community?.name
+      ? community.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+      : "");
+
   return (
     <div className="w-full text-white">
       {/* Header */}
@@ -243,14 +252,7 @@ export function CreatorDashboard({
             onNavigateToMembers={() => setActiveTab("Members")}
             onNavigateToMonetization={() => setActiveTab("Monetization")}
             communityName={community?.name}
-            communitySlug={
-              community?.name
-                ? community.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-")
-                    .replace(/^-|-$/g, "")
-                : ""
-            }
+            communitySlug={effectiveCommunitySlug}
             pricePerMonth={community?.category === "free" ? 0 : community?.pricePerMonth}
           />
         )}
@@ -263,27 +265,13 @@ export function CreatorDashboard({
             authorName={realAuthorName}
             authorHandle={realAuthorHandle}
             authorAvatar={realAuthorAvatar}
-            communitySlug={
-              community?.name
-                ? community.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-")
-                    .replace(/^-|-$/g, "")
-                : ""
-            }
+            communitySlug={effectiveCommunitySlug}
           />
         )}
         {activeTab === "Members" && (
           <MembersTab
             communityName={community?.name}
-            communitySlug={
-              community?.name
-                ? community.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-")
-                    .replace(/^-|-$/g, "")
-                : ""
-            }
+            communitySlug={effectiveCommunitySlug}
           />
         )}
         {activeTab === "Monetization" && (
@@ -295,16 +283,9 @@ export function CreatorDashboard({
         {activeTab === "Settings" && (
           <SettingsTab
             communityName={community?.name}
-            communitySlug={
-              communitySlug ||
-              (community?.name
-                ? community.name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-")
-                    .replace(/^-|-$/g, "")
-                : undefined)
-            }
+            communitySlug={effectiveCommunitySlug || undefined}
             communityBio={community?.bio}
+            initialCoverImage={community?.coverImage || community?.avatar}
             initialPrice={
               community?.category === "free"
                 ? 0

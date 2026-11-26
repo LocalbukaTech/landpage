@@ -30,9 +30,12 @@ import {
 import { CommunityPost } from "./types";
 import {
   useCreateCommunityPost,
+  useUpdateCommunityPost,
+  useTogglePostSave,
   useExploreCommunities,
   useCommunityTagSuggestions,
 } from "@/lib/api/services/community.hooks";
+import { communityService } from "@/lib/api/services/community.service";
 import { useRestaurants } from "@/lib/api/services/restaurants.hooks";
 import apiClient from "@/lib/api/client";
 import { storeMediaBlob, getMediaBlobUrl } from "@/lib/storage/media-storage";
@@ -101,9 +104,12 @@ export function ContentManagementTab({
   onPostsChange,
 }: ContentManagementTabProps) {
   const createPostMutation = useCreateCommunityPost(communitySlug);
+  const updatePostMutation = useUpdateCommunityPost();
+  const togglePostSaveMutation = useTogglePostSave();
   const { data: exploreCommunitiesData } = useExploreCommunities();
   const { data: backendTagSuggestions } = useCommunityTagSuggestions();
   const { data: restaurantsData } = useRestaurants({ page: 1, pageSize: 15 });
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
   // File upload states
   const [uploadedMedia, setUploadedMedia] = useState<string | null>(null);
@@ -556,9 +562,12 @@ export function ContentManagementTab({
         .filter(Boolean)
         .join(" ");
 
-    const mediaToUse = uploadedMedia || SAMPLE_UPLOADED_IMAGE;
+    const mediaToUse = uploadedMedia || "";
     const fileToUpload = selectedFile;
-    const postId = `post-${nextId}`;
+    const postId = editingPostId || `post-${nextId}`;
+    const isEditing = Boolean(editingPostId);
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     const authorHandleFormatted =
       authorHandle ||
@@ -591,7 +600,7 @@ export function ContentManagementTab({
       isBookmarked: false,
     };
 
-    // Show spinner overlay briefly and fire API upload + post mutation in background
+    // Upload media to Cloudinary first, then create or update post on backend
     setIsPosting(true);
     void (async () => {
       let mediaUrls: string[] = mediaToUse.startsWith("http")
@@ -602,11 +611,14 @@ export function ContentManagementTab({
         try {
           const formData = new FormData();
           formData.append("file", fileToUpload);
-          const uploadRes = await apiClient.post<{
-            url?: string;
-            data?: string;
-          }>("/images/upload", formData);
-          const remoteUrl = uploadRes?.data?.url || uploadRes?.data?.data;
+          const uploadRes = await apiClient.post<any>("/images/upload", formData);
+          const payload = uploadRes?.data;
+          const remoteUrl =
+            payload?.secure_url ||
+            payload?.url ||
+            payload?.data?.secure_url ||
+            payload?.data?.url ||
+            (typeof payload?.data === "string" ? payload.data : undefined);
           if (typeof remoteUrl === "string" && remoteUrl.startsWith("http")) {
             mediaUrls = [remoteUrl];
             updatePosts((prev) =>
@@ -615,26 +627,67 @@ export function ContentManagementTab({
               )
             );
           }
-        } catch {
-          // Ignore upload error when testing locally without auth token
+        } catch (err: any) {
+          showToast(
+            err?.response?.data?.message ||
+              "Media upload failed — check connection and try again."
+          );
         }
       }
 
       try {
-        await createPostMutation.mutateAsync({
-          content: fullCaption,
-          mediaUrls,
-          location: location || undefined,
-          tags,
-          hashtags,
-        });
-      } catch {
-        // Ignore auth/membership error when testing locally without creator token
+        if (isEditing && uuidRegex.test(postId)) {
+          await updatePostMutation.mutateAsync({
+            postId,
+            data: {
+              content: fullCaption,
+              mediaUrls,
+              location: location || null,
+              tags,
+              hashtags,
+            },
+          });
+        } else {
+          const createdRes: any = await createPostMutation.mutateAsync({
+            content: fullCaption,
+            mediaUrls,
+            location: location || undefined,
+            tags,
+            hashtags,
+          });
+          const realId = createdRes?.data?.id || createdRes?.id;
+          if (typeof realId === "string" && uuidRegex.test(realId)) {
+            updatePosts((prev) =>
+              prev.map((p) => (p.id === postId ? { ...p, id: realId } : p))
+            );
+          }
+        }
+      } catch (err: any) {
+        const msg = err?.response?.data?.message || err?.message;
+        if (msg) showToast(`Post sync warning: ${msg}`);
       }
     })();
 
     setTimeout(() => {
-      updatePosts((prev) => [newPost, ...prev]);
+      if (isEditing) {
+        updatePosts((prev) =>
+          prev.map((p) =>
+            p.id === postId
+              ? {
+                  ...p,
+                  caption: fullCaption,
+                  mediaUrl: mediaToUse,
+                  location: location || undefined,
+                  tags: [...tags],
+                  hashtags: [...hashtags],
+                }
+              : p
+          )
+        );
+      } else {
+        updatePosts((prev) => [newPost, ...prev]);
+      }
+      setEditingPostId(null);
       setUploadedMedia(null);
       setSelectedFile(null);
       setUploadError(null);
@@ -649,7 +702,11 @@ export function ContentManagementTab({
         handleDeleteDraft(activeDraftBanner.id);
       }
       setIsPosting(false);
-      showToast("Post published successfully to community feed!");
+      showToast(
+        isEditing
+          ? "Post updated successfully!"
+          : "Post published successfully to community feed!"
+      );
       setTimeout(() => {
         postedSectionRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -747,6 +804,7 @@ export function ContentManagementTab({
   };
 
   const handleDiscard = () => {
+    setEditingPostId(null);
     setUploadedMedia(null);
     setSelectedFile(null);
     setUploadError(null);
@@ -828,13 +886,45 @@ export function ContentManagementTab({
         };
       })
     );
-    showToast(nextSavedState ? 'Post saved to bookmarks! 📌' : 'Removed from saved.');
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(postId)) {
+      togglePostSaveMutation.mutate(postId);
+    }
+    showToast(nextSavedState ? 'Post saved to bookmarks!' : 'Removed from saved.');
   };
 
-  const handleDeletePost = (postId: string) => {
-    updatePosts((prev) => prev.filter((p) => p.id !== postId));
+  const handleDeletePost = async (postId: string) => {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     setActiveMenuPostId(null);
+    updatePosts((prev) => prev.filter((p) => p.id !== postId));
+    if (uuidRegex.test(postId)) {
+      try {
+        await communityService.deletePost(postId);
+      } catch {
+        // already removed locally
+      }
+    }
     showToast("Post deleted from feed.");
+  };
+
+  const handleArchivePost = async (postId: string) => {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    setActiveMenuPostId(null);
+    updatePosts((prev) => prev.filter((p) => p.id !== postId));
+    if (uuidRegex.test(postId)) {
+      try {
+        await updatePostMutation.mutateAsync({
+          postId,
+          data: { isArchived: true },
+        });
+      } catch {
+        // ignore
+      }
+    }
+    showToast("Post archived from public feed.");
   };
 
   const toggleTurnOffComments = (postId: string) => {
@@ -1592,16 +1682,22 @@ export function ContentManagementTab({
 
                 {/* Media Image Container with `...` Menu */}
                 <div className="relative rounded-[22px] overflow-hidden bg-[#181818] shadow-lg">
-                  <div className="relative h-64 sm:h-72 md:h-80 w-full">
-                    <Image
-                      src={post.mediaUrl}
-                      alt="Post food photo"
-                      fill
-                      unoptimized
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, 680px"
-                    />
-                  </div>
+                  {post.mediaUrl ? (
+                    <div className="relative h-64 sm:h-72 md:h-80 w-full">
+                      <Image
+                        src={post.mediaUrl}
+                        alt="Post food photo"
+                        fill
+                        unoptimized
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, 680px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="px-5 py-4 min-h-[56px] flex items-center bg-[#1c1c1e] border border-white/5 rounded-[22px]">
+                      <span className="text-xs text-white/45">Text-only post</span>
+                    </div>
+                  )}
 
                   {/* Options Menu Button (Three dots - Matching Screenshot 5) */}
                   <div className="absolute top-3.5 right-3.5 z-10">
@@ -1627,14 +1723,25 @@ export function ContentManagementTab({
                           type="button"
                           onClick={() => {
                             setActiveMenuPostId(null);
+                            setEditingPostId(post.id);
                             setCaption(post.caption);
-                            setUploadedMedia(post.mediaUrl);
-                            showToast("Loaded post into editor.");
+                            setUploadedMedia(post.mediaUrl || null);
+                            showToast("Loaded post into editor — save changes to update.");
                           }}
                           className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-white/90 hover:bg-white/10 rounded-xl transition-colors text-left cursor-pointer"
                         >
                           <Edit2 className="h-3.5 w-3.5" />
                           <span>Edit post</span>
+                        </button>
+
+                        {/* Archive post */}
+                        <button
+                          type="button"
+                          onClick={() => void handleArchivePost(post.id)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-white/90 hover:bg-white/10 rounded-xl transition-colors text-left cursor-pointer"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                          <span>Archive post</span>
                         </button>
 
                         {/* Turn off comments */}

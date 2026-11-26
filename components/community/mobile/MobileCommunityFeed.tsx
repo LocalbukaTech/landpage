@@ -13,9 +13,12 @@ import {
 import { MobileCommunityItem, CommunityComment } from "./types";
 import { INITIAL_COMMENTS } from "./mockData";
 import { cn } from "@/lib/utils";
+import { SharePostModal } from "@/components/community/SharePostModal";
 import {
   useCommunityFeed,
   useTogglePostLike,
+  useTogglePostSave,
+  useSharePost,
   usePostComments,
   useCreatePostComment,
 } from "@/lib/api/services/community.hooks";
@@ -42,7 +45,11 @@ export function MobileCommunityFeed({
   const activePostId = livePost?.id || "";
   const isRealPost = UUID_REGEX.test(activePostId);
 
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
   const toggleLikeMutation = useTogglePostLike();
+  const toggleSaveMutation = useTogglePostSave();
+  const sharePostMutation = useSharePost();
   const { data: liveCommentsData } = usePostComments(
     isRealPost ? activePostId : ""
   );
@@ -168,15 +175,27 @@ export function MobileCommunityFeed({
 
         {/* Community Avatar & Name */}
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-6 h-6 rounded-md overflow-hidden bg-[#fbbe15] shrink-0 flex items-center justify-center p-0.5">
-            <Image
-              src="/images/localBuka_logo.png"
-              alt="Community Logo"
-              width={20}
-              height={20}
-              className="object-contain"
-            />
-          </div>
+          {community.avatar || community.coverImage || community.image ? (
+            <div className="relative w-7 h-7 rounded-full overflow-hidden ring-1 ring-white/15 bg-zinc-800 shrink-0">
+              <Image
+                src={community.avatar || community.coverImage || community.image}
+                alt={community.name}
+                fill
+                unoptimized
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div className="w-6 h-6 rounded-md overflow-hidden bg-[#fbbe15] shrink-0 flex items-center justify-center p-0.5">
+              <Image
+                src="/images/localBuka_logo.png"
+                alt="Community Logo"
+                width={20}
+                height={20}
+                className="object-contain"
+              />
+            </div>
+          )}
           <h1 className="text-sm font-bold text-white truncate">
             {community.name}
           </h1>
@@ -232,8 +251,13 @@ export function MobileCommunityFeed({
             </button>
 
             {/* Comment */}
-            <div className="flex items-center gap-1.5 text-zinc-400">
-              <MessageCircle size={17} />
+            <div className="flex items-center gap-1.5 text-[#FFF9E8]">
+              <svg width="17" height="15" viewBox="0 0 21 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M10.5 0C16.275 0 21 3.58 21 8C21 12.42 16.275 16 10.5 16C9.198 16 7.9485 15.82 6.7935 15.5C3.7275 18 0 18 0 18C2.4465 15.67 2.835 14.1 2.8875 13.5C1.1025 12.07 0 10.13 0 8C0 3.58 4.725 0 10.5 0Z"
+                  fill="currentColor"
+                />
+              </svg>
               <span>{livePost ? comments.length : comments.length > 3 ? "4.1k" : "4k"}</span>
             </div>
 
@@ -243,6 +267,9 @@ export function MobileCommunityFeed({
               onClick={() => {
                 const nextSaved = !isBookmarked;
                 setIsBookmarked(nextSaved);
+                if (isRealPost && activePostId) {
+                  toggleSaveMutation.mutate(activePostId);
+                }
                 if (typeof window !== "undefined") {
                   try {
                     const raw = window.localStorage.getItem("localbuka_saved_posts_v1");
@@ -285,18 +312,20 @@ export function MobileCommunityFeed({
             {/* Share */}
             <button
               type="button"
-              onClick={() => {
-                const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-                if (typeof navigator !== "undefined" && navigator.share) {
-                  navigator.share({ title: community.name, url: shareUrl }).catch(() => {});
-                } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-                  navigator.clipboard.writeText(shareUrl);
-                }
-              }}
-              className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer ml-auto"
+              onClick={() => setIsShareModalOpen(true)}
+              className="flex items-center gap-1.5 text-[#FFF9E8] hover:text-white transition-colors cursor-pointer ml-auto"
             >
-              <Share2 size={16} />
-              <span className="text-[11px]">Share</span>
+              <svg width="18" height="16" viewBox="0 0 26 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M20.9992 12L14.2792 5V8.5C10.9192 8.5 4.19922 10.6 4.19922 19C4.19922 17.833 6.21522 15.5 14.2792 15.5V19L20.9992 12Z"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="text-[11px] font-semibold">Share</span>
             </button>
           </div>
         </article>
@@ -347,6 +376,28 @@ export function MobileCommunityFeed({
           </div>
         </form>
       </div>
+
+      {/* Custom Social Share Modal */}
+      <SharePostModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        post={{
+          id: activePostId || `community-post-${community.id}`,
+          username: livePost?.author?.fullName || "@chef_tolu",
+          avatar: livePost?.author?.avatar || "/images/avatar-bryan.jpg",
+          text:
+            livePost?.content ||
+            "Tried jollof with smoked paprika this time, unexpectedly good. Anyone else experiment with theirs?",
+          image: livePost?.mediaUrls?.[0],
+        }}
+        communityId={communityKey}
+        communityName={community.name}
+        onShareRecorded={(postId, platform) => {
+          if (UUID_REGEX.test(postId)) {
+            sharePostMutation.mutate({ postId, platform });
+          }
+        }}
+      />
     </div>
   );
 }

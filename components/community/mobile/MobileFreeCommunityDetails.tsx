@@ -6,10 +6,10 @@ import { MobileCommunityItem } from "./types";
 
 interface MobileFreeCommunityDetailsProps {
   community: MobileCommunityItem;
-  recentPosts?: Array<{ id: string; image: string; title: string }>;
+  recentPosts?: Array<{ id: string; image?: string; title: string }>;
   onBack: () => void;
   onJoin: () => void;
-  onSelectPost?: () => void;
+  onSelectPost?: (postId?: string) => void;
 }
 
 export function MobileFreeCommunityDetails({
@@ -133,17 +133,28 @@ export function MobileFreeCommunityDetails({
             ).map((post) => (
               <div
                 key={post.id}
-                onClick={onSelectPost || onJoin}
+                onClick={() => (onSelectPost ? onSelectPost(post.id) : onJoin())}
                 className="group relative w-32 h-24 rounded-xl overflow-hidden border border-white/10 bg-zinc-800 shrink-0 cursor-pointer active:scale-95 transition-all"
               >
-                <Image
-                  src={post.image}
-                  alt={post.title || "Recent post"}
-                  fill
-                  unoptimized
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  sizes="150px"
-                />
+                {post.image ? (
+                  <Image
+                    src={post.image}
+                    alt={post.title || "Recent post"}
+                    fill
+                    unoptimized
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="150px"
+                  />
+                ) : (
+                  <div className="w-full h-full p-2.5 flex flex-col justify-between bg-[#1e1e1e]">
+                    <p className="text-[11px] text-zinc-200 line-clamp-3 leading-snug">
+                      {post.title}
+                    </p>
+                    <span className="text-[10px] font-semibold text-[#fbbe15]">
+                      View →
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>

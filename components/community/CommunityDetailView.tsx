@@ -34,7 +34,7 @@ export interface CommunityDetailProps {
   membersCount?: string;
   recentPosts?: Array<{
     id: string;
-    image: string;
+    image?: string;
     title: string;
   }>;
   onBack?: () => void;
@@ -65,9 +65,6 @@ export function CommunityDetailView({
   useEffect(() => {
     setIsJoined(isMember);
   }, [isMember]);
-  const [selectedPostImage, setSelectedPostImage] = useState<string | null>(
-    null,
-  );
 
   const shouldOpenInitially = searchParams
     ? searchParams.get("modal") === "members-only" ||
@@ -87,12 +84,13 @@ export function CommunityDetailView({
     }
   }, [searchParams]);
 
-  const handlePostClick = (image: string) => {
-    if (!isFree) {
+  const handleOpenFeed = (postId?: string) => {
+    if (!isFree && !isJoined) {
       setIsMembersModalOpen(true);
-    } else {
-      setSelectedPostImage(image);
+      return;
     }
+    const query = postId ? `?post=${encodeURIComponent(postId)}` : "";
+    router.push(`/community/${id}/feed${query}`);
   };
 
   const handleBack = () => {
@@ -233,14 +231,33 @@ export function CommunityDetailView({
                   </div>
                 </div>
 
-                {/* Join Button */}
-                <button
-                  type="button"
-                  onClick={handleToggleJoin}
-                  className="w-full py-2.5 rounded-xl bg-[#FFC533] hover:bg-[#e6b12d] text-black font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer text-center"
-                >
-                  {isJoined ? "Joined ✓" : "+ Join Community"}
-                </button>
+                {/* Join / Open Feed CTA */}
+                {isJoined ? (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenFeed()}
+                      className="w-full py-2.5 rounded-xl bg-[#FFC533] hover:bg-[#e6b12d] text-black font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer text-center"
+                    >
+                      Open Community Feed
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleToggleJoin}
+                      className="w-full py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer text-center"
+                    >
+                      Joined ✓ · Leave community
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleToggleJoin}
+                    className="w-full py-2.5 rounded-xl bg-[#FFC533] hover:bg-[#e6b12d] text-black font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer text-center"
+                  >
+                    + Join Community
+                  </button>
+                )}
               </div>
             ) : (
               <div className="w-full rounded-2xl border-2 border-white/10 p-5 bg-[#242424] shadow-xl flex flex-col justify-between min-h-[260px] space-y-4">
@@ -271,20 +288,30 @@ export function CommunityDetailView({
                   </div>
                   <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-[#22C55E] shrink-0 stroke-[3]" />
-                    <span>Direct Q&amp;A with Chef Amaka</span>
+                    <span>Direct Q&amp;A with {owner}</span>
                   </div>
                 </div>
 
-                {/* Subscribe Button */}
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(`/community/${id || "chef-amaka"}/subscribe`)
-                  }
-                  className="w-full py-3 rounded-xl bg-[#FFC533] hover:bg-[#e6b12d] text-black font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer text-center"
-                >
-                  Subscribe to unlock
-                </button>
+                {/* Subscribe / Open Feed Button */}
+                {isJoined ? (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenFeed()}
+                    className="w-full py-3 rounded-xl bg-[#FFC533] hover:bg-[#e6b12d] text-black font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer text-center"
+                  >
+                    Open Community Feed
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(`/community/${id || "chef-amaka"}/subscribe`)
+                    }
+                    className="w-full py-3 rounded-xl bg-[#FFC533] hover:bg-[#e6b12d] text-black font-bold text-sm transition-all shadow-md active:scale-95 cursor-pointer text-center"
+                  >
+                    Subscribe to unlock
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -293,9 +320,20 @@ export function CommunityDetailView({
 
       {/* ── 4. Recent Posts Section ── */}
       <div className="px-2 sm:px-4 pt-6 space-y-4">
-        <h2 className="text-xl font-bold text-white tracking-wide">
-          Recent posts
-        </h2>
+        <div className="flex items-center justify-between max-w-[800px]">
+          <h2 className="text-xl font-bold text-white tracking-wide">
+            Recent posts
+          </h2>
+          {(isFree || isJoined) && recentPosts.length > 0 && (
+            <button
+              type="button"
+              onClick={() => handleOpenFeed()}
+              className="text-sm font-semibold text-[#FFC533] hover:underline cursor-pointer"
+            >
+              View feed →
+            </button>
+          )}
+        </div>
 
         {recentPosts.length === 0 ? (
           <div className="max-w-[800px] rounded-2xl border border-white/10 bg-[#1a1a1a] p-8 text-center text-xs sm:text-sm text-zinc-400">
@@ -304,19 +342,38 @@ export function CommunityDetailView({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4.5 max-w-[800px]">
             {recentPosts.map((post) => (
-              <div
+              <button
                 key={post.id}
-                onClick={() => handlePostClick(post.image)}
-                className="group relative h-[160px] rounded-2xl overflow-hidden bg-zinc-800 border border-white/10 cursor-pointer shadow-md"
+                type="button"
+                onClick={() => handleOpenFeed(post.id)}
+                className="group relative h-[160px] rounded-2xl overflow-hidden bg-zinc-900 border border-white/10 hover:border-[#FFC533]/50 cursor-pointer shadow-md text-left transition-all"
               >
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  fill
-                  unoptimized
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
+                {post.image ? (
+                  <>
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      unoptimized
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent opacity-80 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                      <p className="text-xs font-medium text-white line-clamp-2">
+                        {post.title}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full p-4 flex flex-col justify-between bg-[#1e1e1e] group-hover:bg-[#242424] transition-colors">
+                    <p className="text-sm text-zinc-200 leading-relaxed line-clamp-4">
+                      {post.title}
+                    </p>
+                    <span className="text-xs font-semibold text-[#FFC533]">
+                      View post →
+                    </span>
+                  </div>
+                )}
+              </button>
             ))}
           </div>
         )}
@@ -332,24 +389,6 @@ export function CommunityDetailView({
         ownerName={owner}
         price={price ? `${price}/mo` : "₦2,500/mo"}
       />
-
-      {/* Lightbox / Fullscreen Image Preview modal for free community posts */}
-      {selectedPostImage && (
-        <div
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
-          onClick={() => setSelectedPostImage(null)}
-        >
-          <div className="relative max-w-4xl max-h-[85vh] w-full h-full flex items-center justify-center">
-            <Image
-              src={selectedPostImage}
-              alt="Enlarged post"
-              fill
-              unoptimized
-              className="object-contain rounded-2xl"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

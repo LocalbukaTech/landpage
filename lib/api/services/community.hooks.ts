@@ -213,6 +213,27 @@ export const useCommunityMembers = (idOrSlug: string) => {
   });
 };
 
+export const useSuggestedInvites = (
+  idOrSlug: string,
+  params?: { limit?: number; q?: string; seed?: number },
+) => {
+  return useQuery({
+    queryKey: [
+      ...queryKeys.community.detail(idOrSlug),
+      'suggested-invites',
+      params?.q || '',
+      params?.seed ?? 0,
+      params?.limit ?? 6,
+    ],
+    queryFn: async () => {
+      const response = await communityService.getSuggestedInvites(idOrSlug, params);
+      return response.data;
+    },
+    enabled: !!idOrSlug,
+    refetchInterval: 60 * 60 * 1000, // Auto-refetch every 1 hour
+  });
+};
+
 export const useInviteCommunityMember = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -221,6 +242,9 @@ export const useInviteCommunityMember = () => {
     onSuccess: (_, { idOrSlug }) => {
       queryClient.invalidateQueries({
         queryKey: [...queryKeys.community.detail(idOrSlug), 'members'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.community.detail(idOrSlug), 'suggested-invites'],
       });
     },
   });
@@ -247,7 +271,28 @@ export const useDeclineCommunityInvite = () => {
       queryClient.invalidateQueries({
         queryKey: [...queryKeys.community.detail(idOrSlug), 'members'],
       });
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.community.detail(idOrSlug), 'suggested-invites'],
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+    },
+  });
+};
+
+export const useUpdateCommunity = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      idOrSlug,
+      data,
+    }: {
+      idOrSlug: string;
+      data: Parameters<typeof communityService.updateCommunity>[1];
+    }) => communityService.updateCommunity(idOrSlug, data),
+    onSuccess: (_, { idOrSlug }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.detail(idOrSlug) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.myCommunities() });
     },
   });
 };
@@ -297,6 +342,53 @@ export const useTogglePostLike = () => {
     mutationFn: (postId: string) => communityService.togglePostLike(postId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
+    },
+  });
+};
+
+export const useSharePost = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ postId, platform }: { postId: string; platform?: string }) =>
+      communityService.sharePost(postId, platform),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
+    },
+  });
+};
+
+export const useTogglePostSave = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) => communityService.togglePostSave(postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
+    },
+  });
+};
+
+export const useUpdateCommunityPost = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      postId,
+      data,
+    }: {
+      postId: string;
+      data: Parameters<typeof communityService.updatePost>[1];
+    }) => communityService.updatePost(postId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
+    },
+  });
+};
+
+export const useMySavedCommunityPosts = () => {
+  return useQuery({
+    queryKey: [...queryKeys.community.all, 'my-saved-posts'],
+    queryFn: async () => {
+      const response = await communityService.getMySavedPosts();
+      return response.data;
     },
   });
 };

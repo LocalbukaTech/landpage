@@ -171,7 +171,12 @@ function CommunityPageContent() {
       try {
         const saved = window.localStorage.getItem(CREATOR_COMMUNITY_STORAGE_KEY);
         if (saved) {
-          return { ...DEFAULT_CREATOR_DATA, ...JSON.parse(saved) };
+          const parsed = JSON.parse(saved);
+          if (parsed?.name === "Nigma's Kitc" || parsed?.name === "Nigma's Kitche") {
+            parsed.name = "Nigma's Kitchen";
+            window.localStorage.setItem(CREATOR_COMMUNITY_STORAGE_KEY, JSON.stringify(parsed));
+          }
+          return { ...DEFAULT_CREATOR_DATA, ...parsed };
         }
       } catch {
         // ignore storage errors
@@ -218,7 +223,50 @@ function CommunityPageContent() {
   // Live API data (filtering out the 5 initial seed placeholder communities and stale test duplicates)
   const { data, isLoading } = useExploreCommunities({ tab: activeTab });
   const { data: myCreatedCommunities } = useMyCreatedCommunities();
-  const latestCreatedCommunity = myCreatedCommunities?.[0] || null;
+  const validMyCreatedCommunities = (myCreatedCommunities ?? []).filter(
+    (c) =>
+      c.slug !== "nigma-s-kitche" &&
+      c.name !== "Nigma's Kitche" &&
+      c.id !== "e66d6895-d9a1-4be5-88d5-ae7bef7df176"
+  );
+  const latestCreatedCommunity =
+    validMyCreatedCommunities.find((c) => c.status === "approved") ||
+    validMyCreatedCommunities[0] ||
+    null;
+
+  // Persist authoritative backend community details to localStorage (no synchronous setState inside effect)
+  useEffect(() => {
+    if (!latestCreatedCommunity || typeof window === "undefined") return;
+    try {
+      const next: CreatorCommunityFormData = {
+        ...creatorData,
+        name: latestCreatedCommunity.name || creatorData.name,
+        bio: latestCreatedCommunity.description || creatorData.bio,
+        category: latestCreatedCommunity.isFree ? "free" : "paid",
+        avatar:
+          latestCreatedCommunity.avatar ||
+          latestCreatedCommunity.coverImage ||
+          creatorData.avatar,
+        coverImage:
+          latestCreatedCommunity.coverImage ||
+          latestCreatedCommunity.avatar ||
+          creatorData.coverImage,
+        pricePerMonth: latestCreatedCommunity.isFree
+          ? 0
+          : latestCreatedCommunity.priceAmount || creatorData.pricePerMonth,
+        yearlyPrice: latestCreatedCommunity.isFree
+          ? 0
+          : latestCreatedCommunity.yearlyPriceAmount || creatorData.yearlyPrice,
+        benefits:
+          latestCreatedCommunity.benefits && latestCreatedCommunity.benefits.length > 0
+            ? latestCreatedCommunity.benefits
+            : creatorData.benefits,
+      };
+      window.localStorage.setItem(CREATOR_COMMUNITY_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+  }, [latestCreatedCommunity, creatorData]);
   const communities: CommunityItem[] = (data?.items ?? []).filter(
     (c) =>
       !SEED_PLACEHOLDER_SLUGS.has(c.slug) &&
@@ -656,7 +704,24 @@ function CommunityPageContent() {
             {effectiveCreatorStep === "dashboard" && (
               <CreatorDashboard
                 initialTab={initialDashboardTab}
-                community={creatorData}
+                community={
+                  latestCreatedCommunity
+                    ? {
+                        ...creatorData,
+                        name: latestCreatedCommunity.name || creatorData.name,
+                        bio: latestCreatedCommunity.description || creatorData.bio,
+                        category: latestCreatedCommunity.isFree ? "free" : "paid",
+                        avatar:
+                          latestCreatedCommunity.avatar ||
+                          latestCreatedCommunity.coverImage ||
+                          creatorData.avatar,
+                        coverImage:
+                          latestCreatedCommunity.coverImage ||
+                          latestCreatedCommunity.avatar ||
+                          creatorData.coverImage,
+                      }
+                    : creatorData
+                }
                 communitySlug={latestCreatedCommunity?.slug}
                 onCreateNewCommunity={() => setCreatorStep("form")}
                 onUpdateCommunity={(updates) =>

@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BackCircleButton } from '@/components/ui/BackCircleButton';
 import {
   useMyMemberships,
+  useJoinCommunity,
   useLeaveCommunity,
 } from '@/lib/api/services/community.hooks';
 
@@ -19,25 +20,6 @@ interface MembershipItem {
   billingDate: string;
 }
 
-const initialMemberships: MembershipItem[] = [
-  {
-    id: 'chef-amaka',
-    name: "Chef Amaka's kitchen",
-    avatar: '/images/community/chef-amaka-avatar.jpg',
-    price: '₦2,500/month',
-    status: 'active',
-    billingDate: 'Oct 10, 2026',
-  },
-  {
-    id: 'grill-masters',
-    name: 'Grill masters NG',
-    avatar: '/images/community/chef-amaka-avatar.jpg',
-    price: '₦1,200/month',
-    status: 'paused',
-    billingDate: 'Oct 10, 2026',
-  },
-];
-
 interface CommunityMembershipsListProps {
   onBack?: () => void;
 }
@@ -45,7 +27,8 @@ interface CommunityMembershipsListProps {
 export function CommunityMembershipsList({ onBack }: CommunityMembershipsListProps = {}) {
   const router = useRouter();
   const { toast } = useToast();
-  const { data: liveMemberships } = useMyMemberships();
+  const { data: liveMemberships, refetch } = useMyMemberships();
+  const joinMutation = useJoinCommunity();
   const leaveMutation = useLeaveCommunity();
   const [memberships, setMemberships] = useState<MembershipItem[]>([]);
   const [cancellingItem, setCancellingItem] = useState<MembershipItem | null>(null);
@@ -95,30 +78,52 @@ export function CommunityMembershipsList({ onBack }: CommunityMembershipsListPro
     }
   };
 
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!cancellingItem) return;
     const itemToCancel = cancellingItem;
-    leaveMutation.mutate(itemToCancel.id);
-    setMemberships((prev) =>
-      prev.map((item) =>
-        item.id === itemToCancel.id ? { ...item, status: 'paused' } : item
-      )
-    );
-    toast({
-      title: 'Membership Cancelled',
-      description: `Your access to ${itemToCancel.name} will end on ${itemToCancel.billingDate}.`,
-    });
-    setCancellingItem(null);
+    try {
+      await leaveMutation.mutateAsync(itemToCancel.id);
+      setMemberships((prev) =>
+        prev.map((item) =>
+          item.id === itemToCancel.id ? { ...item, status: 'paused' } : item
+        )
+      );
+      await refetch();
+      toast({
+        title: 'Membership Cancelled',
+        description: `You have left ${itemToCancel.name}.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Unable to cancel membership',
+        description:
+          err?.response?.data?.message || err?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCancellingItem(null);
+    }
   };
 
-  const handleResume = (item: MembershipItem) => {
-    setMemberships((prev) =>
-      prev.map((m) => (m.id === item.id ? { ...m, status: 'active' } : m))
-    );
-    toast({
-      title: 'Membership Resumed! 🎉',
-      description: `Your subscription to ${item.name} is now active.`,
-    });
+  const handleResume = async (item: MembershipItem) => {
+    try {
+      await joinMutation.mutateAsync(item.id);
+      setMemberships((prev) =>
+        prev.map((m) => (m.id === item.id ? { ...m, status: 'active' } : m))
+      );
+      await refetch();
+      toast({
+        title: 'Membership Resumed!',
+        description: `Your membership to ${item.name} is now active.`,
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Unable to resume membership',
+        description:
+          err?.response?.data?.message || err?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (

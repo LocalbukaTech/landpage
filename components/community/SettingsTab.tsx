@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronRight, Image as ImageIcon, Trash2, Loader2 } from "lucide-react";
 import { EditCommunityModal } from "./modals/EditCommunityModal";
 import { PricingBenefitsModal } from "./modals/PricingBenefitsModal";
 import { GalleryPickerModal } from "./modals/GalleryPickerModal";
-import { useDeleteCommunity } from "@/lib/api/services/community.hooks";
+import {
+  useDeleteCommunity,
+  useUpdateCommunity,
+} from "@/lib/api/services/community.hooks";
 import { useToast } from "@/hooks/use-toast";
 
 interface SettingsTabProps {
@@ -15,12 +18,15 @@ interface SettingsTabProps {
   communityBio?: string;
   initialPrice?: number;
   initialBenefits?: string[];
+  initialCoverImage?: string;
+  initialVisibility?: boolean;
   onUpdateCommunity?: (updates: {
     name?: string;
     bio?: string;
     pricePerMonth?: number;
     benefits?: string[];
     coverImage?: string;
+    avatar?: string;
   }) => void;
   onDeleteCommunity?: () => void;
 }
@@ -49,16 +55,19 @@ const PRESET_COVERS = [
 ];
 
 export function SettingsTab({
-  communityName: initialName = "Chef Tolu's kitchen",
+  communityName: initialName = "My Community",
   communitySlug,
-  communityBio: initialBio = "Cooked some good food tonight, tap the link on my bio for the recepies",
-  initialPrice = 2000,
+  communityBio: initialBio = "",
+  initialPrice = 0,
   initialBenefits,
+  initialCoverImage,
+  initialVisibility = true,
   onUpdateCommunity,
   onDeleteCommunity,
 }: SettingsTabProps) {
   const { toast } = useToast();
   const deleteCommunityMutation = useDeleteCommunity();
+  const updateCommunityMutation = useUpdateCommunity();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [communityName, setCommunityName] = useState(initialName);
   const [communityBio, setCommunityBio] = useState(initialBio);
@@ -67,13 +76,72 @@ export function SettingsTab({
     initialBenefits && initialBenefits.length > 0
       ? initialBenefits
       : [
-          "Recipes and cook-alongs from Chef Tolu",
-          "Private food spot recommendations in Lagos",
-          "Exclusive live Q&A cooking sessions",
+          "Exclusive recipes and weekly cook-along sessions",
+          "Private food spot recommendations & tasting invites",
+          "Direct Q&A and priority community badge",
         ]
   );
-  const [selectedCover, setSelectedCover] = useState(PRESET_COVERS[0].url);
-  const [isVisible, setIsVisible] = useState(true);
+  const [selectedCover, setSelectedCover] = useState(
+    initialCoverImage || PRESET_COVERS[0].url
+  );
+  const [isVisible, setIsVisible] = useState(initialVisibility);
+
+  useEffect(() => {
+    setCommunityName(initialName);
+  }, [initialName]);
+
+  useEffect(() => {
+    setCommunityBio(initialBio);
+  }, [initialBio]);
+
+  useEffect(() => {
+    if (initialCoverImage) setSelectedCover(initialCoverImage);
+  }, [initialCoverImage]);
+
+  useEffect(() => {
+    setIsVisible(initialVisibility);
+  }, [initialVisibility]);
+
+  const targetSlug =
+    communitySlug ||
+    communityName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+  const persistCommunityUpdate = async (
+    payload: {
+      name?: string;
+      description?: string;
+      coverImage?: string;
+      avatar?: string;
+      benefits?: string[];
+      pricePerMonth?: number;
+      visibility?: boolean;
+    },
+    successTitle: string
+  ) => {
+    if (!targetSlug) return false;
+    try {
+      await updateCommunityMutation.mutateAsync({
+        idOrSlug: targetSlug,
+        data: payload,
+      });
+      toast({
+        title: successTitle,
+        description: "Your community settings have been saved.",
+      });
+      return true;
+    } catch (err: any) {
+      toast({
+        title: "Failed to save settings",
+        description:
+          err?.response?.data?.message || err?.message || "Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
   // Modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -126,8 +194,21 @@ export function SettingsTab({
               <button
                 key={preset.id}
                 type="button"
-                onClick={() => setSelectedCover(preset.url)}
-                className={`relative h-11 w-11 sm:h-12 sm:w-12 rounded-full overflow-hidden transition-all duration-200 ${
+                disabled={updateCommunityMutation.isPending}
+                onClick={async () => {
+                  setSelectedCover(preset.url);
+                  const ok = await persistCommunityUpdate(
+                    { coverImage: preset.url, avatar: preset.url },
+                    "Cover image updated"
+                  );
+                  if (ok) {
+                    onUpdateCommunity?.({
+                      coverImage: preset.url,
+                      avatar: preset.url,
+                    });
+                  }
+                }}
+                className={`relative h-11 w-11 sm:h-12 sm:w-12 rounded-full overflow-hidden transition-all duration-200 cursor-pointer ${
                   isSelected
                     ? "ring-2 ring-[#f5c94d] ring-offset-2 ring-offset-[#141414] scale-105"
                     : "opacity-80 hover:opacity-100 hover:scale-105"
@@ -169,8 +250,17 @@ export function SettingsTab({
           type="button"
           role="switch"
           aria-checked={isVisible}
-          onClick={() => setIsVisible(!isVisible)}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+          disabled={updateCommunityMutation.isPending}
+          onClick={async () => {
+            const nextVisible = !isVisible;
+            setIsVisible(nextVisible);
+            const ok = await persistCommunityUpdate(
+              { visibility: nextVisible },
+              nextVisible ? "Community is now public" : "Community hidden from Explore"
+            );
+            if (!ok) setIsVisible(!nextVisible);
+          }}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer disabled:opacity-50 ${
             isVisible ? "bg-[#2563eb]" : "bg-[#333333]"
           }`}
         >
@@ -269,10 +359,16 @@ export function SettingsTab({
         onClose={() => setIsEditModalOpen(false)}
         communityName={communityName}
         communityBio={communityBio}
-        onSave={(name, bio) => {
-          setCommunityName(name);
-          setCommunityBio(bio);
-          onUpdateCommunity?.({ name, bio });
+        onSave={async (name, bio) => {
+          const ok = await persistCommunityUpdate(
+            { name, description: bio },
+            "Community profile updated"
+          );
+          if (ok) {
+            setCommunityName(name);
+            setCommunityBio(bio);
+            onUpdateCommunity?.({ name, bio });
+          }
         }}
       />
 
@@ -281,14 +377,20 @@ export function SettingsTab({
         onClose={() => setIsPricingModalOpen(false)}
         pricePerMonth={pricePerMonth}
         benefits={benefits}
-        onSave={(price, newBenefits) => {
+        onSave={async (price, newBenefits) => {
           const validPrice = price > 0 ? Math.max(2000, price) : 0;
-          setPricePerMonth(validPrice);
-          setBenefits(newBenefits);
-          onUpdateCommunity?.({
-            pricePerMonth: validPrice,
-            benefits: newBenefits,
-          });
+          const ok = await persistCommunityUpdate(
+            { pricePerMonth: validPrice, benefits: newBenefits },
+            "Pricing & benefits updated"
+          );
+          if (ok) {
+            setPricePerMonth(validPrice);
+            setBenefits(newBenefits);
+            onUpdateCommunity?.({
+              pricePerMonth: validPrice,
+              benefits: newBenefits,
+            });
+          }
         }}
       />
 
@@ -296,9 +398,15 @@ export function SettingsTab({
         isOpen={isGalleryModalOpen}
         onClose={() => setIsGalleryModalOpen(false)}
         selectedImage={selectedCover}
-        onSelectImage={(url) => {
+        onSelectImage={async (url) => {
           setSelectedCover(url);
-          onUpdateCommunity?.({ coverImage: url });
+          const ok = await persistCommunityUpdate(
+            { coverImage: url, avatar: url },
+            "Cover photo updated"
+          );
+          if (ok) {
+            onUpdateCommunity?.({ coverImage: url, avatar: url });
+          }
         }}
       />
     </div>

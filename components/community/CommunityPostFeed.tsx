@@ -6,11 +6,14 @@ import { Flag, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BackCircleButton } from '@/components/ui/BackCircleButton';
 import { UgcReportModal } from '@/components/modals/UgcReportModal';
+import { SharePostModal, type SharePlatform } from '@/components/community/SharePostModal';
 import { getMediaBlobUrl } from '@/lib/storage/media-storage';
 import {
   useCommunityFeed,
   useCreateCommunityPost,
   useTogglePostLike,
+  useTogglePostSave,
+  useSharePost,
   usePostComments,
   useCreatePostComment,
 } from '@/lib/api/services/community.hooks';
@@ -57,6 +60,7 @@ interface CommunityPost {
   likes: string;
   comments: string;
   saves: string;
+  shares?: string;
   commentList: CommentItem[];
 }
 
@@ -173,15 +177,14 @@ function CommentsPanel({
   );
 
   useEffect(() => {
-    setLocalComments(
-      getStoredCommentsForPost(post.id, post.text).map((c) => ({
-        id: c.id,
-        avatar: c.avatar,
-        username: c.author,
-        timeAgo: c.timeAgo,
-        text: c.text,
-      }))
-    );
+    const items = getStoredCommentsForPost(post.id, post.text).map((c) => ({
+      id: c.id,
+      avatar: c.avatar,
+      username: c.author,
+      timeAgo: c.timeAgo,
+      text: c.text,
+    }));
+    queueMicrotask(() => setLocalComments(items));
   }, [post.id, post.text]);
 
   const isRealPost = UUID_REGEX.test(post.id);
@@ -468,7 +471,7 @@ function CommentsPanel({
 }
 
 /* ─────────────────────── Main Feed ─────────────────────── */
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 export interface CommunityPostFeedProps {
@@ -484,15 +487,20 @@ export function CommunityPostFeed({
   communityId = '1',
   communityName = 'Nigeria food and culture',
   communityLogo = '/images/community/community-logo.svg',
-  communityAvatar = '/images/community/avatar-1.png',
+  communityAvatar,
   viewState: initialViewState = 'feed',
   onBack,
 }: CommunityPostFeedProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { data: liveFeed } = useCommunityFeed(communityId);
   const createPostMutation = useCreateCommunityPost(communityId);
   const togglePostLikeMutation = useTogglePostLike();
+  const togglePostSaveMutation = useTogglePostSave();
+  const sharePostMutation = useSharePost();
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
+  const hasAutoScrolledRef = useRef<string | null>(null);
 
   const [localFallbackPosts, setLocalFallbackPosts] = useState<CommunityPost[]>(mockPosts);
   const [localCreatorPosts, setLocalCreatorPosts] = useState<CommunityPost[]>([]);
@@ -548,38 +556,46 @@ export function CommunityPostFeed({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPostText, setNewPostText] = useState('');
   const [reportingPost, setReportingPost] = useState<CommunityPost | null>(null);
+  const [sharingPost, setSharingPost] = useState<CommunityPost | null>(null);
+  const [shareOverrides, setShareOverrides] = useState<Record<string, number>>({});
   const feedRef = useRef<HTMLDivElement>(null);
 
-  // Hydrate likes, comments & saved state from localStorage
+  // Hydrate likes, comments, shares & saved state from localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      const savedLikes = window.localStorage.getItem('localbuka_community_liked_posts_v1');
-      if (savedLikes) {
-        setLikedPosts(JSON.parse(savedLikes));
-      }
-      const savedLikeCounts = window.localStorage.getItem('localbuka_community_like_counts_v1');
-      if (savedLikeCounts) {
-        setLikeOverrides(JSON.parse(savedLikeCounts));
-      }
-      const savedCommentCounts = window.localStorage.getItem(COMMUNITY_COMMENT_COUNTS_KEY);
-      if (savedCommentCounts) {
-        setCommentOverrides(JSON.parse(savedCommentCounts));
-      }
-      const savedPostsRaw = window.localStorage.getItem('localbuka_saved_posts_v1');
-      if (savedPostsRaw) {
-        const parsed = JSON.parse(savedPostsRaw);
-        if (Array.isArray(parsed)) {
-          const map: Record<string, boolean> = {};
-          parsed.forEach((item: any) => {
-            if (item?.id) map[item.id] = true;
-          });
-          setSavedPosts(map);
+    queueMicrotask(() => {
+      try {
+        const savedLikes = window.localStorage.getItem('localbuka_community_liked_posts_v1');
+        if (savedLikes) {
+          setLikedPosts(JSON.parse(savedLikes));
         }
+        const savedLikeCounts = window.localStorage.getItem('localbuka_community_like_counts_v1');
+        if (savedLikeCounts) {
+          setLikeOverrides(JSON.parse(savedLikeCounts));
+        }
+        const savedCommentCounts = window.localStorage.getItem(COMMUNITY_COMMENT_COUNTS_KEY);
+        if (savedCommentCounts) {
+          setCommentOverrides(JSON.parse(savedCommentCounts));
+        }
+        const savedShareCounts = window.localStorage.getItem('localbuka_community_share_counts_v1');
+        if (savedShareCounts) {
+          setShareOverrides(JSON.parse(savedShareCounts));
+        }
+        const savedPostsRaw = window.localStorage.getItem('localbuka_saved_posts_v1');
+        if (savedPostsRaw) {
+          const parsed = JSON.parse(savedPostsRaw);
+          if (Array.isArray(parsed)) {
+            const map: Record<string, boolean> = {};
+            parsed.forEach((item: any) => {
+              if (item?.id) map[item.id] = true;
+            });
+            setSavedPosts(map);
+          }
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
-    }
+    });
   }, []);
 
   const posts: CommunityPost[] = useMemo(() => {
@@ -620,12 +636,17 @@ export function CommunityPostFeed({
         saveOverrides[p.id] !== undefined
           ? String(saveOverrides[p.id])
           : p.saves || '0';
+      const effectiveShares =
+        shareOverrides[p.id] !== undefined
+          ? String(shareOverrides[p.id])
+          : p.shares || '0';
 
       return {
         ...p,
         likes: effectiveLikes,
         comments: effectiveComments,
         saves: effectiveSaves,
+        shares: effectiveShares,
         commentList: storedComments,
       };
     });
@@ -648,7 +669,11 @@ export function CommunityPostFeed({
             ? commentOverrides[p.id]
             : Math.max(p.commentsCount ?? 0, storedCount);
         const effectiveSaves =
-          saveOverrides[p.id] !== undefined ? saveOverrides[p.id] : (savedPosts[p.id] ? 1 : 0);
+          saveOverrides[p.id] !== undefined
+            ? saveOverrides[p.id]
+            : (p.savesCount ?? (savedPosts[p.id] ? 1 : 0));
+        const effectiveShares =
+          shareOverrides[p.id] !== undefined ? shareOverrides[p.id] : (p.sharesCount ?? 0);
 
         // Check if there's a matching local creator post to restore local media blob if pending
         const localMatch = resolvedCreatorPosts.find(
@@ -667,6 +692,7 @@ export function CommunityPostFeed({
           likes: String(effectiveCount ?? 0),
           comments: String(effectiveComments ?? 0),
           saves: String(effectiveSaves ?? 0),
+          shares: String(effectiveShares ?? 0),
           commentList: storedComments,
         };
       });
@@ -696,11 +722,14 @@ export function CommunityPostFeed({
           commentOverrides[p.id] !== undefined ? String(commentOverrides[p.id]) : p.comments;
         const effectiveSaves =
           saveOverrides[p.id] !== undefined ? String(saveOverrides[p.id]) : (savedPosts[p.id] ? '1' : p.saves);
+        const effectiveShares =
+          shareOverrides[p.id] !== undefined ? String(shareOverrides[p.id]) : (p.shares || '0');
         return {
           ...p,
           likes: effectiveLikes,
           comments: effectiveComments,
           saves: effectiveSaves,
+          shares: effectiveShares,
         };
       });
     }
@@ -711,11 +740,73 @@ export function CommunityPostFeed({
     likeOverrides,
     commentOverrides,
     saveOverrides,
+    shareOverrides,
     savedPosts,
     localFallbackPosts,
     localCreatorPosts,
     communityId,
   ]);
+
+  // Deep-link scroll: if arriving from Recent Posts or a shared URL (?post=<id> or #community-post-<id>)
+  useEffect(() => {
+    if (posts.length === 0) return;
+    const targetParam =
+      searchParams?.get('post') ||
+      (typeof window !== 'undefined' && window.location.hash.startsWith('#community-post-')
+        ? window.location.hash.replace('#community-post-', '')
+        : null);
+
+    if (!targetParam || hasAutoScrolledRef.current === targetParam) return;
+    const targetIdx = posts.findIndex((p) => p.id === targetParam);
+    if (targetIdx === -1) return;
+
+    hasAutoScrolledRef.current = targetParam;
+
+    const timer = setTimeout(() => {
+      setCurrentIndex(targetIdx);
+      setHighlightedPostId(targetParam);
+      const el = document.getElementById(`community-post-${targetIdx}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
+
+    const clearHighlight = setTimeout(() => {
+      setHighlightedPostId(null);
+    }, 2600);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(clearHighlight);
+    };
+  }, [posts, searchParams]);
+
+  // Keep Up/Down arrow active index synced as the user scrolls through posts
+  useEffect(() => {
+    if (typeof window === 'undefined' || posts.length <= 1) return;
+    const elements = posts
+      .map((_, idx) => document.getElementById(`community-post-${idx}`))
+      .filter(Boolean) as HTMLElement[];
+
+    if (elements.length === 0 || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible.length > 0) {
+          const idAttr = visible[0].target.id;
+          const idx = parseInt(idAttr.replace('community-post-', ''), 10);
+          if (!Number.isNaN(idx)) {
+            setCurrentIndex(idx);
+          }
+        }
+      },
+      { threshold: [0.35, 0.65] }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [posts.length]);
 
   const handleToggleLike = async (post: CommunityPost) => {
     const isRealPost = UUID_REGEX.test(post.id);
@@ -767,8 +858,12 @@ export function CommunityPostFeed({
     }
   };
 
-  const handleToggleSave = (post: CommunityPost) => {
-    const currentlySaved = Boolean(savedPosts[post.id]);
+  const handleToggleSave = async (post: CommunityPost) => {
+    const livePost = liveFeed?.items?.find((p) => p.id === post.id);
+    const currentlySaved =
+      savedPosts[post.id] !== undefined
+        ? savedPosts[post.id]
+        : Boolean(livePost?.hasSaved);
     const nextSaved = !currentlySaved;
 
     const rawSaves =
@@ -778,11 +873,7 @@ export function CommunityPostFeed({
 
     const nextCount = Math.max(0, rawSaves + (nextSaved ? 1 : -1));
 
-    setSavedPosts((prev) => {
-      const updated = { ...prev, [post.id]: nextSaved };
-      return updated;
-    });
-
+    setSavedPosts((prev) => ({ ...prev, [post.id]: nextSaved }));
     setSaveOverrides((prev) => ({ ...prev, [post.id]: nextCount }));
 
     if (typeof window !== 'undefined') {
@@ -813,8 +904,24 @@ export function CommunityPostFeed({
       } catch {}
     }
 
+    if (UUID_REGEX.test(post.id)) {
+      try {
+        const res: any = await togglePostSaveMutation.mutateAsync(post.id);
+        const serverSaved = res?.data?.saved ?? res?.saved;
+        const serverCount = res?.data?.savesCount ?? res?.savesCount;
+        if (typeof serverSaved === 'boolean') {
+          setSavedPosts((prev) => ({ ...prev, [post.id]: serverSaved }));
+        }
+        if (typeof serverCount === 'number') {
+          setSaveOverrides((prev) => ({ ...prev, [post.id]: serverCount }));
+        }
+      } catch {
+        // Keep optimistic UI state on transient offline/guest error
+      }
+    }
+
     toast({
-      title: nextSaved ? 'Post Saved! 📌' : 'Removed from Saved',
+      title: nextSaved ? 'Post Saved!' : 'Removed from Saved',
       description: nextSaved
         ? 'You can find this post in your Saved bookmarks.'
         : 'Post has been removed from your bookmarks.',
@@ -838,42 +945,8 @@ export function CommunityPostFeed({
     if (postEl) postEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const handleShare = async (post: CommunityPost) => {
-    const shareUrl =
-      typeof window !== 'undefined'
-        ? `${window.location.origin}/community/${communityId}/feed#community-post-${post.id}`
-        : '';
-
-    const shareData = {
-      title: `${post.username} on ${communityName}`,
-      text: post.text,
-      url: shareUrl || (typeof window !== 'undefined' ? window.location.href : ''),
-    };
-
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share(shareData);
-        toast({ title: 'Shared! 🚀', description: 'Post shared successfully.' });
-        return;
-      } catch (err: any) {
-        if (err?.name === 'AbortError') return; // User closed sheet
-      }
-    }
-
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      try {
-        await navigator.clipboard.writeText(shareUrl || window.location.href);
-        toast({
-          title: 'Link Copied! 📋',
-          description: 'Post URL has been copied to your clipboard.',
-        });
-      } catch {
-        toast({
-          title: 'Post link',
-          description: shareUrl || window.location.href,
-        });
-      }
-    }
+  const handleShare = (post: CommunityPost) => {
+    setSharingPost(post);
   };
 
   const handleCreatePost = async (e: React.FormEvent) => {
@@ -915,15 +988,21 @@ export function CommunityPostFeed({
 
   return (
     <>
-      <div className='w-full max-w-[620px] mx-auto relative flex flex-col min-h-[calc(100vh-140px)]'>
+      <div className='w-full max-w-[540px] mx-auto relative flex flex-col min-h-[calc(100vh-140px)]'>
         {/* Community Header with Circular Back Button */}
         <div className='flex items-center gap-4 mb-6 px-1'>
           <BackCircleButton onClick={handleBack} size={26} color='#FFFFFF' className='text-white' />
 
           <div className='flex items-center gap-3'>
-            {currentViewState === 'expired' ? (
-              <div className='relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/10 shrink-0'>
-                <Image src={communityAvatar} alt={communityName} fill className='object-cover' />
+            {communityAvatar ? (
+              <div className='relative w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/15 bg-zinc-800 shrink-0'>
+                <Image
+                  src={communityAvatar}
+                  alt={communityName}
+                  fill
+                  unoptimized
+                  className='object-cover'
+                />
               </div>
             ) : (
               <div className='w-9 h-9 rounded-lg bg-[#FFC533] flex items-center justify-center shrink-0 overflow-hidden'>
@@ -1034,7 +1113,7 @@ export function CommunityPostFeed({
 
         {/* ACTIVE POSTS FEED */}
         {currentViewState === 'feed' && posts.length > 0 && (
-          <>
+          <div className='relative'>
             <div ref={feedRef} className='space-y-6'>
               {posts.map((post, index) => {
                 const livePost = liveFeed?.items?.find((p) => p.id === post.id);
@@ -1042,10 +1121,21 @@ export function CommunityPostFeed({
                   likedPosts[post.id] !== undefined
                     ? likedPosts[post.id]
                     : Boolean(livePost?.hasLiked);
-                const isSaved = savedPosts[post.id];
+                const isSaved =
+                  savedPosts[post.id] !== undefined
+                    ? savedPosts[post.id]
+                    : Boolean(livePost?.hasSaved);
+
+                const isHighlighted = highlightedPostId === post.id;
 
                 return (
-                  <div key={post.id} id={`community-post-${index}`} className='bg-transparent'>
+                  <div
+                    key={post.id}
+                    id={`community-post-${index}`}
+                    className={`bg-transparent rounded-2xl transition-all duration-500 ${
+                      isHighlighted ? 'ring-2 ring-[#FFC533]/70 bg-white/[0.03] p-3 -mx-3' : ''
+                    }`}
+                  >
                     {/* Author Row */}
                     <div className='flex items-center justify-between mb-3'>
                       <div className='flex items-center gap-3'>
@@ -1073,7 +1163,7 @@ export function CommunityPostFeed({
 
                     {/* Post Media (Image or Video) */}
                     {post.image && (
-                      <div className='relative w-full aspect-[4/3] max-w-[340px] rounded-2xl overflow-hidden mb-4 bg-zinc-800'>
+                      <div className='relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-4 bg-zinc-800'>
                         {post.image.includes('.mp4') || post.image.includes('.webm') || post.image.includes('.mov') || post.image.startsWith('blob:') || (post as any).mediaType === 'video' ? (
                           <video
                             src={post.image}
@@ -1101,46 +1191,55 @@ export function CommunityPostFeed({
                         aria-label='Like post'
                       >
                         <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                             isLiked
                               ? 'bg-[#FFC533]/20 text-[#FFC533]'
-                              : 'bg-white/10 text-gray-300 group-hover:bg-white/20'
+                              : 'bg-white/15 text-[#FFF9E8] group-hover:bg-white/25'
                           }`}
                         >
                           <svg
-                            width='18'
-                            height='16'
+                            width='20'
+                            height='18'
                             viewBox='0 0 23 21'
-                            fill={isLiked ? '#FFC533' : 'none'}
+                            fill={isLiked ? '#FFC533' : '#FFF9E8'}
                             xmlns='http://www.w3.org/2000/svg'
                             className={`transition-transform ${isLiked ? 'scale-110' : ''}`}
                           >
                             <path
                               d='M16.6759 0.875C13.1256 0.875 11.3756 4.375 11.3756 4.375C11.3756 4.375 9.62556 0.875 6.07525 0.875C3.18993 0.875 0.90509 3.28891 0.875559 6.1693C0.815403 12.1483 5.61861 16.4002 10.8834 19.9735C11.0285 20.0723 11.2 20.1251 11.3756 20.1251C11.5511 20.1251 11.7226 20.0723 11.8677 19.9735C17.132 16.4002 21.9352 12.1483 21.8756 6.1693C21.846 3.28891 19.5612 0.875 16.6759 0.875Z'
-                              stroke={isLiked ? '#FFC533' : 'currentColor'}
-                              strokeWidth='1.8'
+                              stroke={isLiked ? '#FFC533' : '#FFF9E8'}
+                              strokeWidth='1.75'
                               strokeLinecap='round'
                               strokeLinejoin='round'
                             />
                           </svg>
                         </div>
-                        <span className={`text-sm font-medium ${isLiked ? 'text-[#FFC533]' : 'text-gray-300'}`}>
+                        <span className={`text-sm font-semibold ${isLiked ? 'text-[#FFC533]' : 'text-white'}`}>
                           {post.likes}
                         </span>
                       </button>
 
-                      {/* Comment — opens panel */}
+                      {/* Comment — opens panel (Exact 21×18 Figma SVG) */}
                       <button
                         onClick={() => setOpenCommentsPost(post)}
                         className='flex items-center gap-2 group cursor-pointer'
                         aria-label='Comment'
                       >
-                        <div className='w-9 h-9 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors text-gray-300'>
-                          <svg width='17' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
-                            <path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' />
+                        <div className='w-10 h-10 rounded-full bg-white/15 flex items-center justify-center group-hover:bg-white/25 transition-colors text-[#FFF9E8]'>
+                          <svg
+                            width='21'
+                            height='18'
+                            viewBox='0 0 21 18'
+                            fill='none'
+                            xmlns='http://www.w3.org/2000/svg'
+                          >
+                            <path
+                              d='M10.5 0C16.275 0 21 3.58 21 8C21 12.42 16.275 16 10.5 16C9.198 16 7.9485 15.82 6.7935 15.5C3.7275 18 0 18 0 18C2.4465 15.67 2.835 14.1 2.8875 13.5C1.1025 12.07 0 10.13 0 8C0 3.58 4.725 0 10.5 0Z'
+                              fill='#FFF9E8'
+                            />
                           </svg>
                         </div>
-                        <span className='text-gray-300 text-sm font-medium'>{post.comments}</span>
+                        <span className='text-white text-sm font-semibold'>{post.comments}</span>
                       </button>
 
                       {/* Save / Bookmark */}
@@ -1150,18 +1249,18 @@ export function CommunityPostFeed({
                         aria-label='Save post'
                       >
                         <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
                             isSaved
                               ? 'bg-[#FFC533]/20 text-[#FFC533]'
-                              : 'bg-white/10 text-gray-300 group-hover:bg-white/20'
+                              : 'bg-white/15 text-[#FFF9E8] group-hover:bg-white/25'
                           }`}
                         >
                           <svg
                             width='16'
-                            height='18'
+                            height='19'
                             viewBox='0 0 24 24'
-                            fill={isSaved ? '#FFC533' : 'none'}
-                            stroke={isSaved ? '#FFC533' : 'currentColor'}
+                            fill={isSaved ? '#FFC533' : '#FFF9E8'}
+                            stroke={isSaved ? '#FFC533' : '#FFF9E8'}
                             strokeWidth='2'
                             strokeLinecap='round'
                             strokeLinejoin='round'
@@ -1170,27 +1269,38 @@ export function CommunityPostFeed({
                             <path d='M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z' />
                           </svg>
                         </div>
-                        <span className={`text-sm font-medium ${isSaved ? 'text-[#FFC533]' : 'text-gray-300'}`}>
+                        <span className={`text-sm font-semibold ${isSaved ? 'text-[#FFC533]' : 'text-white'}`}>
                           {post.saves}
                         </span>
                       </button>
 
-                      {/* Share */}
+                      {/* Share — opens SharePostModal (Exact Figma curved arrow SVG) */}
                       <button
                         onClick={() => void handleShare(post)}
                         className='flex items-center gap-2 group cursor-pointer'
                         aria-label='Share post'
                       >
-                        <div className='w-9 h-9 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/20 transition-colors text-gray-300'>
-                          <svg width='17' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'>
-                            <circle cx='18' cy='5' r='3' />
-                            <circle cx='6' cy='12' r='3' />
-                            <circle cx='18' cy='19' r='3' />
-                            <line x1='8.59' y1='13.51' x2='15.42' y2='17.49' />
-                            <line x1='15.41' y1='6.51' x2='8.59' y2='10.49' />
+                        <div className='w-10 h-10 rounded-full bg-white/15 flex items-center justify-center group-hover:bg-white/25 transition-colors text-[#FFF9E8]'>
+                          <svg
+                            width='22'
+                            height='20'
+                            viewBox='0 0 26 24'
+                            fill='none'
+                            xmlns='http://www.w3.org/2000/svg'
+                          >
+                            <path
+                              d='M20.9992 12L14.2792 5V8.5C10.9192 8.5 4.19922 10.6 4.19922 19C4.19922 17.833 6.21522 15.5 14.2792 15.5V19L20.9992 12Z'
+                              fill='#FFF9E8'
+                              stroke='#FFF9E8'
+                              strokeWidth='2'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
                           </svg>
                         </div>
-                        <span className='text-gray-300 text-sm font-medium'>Share</span>
+                        <span className='text-white text-sm font-semibold'>
+                          {post.shares && Number(post.shares) > 0 ? `Share (${post.shares})` : 'Share'}
+                        </span>
                       </button>
                     </div>
 
@@ -1200,34 +1310,38 @@ export function CommunityPostFeed({
               })}
             </div>
 
-            {/* Up / Down Navigation */}
-            {posts.length > 1 && (
-              <div className='fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-40'>
+            {/* Up / Down Navigation Arrows — positioned right beside the post column */}
+            <div className='hidden md:block absolute left-[calc(100%+20px)] top-0 bottom-0 z-30 pointer-events-none'>
+              <div className='sticky top-[34vh] flex flex-col gap-3 pointer-events-auto'>
                 <button
+                  type='button'
                   onClick={() => scrollToPost(currentIndex - 1)}
                   disabled={currentIndex === 0}
-                  className='w-10 h-10 rounded-full border border-white/40 bg-transparent hover:bg-white/10 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer'
+                  className='w-11 h-11 rounded-full flex items-center justify-center text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.65)] hover:drop-shadow-[0_0_14px_rgba(255,255,255,0.95)] hover:scale-105 active:scale-95 transition-all disabled:text-[#6E6E6E] disabled:drop-shadow-none disabled:hover:scale-100 disabled:cursor-not-allowed cursor-pointer'
                   aria-label='Previous post'
+                  title='Previous post'
                 >
-                  <svg width='20' height='20' viewBox='0 0 44 44' fill='none'>
-                    <circle cx='22' cy='22' r='20' stroke='white' strokeWidth='3' />
-                    <path d='M30 26L22 18L14 26' stroke='white' strokeWidth='3' strokeLinecap='round' strokeLinejoin='round' />
+                  <svg width='40' height='40' viewBox='0 0 44 44' fill='none' xmlns='http://www.w3.org/2000/svg'>
+                    <circle cx='22' cy='22' r='19' stroke='currentColor' strokeWidth='3.2' />
+                    <path d='M22 30V14M22 14L14.5 21.5M22 14L29.5 21.5' stroke='currentColor' strokeWidth='3.2' strokeLinecap='round' strokeLinejoin='round' />
                   </svg>
                 </button>
                 <button
+                  type='button'
                   onClick={() => scrollToPost(currentIndex + 1)}
-                  disabled={currentIndex === posts.length - 1}
-                  className='w-10 h-10 rounded-full border border-white/40 bg-transparent hover:bg-white/10 flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer'
+                  disabled={currentIndex >= posts.length - 1}
+                  className='w-11 h-11 rounded-full flex items-center justify-center text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.75)] hover:drop-shadow-[0_0_16px_rgba(255,255,255,1)] hover:scale-105 active:scale-95 transition-all disabled:text-[#6E6E6E] disabled:drop-shadow-none disabled:hover:scale-100 disabled:cursor-not-allowed cursor-pointer'
                   aria-label='Next post'
+                  title='Next post'
                 >
-                  <svg width='20' height='20' viewBox='0 0 44 44' fill='none'>
-                    <circle cx='22' cy='22' r='20' stroke='white' strokeWidth='3' />
-                    <path d='M14 18L22 26L30 18' stroke='white' strokeWidth='3' strokeLinecap='round' strokeLinejoin='round' />
+                  <svg width='40' height='40' viewBox='0 0 44 44' fill='none' xmlns='http://www.w3.org/2000/svg'>
+                    <circle cx='22' cy='22' r='19' stroke='currentColor' strokeWidth='3.2' />
+                    <path d='M22 14V30M22 30L14.5 22.5M22 30L29.5 22.5' stroke='currentColor' strokeWidth='3.2' strokeLinecap='round' strokeLinejoin='round' />
                   </svg>
                 </button>
               </div>
-            )}
-          </>
+            </div>
+          </div>
         )}
       </div>
 
@@ -1303,6 +1417,48 @@ export function CommunityPostFeed({
         targetId={reportingPost?.id}
         targetType='post'
         targetTitle={reportingPost?.username}
+      />
+
+      {/* Share Post Modal (WhatsApp, Instagram, Snapchat, X, Facebook + Copy URL) */}
+      <SharePostModal
+        isOpen={!!sharingPost}
+        onClose={() => setSharingPost(null)}
+        post={sharingPost}
+        communityId={communityId}
+        communityName={communityName}
+        onShareRecorded={(postId, platform: SharePlatform) => {
+          setShareOverrides((prev) => {
+            const current =
+              prev[postId] !== undefined
+                ? prev[postId]
+                : parseInt(sharingPost?.shares || '0', 10) || 0;
+            const updated = { ...prev, [postId]: current + 1 };
+            try {
+              window.localStorage.setItem('localbuka_community_share_counts_v1', JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+
+          if (UUID_REGEX.test(postId)) {
+            sharePostMutation.mutate(
+              { postId, platform },
+              {
+                onSuccess: (res: any) => {
+                  const realCount = res?.data?.sharesCount ?? res?.sharesCount;
+                  if (typeof realCount === 'number') {
+                    setShareOverrides((prev) => {
+                      const updated = { ...prev, [postId]: realCount };
+                      try {
+                        window.localStorage.setItem('localbuka_community_share_counts_v1', JSON.stringify(updated));
+                      } catch {}
+                      return updated;
+                    });
+                  }
+                },
+              }
+            );
+          }
+        }}
       />
     </>
   );

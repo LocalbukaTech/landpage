@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CommunityPostFeed } from '@/components/community/CommunityPostFeed';
@@ -12,14 +12,20 @@ interface CommunityFeedPageProps {
 
 const CREATOR_COMMUNITY_STORAGE_KEY = 'localbuka_creator_community_v1';
 
+const toSlug = (val: string) =>
+  val
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
 export default function CommunityFeedPage({ params }: CommunityFeedPageProps) {
   const { id } = use(params);
   const searchParams = useSearchParams();
   const { data: community } = useCommunity(id);
 
-  let localName: string | undefined;
-  let localAvatar: string | undefined;
-  if (typeof window !== 'undefined') {
+  const [localMeta, setLocalMeta] = useState<{ name?: string; avatar?: string }>({});
+
+  useEffect(() => {
     try {
       const saved = window.localStorage.getItem(CREATOR_COMMUNITY_STORAGE_KEY);
       if (saved) {
@@ -30,13 +36,20 @@ export default function CommunityFeedPage({ params }: CommunityFeedPageProps) {
             window.localStorage.setItem(CREATOR_COMMUNITY_STORAGE_KEY, JSON.stringify(parsed));
           } catch {}
         }
-        localName = parsed?.name;
-        localAvatar = parsed?.avatar;
+        const savedSlug = parsed?.name ? toSlug(parsed.name) : '';
+        if (!savedSlug || savedSlug === id || id.startsWith(savedSlug.slice(0, 6))) {
+          queueMicrotask(() => {
+            setLocalMeta({
+              name: parsed?.name,
+              avatar: parsed?.avatar || parsed?.coverImage,
+            });
+          });
+        }
       }
     } catch {
       // ignore
     }
-  }
+  }, [id]);
 
   const stateParam = searchParams.get('state');
   const viewState: 'feed' | 'empty' | 'expired' =
@@ -48,7 +61,7 @@ export default function CommunityFeedPage({ params }: CommunityFeedPageProps) {
 
   const communityName =
     community?.name ||
-    localName ||
+    localMeta.name ||
     id
       .split('-')
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -57,8 +70,9 @@ export default function CommunityFeedPage({ params }: CommunityFeedPageProps) {
   const communityAvatar =
     community?.avatar ||
     community?.coverImage ||
-    localAvatar ||
-    '/images/community/avatar-1.png';
+    community?.image ||
+    localMeta.avatar ||
+    '';
 
   return (
     <MainLayout>
@@ -67,7 +81,7 @@ export default function CommunityFeedPage({ params }: CommunityFeedPageProps) {
           communityId={id}
           communityName={communityName}
           communityLogo='/images/community/community-logo.svg'
-          communityAvatar={communityAvatar}
+          communityAvatar={communityAvatar || undefined}
           viewState={viewState}
         />
       </div>

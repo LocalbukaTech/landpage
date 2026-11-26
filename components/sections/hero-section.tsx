@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { Reveal } from '@/components/anim/Reveal';
-
+//--new commit
 export function HeroSection() {
   return (
     <section className="relative min-h-screen overflow-hidden bg-white">

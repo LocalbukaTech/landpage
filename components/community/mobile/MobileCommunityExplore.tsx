@@ -124,19 +124,6 @@ export function MobileCommunityExplore({
               {cat}
             </button>
           ))}
-
-          {/* Quick empty state switch for dev/demo */}
-          {onViewEmptyState && (
-            <button
-              type="button"
-              onClick={onViewEmptyState}
-              className="ml-auto text-[11px] text-zinc-500 hover:text-[#fbbe15] whitespace-nowrap transition-colors flex items-center gap-1 cursor-pointer"
-              title="Preview empty state"
-            >
-              <Users size={12} />
-              <span>Empty</span>
-            </button>
-          )}
         </div>
 
         {/* Empty State when no real communities exist yet */}

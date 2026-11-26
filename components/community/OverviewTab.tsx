@@ -2,12 +2,35 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { ArrowUpRight, Heart, MessageCircle, Plus } from "lucide-react";
+import { ArrowUpRight, Heart, MessageCircle, Plus, Play } from "lucide-react";
 import { CommunityPost } from "./types";
 import { useCommunityAnalytics } from "@/lib/api/services/community.hooks";
 
+function isVideoMediaUrl(url?: string | null): boolean {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("/video/upload/") ||
+    lower.includes(".mp4") ||
+    lower.includes(".webm") ||
+    lower.includes(".mov") ||
+    lower.includes(".m4v") ||
+    lower.includes(".ogg") ||
+    lower.startsWith("data:video/") ||
+    lower.startsWith("blob:")
+  );
+}
+
+function normalizeMediaUrl(url?: string | null): string {
+  if (!url) return "";
+  return url.startsWith("http://res.cloudinary.com")
+    ? url.replace("http://", "https://")
+    : url;
+}
+
 interface OverviewTabProps {
   defaultLoading?: boolean;
+  isLoadingFeed?: boolean;
   posts?: CommunityPost[];
   onNavigateToContent?: () => void;
   onNavigateToMembers?: () => void;
@@ -21,6 +44,7 @@ const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export function OverviewTab({
   defaultLoading = false,
+  isLoadingFeed = false,
   posts = [],
   onNavigateToContent,
   onNavigateToMembers,
@@ -29,14 +53,17 @@ export function OverviewTab({
   communitySlug = "",
   pricePerMonth = 0,
 }: OverviewTabProps) {
-  const [viewState, setViewState] = useState<"loading" | "filled">("loading");
-  const { data: liveAnalytics } = useCommunityAnalytics(communitySlug);
+  const [viewState, setViewState] = useState<"loading" | "filled">(
+    defaultLoading ? "loading" : "loading"
+  );
+  const { data: liveAnalytics, isLoading: isLoadingAnalytics } =
+    useCommunityAnalytics(communitySlug);
 
-  // On page load/reload, show the Figma skeleton loading state first, then automatically transition to filled state!
+  // Brief skeleton transition on load
   useEffect(() => {
     const timer = setTimeout(() => {
       setViewState("filled");
-    }, 700);
+    }, 450);
     return () => clearTimeout(timer);
   }, []);
 
@@ -54,12 +81,17 @@ export function OverviewTab({
     });
   }, [posts, communitySlug, communityName]);
 
+  const totalPostsCount = Math.max(
+    realPosts.length,
+    liveAnalytics?.postsCount ?? 0
+  );
+
   const activeMembersCount = liveAnalytics?.activeMembers ?? 1;
   const paidSubsCount = liveAnalytics?.activePaidSubscriptions ?? 0;
   const grossRevenueAmount =
     liveAnalytics?.grossRevenue ?? paidSubsCount * (pricePerMonth || 0);
 
-  // Compute dynamic 7-day chart points from backend analytics + real uploaded posts
+  // Compute dynamic 7-day chart points from backend analytics + live posts
   const chartData = useMemo(() => {
     const apiPoints = liveAnalytics?.growthPoints;
     const jsDayToLabel = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -67,11 +99,19 @@ export function OverviewTab({
 
     const points = DAY_LABELS.map((label) => {
       const apiPt = apiPoints?.find((p) => p.label === label);
-      let count = (apiPt?.posts || 0) + (apiPt?.members || 0);
-      if (label === todayLabel) {
-        count = Math.max(count, realPosts.length);
+      let postCount = apiPt?.posts || 0;
+      const memberCount = apiPt?.members || 0;
+      if (label === todayLabel && postCount === 0 && totalPostsCount > 0) {
+        const apiTotalPosts = (apiPoints ?? []).reduce(
+          (sum, pt) => sum + (pt.posts || 0),
+          0
+        );
+        if (apiTotalPosts === 0) {
+          postCount = totalPostsCount;
+        }
       }
-      return { label, value: count };
+      const value = postCount + memberCount;
+      return { label, value, posts: postCount, members: memberCount };
     });
 
     const maxVal = Math.max(1, ...points.map((p) => p.value));
@@ -100,10 +140,12 @@ export function OverviewTab({
     );
 
     return { points: coords, linePath, areaPath, peakCoord };
-  }, [liveAnalytics, realPosts.length]);
+  }, [liveAnalytics, totalPostsCount]);
 
-  const isLoading = viewState === "loading";
-  const showEmptyPerformance = realPosts.length === 0;
+  const isLoading =
+    viewState === "loading" ||
+    (Boolean(communitySlug) && (isLoadingAnalytics || isLoadingFeed) && totalPostsCount === 0);
+  const showEmptyPerformance = totalPostsCount === 0;
 
   return (
     <div className="w-full text-white space-y-6 pt-1">
@@ -463,7 +505,7 @@ export function OverviewTab({
                       </span>
                       <span className="inline-flex items-center gap-1 rounded-full bg-[#4ade80]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#4ade80]">
                         <span className="h-1.5 w-1.5 rounded-full bg-[#4ade80]" />
-                        Live · {realPosts.length} {realPosts.length === 1 ? "post" : "posts"}
+                        Live · {totalPostsCount} {totalPostsCount === 1 ? "post" : "posts"}
                       </span>
                     </div>
                     <button
@@ -528,17 +570,22 @@ export function OverviewTab({
                     {chartData.points.map((pt) => (
                       <span key={pt.label} className="font-medium flex flex-col items-center">
                         <span>{pt.label}</span>
-                        {pt.value > 0 && (
+                        {pt.posts > 0 ? (
                           <span className="text-[10px] text-[#FBBE15] font-bold">
-                            {pt.value} {pt.value === 1 ? "post" : "posts"}
+                            {pt.posts} {pt.posts === 1 ? "post" : "posts"}
                           </span>
-                        )}
+                        ) : pt.members > 0 ? (
+                          <span className="text-[10px] text-[#4ade80] font-bold">
+                            +{pt.members} {pt.members === 1 ? "member" : "members"}
+                          </span>
+                        ) : null}
                       </span>
                     ))}
                   </div>
                 </div>
 
                 {/* Recent Posted Content Preview */}
+                {realPosts.length > 0 && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-bold text-white">
@@ -554,44 +601,74 @@ export function OverviewTab({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {realPosts.slice(0, 6).map((post) => (
-                      <div
-                        key={post.id}
-                        onClick={onNavigateToContent}
-                        className="group rounded-2xl bg-[#161618] border border-white/8 overflow-hidden cursor-pointer hover:border-white/20 transition-all flex flex-col justify-between"
-                      >
-                        <div className="relative h-44 w-full bg-zinc-900">
-                          <Image
-                            src={post.mediaUrl}
-                            alt={post.caption}
-                            fill
-                            unoptimized
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                            sizes="300px"
-                          />
-                          <div className="absolute top-2.5 right-2.5 rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-medium text-white/90">
-                            {post.timestamp}
+                    {realPosts.slice(0, 6).map((post) => {
+                      const cleanMediaUrl = normalizeMediaUrl(post.mediaUrl);
+                      const isVideo =
+                        post.mediaType === "video" || isVideoMediaUrl(cleanMediaUrl);
+                      return (
+                        <div
+                          key={post.id}
+                          onClick={onNavigateToContent}
+                          className="group rounded-2xl bg-[#161618] border border-white/8 overflow-hidden cursor-pointer hover:border-white/20 transition-all flex flex-col justify-between"
+                        >
+                          <div className="relative h-44 w-full bg-zinc-900">
+                            {cleanMediaUrl ? (
+                              isVideo ? (
+                                <>
+                                  <video
+                                    src={cleanMediaUrl}
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                    className="h-full w-full object-cover"
+                                  />
+                                  <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-black/70 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-semibold text-[#FBBE15]">
+                                    <Play className="h-2.5 w-2.5 fill-current" />
+                                    <span>Video</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <Image
+                                  src={cleanMediaUrl}
+                                  alt={post.caption || "Community post"}
+                                  fill
+                                  unoptimized
+                                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                  sizes="300px"
+                                />
+                              )
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center p-5 bg-gradient-to-br from-[#232325] to-[#141416]">
+                                <p className="text-xs text-white/75 line-clamp-4 text-center leading-relaxed">
+                                  {post.caption || "Text post"}
+                                </p>
+                              </div>
+                            )}
+                            <div className="absolute top-2.5 right-2.5 rounded-full bg-black/60 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-medium text-white/90">
+                              {post.timestamp}
+                            </div>
+                          </div>
+                          <div className="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between">
+                            <p className="text-xs text-white/90 line-clamp-2 leading-relaxed">
+                              {post.caption}
+                            </p>
+                            <div className="flex items-center gap-4 text-[11px] text-white/60 pt-1">
+                              <span className="inline-flex items-center gap-1">
+                                <Heart className="h-3.5 w-3.5 text-[#FBBE15]" />
+                                {post.likes}
+                              </span>
+                              <span className="inline-flex items-center gap-1">
+                                <MessageCircle className="h-3.5 w-3.5" />
+                                {post.comments}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between">
-                          <p className="text-xs text-white/90 line-clamp-2 leading-relaxed">
-                            {post.caption}
-                          </p>
-                          <div className="flex items-center gap-4 text-[11px] text-white/60 pt-1">
-                            <span className="inline-flex items-center gap-1">
-                              <Heart className="h-3.5 w-3.5 text-[#FBBE15]" />
-                              {post.likes}
-                            </span>
-                            <span className="inline-flex items-center gap-1">
-                              <MessageCircle className="h-3.5 w-3.5" />
-                              {post.comments}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
+                )}
               </div>
             )}
           </div>

@@ -1164,7 +1164,7 @@ export function CommunityPostFeed({
                     {/* Post Media (Image or Video) */}
                     {post.image && (
                       <div className='relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-4 bg-zinc-800'>
-                        {post.image.includes('.mp4') || post.image.includes('.webm') || post.image.includes('.mov') || post.image.startsWith('blob:') || (post as any).mediaType === 'video' ? (
+                        {post.image.includes('/video/upload/') || post.image.includes('.mp4') || post.image.includes('.webm') || post.image.includes('.mov') || post.image.startsWith('blob:') || (post as any).mediaType === 'video' ? (
                           <video
                             src={post.image}
                             controls

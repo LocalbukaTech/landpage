@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/api/types";
 import {
   Upload,
   MapPin,
@@ -103,6 +105,7 @@ export function ContentManagementTab({
   posts: externalPosts,
   onPostsChange,
 }: ContentManagementTabProps) {
+  const queryClient = useQueryClient();
   const createPostMutation = useCreateCommunityPost(communitySlug);
   const updatePostMutation = useUpdateCommunityPost();
   const togglePostSaveMutation = useTogglePostSave();
@@ -589,6 +592,7 @@ export function ContentManagementTab({
       timestamp: "Just now",
       caption: fullCaption,
       mediaUrl: mediaToUse,
+      mediaType: uploadedMediaType,
       location: location || undefined,
       tags: [...tags],
       hashtags: [...hashtags],
@@ -902,6 +906,7 @@ export function ContentManagementTab({
     if (uuidRegex.test(postId)) {
       try {
         await communityService.deletePost(postId);
+        queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
       } catch {
         // already removed locally
       }
@@ -1680,18 +1685,38 @@ export function ContentManagementTab({
                   })}
                 </p>
 
-                {/* Media Image Container with `...` Menu */}
+                {/* Media Image/Video Container with `...` Menu */}
                 <div className="relative rounded-[22px] overflow-hidden bg-[#181818] shadow-lg">
                   {post.mediaUrl ? (
-                    <div className="relative h-64 sm:h-72 md:h-80 w-full">
-                      <Image
-                        src={post.mediaUrl}
-                        alt="Post food photo"
-                        fill
-                        unoptimized
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 680px"
-                      />
+                    <div className="relative h-64 sm:h-72 md:h-80 w-full bg-black">
+                      {post.mediaType === "video" ||
+                      post.mediaUrl.toLowerCase().includes("/video/upload/") ||
+                      post.mediaUrl.toLowerCase().includes(".mp4") ||
+                      post.mediaUrl.toLowerCase().includes(".webm") ||
+                      post.mediaUrl.toLowerCase().includes(".mov") ||
+                      post.mediaUrl.toLowerCase().includes(".m4v") ||
+                      post.mediaUrl.startsWith("blob:") ? (
+                        <video
+                          src={post.mediaUrl}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src={
+                            post.mediaUrl.startsWith("http://res.cloudinary.com")
+                              ? post.mediaUrl.replace("http://", "https://")
+                              : post.mediaUrl
+                          }
+                          alt="Post food photo"
+                          fill
+                          unoptimized
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 680px"
+                        />
+                      )}
                     </div>
                   ) : (
                     <div className="px-5 py-4 min-h-[56px] flex items-center bg-[#1c1c1e] border border-white/5 rounded-[22px]">

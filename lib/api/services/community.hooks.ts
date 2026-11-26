@@ -30,6 +30,7 @@ export const useCommunityFeed = (idOrSlug: string, params?: FeedParams) => {
       const response = await communityService.getFeed(idOrSlug, params);
       return response.data;
     },
+    enabled: !!idOrSlug,
   });
 };
 
@@ -176,8 +177,11 @@ export const useCreateCommunityPost = (idOrSlug: string) => {
       hashtags?: string[];
     }) => communityService.createPost(idOrSlug, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.community.feed(idOrSlug) });
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.community.all, 'feed', idOrSlug],
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.community.detail(idOrSlug) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.all });
     },
   });
 };

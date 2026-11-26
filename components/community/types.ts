@@ -26,6 +26,7 @@ export interface CommunityPost {
   timestamp: string;
   caption: string;
   mediaUrl: string;
+  mediaType?: "image" | "video";
   location?: string;
   tags?: string[];
   hashtags?: string[];

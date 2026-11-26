@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { DashboardTab, CommunityPost } from "./types";
 import { OverviewTab } from "./OverviewTab";
@@ -10,8 +10,48 @@ import { MonetizationTab } from "./MonetizationTab";
 import { SettingsTab } from "./SettingsTab";
 import type { CreatorCommunityFormData } from "./CreatorCommunityForm";
 import { useAuth } from "@/context/AuthContext";
+import { useCommunityFeed } from "@/lib/api/services/community.hooks";
 import { cn } from "@/lib/utils";
 import { getMediaBlobUrl } from "@/lib/storage/media-storage";
+
+function normalizeMediaUrl(url?: string | null): string {
+  if (!url) return "";
+  return url.startsWith("http://res.cloudinary.com")
+    ? url.replace("http://", "https://")
+    : url;
+}
+
+function isVideoMediaUrl(url?: string | null): boolean {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("/video/upload/") ||
+    lower.includes(".mp4") ||
+    lower.includes(".webm") ||
+    lower.includes(".mov") ||
+    lower.includes(".m4v") ||
+    lower.includes(".ogg") ||
+    lower.startsWith("data:video/")
+  );
+}
+
+function formatRelativeTimestamp(iso?: string): string {
+  if (!iso) return "Recently";
+  const ts = new Date(iso).getTime();
+  if (Number.isNaN(ts)) return "Recently";
+  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (diffSec < 60) return "Just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return new Date(ts).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
 
 interface ManagedCommunityOption {
   id: string;
@@ -185,6 +225,90 @@ export function CreatorDashboard({
           .replace(/^-|-$/g, "")
       : "");
 
+  // Fetch authoritative published posts for this community from the live backend
+  const { data: liveFeedData, isLoading: isLoadingFeed } = useCommunityFeed(
+    effectiveCommunitySlug,
+    { limit: 50 }
+  );
+
+  const mergedPosts = useMemo<CommunityPost[]>(() => {
+    const backendPosts: CommunityPost[] = (liveFeedData?.items ?? []).map((p) => {
+      const mediaUrl = normalizeMediaUrl(p.mediaUrls?.[0] || "");
+      const authorFullName = p.author?.fullName || realAuthorName;
+      const authorHandleValue = `@${authorFullName
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")}`;
+      return {
+        id: p.id,
+        communityName: community?.name || "Community",
+        communitySlug: effectiveCommunitySlug,
+        communityAvatar:
+          normalizeMediaUrl(community?.avatar || community?.coverImage) ||
+          "/images/community/cover-1.jpg",
+        authorName: authorFullName,
+        authorHandle: authorHandleValue,
+        authorAvatar:
+          normalizeMediaUrl(p.author?.avatar) ||
+          normalizeMediaUrl(realAuthorAvatar) ||
+          "/images/community/cover-1.jpg",
+        timestamp: formatRelativeTimestamp(p.createdAt),
+        caption: p.content || "",
+        mediaUrl,
+        mediaType: isVideoMediaUrl(mediaUrl) ? "video" : "image",
+        location: p.location || undefined,
+        tags: p.tags || [],
+        hashtags: p.hashtags || [],
+        likes: String(p.likesCount ?? 0),
+        comments: String(p.commentsCount ?? 0),
+        bookmarks: String(p.savesCount ?? 0),
+        shares: String(p.sharesCount ?? 0),
+        isLiked: Boolean(p.hasLiked),
+        isBookmarked: Boolean(p.hasSaved),
+        isPinned: Boolean(p.isPinned),
+      };
+    });
+
+    const backendIds = new Set(backendPosts.map((p) => p.id));
+    const backendSignatures = new Set(
+      backendPosts.map((p) => `${p.caption.trim()}::${p.mediaUrl}`)
+    );
+
+    const pendingLocalPosts = posts.filter((p) => {
+      if (SEED_PLACEHOLDER_POST_IDS.has(p.id)) return false;
+      if (effectiveCommunitySlug && p.communitySlug && p.communitySlug !== effectiveCommunitySlug) {
+        return false;
+      }
+      if (
+        !p.communitySlug &&
+        community?.name &&
+        p.communityName &&
+        p.communityName.toLowerCase() !== community.name.toLowerCase()
+      ) {
+        return false;
+      }
+      if (backendIds.has(p.id)) return false;
+      if (backendSignatures.has(`${(p.caption || "").trim()}::${normalizeMediaUrl(p.mediaUrl)}`)) {
+        return false;
+      }
+      // Once backend has synced, only keep truly unsynced optimistic posts (non-UUID temporary IDs)
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.id);
+      if (isUuid && liveFeedData) return false;
+      return true;
+    });
+
+    return [...pendingLocalPosts, ...backendPosts];
+  }, [
+    liveFeedData,
+    posts,
+    community,
+    effectiveCommunitySlug,
+    realAuthorName,
+    realAuthorAvatar,
+  ]);
+
   return (
     <div className="w-full text-white">
       {/* Header */}
@@ -273,7 +397,8 @@ export function CreatorDashboard({
       <div className="w-full pb-16">
         {activeTab === "Overview" && (
           <OverviewTab
-            posts={posts}
+            posts={mergedPosts}
+            isLoadingFeed={isLoadingFeed}
             onNavigateToContent={() => setActiveTab("Content and feed management")}
             onNavigateToMembers={() => setActiveTab("Members")}
             onNavigateToMonetization={() => setActiveTab("Monetization")}
@@ -284,7 +409,7 @@ export function CreatorDashboard({
         )}
         {activeTab === "Content and feed management" && (
           <ContentManagementTab
-            posts={posts}
+            posts={mergedPosts}
             onPostsChange={handleUpdatePosts}
             communityName={community?.name}
             communityAvatar={community?.avatar || community?.coverImage}

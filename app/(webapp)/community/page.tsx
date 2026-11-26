@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -110,12 +110,19 @@ function CommunityPageContent() {
   const { toast } = useToast();
   const createCommunityMutation = useCreateCommunity();
 
-  const initialMode =
-    searchParams.get("view") === "creator"
-      ? "creator"
-      : searchParams.get("view") === "memberships"
-      ? "memberships"
-      : "explore";
+  const initialMode = (() => {
+    const fromUrl = searchParams.get("view");
+    if (fromUrl === "creator" || fromUrl === "memberships" || fromUrl === "explore") {
+      return fromUrl;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const stored = window.localStorage.getItem("localbuka_community_last_view");
+        if (stored === "creator" || stored === "memberships") return stored as "creator" | "memberships";
+      } catch {}
+    }
+    return "explore";
+  })();
   const [viewMode, setViewMode] = useState<"creator" | "explore" | "memberships">(
     initialMode
   );
@@ -127,8 +134,37 @@ function CommunityPageContent() {
     if (stepParam === "changes-requested") return "changes-requested";
     if (stepParam === "rejected") return "rejected";
     if (stepParam === "dashboard" || searchParams.get("tab")) return "dashboard";
+    if (typeof window !== "undefined") {
+      try {
+        const storedStep = window.localStorage.getItem("localbuka_community_last_step");
+        if (storedStep === "dashboard") return "dashboard";
+      } catch {}
+    }
     return "form";
   });
+
+  // Sync viewMode and creatorStep with URL query string and localStorage so reload always stays on the current view
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("localbuka_community_last_view", viewMode);
+      window.localStorage.setItem("localbuka_community_last_step", creatorStep);
+      const params = new URLSearchParams(window.location.search);
+      if (viewMode !== "explore") {
+        params.set("view", viewMode);
+      } else {
+        params.delete("view");
+      }
+      if (viewMode === "creator" && creatorStep) {
+        params.set("step", creatorStep);
+      } else {
+        params.delete("step");
+      }
+      const qs = params.toString();
+      const nextUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+      window.history.replaceState(null, "", nextUrl);
+    } catch {}
+  }, [viewMode, creatorStep]);
 
   const [creatorData, setCreatorData] = useState<CreatorCommunityFormData>(() => {
     if (typeof window !== "undefined") {

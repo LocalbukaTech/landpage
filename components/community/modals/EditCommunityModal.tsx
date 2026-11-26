@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Sparkles } from "lucide-react";
+import { X, Pencil } from "lucide-react";
 
 interface EditCommunityModalProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ export function EditCommunityModal({
         <div className="flex items-center justify-between pb-4 border-b border-white/10">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f5c94d]/15 text-[#f5c94d]">
-              <Sparkles className="h-5 w-5" />
+              <Pencil className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-lg font-semibold">Edit Community Name & Bio</h2>

@@ -9,7 +9,6 @@ import {
   Copy,
   Check,
   Clock,
-  Sparkles,
   Plus,
   X,
   Building2,
@@ -364,10 +363,6 @@ export function CreatorCommunityForm({
     <div className="h-full flex flex-col justify-start px-6 sm:px-8 lg:px-10 py-7 lg:py-8 text-white bg-[#1a1a1a] overflow-y-auto">
       {/* ── Header ─────────────────────────────── */}
       <div className="mb-5 text-left">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-[#FFC533]/15 px-3 py-1 text-[11px] font-semibold text-[#FFC533] mb-2">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Creator Community Onboarding</span>
-        </div>
         <h2 className="text-2xl sm:text-[26px] font-bold leading-tight text-white mb-1">
           Welcome to Localbuka
           <br />

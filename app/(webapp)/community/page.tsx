@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
   Lock,
-  Sparkles,
   LayoutDashboard,
   Compass,
   ArrowLeft,
@@ -1358,7 +1357,7 @@ function CommunityPageContent() {
 
                   <div className="mx-auto mb-5 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full border border-[#f5c94d]/50 bg-[#f5c94d] text-[#111111] shadow-[0_0_0_8px_rgba(245,201,77,0.12)]">
                     <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-black/10">
-                      <Sparkles className="h-6 w-6 sm:h-7 sm:w-7" />
+                      <Lock className="h-6 w-6 sm:h-7 sm:w-7" />
                     </div>
                   </div>
 

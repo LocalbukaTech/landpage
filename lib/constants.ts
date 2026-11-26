@@ -12,6 +12,8 @@ import {
 export const NAV_LINKS = [
   { href: '/about', label: 'About Us' },
   { href: '/blog', label: 'Blog' },
+  {href: '/#', label:'Ambassadorship Program'},
+  { href: '/team', label: 'Meet the Team' },
 ] as const;
 
 // Sentinel value for restaurants without photos – used to trigger the icon placeholder in UI
@@ -134,28 +136,32 @@ export const TEAM_MEMBERS: TeamMember[] = [
 // Testimonials data
 export const TESTIMONIALS = [
   {
-    text: 'The good thing is, the app actually located most of the restaurant around this my axis. Love it💃💃💃',
-    author: 'Orji, Happiness',
-    avatar:
-      'https://play-lh.googleusercontent.com/a-/ALV-UjXEVnrqP93YOm4SeQw3i2BqvDJWsC2vmX0S2qYAP-Pvcp_hRnXC=s64-rw',
+    title: "Found exactly what I needed",
+    text: "The LocalBuka App has been a game-changer for my dining experiences! It led me to this hidden gem with amazing local dishes. The affordability filter is a lifesaver for a student like me.",
+    author: 'Bolaji',
+    location: 'Lagos',
+    avatar: '/images/bolaji.webp', // Pointing to your public folder
   },
   {
-    text: `Great app. Very useful for when you visit new locations don't trust where to eat. The user interface is excellent and the reviews are great . Kudus to the team`,
-    author: 'Ifejika, Amaka',
-    avatar:
-      'https://play-lh.googleusercontent.com/a-/ALV-UjUOs8lPACWGpPTcfLoXrSWCBmL9oRjPx3tT2avNayrv3WOPyvuD=s64-rw',
+    title: "LocalBuka Empowered my decisions",
+    text: "When I'm unsure of what to eat, LocalBuka lets me see meals shared by other users and find good places, so I can make a decision.",
+    author: 'Yemisi',
+    location: 'Ikeja',
+    avatar: '/images/yemisi.webp',
   },
   {
-    text: 'I had a seamless experience navigating through, and I was able to get lists of good Nigerian restaurants here in the UK. The app is a must have',
-    author: 'Promise Benson, United Kingdom',
-    avatar:
-      'https://play-lh.googleusercontent.com/a/ACg8ocKAicBiy9ASVRp6VEATqKoW3akuohapdawbYa-l-hb5l6587w=s64-rw-mo',
+    title: "Clean spots and foodies were a no-miss!",
+    text: "Cleanliness and quality are my top priorities when dining out. LocalBuka App not only helped me find the cleanest spots in Abuja but also connected me with a community of foodies sharing their favorite places.",
+    author: 'Bankole',
+    location: 'Abuja',
+    avatar: '/images/bankole.webp',
   },
   {
-    text: 'Best app to check for food in your area',
-    author: 'Kingsley, Dadzi',
-    avatar:
-      'https://play-lh.googleusercontent.com/a/ACg8ocI-vPgZYeBLPnb-JqNnAgRCf8zPuni2vt0rRpaWXq9c_l3iZA=s64-rw-mo',
+    title: "Established a community",
+    text: "I've been able to create a community where i don't only socialize with my members but make money doing what i always loved, sharing food ideas.",
+    author: 'Folakemi',
+    location: 'Yaba',
+    avatar: '/images/folakemi.webp',
   },
 ] as const;
 

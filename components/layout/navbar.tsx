@@ -1,21 +1,20 @@
 'use client';
 
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import {Button} from '@/components/ui/button';
-import {NAV_LINKS} from '@/lib/constants';
-import {useRouter} from 'next/navigation';
-import {getUser, isUserAuthenticated, logoutUser} from '@/lib/auth';
-import {setAnalyticsUser} from '@/lib/analytics';
-import {LogOut, User as UserIcon} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { getUser, isUserAuthenticated, logoutUser } from '@/lib/auth';
+import { setAnalyticsUser } from '@/lib/analytics';
+import { LogOut, User as UserIcon } from 'lucide-react';
 
 export function Navbar() {
-  const [user, setUser] = useState<{fullName?: string} | null>(null);
+  const [user, setUser] = useState<{ fullName?: string } | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
 
-  // Check auth state on mount and when it changes
+  // Check auth state on mount
   useEffect(() => {
     const checkAuth = () => {
       setIsAuthenticated(isUserAuthenticated());
@@ -24,29 +23,17 @@ export function Navbar() {
     
     checkAuth();
     
-    // Listen for storage events (for when auth state changes in another tab)
-    window.addEventListener('storage', checkAuth);
-    return () => window.removeEventListener('storage', checkAuth);
+    // Add scroll listener for the floating effect
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
-
-
-  const handleNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement>,
-    href: string,
-    _label: string
-  ) => {
-
-    if (href.startsWith('#')) {
-      e.preventDefault();
-      const element = document.querySelector(href);
-      if (element) {
-        element.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-        });
-      }
-    }
-  };
 
   const handleLogout = () => {
     setAnalyticsUser(null, null, null, null);
@@ -56,87 +43,92 @@ export function Navbar() {
     router.push('/');
   };
 
-  // Get first name from fullName
   const firstName = user?.fullName?.split(' ')[0] || 'User';
 
-  return (
-    <>
-      <div className='sticky top-0 z-50 flex justify-center pt-4 px-4 bg-transparent pointer-events-none'>
-        <nav className='bg-white dark:bg-black shadow-md rounded-xl px-6 lg:px-8 max-w-6xl w-full pointer-events-auto'>
-          <div className='flex items-center justify-between h-16 md:h-18'>
-            {/* Left: Logo + Brand Name */}
-            <Link href='/' className='flex items-center gap-2'>
-              <span className='font-display text-xl md:text-2xl text-gray-900 dark:text-secondary-foreground font-normal'>
-                LocalBuka
-              </span>
-              <Image
-                src='/images/localBuka_logo.png'
-                alt='LocalBuka'
-                width={40}
-                height={40}
-                className='h-8 w-8 rounded-full'
-                priority
-              />
-            </Link>
-            
-            {/* Right: Nav Links + Buttons */}
-            <div className='flex items-center gap-4 md:gap-6 lg:gap-8'>
-              {/* Nav Links */}
-              <div className='hidden md:flex items-center gap-6 lg:gap-8'>
-                
-                {NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={(e) => handleNavClick(e, link.href, link.label)}
-                    className='text-gray-800 dark:text-gray-300 text-sm font-medium hover:text-primary transition-colors'>
-                    {link.label} 
-                  </Link> 
-                ))} 
-     
-              </div>
+  // The specific links from your Figma design
+  const navLinks = [
+    { label: 'About Us', href: '/about' },
+    { label: 'Ambassadorship Program', href: '/ambassador' },
+    { label: 'Meet the team', href: '/team' },
+  ];
 
-              {/* Auth Section */}
-              <div className='flex items-center gap-3'>
-                {isAuthenticated && user ? (
-                  // Logged in: Show welcome message
-                  <div className='flex items-center gap-3'>
-                    <div className='flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg'>
-                      <UserIcon className='w-4 h-4 text-primary' />
-                      <span className='text-sm font-medium text-gray-800 dark:text-gray-200'>
-                        Welcome, <span className='text-primary'>{firstName}</span>
-                      </span>
-                    </div>
-                    <Button
-                      onClick={handleLogout}
-                      variant='ghost'
-                      size='sm'
-                      className='text-gray-500 hover:text-red-500 transition-colors'>
-                      <LogOut className='w-4 h-4' />
-                    </Button>
+  return (
+    <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 flex justify-center pt-4 px-4 ${isScrolled ? 'bg-[#FDFBF7]/90 backdrop-blur-md' : 'bg-transparent'}`}>
+      <nav className='bg-white shadow-sm border border-gray-100 rounded-2xl px-6 lg:px-8 max-w-6xl w-full'>
+        <div className='flex items-center justify-between h-16 md:h-20'>
+          
+          {/* Left: Logo + Brand Name */}
+          <Link href='/' className='flex items-center gap-2'>
+            <span className='font-display text-xl md:text-2xl text-[#0A1E44] font-bold'>
+              LocalBuka
+            </span>
+            <Image
+              src='/images/localBuka_logo.png'
+              alt='LocalBuka'
+              width={40}
+              height={40}
+              className='h-8 w-8 rounded-full'
+              priority
+            />
+          </Link>
+          
+          {/* Right: Nav Links + Buttons */}
+          <div className='flex items-center gap-4 md:gap-8'>
+            
+            {/* Nav Links */}
+            <div className='hidden md:flex items-center gap-8'>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className='text-[#0A1E44] text-sm font-semibold hover:text-[#FFC727] transition-colors'
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Auth Section */}
+            <div className='flex items-center gap-3'>
+              {isAuthenticated && user ? (
+                // Logged in: Show welcome message
+                <div className='flex items-center gap-3'>
+                  <div className='flex items-center gap-2 px-3 py-2 bg-[#FDFBF7] rounded-lg'>
+                    <UserIcon className='w-4 h-4 text-[#FFC727]' />
+                    <span className='text-sm font-medium text-[#0A1E44]'>
+                      Welcome, <span className='text-[#FFC727]'>{firstName}</span>
+                    </span>
                   </div>
-                ) : (
-                  // Not logged in: Show auth buttons
-                  <>
-                    <Button
-                      onClick={() => router.push('/signin')}
-                      variant='ghost'
-                      className='text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 cursor-pointer'>
-                      Login
-                    </Button>
-                    <Button
-                      onClick={() => router.push('/signup')}
-                      className='bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm px-5 py-2 cursor-pointer'>
-                      Sign Up
-                    </Button>
-                  </>
-                )}
-              </div>
+                  <button
+                    onClick={handleLogout}
+                    className='text-gray-500 hover:text-red-500 transition-colors p-2'
+                  >
+                    <LogOut className='w-4 h-4' />
+                  </button>
+                </div>
+              ) : (
+                // Not logged in: Show Figma-style buttons
+                <>
+                  <button
+                    onClick={() => router.push('/signin')}
+                    className='text-sm font-bold text-[#0A1E44] hover:bg-gray-50 px-4 py-2 rounded-xl transition-colors border border-gray-200'
+                  >
+                    Login
+                  </button>
+                  
+                  {/* Figma has a single "Find Food" button instead of Sign Up */}
+                  <button
+                    onClick={() => router.push('/explore')}
+                    className='bg-[#FFC727] text-[#0A1E44] hover:bg-yellow-400 font-bold text-sm px-6 py-2.5 rounded-xl transition-colors'
+                  >
+                    Find Food
+                  </button>
+                </>
+              )}
             </div>
           </div>
-        </nav>
-      </div>
-    </>
+        </div>
+      </nav>
+    </div>
   );
 }
-

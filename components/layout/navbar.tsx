@@ -53,7 +53,7 @@ export function Navbar() {
   ];
 
   return (
-    <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 flex justify-center pt-4 px-4 ${isScrolled ? 'bg-[#FDFBF7]/90 backdrop-blur-md' : 'bg-transparent'}`}>
+    <header className={`sticky top-0 left-0 right-0 z-50 w-full transition-all duration-300 flex justify-center py-4 px-4 ${isScrolled ? 'bg-[#FDF9ED]/95 backdrop-blur-md shadow-xs' : 'bg-transparent'}`}>
       <nav className='bg-white shadow-sm border border-gray-100 rounded-2xl px-6 lg:px-8 max-w-6xl w-full'>
         <div className='flex items-center justify-between h-16 md:h-20'>
           
@@ -129,6 +129,6 @@ export function Navbar() {
           </div>
         </div>
       </nav>
-    </div>
+    </header>
   );
 }

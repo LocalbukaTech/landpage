@@ -17,7 +17,7 @@ import {FooterMew} from '@/components/layout/footermew';
 
 export function LandingPageClient() {
   return (
-    <>
+    <div className='min-h-screen bg-white'>
       <Navbar />
       <HeroSection />
       <TestimonialsSection />
@@ -32,6 +32,6 @@ export function LandingPageClient() {
       
       {/* {<FAQSection />} */}
       <FooterMew />
-    </>
+    </div>
   );
 }

@@ -7,6 +7,8 @@ import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
 import { Reveal } from '@/components/anim/Reveal';
 import { api } from '@/lib/api/client';
+import { useSiteSettingsQuery } from '@/lib/api/services/contact.hooks';
+import { DEFAULT_CONTACT_INFO_CONTENT } from '@/lib/api/services/contact.service';
 import {
   Mail,
   Phone,
@@ -22,12 +24,19 @@ import {
 } from 'lucide-react';
 
 export default function ContactPage() {
+  const { data: settingsRes } = useSiteSettingsQuery();
+  const info = {
+    ...DEFAULT_CONTACT_INFO_CONTENT,
+    ...(settingsRes?.data?.contactInfo ?? {}),
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     subject: 'general',
     message: '',
+    website: '', // Anti-spam honeypot
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -45,16 +54,23 @@ export default function ContactPage() {
         phone: formData.phone.trim() || undefined,
         subject: formData.subject,
         message: formData.message.trim(),
+        website: formData.website || undefined,
       });
       setIsSubmitted(true);
     } catch (err: any) {
-      console.warn('Backend submission notification:', err?.message || err);
-      // If network or CORS or server is warming up, still confirm to user gracefully
-      setIsSubmitted(true);
+      const apiMsg = err?.response?.data?.message;
+      setErrorMessage(
+        Array.isArray(apiMsg)
+          ? apiMsg.join(', ')
+          : apiMsg ||
+              'Unable to send your message right now. Please check your connection and try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const phoneHref = `tel:${info.primaryPhone.replace(/[^+\d]/g, '')}`;
 
   const contactSchema = {
     '@context': 'https://schema.org',
@@ -64,18 +80,17 @@ export default function ContactPage() {
         '@id': 'https://localbuka.com/contact#webpage',
         url: 'https://localbuka.com/contact',
         name: 'Contact LocalBuka - Customer Support & Restaurant Partnerships',
-        description:
-          'Get in touch with LocalBuka for restaurant listings, creator community programs, partnerships, or customer support across Africa.',
+        description: info.heroSubtitle,
         isPartOf: { '@id': 'https://localbuka.com/#website' },
         mainEntity: {
           '@type': 'Organization',
           name: 'LocalBuka',
           url: 'https://localbuka.com',
-          email: 'support@localbuka.com',
-          telephone: '+234-801-234-5678',
+          email: info.supportEmail,
+          telephone: info.primaryPhone,
           address: {
             '@type': 'PostalAddress',
-            addressLocality: 'Lagos',
+            addressLocality: info.locationCity,
             addressCountry: 'NG',
           },
         },
@@ -109,11 +124,11 @@ export default function ContactPage() {
       <Navbar />
 
       <main className="bg-[#121214] text-white min-h-screen">
-        {/* --- HERO SECTION WITH CONTACT HERO IMAGE (Matching About Us style) --- */}
+        {/* --- HERO SECTION --- */}
         <section className="relative h-[520px] md:h-[600px] lg:h-[660px] overflow-hidden -mt-24 rounded-b-2xl">
           <div className="absolute inset-0 z-0">
             <Image
-              src="/images/contactHero.jpg"
+              src={info.heroImageUrl || '/images/contactHero.jpg'}
               alt="Contact LocalBuka Hero"
               fill
               className="object-cover object-center"
@@ -127,20 +142,19 @@ export default function ContactPage() {
               <Reveal direction="up" duration={0.6}>
                 <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FBBE15]/20 text-[#FBBE15] border border-[#FBBE15]/40 backdrop-blur-md mb-6 shadow-sm">
                   <MessageSquare className="w-3.5 h-3.5" />
-                  Get in Touch
+                  {info.heroBadge}
                 </span>
               </Reveal>
 
               <Reveal direction="up" delay={0.1} duration={0.7}>
                 <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-tight">
-                  We&apos;d love to <span className="text-[#FBBE15]">hear from you</span>
+                  {info.heroHeadline}
                 </h1>
               </Reveal>
 
               <Reveal direction="up" delay={0.2} duration={0.7}>
                 <p className="text-white/90 text-base md:text-lg max-w-2xl mx-auto leading-relaxed drop-shadow">
-                  Have questions about discovering restaurants, listing your buka, partnering with us,
-                  or exploring community creator programs? Our team is always ready to assist.
+                  {info.heroSubtitle}
                 </p>
               </Reveal>
             </div>
@@ -150,7 +164,6 @@ export default function ContactPage() {
         {/* --- MAIN CONTACT CONTENT --- */}
         <section className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            
             {/* LEFT COLUMN: Contact Cards & Info (5 cols) */}
             <div className="lg:col-span-5 space-y-6">
               <Reveal direction="up" duration={0.6}>
@@ -180,19 +193,19 @@ export default function ContactPage() {
                         <div>
                           <span className="text-xs text-zinc-500 block">Support &amp; Help:</span>
                           <a
-                            href="mailto:support@localbuka.com"
+                            href={`mailto:${info.supportEmail}`}
                             className="text-sm sm:text-base font-semibold text-[#FBBE15] hover:underline"
                           >
-                            support@localbuka.com
+                            {info.supportEmail}
                           </a>
                         </div>
                         <div>
                           <span className="text-xs text-zinc-500 block">General &amp; Partnerships:</span>
                           <a
-                            href="mailto:hello@localbuka.com"
+                            href={`mailto:${info.generalEmail}`}
                             className="text-sm sm:text-base font-semibold text-[#FBBE15] hover:underline"
                           >
-                            hello@localbuka.com
+                            {info.generalEmail}
                           </a>
                         </div>
                       </div>
@@ -215,14 +228,19 @@ export default function ContactPage() {
                       </p>
                       <div className="space-y-1.5 pt-1">
                         <a
-                          href="tel:+2348012345678"
+                          href={phoneHref}
                           className="inline-flex items-center gap-2 text-base sm:text-lg font-bold text-[#FBBE15] hover:underline"
                         >
-                          +234 801 234 5678
+                          {info.primaryPhone}
                         </a>
-                        <p className="text-xs text-zinc-400">
-                          Toll-Free / Support: <span className="text-white font-medium">+234 800 LOCALBUKA</span>
-                        </p>
+                        {info.tollFreePhone && (
+                          <p className="text-xs text-zinc-400">
+                            Toll-Free / Support:{' '}
+                            <span className="text-white font-medium">
+                              {info.tollFreePhone}
+                            </span>
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -237,9 +255,9 @@ export default function ContactPage() {
                       <MapPin className="w-4 h-4" />
                       <span className="text-xs font-bold uppercase tracking-wider">Location</span>
                     </div>
-                    <p className="text-sm font-semibold text-white">Lagos, Nigeria</p>
+                    <p className="text-sm font-semibold text-white">{info.locationCity}</p>
                     <p className="text-xs text-zinc-400 mt-1">
-                      Serving food discovery &amp; communities across Africa
+                      {info.locationSubtitle}
                     </p>
                   </div>
 
@@ -248,9 +266,9 @@ export default function ContactPage() {
                       <Clock className="w-4 h-4" />
                       <span className="text-xs font-bold uppercase tracking-wider">Hours</span>
                     </div>
-                    <p className="text-sm font-semibold text-white">Mon – Sat: 8am – 8pm</p>
+                    <p className="text-sm font-semibold text-white">{info.weekdayHours}</p>
                     <p className="text-xs text-zinc-400 mt-1">
-                      Sun: 10am – 6pm (WAT)
+                      {info.weekendHours}
                     </p>
                   </div>
                 </div>
@@ -293,7 +311,11 @@ export default function ContactPage() {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-[#FBBE15]/10 rounded-full blur-2xl pointer-events-none" />
 
                   {isSubmitted ? (
-                    <div className="text-center py-12 space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      className="text-center py-12 space-y-4 animate-in fade-in zoom-in-95 duration-300"
+                    >
                       <div className="w-16 h-16 rounded-full bg-[#FBBE15]/20 border border-[#FBBE15]/40 text-[#FBBE15] flex items-center justify-center mx-auto mb-4">
                         <CheckCircle2 className="w-8 h-8" />
                       </div>
@@ -306,7 +328,14 @@ export default function ContactPage() {
                         type="button"
                         onClick={() => {
                           setIsSubmitted(false);
-                          setFormData({ name: '', email: '', phone: '', subject: 'general', message: '' });
+                          setFormData({
+                            name: '',
+                            email: '',
+                            phone: '',
+                            subject: 'general',
+                            message: '',
+                            website: '',
+                          });
                         }}
                         className="mt-6 px-6 py-2.5 rounded-xl bg-white/10 text-white font-semibold text-xs hover:bg-white/20 transition-all cursor-pointer"
                       >
@@ -314,9 +343,16 @@ export default function ContactPage() {
                       </button>
                     </div>
                   ) : (
-                    <form onSubmit={handleSubmit} className="space-y-5">
+                    <form
+                      onSubmit={handleSubmit}
+                      aria-labelledby="contact-form-heading"
+                      className="space-y-5"
+                    >
                       <div>
-                        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
+                        <h2
+                          id="contact-form-heading"
+                          className="text-xl sm:text-2xl font-bold text-white mb-1"
+                        >
                           Send us a Message
                         </h2>
                         <p className="text-xs sm:text-sm text-zinc-400">
@@ -325,40 +361,67 @@ export default function ContactPage() {
                       </div>
 
                       {errorMessage && (
-                        <div className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+                        <div
+                          role="alert"
+                          aria-live="assertive"
+                          className="p-3.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2"
+                        >
                           <AlertCircle className="w-4 h-4 shrink-0" />
                           <span>{errorMessage}</span>
                         </div>
                       )}
 
+                      {/* Accessible Honeypot field hidden from users and assistive tech */}
+                      <div className="sr-only" aria-hidden="true">
+                        <label htmlFor="contact-website-hp">Website</label>
+                        <input
+                          id="contact-website-hp"
+                          name="website"
+                          type="text"
+                          tabIndex={-1}
+                          autoComplete="off"
+                          value={formData.website}
+                          onChange={(e) =>
+                            setFormData({ ...formData, website: e.target.value })
+                          }
+                        />
+                      </div>
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                         <div>
                           <label htmlFor="name" className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                            Full Name <span className="text-[#FBBE15]">*</span>
+                            Full Name <span className="text-[#FBBE15]" aria-hidden="true">*</span>
                           </label>
                           <input
                             type="text"
                             id="name"
+                            name="name"
+                            autoComplete="name"
                             required
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             placeholder="e.g. Adeola Johnson"
-                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#FBBE15] focus:border-transparent transition-all"
+                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-base sm:text-sm text-white placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-[#FBBE15] transition-all"
                           />
                         </div>
 
                         <div>
                           <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                            Email Address <span className="text-[#FBBE15]">*</span>
+                            Email Address <span className="text-[#FBBE15]" aria-hidden="true">*</span>
                           </label>
                           <input
                             type="email"
                             id="email"
+                            name="email"
+                            autoComplete="email"
+                            autoCorrect="off"
+                            autoCapitalize="none"
+                            spellCheck={false}
                             required
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                             placeholder="e.g. adeola@example.com"
-                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#FBBE15] focus:border-transparent transition-all"
+                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-base sm:text-sm text-white placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-[#FBBE15] transition-all"
                           />
                         </div>
                       </div>
@@ -371,10 +434,12 @@ export default function ContactPage() {
                           <input
                             type="tel"
                             id="phone"
+                            name="phone"
+                            autoComplete="tel"
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             placeholder="+234 800 000 0000"
-                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#FBBE15] focus:border-transparent transition-all"
+                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-base sm:text-sm text-white placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-[#FBBE15] transition-all"
                           />
                         </div>
 
@@ -384,9 +449,10 @@ export default function ContactPage() {
                           </label>
                           <select
                             id="subject"
+                            name="subject"
                             value={formData.subject}
                             onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#FBBE15] focus:border-transparent transition-all cursor-pointer"
+                            className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-base sm:text-sm text-white focus-visible:outline-2 focus-visible:outline-[#FBBE15] transition-all cursor-pointer"
                           >
                             <option value="general">General Inquiry</option>
                             <option value="restaurant">Restaurant Owner &amp; Listing Partnership</option>
@@ -399,16 +465,17 @@ export default function ContactPage() {
 
                       <div>
                         <label htmlFor="message" className="block text-xs font-bold uppercase tracking-wider text-zinc-300 mb-1.5">
-                          Your Message <span className="text-[#FBBE15]">*</span>
+                          Your Message <span className="text-[#FBBE15]" aria-hidden="true">*</span>
                         </label>
                         <textarea
                           id="message"
+                          name="message"
                           required
                           rows={5}
                           value={formData.message}
                           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                           placeholder="Tell us what you need help with or how we can collaborate..."
-                          className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#FBBE15] focus:border-transparent transition-all resize-none"
+                          className="w-full px-4 py-3 rounded-xl bg-[#26262a] border border-white/10 text-base sm:text-sm text-white placeholder:text-zinc-500 focus-visible:outline-2 focus-visible:outline-[#FBBE15] transition-all resize-y"
                         />
                       </div>
 
@@ -434,7 +501,6 @@ export default function ContactPage() {
                 </div>
               </Reveal>
             </div>
-
           </div>
         </section>
       </main>

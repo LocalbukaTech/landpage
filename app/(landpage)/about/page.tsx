@@ -7,8 +7,21 @@ import { Footer } from '@/components/layout/footer';
 import SectionHeader from '@/components/SectionHeader';
 import { Reveal } from '@/components/anim/Reveal';
 import StarIcon from '@/public/svg/StarIcon';
+import { useSiteSettingsQuery } from '@/lib/api/services/contact.hooks';
+import { DEFAULT_ABOUT_US_CONTENT } from '@/lib/api/services/contact.service';
 
 export default function AboutPage() {
+  const { data: settingsRes } = useSiteSettingsQuery();
+  const about = {
+    ...DEFAULT_ABOUT_US_CONTENT,
+    ...(settingsRes?.data?.aboutUs ?? {}),
+    coreValues:
+      settingsRes?.data?.aboutUs?.coreValues &&
+      settingsRes.data.aboutUs.coreValues.length > 0
+        ? settingsRes.data.aboutUs.coreValues
+        : DEFAULT_ABOUT_US_CONTENT.coreValues,
+  };
+
   const aboutSchema = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -17,8 +30,7 @@ export default function AboutPage() {
         '@id': 'https://localbuka.com/about#webpage',
         url: 'https://localbuka.com/about',
         name: 'About LocalBuka - Africa’s Food Discovery & Community Platform',
-        description:
-          'LocalBuka is Africa’s food discovery and community platform built for people who care deeply about where they eat, what they eat, and who they eat with.',
+        description: about.storyParagraph1,
         isPartOf: { '@id': 'https://localbuka.com/#website' },
         about: { '@id': 'https://localbuka.com/#organization' },
       },
@@ -54,7 +66,7 @@ export default function AboutPage() {
       <section className='relative h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden -mt-24 rounded-b-xl'>
         <div className='absolute inset-0 z-0'>
           <Image
-            src='/images/aboutUsHero.png'
+            src={about.heroImageUrl || '/images/aboutUsHero.png'}
             alt='About LocalBuka hero'
             fill
             className='object-cover object-center'
@@ -82,14 +94,14 @@ export default function AboutPage() {
               delay={0.12}
               duration={0.7}
               className='text-white text-base md:text-lg max-w-2xl mx-auto'>
-              Join a vibrant community of food lovers exploring
-              the best local dining experience across Africa.
+              {about.heroSubtitle}
             </Reveal>
             <Reveal direction='up' delay={0.2} duration={0.7} className='mt-8 flex justify-center'>
-              <Link href="/feeds">
-                <button className='px-16 py-4 flex items-center justify-center rounded-2xl bg-[#FBBE15] text-[#111827] hover:bg-[#E5AD13] font-bold text-lg transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap'>
-                  Get Started
-                </button>
+              <Link
+                href={about.heroCtaHref || '/feeds'}
+                className='px-16 py-4 inline-flex items-center justify-center rounded-2xl bg-[#FBBE15] text-[#111827] hover:bg-[#E5AD13] font-bold text-lg transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap'
+              >
+                {about.heroCtaText || 'Get Started'}
               </Link>
             </Reveal>
           </div>
@@ -100,34 +112,21 @@ export default function AboutPage() {
       <section className='py-20 bg-white dark:bg-black'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center'>
-
             {/* Left Column — Text */}
             <div className='relative space-y-6'>
               <Reveal direction='up' duration={0.5}>
-                <SectionHeader title='About Localbuka' />
+                <SectionHeader title={about.storyHeading || 'About Localbuka'} />
               </Reveal>
 
               <div className='space-y-4 text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed max-w-2xl'>
                 <Reveal direction='up' delay={0.1} duration={0.6}>
-                  <p>
-                    LocalBuka is Africa&apos;s food discovery and community platform built for
-                    the people who care deeply about where they eat, what they eat, and
-                    who they eat with. We exist at the intersection of food, community,
-                    and everyday life.
-                  </p>
+                  <p>{about.storyParagraph1}</p>
                 </Reveal>
-                <Reveal direction='up' delay={0.2} duration={0.6}>
-                  <p>
-                    We started with a simple observation: finding a great restaurant in an
-                    African city shouldn&apos;t feel like guesswork. Recommendations from
-                    friends, honest reviews from real people, and local knowledge should
-                    be easy to find and easy to trust. LocalBuka makes that possible.
-                    Whether you&apos;re a chef, a home cook, or someone who just loves a
-                    good meal, LocalBuka is the place to discover your next favorite
-                    restaurant, connect with fellow food lovers, and become part of a
-                    community that celebrates every dish.
-                  </p>
-                </Reveal>
+                {about.storyParagraph2 && (
+                  <Reveal direction='up' delay={0.2} duration={0.6}>
+                    <p>{about.storyParagraph2}</p>
+                  </Reveal>
+                )}
               </div>
             </div>
 
@@ -135,17 +134,15 @@ export default function AboutPage() {
             <Reveal direction='up' delay={0.3} duration={0.6} className='w-full'>
               <div className='relative w-full aspect-[4/3] lg:aspect-square rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-sm'>
                 <Image
-                  src='/images/peopleInResturant.png'
+                  src={about.storyImageUrl || '/images/peopleInResturant.png'}
                   alt='People enjoying a meal together at a restaurant'
                   fill
                   className='object-cover'
                   sizes='(max-width: 1024px) 100vw, 50vw'
                   priority
-                  unoptimized={false}
                 />
               </div>
-            </Reveal> 
-
+            </Reveal>
           </div>
         </div>
       </section>
@@ -153,47 +150,43 @@ export default function AboutPage() {
       {/* --- MISSION & VISION SECTION --- */}
       <section className='py-20 bg-[#FFF9E8] dark:bg-muted/10'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-
           {/* Section Header with Star */}
           <Reveal direction='up' duration={0.5} className='relative mb-16'>
             <div className='absolute -top-6 -left-4'>
               <StarIcon />
             </div>
             <h2 className='text-4xl md:text-5xl lg:text-[54px] font-extrabold leading-tight z-10 text-[#111827] dark:text-white relative'>
-              Our Mission & Vision
+              {about.missionSectionTitle}
             </h2>
           </Reveal>
 
           {/* Two Columns with Divider */}
-          {/* Two Columns with Divider */}
           <div className='grid grid-cols-1 md:grid-cols-2'>
-
             {/* Mission Column */}
             <Reveal direction='up' delay={0.1} duration={0.6} className='space-y-4 p-8 md:border-r border-gray-200 dark:border-gray-800'>
               <span className='text-[#FBBE15] text-sm font-semibold uppercase tracking-wider block'>
-                Our Mission
+                {about.missionLabel}
               </span>
               <h3 className='text-2xl md:text-3xl font-extrabold text-[#111827] dark:text-white'>
-                What We&apos;re Here to Do
+                {about.missionHeading}
               </h3>
               <p className='text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed'>
-                To create a connected food community where people discover restaurants, share authentic experiences, leave honest reviews and ratings, and build healthier, more intentional everyday habits through food and social connection.
+                {about.missionBody}
               </p>
             </Reveal>
 
             {/* Vision Column */}
             <Reveal direction='up' delay={0.2} duration={0.6} className='space-y-4 p-8'>
               <span className='text-[#FBBE15] text-sm font-semibold uppercase tracking-wider block'>
-                Our Vision
+                {about.visionLabel}
               </span>
               <h3 className='text-2xl md:text-3xl font-extrabold text-[#111827] dark:text-white'>
-                Where We&apos;re Going
+                {about.visionHeading}
               </h3>
               <p className='text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed'>
-                To become Africa&apos;s leading food discovery and community platform, where restaurants, people, experiences, and better everyday living come together.
+                {about.visionBody}
               </p>
             </Reveal>
-
           </div>
         </div>
       </section>
@@ -201,7 +194,6 @@ export default function AboutPage() {
       {/* --- CORE VALUES SECTION --- */}
       <section className='py-20 bg-white dark:bg-black'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-
           {/* Section Header */}
           <Reveal direction='up' duration={0.5} className='relative mb-6'>
             <div className='text-center'>
@@ -212,7 +204,7 @@ export default function AboutPage() {
                   </div>
                 </div>
                 <h2 className='text-4xl md:text-5xl font-extrabold leading-tight z-10 text-[#111827] dark:text-white relative'>
-                  Our Core Values
+                  {about.valuesSectionTitle}
                 </h2>
               </div>
             </div>
@@ -220,48 +212,35 @@ export default function AboutPage() {
 
           <Reveal direction='up' delay={0.1} duration={0.6} className='mb-12'>
             <p className='text-gray-600 dark:text-gray-300 text-base md:text-lg max-w-2xl mx-auto text-center'>
-              Five principles that guide everything we build and every decision we make.
+              {about.valuesSectionSubtitle}
             </p>
           </Reveal>
 
-          {/* Values Grid */}
+          {/* Dynamic Values Grid */}
           <div className='grid grid-cols-1 md:grid-cols-2'>
-
-            <Reveal direction='up' delay={0.1} duration={0.6} className='space-y-3 p-8 border-b border-r border-gray-200 dark:border-gray-800'>
-              <h3 className='text-[#FBBE15] text-xl md:text-2xl font-bold'>Authentic Discovery</h3>
-              <p className='text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed'>
-                We believe restaurant discovery should feel simple, genuine, and trustworthy through real reviews, experiences and recommendations from everyday people.
-              </p>
-            </Reveal>
-
-            <Reveal direction='up' delay={0.15} duration={0.6} className='space-y-3 p-8 border-b border-gray-200 dark:border-gray-800'>
-              <h3 className='text-[#FBBE15] text-xl md:text-2xl font-bold'>Exploration</h3>
-              <p className='text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed'>
-                We encourage people to discover new restaurants, cuisines, tastes, and experiences that enrich everyday life.
-              </p>
-            </Reveal>
-
-            <Reveal direction='up' delay={0.2} duration={0.6} className='space-y-3 p-8 border-b border-r border-gray-200 dark:border-gray-800'>
-              <h3 className='text-[#FBBE15] text-xl md:text-2xl font-bold'>Simplicity</h3>
-              <p className='text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed'>
-                We strive to make discovering restaurants, sharing experiences, and connecting with others feel natural and intuitive.
-              </p>
-            </Reveal>
-
-            <Reveal direction='up' delay={0.25} duration={0.6} className='space-y-3 p-8 border-b border-gray-200 dark:border-gray-800'>
-              <h3 className='text-[#FBBE15] text-xl md:text-2xl font-bold'>Community & Connection</h3>
-              <p className='text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed'>
-                We believe food brings people together and fosters meaningful human connections through shared moments and experiences.
-              </p>
-            </Reveal>
-
-            <Reveal direction='up' delay={0.3} duration={0.6} className='space-y-3 p-8 border-r border-gray-200 dark:border-gray-800'>
-              <h3 className='text-[#FBBE15] text-xl md:text-2xl font-bold'>Wellness & Better Living</h3>
-              <p className='text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed'>
-                We believe mindful food choices and healthy habits contribute to a healthier and more fulfilling lifestyle.
-              </p>
-            </Reveal>
-
+            {about.coreValues.map((value, idx) => {
+              const isLeft = idx % 2 === 0;
+              const isLastRow =
+                idx >= about.coreValues.length - (about.coreValues.length % 2 === 0 ? 2 : 1);
+              return (
+                <Reveal
+                  key={`${value.title}-${idx}`}
+                  direction='up'
+                  delay={0.1 + idx * 0.05}
+                  duration={0.6}
+                  className={`space-y-3 p-8 border-gray-200 dark:border-gray-800 ${
+                    !isLastRow ? 'border-b' : ''
+                  } ${isLeft ? 'md:border-r' : ''}`}
+                >
+                  <h3 className='text-[#FBBE15] text-xl md:text-2xl font-bold'>
+                    {value.title}
+                  </h3>
+                  <p className='text-gray-600 dark:text-gray-300 text-base md:text-lg leading-relaxed'>
+                    {value.description}
+                  </p>
+                </Reveal>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -274,24 +253,23 @@ export default function AboutPage() {
         <div className='max-w-3xl mx-auto text-center'>
           <Reveal direction='up' duration={0.6}>
             <h2 className='text-3xl md:text-4xl lg:text-5xl font-semibold text-white leading-tight mb-6'>
-              Ready to Discover Your Next<br className='hidden sm:block' /> Favourite Meal?
+              {about.ctaHeading}
             </h2>
           </Reveal>
           <Reveal direction='up' delay={0.1} duration={0.6}>
             <p className='text-gray-300 text-base md:text-lg mb-10 max-w-xl mx-auto leading-[1.40] font-nunito'>
-              Join thousands of food lovers exploring the rich culinary landscape of Africa. Share your
-              experiences and connect with a community that cares.
+              {about.ctaSubtitle}
             </p>
           </Reveal>
           <Reveal direction='up' delay={0.2} duration={0.6}>
-            <a
-              href='/signup'
+            <Link
+              href={about.ctaButtonHref || '/signup'}
               className='flex items-center justify-center w-full max-w-lg mx-auto bg-[#FBBE15] text-[#111827] hover:bg-[#E5AD13] active:scale-[0.98] transition-all font-semibold rounded-2xl py-4 text-base cursor-pointer'>
-              Join Localbuka
-            </a>
+              {about.ctaButtonText || 'Join Localbuka'}
+            </Link>
           </Reveal>
         </div>
-      </section >
+      </section>
 
       <Footer />
     </>

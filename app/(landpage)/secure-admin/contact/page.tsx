@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MessageSquareText,
   Mail,
@@ -18,26 +18,21 @@ import {
   X,
   Save,
   Info,
-  Building2,
   Send,
-  Inbox,
-  Copy,
-  Check,
-  PlusCircle,
 } from 'lucide-react';
 import {
   useContactsQuery,
   useUpdateContactMutation,
   useDeleteContactMutation,
-  useReplyContactMutation,
-  useIngestInboundEmailMutation,
+  useBulkDeleteContactsMutation,
 } from '@/lib/api/services/contact.hooks';
 import type {
   ContactInquiry,
   ContactStatus,
 } from '@/lib/api/services/contact.service';
-import { API_BASE_URL } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
+import { AboutUsContactEditor } from '@/components/admin/contact/AboutUsContactEditor';
+import { BrandedEmailComposer } from '@/components/admin/contact/BrandedEmailComposer';
 
 const PAGE_SIZE = 10;
 
@@ -69,39 +64,39 @@ const STATUS_CONFIG: Record<
 
 export default function AdminContactPage() {
   const [activeMainTab, setActiveMainTab] = useState<
-    'responses' | 'gmail-sync' | 'about'
+    'responses' | 'branded-email' | 'about'
   >('responses');
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<ContactStatus | undefined>(
     undefined
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedInquiry, setSelectedInquiry] =
     useState<ContactInquiry | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
-  const [replyMessage, setReplyMessage] = useState('');
-  const [replySuccessBanner, setReplySuccessBanner] = useState<string | null>(
-    null
-  );
+  const [statusSaveBanner, setStatusSaveBanner] = useState<string | null>(null);
   const [modalStatus, setModalStatus] = useState<ContactStatus>('pending');
 
-  // Gmail manual/test forward state
-  const [copiedWebhook, setCopiedWebhook] = useState(false);
-  const [copiedScript, setCopiedScript] = useState(false);
-  const [inboundFrom, setInboundFrom] = useState('');
-  const [inboundSubject, setInboundSubject] = useState('');
-  const [inboundBody, setInboundBody] = useState('');
-  const [inboundFeedback, setInboundFeedback] = useState<string | null>(null);
+  // Debounce server-side search query so it searches across ALL pages cleanly
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const { data, isLoading, isError } = useContactsQuery({
     page,
     size: PAGE_SIZE,
     status: statusFilter,
+    q: debouncedSearch || undefined,
   });
   const updateMutation = useUpdateContactMutation();
   const deleteMutation = useDeleteContactMutation();
-  const replyMutation = useReplyContactMutation();
-  const ingestMutation = useIngestInboundEmailMutation();
+  const bulkDeleteMutation = useBulkDeleteContactsMutation();
 
   const contactData = data?.data;
   const inquiries: ContactInquiry[] = [...(contactData?.docs ?? [])].sort(
@@ -110,45 +105,53 @@ export default function AdminContactPage() {
   );
   const totalPages = contactData?.total_pages ?? 1;
   const totalDocs = contactData?.total_docs ?? 0;
+  const unreadCount = contactData?.unread_count ?? 0;
+  const statusCounts = contactData?.counts;
 
-  const inboundWebhookUrl = `${API_BASE_URL}/contact/inbound-webhook`;
+  const visibleIds = inquiries.map((i) => i.id);
+  const activeSelectedIds = selectedIds.filter((id) => visibleIds.includes(id));
+  const allVisibleSelected =
+    visibleIds.length > 0 && activeSelectedIds.length === visibleIds.length;
 
-  const gmailAppsScriptCode = `// Google Apps Script: Auto-forward unread LocalBuka Gmail messages to Admin Panel
-function syncLocalBukaGmailToAdmin() {
-  var threads = GmailApp.search('is:unread to:me', 0, 20);
-  var webhookUrl = '${inboundWebhookUrl}';
-  for (var i = 0; i < threads.length; i++) {
-    var messages = threads[i].getMessages();
-    var msg = messages[messages.length - 1];
-    if (msg.isUnread()) {
-      UrlFetchApp.fetch(webhookUrl, {
-        method: 'post',
-        contentType: 'application/json',
-        payload: JSON.stringify({
-          from: msg.getFrom(),
-          subject: msg.getSubject(),
-          message: msg.getPlainBody()
-        })
-      });
-      msg.markRead();
+  const toggleSelectRow = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAllVisible = () => {
+    if (allVisibleSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(visibleIds);
     }
-  }
-}`;
+  };
 
-  const filteredInquiries = inquiries.filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.phone && item.phone.includes(searchQuery)) ||
-      item.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.message.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleBulkDelete = () => {
+    if (activeSelectedIds.length === 0) return;
+    if (
+      !window.confirm(
+        `Delete ${activeSelectedIds.length} selected ${
+          activeSelectedIds.length === 1 ? 'inquiry' : 'inquiries'
+        }? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    bulkDeleteMutation.mutate(activeSelectedIds, {
+      onSuccess: () => {
+        setSelectedIds([]);
+        if (selectedInquiry && activeSelectedIds.includes(selectedInquiry.id)) {
+          setSelectedInquiry(null);
+        }
+      },
+    });
+  };
 
   const handleOpenInquiry = (inquiry: ContactInquiry) => {
     setSelectedInquiry(inquiry);
     setAdminNotes(inquiry.admin_notes || '');
-    setReplyMessage('');
-    setReplySuccessBanner(null);
+    setStatusSaveBanner(null);
     setModalStatus(inquiry.status);
 
     if (!inquiry.is_read) {
@@ -182,55 +185,7 @@ function syncLocalBukaGmailToAdmin() {
                 }
               : null
           );
-          setReplySuccessBanner('Status and internal notes saved.');
-        },
-      }
-    );
-  };
-
-  const handleSendDirectReply = () => {
-    if (!selectedInquiry || !replyMessage.trim()) return;
-    replyMutation.mutate(
-      {
-        id: selectedInquiry.id,
-        data: {
-          subject: `Re: ${selectedInquiry.subject} - LocalBuka Support`,
-          replyMessage: replyMessage.trim(),
-        },
-      },
-      {
-        onSuccess: (res) => {
-          const updated = res?.data?.data;
-          setModalStatus('resolved');
-          if (updated?.admin_notes) {
-            setAdminNotes(updated.admin_notes);
-          }
-          setReplyMessage('');
-          setReplySuccessBanner(
-            `Reply sent to ${selectedInquiry.email} and inquiry marked as Resolved.`
-          );
-        },
-      }
-    );
-  };
-
-  const handleIngestEmail = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inboundFrom.trim() || !inboundBody.trim()) return;
-    ingestMutation.mutate(
-      {
-        from: inboundFrom.trim(),
-        subject: inboundSubject.trim() || 'Direct Email to LocalBuka Gmail',
-        message: inboundBody.trim(),
-      },
-      {
-        onSuccess: () => {
-          setInboundFrom('');
-          setInboundSubject('');
-          setInboundBody('');
-          setInboundFeedback(
-            'Email logged into Admin Contact inbox! Switch to "Contact & Gmail Inbox" to review.'
-          );
+          setStatusSaveBanner('Status and internal notes saved.');
         },
       }
     );
@@ -242,6 +197,7 @@ function syncLocalBukaGmailToAdmin() {
     }
     deleteMutation.mutate(id, {
       onSuccess: () => {
+        setSelectedIds((prev) => prev.filter((item) => item !== id));
         if (selectedInquiry?.id === id) {
           setSelectedInquiry(null);
         }
@@ -259,7 +215,7 @@ function syncLocalBukaGmailToAdmin() {
       'Message',
       'Date',
     ];
-    const rows = filteredInquiries.map((item) => [
+    const rows = inquiries.map((item) => [
       `"${item.name.replace(/"/g, '""')}"`,
       `"${item.email.replace(/"/g, '""')}"`,
       `"${(item.phone || '').replace(/"/g, '""')}"`,
@@ -289,19 +245,25 @@ function syncLocalBukaGmailToAdmin() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">
-            Contact Us, Gmail Inbox & About Us Admin
+            Contact Us, Branded Email &amp; About Us Admin
           </h1>
           <p className="text-muted-foreground text-xs sm:text-sm">
-            Review and respond to user inquiries from the Contact Us page and emails sent to the LocalBuka Gmail
+            Manage inquiries, reply using LocalBuka&apos;s branded customer email templates, and update live About Us &amp; Contact pages
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {unreadCount > 0 && (
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-3.5 py-2 rounded-lg font-bold text-xs">
+              {unreadCount} Unread
+            </div>
+          )}
           <div className="bg-[#fbbe15] text-[#1a1a1a] px-4 py-2.5 rounded-lg font-bold text-sm">
-            {totalDocs} Inquiries
+            {statusCounts?.all ?? totalDocs} Inquiries
           </div>
-          {filteredInquiries.length > 0 && (
+          {inquiries.length > 0 && activeMainTab === 'responses' && (
             <button
+              type="button"
               onClick={exportToCSV}
               className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium text-xs transition-all cursor-pointer"
             >
@@ -312,7 +274,7 @@ function syncLocalBukaGmailToAdmin() {
         </div>
       </div>
 
-      {/* Top View Switcher: Inbox vs Gmail Bridge vs About Us */}
+      {/* Top View Switcher */}
       <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
         <button
           type="button"
@@ -324,20 +286,20 @@ function syncLocalBukaGmailToAdmin() {
           }`}
         >
           <MessageSquareText className="w-4 h-4" />
-          <span>Contact &amp; Gmail Inbox ({totalDocs})</span>
+          <span>Contact Inbox ({statusCounts?.all ?? totalDocs})</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveMainTab('gmail-sync')}
+          onClick={() => setActiveMainTab('branded-email')}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-            activeMainTab === 'gmail-sync'
+            activeMainTab === 'branded-email'
               ? 'bg-[#fbbe15] text-[#1a1a1a] shadow-xs'
               : 'bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
           }`}
         >
-          <Inbox className="w-4 h-4" />
-          <span>LocalBuka Gmail Auto-Sync</span>
+          <Send className="w-4 h-4" />
+          <span>Send Branded Email</span>
         </button>
 
         <button
@@ -354,308 +316,170 @@ function syncLocalBukaGmailToAdmin() {
         </button>
       </div>
 
-      {activeMainTab === 'gmail-sync' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Webhook & Auto-Forward Setup Card */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <Inbox className="w-5 h-5 text-[#fbbe15]" />
-              <h2 className="text-base font-bold text-foreground">
-                Route LocalBuka Gmail to Admin Panel
-              </h2>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Every inquiry submitted on <code className="text-[#fbbe15]">/contact</code> is automatically saved here AND emailed to the LocalBuka Gmail. To ensure emails sent <strong>directly</strong> to LocalBuka&apos;s Gmail also appear in this Admin Panel automatically, connect the Inbound Webhook below:
-            </p>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Inbound Email Webhook Endpoint
-              </label>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 p-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-mono text-foreground truncate">
-                  {inboundWebhookUrl}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(inboundWebhookUrl);
-                    setCopiedWebhook(true);
-                    setTimeout(() => setCopiedWebhook(false), 2000);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#fbbe15] text-[#1a1a1a] font-bold text-xs cursor-pointer"
-                >
-                  {copiedWebhook ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5" />
-                      Copy URL
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  1-Minute Gmail Auto-Forwarder (Google Apps Script)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(gmailAppsScriptCode);
-                    setCopiedScript(true);
-                    setTimeout(() => setCopiedScript(false), 2000);
-                  }}
-                  className="text-xs font-semibold text-[#fbbe15] hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  {copiedScript ? 'Copied Script!' : 'Copy Script'}
-                </button>
-              </div>
-              <pre className="p-3 rounded-lg bg-gray-950 text-gray-200 text-[11px] font-mono overflow-x-auto leading-relaxed">
-                {gmailAppsScriptCode}
-              </pre>
-              <p className="text-[11px] text-muted-foreground">
-                Paste into <strong>script.google.com</strong> under the LocalBuka Gmail account and set a 5-minute time-driven trigger (or point Resend/Cloudflare Inbound Webhook to the URL above).
-              </p>
-            </div>
-          </div>
-
-          {/* Log / Test Inbound Gmail Inquiry */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <PlusCircle className="w-5 h-5 text-[#fbbe15]" />
-              <h2 className="text-base font-bold text-foreground">
-                Log or Test Inbound Gmail Message
-              </h2>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Test the inbound Gmail webhook or manually log an external email so the admin team can track, add notes, and reply from the dashboard.
-            </p>
-
-            {inboundFeedback && (
-              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-xs font-medium">
-                {inboundFeedback}
-              </div>
-            )}
-
-            <form onSubmit={handleIngestEmail} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
-                  Sender Name &amp; Email
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Chinedu Okafor <chinedu@gmail.com>"
-                  value={inboundFrom}
-                  onChange={(e) => setInboundFrom(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs text-foreground"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
-                  Email Subject
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Question about listing my buka in Abuja"
-                  value={inboundSubject}
-                  onChange={(e) => setInboundSubject(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs text-foreground"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-foreground mb-1">
-                  Email Content
-                </label>
-                <textarea
-                  rows={4}
-                  required
-                  placeholder="Paste or type the email message sent to LocalBuka Gmail..."
-                  value={inboundBody}
-                  onChange={(e) => setInboundBody(e.target.value)}
-                  className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs text-foreground"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={ingestMutation.isPending}
-                className="w-full py-2.5 rounded-lg bg-[#fbbe15] hover:bg-[#e5ad13] text-[#1a1a1a] font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {ingestMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Inbox className="w-4 h-4" />
-                )}
-                <span>Send to Admin Contact Inbox</span>
-              </button>
-            </form>
-          </div>
+      {activeMainTab === 'branded-email' ? (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6">
+          <BrandedEmailComposer mode="standalone" />
         </div>
       ) : activeMainTab === 'about' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <Building2 className="w-5 h-5 text-[#fbbe15]" />
-              <h2 className="text-base font-bold text-foreground">
-                About LocalBuka Overview
-              </h2>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              LocalBuka is Africa&apos;s food discovery and community platform built for people who care deeply about where they eat, what they eat, and who they eat with.
-            </p>
-            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800 text-xs">
-              <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">Public About Page:</span>
-                <a
-                  href="/about"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[#fbbe15] font-semibold hover:underline"
-                >
-                  /about ↗
-                </a>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">Public Contact Page:</span>
-                <a
-                  href="/contact"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[#fbbe15] font-semibold hover:underline"
-                >
-                  /contact ↗
-                </a>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">Support &amp; Gmail Forward Target:</span>
-                <span className="font-medium text-foreground">localbuka@gmail.com / support@localbuka.com</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-muted-foreground">Headquarters:</span>
-                <span className="font-medium text-foreground">Lagos, Nigeria</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-6 space-y-4">
-            <h2 className="text-base font-bold text-foreground">
-              Inquiry Categories &amp; Routing
-            </h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              All submissions from the public Contact Us form and inbound Gmail webhook are stored in PostgreSQL and trigger email notifications to the LocalBuka Gmail.
-            </p>
-            <ul className="space-y-2 text-xs text-muted-foreground">
-              <li className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/60">
-                <span className="font-medium text-foreground">General Inquiry</span>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">subject: general</span>
-              </li>
-              <li className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/60">
-                <span className="font-medium text-foreground">Restaurant Partnership</span>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">subject: restaurant</span>
-              </li>
-              <li className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-800/60">
-                <span className="font-medium text-foreground">Inbound Gmail Message</span>
-                <span className="text-[11px] px-2 py-0.5 rounded bg-gray-200 dark:bg-gray-700">subject: [Gmail] *</span>
-              </li>
-            </ul>
-          </div>
-        </div>
+        <AboutUsContactEditor />
       ) : (
         <>
-          {/* Filter Bar */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 sm:p-5 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search by name, email, phone, subject, or message..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-foreground text-xs focus:ring-2 focus:ring-[#fbbe15] focus:border-transparent"
-              />
-            </div>
+          {/* Search, Bulk Actions & Status Filter */}
+          <search className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 space-y-3">
+            <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <label htmlFor="admin-inbox-search" className="sr-only">
+                  Search all contact inquiries
+                </label>
+                <input
+                  id="admin-inbox-search"
+                  name="q"
+                  type="search"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search all inquiries by name, email, phone, subject, or message..."
+                  className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs sm:text-sm text-foreground focus-visible:outline-2 focus-visible:outline-[#fbbe15]"
+                />
+              </div>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto">
-              {(
-                [
-                  { label: 'All', value: undefined },
-                  { label: 'Pending', value: 'pending' },
-                  { label: 'In Progress', value: 'in_progress' },
-                  { label: 'Resolved', value: 'resolved' },
-                  { label: 'Archived', value: 'archived' },
-                ] as { label: string; value: ContactStatus | undefined }[]
-              ).map((tab) => (
-                <button
-                  key={tab.label}
-                  type="button"
-                  onClick={() => {
-                    setStatusFilter(tab.value);
-                    setPage(1);
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
-                    statusFilter === tab.value
-                      ? 'bg-[#fbbe15] text-[#1a1a1a] font-bold'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center min-h-[40vh]">
-              <div className="text-center">
-                <Loader2 className="w-10 h-10 animate-spin text-[#fbbe15] mx-auto mb-3" />
-                <p className="text-muted-foreground text-xs">
-                  Loading user responses...
-                </p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(
+                  [
+                    { value: undefined, label: 'All', count: statusCounts?.all },
+                    {
+                      value: 'pending',
+                      label: 'Pending',
+                      count: statusCounts?.pending,
+                    },
+                    {
+                      value: 'in_progress',
+                      label: 'In Progress',
+                      count: statusCounts?.in_progress,
+                    },
+                    {
+                      value: 'resolved',
+                      label: 'Resolved',
+                      count: statusCounts?.resolved,
+                    },
+                    {
+                      value: 'archived',
+                      label: 'Archived',
+                      count: statusCounts?.archived,
+                    },
+                  ] as {
+                    value: ContactStatus | undefined;
+                    label: string;
+                    count?: number;
+                  }[]
+                ).map((item) => (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => {
+                      setStatusFilter(item.value);
+                      setSelectedIds([]);
+                      setPage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      statusFilter === item.value
+                        ? 'bg-[#fbbe15] text-[#1a1a1a] font-bold'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {item.label}
+                    {typeof item.count === 'number' ? ` (${item.count})` : ''}
+                  </button>
+                ))}
               </div>
             </div>
-          ) : isError ? (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg text-xs">
-              Failed to load contact responses. Please check your connection and try again.
-            </div>
-          ) : filteredInquiries.length === 0 ? (
-            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-12 text-center">
-              <MessageSquareText className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-60" />
-              <h3 className="text-base font-semibold text-foreground mb-1">
-                No contact responses found
-              </h3>
-              <p className="text-muted-foreground text-xs">
-                {searchQuery
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'User responses submitted via Contact Us or forwarded from LocalBuka Gmail will appear here.'}
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
+
+            {activeSelectedIds.length > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                <span className="text-xs font-semibold text-foreground">
+                  {activeSelectedIds.length}{' '}
+                  {activeSelectedIds.length === 1 ? 'inquiry' : 'inquiries'}{' '}
+                  selected
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedIds([])}
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-medium text-foreground cursor-pointer"
+                  >
+                    Clear Selection
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    disabled={bulkDeleteMutation.isPending}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {bulkDeleteMutation.isPending ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
+                    <span>Delete Selected ({activeSelectedIds.length})</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </search>
+
+          {/* Table */}
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-xs">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                <Loader2 className="w-8 h-8 animate-spin text-[#fbbe15]" />
+                <p className="text-sm">Loading contact inquiries...</p>
+              </div>
+            ) : isError ? (
+              <div className="text-center py-20 px-4">
+                <p className="text-red-500 font-medium text-sm">
+                  Unable to load contact inquiries. Make sure you are signed in
+                  as an administrator.
+                </p>
+              </div>
+            ) : inquiries.length === 0 ? (
+              <div className="text-center py-20 px-4 space-y-2">
+                <MessageSquareText className="w-10 h-10 text-gray-300 dark:text-gray-700 mx-auto" />
+                <h3 className="text-base font-semibold text-foreground">
+                  No contact inquiries found
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {debouncedSearch
+                    ? `No results matched "${debouncedSearch}".`
+                    : 'Messages submitted from the public Contact Us page will appear here.'}
+                </p>
+              </div>
+            ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-800">
                     <tr>
-                      <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="pl-5 pr-2 py-3.5 w-10">
+                        <input
+                          type="checkbox"
+                          aria-label="Select all inquiries on this page"
+                          checked={allVisibleSelected}
+                          onChange={toggleSelectAllVisible}
+                          className="h-4 w-4 accent-[#fbbe15] rounded cursor-pointer"
+                        />
+                      </th>
+                      <th className="px-4 py-3.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                         Sender
                       </th>
-                      <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-3.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                         Subject &amp; Message
                       </th>
-                      <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-3.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="px-5 py-3.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
                         Submitted
                       </th>
                       <th className="px-5 py-3.5 text-right text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
@@ -664,9 +488,10 @@ function syncLocalBukaGmailToAdmin() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                    {filteredInquiries.map((inquiry) => {
+                    {inquiries.map((inquiry) => {
                       const statusMeta =
                         STATUS_CONFIG[inquiry.status] || STATUS_CONFIG.pending;
+                      const isChecked = activeSelectedIds.includes(inquiry.id);
                       return (
                         <tr
                           key={inquiry.id}
@@ -677,7 +502,20 @@ function syncLocalBukaGmailToAdmin() {
                               : ''
                           }`}
                         >
-                          <td className="px-5 py-4 whitespace-nowrap">
+                          <td
+                            className="pl-5 pr-2 py-4"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              aria-label={`Select inquiry from ${inquiry.name}`}
+                              checked={isChecked}
+                              onChange={() => toggleSelectRow(inquiry.id)}
+                              className="h-4 w-4 accent-[#fbbe15] rounded cursor-pointer"
+                            />
+                          </td>
+
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2.5">
                               {!inquiry.is_read && (
                                 <span
@@ -760,145 +598,108 @@ function syncLocalBukaGmailToAdmin() {
                   </tbody>
                 </table>
               </div>
+            )}
 
-              {/* Pagination */}
-              <div className="px-5 py-3.5 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Page {page} of {totalPages} ({totalDocs} total inquiries)
-                </p>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-200 dark:border-gray-800 text-xs text-muted-foreground">
+                <span>
+                  Page {page} of {totalPages} ({totalDocs} total)
+                </span>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                   >
-                    <ChevronLeft className="w-4 h-4 mr-1" />
-                    Previous
+                    <ChevronLeft className="w-4 h-4" />
+                    Prev
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   >
                     Next
-                    <ChevronRight className="w-4 h-4 ml-1" />
+                    <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </>
       )}
 
-      {/* Detail & Direct Reply Modal */}
+      {/* Detail & Branded Customer-Template Reply Modal */}
       {selectedInquiry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto shadow-2xl p-6 space-y-5">
             <div className="flex items-start justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-4">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#fbbe15]">
-                  {selectedInquiry.subject} Inquiry
-                </span>
-                <h2 className="text-lg font-bold text-foreground mt-0.5">
-                  {selectedInquiry.name}
+                <h2 className="text-lg font-bold text-foreground capitalize">
+                  {selectedInquiry.subject.replace(/_/g, ' ')} Inquiry
                 </h2>
-                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
-                  <a
-                    href={`mailto:${selectedInquiry.email}`}
-                    className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    <Mail className="w-3.5 h-3.5" />
-                    {selectedInquiry.email}
-                  </a>
-                  {selectedInquiry.phone && (
-                    <a
-                      href={`tel:${selectedInquiry.phone}`}
-                      className="flex items-center gap-1 hover:underline"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      {selectedInquiry.phone}
-                    </a>
-                  )}
-                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  From <strong>{selectedInquiry.name}</strong> (
+                  {selectedInquiry.email})
+                  {selectedInquiry.phone ? ` · ${selectedInquiry.phone}` : ''}
+                </p>
               </div>
-
               <button
                 type="button"
                 onClick={() => setSelectedInquiry(null)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                aria-label="Close inquiry modal"
+                className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {replySuccessBanner && (
-              <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-xs font-medium flex items-center gap-2">
+            {statusSaveBanner && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-xs font-medium flex items-center gap-2"
+              >
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>{replySuccessBanner}</span>
+                <span>{statusSaveBanner}</span>
               </div>
             )}
 
-            {/* User Message */}
+            {/* User Original Message */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 User Message
-              </label>
-              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 text-xs text-foreground whitespace-pre-wrap leading-relaxed">
+              </span>
+              <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                 {selectedInquiry.message}
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                Received on{' '}
-                {new Date(selectedInquiry.created_at).toLocaleString()}
-              </p>
             </div>
 
-            {/* Direct In-App Email Reply Box */}
-            <div className="space-y-2 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-foreground flex items-center gap-1.5">
-                  <Send className="w-3.5 h-3.5 text-[#fbbe15]" />
-                  <span>Send Direct Reply to {selectedInquiry.email}</span>
-                </label>
-              </div>
-              <textarea
-                rows={3}
-                value={replyMessage}
-                onChange={(e) => setReplyMessage(e.target.value)}
-                placeholder={`Write your response to ${selectedInquiry.name}...`}
-                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs text-foreground focus:ring-2 focus:ring-[#fbbe15] focus:border-transparent"
+            {/* Branded Customer-Template Email Composer */}
+            <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700">
+              <BrandedEmailComposer
+                key={selectedInquiry.id}
+                mode="reply"
+                inquiry={selectedInquiry}
+                onReplySent={({ emailDelivered, updatedInquiry }) => {
+                  if (emailDelivered) {
+                    setModalStatus('resolved');
+                  }
+                  if (updatedInquiry?.admin_notes) {
+                    setAdminNotes(updatedInquiry.admin_notes);
+                  }
+                }}
               />
-              <div className="flex items-center justify-between pt-1">
-                <a
-                  href={`mailto:${selectedInquiry.email}?subject=Re: ${encodeURIComponent(
-                    selectedInquiry.subject
-                  )} - LocalBuka Support`}
-                  className="text-[11px] text-muted-foreground hover:text-foreground underline"
-                >
-                  Or open in default mail app
-                </a>
-                <button
-                  type="button"
-                  onClick={handleSendDirectReply}
-                  disabled={replyMutation.isPending || !replyMessage.trim()}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#fbbe15] hover:bg-[#e5ad13] text-[#1a1a1a] font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {replyMutation.isPending ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Send className="w-3.5 h-3.5" />
-                  )}
-                  <span>Send Email &amp; Mark Resolved</span>
-                </button>
-              </div>
             </div>
 
             {/* Status Update */}
             <div className="space-y-2">
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block">
                 Inquiry Status
-              </label>
+              </span>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {(
                   [
@@ -934,39 +735,44 @@ function syncLocalBukaGmailToAdmin() {
 
             {/* Admin Notes */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <label
+                htmlFor="modal-admin-notes"
+                className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block"
+              >
                 Internal Admin Notes &amp; Reply Log
               </label>
               <textarea
+                id="modal-admin-notes"
+                name="adminNotes"
                 rows={3}
                 value={adminNotes}
                 onChange={(e) => setAdminNotes(e.target.value)}
                 placeholder="Add internal notes or record how this inquiry was resolved..."
-                className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs text-foreground focus:ring-2 focus:ring-[#fbbe15] focus:border-transparent"
+                className="w-full p-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs text-foreground focus-visible:outline-2 focus-visible:outline-[#fbbe15]"
               />
             </div>
 
             {/* Actions */}
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200 dark:border-gray-800">
-              <Button
-                variant="outline"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => setSelectedInquiry(null)}
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
               >
                 Close
-              </Button>
+              </button>
               <button
                 type="button"
                 onClick={handleSaveInquiryUpdates}
                 disabled={updateMutation.isPending}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#fbbe15] hover:bg-[#e5ad13] text-[#1a1a1a] font-bold text-xs transition-all cursor-pointer disabled:opacity-50"
               >
                 {updateMutation.isPending ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                Save Status &amp; Notes
+                <span>Save Status &amp; Notes</span>
               </button>
             </div>
           </div>

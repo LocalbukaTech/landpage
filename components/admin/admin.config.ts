@@ -7,6 +7,7 @@ import {
   TrendingUp,
   KeyRound,
   MessageSquareText,
+  Building2,
   LucideIcon,
 } from 'lucide-react';
 import { IconType } from 'react-icons';
@@ -46,6 +47,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     name: 'Contact & Inquiries',
     href: '/secure-admin/contact',
     icon: MessageSquareText,
+  },
+  {
+    name: 'About Us',
+    href: '/secure-admin/about',
+    icon: Building2,
   },
   {
     name: 'Community Approvals',

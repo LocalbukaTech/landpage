@@ -1,27 +1,23 @@
 'use client';
 
-import { Navbar } from '@/components/layout/navbar';
+import { LandingNavbar } from '@/components/layout/landing-navbar';
 import { HeroSection } from '@/components/sections/hero-section';
-import { FoodLoversSection } from '@/components/sections/food-lovers-section';
-import { WhyLocalBukaSection } from '@/components/sections/why-localbuka-section';
-import { AppDownloadSection } from '@/components/sections/app-download-section';
-import { TeamSection } from '@/components/sections/team-section';
 import { TestimonialsSection } from '@/components/sections/testimonials-section';
-import { FAQSection } from '@/components/sections/faq-section';
-import { Footer } from '@/components/layout/footer';
+import { MealExplorerSection } from '@/components/sections/mealexplore';
+import { OwnerCtaSection } from '@/components/sections/owner-cta';
+import { TeamSection } from '@/components/sections/team';
+import { FooterMew } from '@/components/layout/footermew';
 
 export function LandingPageClient() {
   return (
-    <>
-      <Navbar />
+    <div className='min-h-screen bg-white'>
+      <LandingNavbar />
       <HeroSection />
-      <FoodLoversSection />
-      <WhyLocalBukaSection />
-      <AppDownloadSection />
-      <TeamSection />
       <TestimonialsSection />
-      <FAQSection />
-      <Footer />
-    </>
+      <MealExplorerSection />
+      <OwnerCtaSection />
+      <TeamSection />
+      <FooterMew />
+    </div>
   );
 }
